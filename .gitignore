@@ -1,0 +1,16 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Backend específicos
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+db.sqlite3
