@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@theme {
+  --color-dark-bg: #1a1a2e;
+  --color-dark-card: #16213e;
+  --color-dark-text: #eaeaea;
+}
+
+.dark {
+  --color-bg-primary: #1a1a2e;
+  --color-bg-secondary: #16213e;
+  --color-text-primary: #eaeaea;
+  --color-text-secondary: #a0a0a0;
+}
+
+.dark body,
+.dark {
+  background-color: #0f0f23;
+  color: #eaeaea;
+}
+
+.dark .bg-white\/20,
+.dark .bg-white\/40,
+.dark .bg-white\/50,
+.dark .bg-white\/60,
+.dark .bg-white\/70,
+.dark .bg-white\/90 {
+  background-color: rgba(22, 33, 62, 0.6);
+}
+
+.dark .backdrop-blur-2xl,
+.dark .backdrop-blur-xl,
+.dark .backdrop-blur-md {
+  backdrop-filter: blur(16px);
+}
+
+.dark .text-gray-800,
+.dark .text-gray-900 {
+  color: #eaeaea;
+}
+
+.dark .text-gray-700 {
+  color: #d0d0d0;
+}
+
+.dark .text-gray-600 {
+  color: #b0b0b0;
+}
+
+.dark .text-gray-500 {
+  color: #909090;
+}
+
+.dark .border-white\/50,
+.dark .border-white\/60,
+.dark .border-white\/40,
+.dark .bg-\[\#e8eef2\] {
+  background-color: rgba(22, 33, 62, 0.8);
+}
+
+.dark .bg-\[\#e8eef2\] {
+  background-color: #0f0f23;
+}
+
+.dark .bg-\[\#292e34\]\/90 {
+  background-color: rgba(40, 50, 70, 0.9);
+}
+
+.dark input,
+.dark textarea {
+  color: #eaeaea;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #888;
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
