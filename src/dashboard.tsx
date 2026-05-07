@@ -8,11 +8,25 @@ import {
 import { KanbanBoard } from './components/KanbanBoard';
 import { NotificationToast } from './components/NotificationToast';
 import { FormularioRueda } from './components/FormularioRueda';
+import { ActionButton } from './components/ActionButton';
 import { X, Moon, Sun, LogOut, User, Plus, ArrowRight, Calendar, Edit3, Info, CheckCircle2, Play, ChevronRight, Target, TrendingUp, CalendarDays, CheckCircle, CreditCard, Landmark, Receipt, AlertCircle, CheckSquare, Pill, Clock, Edit, Check, Zap, Trophy, Star, Shield, Flame, Users, Settings, Mail, Copy, Crown, ShieldCheck, UserPlus, Trash2, Send, Briefcase, Bell, MessageSquare } from 'lucide-react';
 
 
 interface DashboardProps {
   onLogout: () => void;
+}
+
+interface XPStats {
+  totalXP: number;
+  level: number;
+  streak: number;
+  lastActiveDate: string;
+  todayXP: number;
+  tasksCompleted: number;
+  kanbanCompleted: number;
+  ruedaCompleted: number;
+  medicationsTaken: number;
+  unlockedBadges: string[];
 }
 
 const XP_CONFIG = {
@@ -96,15 +110,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [inviteLink, setInviteLink] = useState('');
   const [showInviteLink, setShowInviteLink] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const [showUserSettingsModal, setShowUserSettingsModal] = useState(false);
   const [showDelegationModal, setShowDelegationModal] = useState(false);
   const [delegationTask, setDelegationTask] = useState<KanbanTaskData | null>(null);
   const [delegationEmail, setDelegationEmail] = useState('');
   const [delegationMessage, setDelegationMessage] = useState('');
   const [delegationLink, setDelegationLink] = useState('');
-  const [delegations, setDelegations] = useState<{ sent: any[]; received: any[] }>({ sent: [], received: [] });
+  const [delegations, setDelegations] = useState<{ sent: DelegationData[]; received: DelegationData[] }>({ sent: [], received: [] });
   const [delegationTab, setDelegationTab] = useState<'create' | 'received'>('create');
+  const [showAccionesDelegarModal, setShowAccionesDelegarModal] = useState(false);
 
   const [userData, setUserData] = useState({ username: 'Brenda', email: '', avatar_url: '' });
   const [newAvatarUrl, setNewAvatarUrl] = useState('');
@@ -158,7 +173,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     };
   });
 
-  const [xpStats, setXpStats] = useState(() => {
+  const [xpStats, setXpStats] = useState<XPStats>(() => {
     const saved = localStorage.getItem('focusia_xp_stats');
     if (saved) {
       const parsed = JSON.parse(saved);
@@ -268,25 +283,25 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         if (editingMetaIndex === -1) {
           setMetaAnual([...metaAnual, newMetaText.trim()]);
         } else {
-          setMetaAnual(metaAnual.map((m, i) => i === editingMetaIndex ? newMetaText.trim() : m));
+          setMetaAnual(metaAnual.map((m: string, i: number) => i === editingMetaIndex ? newMetaText.trim() : m));
         }
       } else if (editingMetaType === 'mensual') {
         if (editingMetaIndex === -1) {
           setMetaMensual([...metaMensual, newMetaText.trim()]);
         } else {
-          setMetaMensual(metaMensual.map((m, i) => i === editingMetaIndex ? newMetaText.trim() : m));
+          setMetaMensual(metaMensual.map((m: string, i: number) => i === editingMetaIndex ? newMetaText.trim() : m));
         }
       } else if (editingMetaType === 'semanal') {
         if (editingMetaIndex === -1) {
           setMetaSemanal([...metaSemanal, newMetaText.trim()]);
         } else {
-          setMetaSemanal(metaSemanal.map((m, i) => i === editingMetaIndex ? newMetaText.trim() : m));
+          setMetaSemanal(metaSemanal.map((m: string, i: number) => i === editingMetaIndex ? newMetaText.trim() : m));
         }
       } else if (editingMetaType === 'diaria') {
         if (editingMetaIndex === -1) {
           setMetaDiaria([...metaDiaria, newMetaText.trim()]);
         } else {
-          setMetaDiaria(metaDiaria.map((m, i) => i === editingMetaIndex ? newMetaText.trim() : m));
+          setMetaDiaria(metaDiaria.map((m: string, i: number) => i === editingMetaIndex ? newMetaText.trim() : m));
         }
       }
     }
@@ -296,10 +311,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   };
 
   const handleDeleteMeta = (type: string, index: number) => {
-    if (type === 'anual') setMetaAnual(metaAnual.filter((_, i) => i !== index));
-    else if (type === 'mensual') setMetaMensual(metaMensual.filter((_, i) => i !== index));
-    else if (type === 'semanal') setMetaSemanal(metaSemanal.filter((_, i) => i !== index));
-    else if (type === 'diaria') setMetaDiaria(metaDiaria.filter((_, i) => i !== index));
+    if (type === 'anual') setMetaAnual(metaAnual.filter((_: string, i: number) => i !== index));
+    else if (type === 'mensual') setMetaMensual(metaMensual.filter((_: string, i: number) => i !== index));
+    else if (type === 'semanal') setMetaSemanal(metaSemanal.filter((_: string, i: number) => i !== index));
+    else if (type === 'diaria') setMetaDiaria(metaDiaria.filter((_: string, i: number) => i !== index));
   };
 
   const handleEditMeta = (type: string, index: number, currentText: string) => {
@@ -363,17 +378,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           error: ''
         });
       } catch (e) {
-        setClima(prev => ({ ...prev, loading: false, error: 'Sin datos' }));
+        setClima((prev: typeof clima) => ({ ...prev, loading: false, error: 'Sin datos' }));
       }
     };
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => fetchClima(pos.coords.latitude, pos.coords.longitude),
-        () => setClima(prev => ({ ...prev, loading: false, error: 'Permiso denegado' }))
+        () => setClima((prev: typeof clima) => ({ ...prev, loading: false, error: 'Permiso denegado' }))
       );
     } else {
-      setClima(prev => ({ ...prev, loading: false, error: 'No disponible' }));
+      setClima((prev: typeof clima) => ({ ...prev, loading: false, error: 'No disponible' }));
     }
   }, []);
 
@@ -459,7 +474,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       setWorkspaces(updatedWorkspaces);
       const newWs = updatedWorkspaces.find(w => w.id === result.workspace_id);
       if (newWs) setCurrentWorkspace(newWs);
-      setPendingInvitations(pendingInvitations.filter(i => i.token !== token));
+      setPendingInvitations(pendingInvitations.filter((i: InvitationData) => i.token !== token));
       addXP(50, 'Te uniste a un workspace');
     } catch (err) {
       console.error('Error accepting invitation:', err);
@@ -541,7 +556,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     if (currentWorkspace) {
       try {
         const members = await delegationService.getWorkspaceMembers(currentWorkspace.id);
-        setWorkspaceMembers(members);
+        setWorkspaceMembers(members as WorkspaceMemberData[]);
       } catch (err) {
         console.error('Error loading workspace members for delegation:', err);
       }
@@ -562,7 +577,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     const now = new Date();
     const today = now.toISOString().split('T')[0];
 
-    recordatorios.forEach(rec => {
+    recordatorios.forEach((rec: RecordatorioData) => {
       if (!rec.activo) return;
       if (takenMedications.has(rec.id)) return;
 
@@ -583,7 +598,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const handleMarkTaken = async (id: number) => {
     try {
       await recordatorioService.update(id, { activo: false });
-      setTakenMedications(prev => new Set([...prev, id]));
+      setTakenMedications((prev: Set<number>) => new Set([...prev, id]));
       setActiveNotification(null);
     } catch (err) {
       console.error('Error marking medication as taken:', err);
@@ -646,7 +661,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       setUserData({
         ...userData,
         username: updated.username,
-        avatar_url: updated.avatar_url || `https://ui-avatars.com/api/?name=${updated.username}&background=f4d2d2&color=000`
+        avatar_url: updated.avatar_url || `//api/?name=${updated.username}&background=f4d2d2&color=000`
       });
       setShowUserSettingsModal(false);
       addXP(50, 'Perfil actualizado');
@@ -714,7 +729,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   };
 
   const handleTimeBlockBlur = async (hora: number, value: string) => {
-    const block = timeBlocks.find(t => t.hora === hora);
+    const block = timeBlocks.find((t: TimeBlockData) => t.hora === hora);
     if (block && block.tarea === value) return; // Sin cambios
     try {
       if (block) {
@@ -730,15 +745,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   };
 
   const handleTimeBlockStatus = async (hora: number, estado: boolean) => {
-    const block = timeBlocks.find(t => t.hora === hora);
+    const block = timeBlocks.find((t: TimeBlockData) => t.hora === hora);
     try {
       if (block) {
         await timeBlockService.update(block.id, { estado });
         // update local state so it doesn't revert
-        setTimeBlocks(prev => prev.map(t => t.id === block.id ? { ...t, estado } : t));
+        setTimeBlocks((prev: TimeBlockData[]) => prev.map((t: TimeBlockData) => t.id === block.id ? { ...t, estado } : t));
       } else {
         const newBlock = await timeBlockService.create({ hora, tarea: '', estado });
-        setTimeBlocks(prev => [...prev, newBlock]);
+        setTimeBlocks((prev: TimeBlockData[]) => [...prev, newBlock]);
       }
       showSaving();
     } catch (e) {
@@ -784,13 +799,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     if (ruedaCompleta.length === 0) return fallback;
 
     const colors = ['#eb97a4', '#9ac1cf', '#c795b5', '#dfb48b', '#a8d5a2', '#f9c89b', '#b8a9c9', '#8ecae6'];
-    const total = ruedaCompleta.reduce((sum, cat) => sum + cat.puntaje, 0);
+    const total = ruedaCompleta.reduce((sum: number, cat: RuedaCategoria) => sum + cat.puntaje, 0);
     if (total === 0) return fallback;
 
     let currentDeg = 0;
     const gradientParts: string[] = [];
 
-    ruedaCompleta.forEach((cat, index) => {
+    ruedaCompleta.forEach((cat: RuedaCategoria, index: number) => {
       const degrees = (cat.puntaje / total) * 360;
       const nextDeg = currentDeg + degrees;
       const color = colors[index % colors.length];
@@ -811,7 +826,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           {savingStatus}
         </div>
       )}
-
       {/* Background blobs for pastel feel */}
       <div className="fixed top-[0%] left-[-5%] w-[40%] h-[40%] bg-green-200/30 rounded-full mix-blend-multiply filter blur-[100px] opacity-70 z-0 pointer-events-none"></div>
       <div className="fixed bottom-[-5%] left-[10%] w-[30%] h-[30%] bg-blue-200/30 rounded-full mix-blend-multiply filter blur-[100px] opacity-70 z-0 pointer-events-none"></div>
@@ -819,336 +833,112 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       <div className="fixed bottom-[10%] right-[10%] w-[35%] h-[35%] bg-yellow-100/30 rounded-full mix-blend-multiply filter blur-[100px] opacity-70 z-0 pointer-events-none"></div>
 
       {/* TOP HEADER */}
-      <header className="w-full max-w-[1240px] flex items-center justify-end mb-4 z-50 relative px-4 text-gray-600">
-        <div className="flex-1 flex justify-end items-center gap-2 sm:gap-4">
-          <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className="flex items-center justify-center w-8 h-8 rounded-full bg-[#292e34]/90 shadow-sm border border-gray-600 hover:bg-[#3a3f47] transition-colors"
-            title={isDarkMode ? 'Modo claro' : 'Modo oscuro'}
-          >
-            {isDarkMode ? (
-              <Sun className="w-4 h-4 text-yellow-400" />
-            ) : (
-              <Moon className="w-4 h-4 text-white" />
-            )}
-          </button>
+      <header className="w-full max-w-[1240px] flex items-center justify-between mb-4 z-50 relative px-4 text-gray-600 mx-auto">
 
-          {/* Notifications Center */}
-          <div className="relative">
-            <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="flex items-center justify-center w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 transition-all relative border border-white/40 shadow-sm"
-              title="Notificaciones"
-            >
-              <Bell className="w-4 h-4 text-white" />
-              {notifications.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border border-white">
-                  {notifications.length}
-                </span>
-              )}
-            </button>
-
-            {showNotifications && (
-              <>
-                <div
-                  className="fixed inset-0 z-[100]"
-                  onClick={() => setShowNotifications(false)}
-                />
-                <div className="absolute right-0 top-full mt-3 w-80 bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-white/50 overflow-hidden z-[110] animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-gray-50 to-gray-100">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Notificaciones</p>
-                    <span className="text-[10px] text-gray-400 font-medium">{notifications.length} nuevas</span>
-                  </div>
-
-                  <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
-                    {notifications.length === 0 ? (
-                      <div className="p-10 text-center">
-                        <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                          <Bell className="w-5 h-5 text-gray-300" />
-                        </div>
-                        <p className="text-sm text-gray-400 font-medium">No tienes notificaciones</p>
-                      </div>
-                    ) : (
-                      <div className="divide-y divide-gray-50">
-                        {notifications.map(notif => (
-                          <div 
-                            key={notif.id}
-                            className="p-4 hover:bg-gray-50 transition-colors flex gap-3 group"
-                          >
-                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${
-                              notif.type === 'invitation' ? 'bg-purple-100 text-purple-600' :
-                              notif.type === 'delegation' ? 'bg-amber-100 text-amber-600' :
-                              'bg-blue-100 text-blue-600'
-                            }`}>
-                              {notif.type === 'invitation' ? <Briefcase className="w-5 h-5" /> :
-                               notif.type === 'delegation' ? <MessageSquare className="w-5 h-5" /> :
-                               <Clock className="w-5 h-5" />}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-bold text-gray-800 leading-tight mb-0.5">{notif.title}</p>
-                              <p className="text-xs text-gray-500 line-clamp-2">{notif.message}</p>
-                              <div className="flex items-center gap-2 mt-2">
-                                <span className="text-[10px] text-gray-400">{new Date(notif.created_at).toLocaleDateString()}</span>
-                                <button className="text-[10px] font-bold text-[#7c3aed] opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                                  Ver detalles <ChevronRight className="w-2.5 h-2.5" />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {notifications.length > 0 && (
-                    <div className="p-3 bg-gray-50 border-t border-gray-100">
-                      <button className="w-full py-2.5 text-xs font-bold text-gray-500 hover:text-gray-700 transition-colors">
-                        Marcar todas como leídas
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-          
-          {/* Workspace Selector */}
-
-          <div className="relative">
-            <button
-              onClick={() => setShowWorkspaceSelector(!showWorkspaceSelector)}
-              className="flex items-center gap-2 bg-gradient-to-r from-[#7c3aed] to-[#059669] text-white px-3 py-1.5 rounded-full hover:opacity-90 transition-opacity shadow-md"
-            >
-              <Briefcase className="w-4 h-4" />
-              <span className="font-bold text-xs max-w-[120px] truncate">
-                {currentWorkspace?.name || 'Mi Workspace'}
-              </span>
-              {pendingInvitations.length > 0 && (
-                <span className="w-5 h-5 bg-yellow-400 text-black text-[10px] font-bold rounded-full flex items-center justify-center">
-                  {pendingInvitations.length}
-                </span>
-              )}
-            </button>
-
-            {showWorkspaceSelector && (
-              <>
-                <div
-                  className="fixed inset-0 z-[60]"
-                  onClick={() => setShowWorkspaceSelector(false)}
-                />
-                <div className="absolute right-0 top-full mt-2 w-72 bg-white/95 backdrop-blur-xl rounded-2xl shadow-lg border border-white/50 overflow-hidden z-[70]">
-                  <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-[#7c3aed]/10 to-[#0d9488]/10">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Workspaces</p>
-                  </div>
-                  
-                  <div className="max-h-64 overflow-y-auto">
-                    {workspaces.map(ws => (
-                      <button
-                        key={ws.id}
-                        onClick={() => {
-                          setCurrentWorkspace(ws);
-                          loadWorkspaceMembers(ws.id);
-                          setShowWorkspaceSelector(false);
-                        }}
-                        className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors ${
-                          currentWorkspace?.id === ws.id ? 'bg-[#7c3aed]/10' : ''
-                        }`}
-                      >
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                          ws.my_role === 'owner' ? 'bg-gradient-to-br from-yellow-400 to-orange-500' :
-                          ws.my_role === 'admin' ? 'bg-gradient-to-br from-purple-400 to-pink-500' :
-                          'bg-gradient-to-br from-teal-400 to-cyan-500'
-                        }`}>
-                          <Briefcase className="w-5 h-5 text-white" />
-                        </div>
-                        <div className="flex-1 text-left">
-                          <p className="font-semibold text-sm text-gray-800">{ws.name}</p>
-                          <div className="flex items-center gap-2">
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-                              ws.my_role === 'owner' ? 'bg-yellow-100 text-yellow-700' :
-                              ws.my_role === 'admin' ? 'bg-purple-100 text-purple-700' :
-                              'bg-gray-100 text-gray-600'
-                            }`}>
-                              {ws.my_role === 'owner' ? 'Dueño' : ws.my_role === 'admin' ? 'Admin' : 'Miembro'}
-                            </span>
-                            <span className="text-[10px] text-gray-400 flex items-center gap-1">
-                              <Users className="w-3 h-3" /> {ws.members_count}
-                            </span>
-                          </div>
-                        </div>
-                        {currentWorkspace?.id === ws.id && (
-                          <Check className="w-5 h-5 text-[#7c3aed]" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="border-t border-gray-100 p-2">
-                    <button
-                      onClick={() => {
-                        setShowWorkspaceSelector(false);
-                        setShowCreateWorkspaceModal(true);
-                      }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#7c3aed] hover:bg-[#7c3aed]/10 rounded-xl transition-colors"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Crear workspace
-                    </button>
-                    {currentWorkspace && (currentWorkspace.my_role === 'owner' || currentWorkspace.my_role === 'admin') && (
-                      <button
-                        onClick={() => {
-                          setShowWorkspaceSelector(false);
-                          setShowWorkspaceSettingsModal(true);
-                          loadWorkspaceMembers(currentWorkspace.id);
-                        }}
-                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
-                      >
-                        <Settings className="w-4 h-4" />
-                        Configuración
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className="relative">
-            <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-1.5 hover:bg-white/20 rounded-full px-2 py-1 transition-colors"
-            >
-              <div className="w-7 h-7 rounded-full overflow-hidden shadow-sm border-2 border-white">
-                <img src={userData.avatar_url} alt="profile" className="w-full h-full object-cover" />
-              </div>
-              <span className="font-bold text-xs text-gray-800">{userData.username}</span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-            </button>
-
-
-            {showUserMenu && (
-              <>
-                <div
-                  className="fixed inset-0 z-[60]"
-                  onClick={() => setShowUserMenu(false)}
-                />
-                <div className="absolute right-0 top-full mt-2 w-72 bg-white/95 backdrop-blur-xl rounded-2xl shadow-lg border border-white/50 overflow-hidden z-[70]">
-                  <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-[#7c3aed]/10 to-[#0d9488]/10">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full overflow-hidden shadow-sm border-2 border-[#7c3aed]">
-                        <img src={userData.avatar_url} alt="profile" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-gray-800">{userData.username}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-
-                          <div className="flex items-center gap-1 bg-[#7c3aed]/20 px-2 py-0.5 rounded-full">
-                            <Zap className="w-3 h-3 text-[#7c3aed]" />
-                            <span className="text-xs font-bold text-[#7c3aed]">Nivel {getLevelFromXP(xpStats.totalXP).level}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-3">
-                      <div className="flex justify-between text-xs text-gray-500 mb-1">
-                        <span className="flex items-center gap-1">
-                          <Star className="w-3 h-3 text-yellow-500" />
-                          {xpStats.totalXP} XP
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Flame className="w-3 h-3 text-orange-500" />
-                          {xpStats.streak} días
-                        </span>
-                      </div>
-                      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-[#7c3aed] to-[#0d9488] rounded-full transition-all duration-500"
-                          style={{ width: `${getLevelFromXP(xpStats.totalXP).progress}%` }}
-                        />
-                      </div>
-                      <p className="text-[10px] text-gray-400 mt-0.5 text-right">
-                        {getLevelFromXP(xpStats.totalXP).currentXP}/{getLevelFromXP(xpStats.totalXP).nextLevelXP} para nivel {getLevelFromXP(xpStats.totalXP).level + 1}
-                      </p>
-                    </div>
-                    <div className="mt-2 flex items-center justify-between bg-[#059669]/10 px-3 py-1.5 rounded-xl">
-                      <span className="text-[10px] text-[#059669] font-medium">XP de hoy:</span>
-                      <span className="text-xs font-bold text-[#059669]">+{xpStats.todayXP} XP</span>
-                    </div>
-                  </div>
-
-                  <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Insignias</p>
-                    <div className="flex gap-2 flex-wrap">
-                      {BADGES.map(badge => {
-                        const isUnlocked = xpStats.unlockedBadges.includes(badge.id);
-                        return (
-                          <div
-                            key={badge.id}
-                            className={`relative group flex items-center justify-center w-10 h-10 rounded-xl ${isUnlocked
-                                ? 'bg-gradient-to-br from-yellow-400 to-orange-500 shadow-lg'
-                                : 'bg-gray-100 opacity-50'
-                              }`}
-                            title={isUnlocked ? badge.name : `Bloqueada - ${badge.desc}`}
-                          >
-                            <badge.icon className={`w-5 h-5 ${isUnlocked ? 'text-white' : 'text-gray-400'}`} />
-                            {!isUnlocked && (
-                              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                                {badge.desc}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="px-2 py-1">
-                    <button
-                      onClick={() => {
-                        setShowUserMenu(false);
-                        setShowUserSettingsModal(true);
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-gray-700 hover:bg-gray-50 transition-all rounded-xl"
-                    >
-                      <Settings className="w-4 h-4 text-gray-400" />
-                      Ajustes de usuario
-                    </button>
-                  </div>
-
-                  <div className="p-2">
-                    <button
-                      onClick={() => {
-                        setShowUserMenu(false);
-                        onLogout();
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-red-600 hover:bg-red-50 transition-all rounded-xl"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Cerrar sesión
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-          <button className="text-gray-600 relative ml-1">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-            <span className="absolute -top-0.5 -right-0.5 w-[7px] h-[7px] bg-red-400 rounded-full border border-white"></span>
-          </button>
+        {/* LEFT SECTION: Modo Oscuro y Notificaciones */}
+       
+        {/* CENTER SECTION: Logo Ancla Visual */}
+        <div className="absolute left-1/2 -top-1 -translate-x-1/2 pointer-events-none -ml-6">
+          <img
+            src="/focusia-logo.png"
+            alt="Focusia"
+            className="h-10 md:h-12 object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.1)] pointer-events-auto hover:scale-110 transition-transform duration-300"
+          />
         </div>
+
+        {/* RIGHT SECTION: Workspace y Usuario */}
+        
       </header>
-
       {/* MAIN CONTENT AREA */}
-      <div className="w-full max-w-[1240px] bg-white/20 backdrop-blur-2xl border border-white/50 shadow-[0_4px_30px_rgba(0,0,0,0.05)] rounded-[2.5rem] p-5 sm:p-7 z-10 flex flex-col xl:flex-row gap-5">
+      <main className="w-full max-w-[1240px] h-[1300px] bg-white/25 backdrop-blur-3xl border border-white/50 shadow-[0_4px_30px_rgba(0,0,0,0.05)] rounded-[3.5rem] p-8 z-10 flex flex-col xl:flex-row gap-5">
+      
+      <div className="absolute top-6 right-8 flex items-center gap-2 sm:gap-4 z-20">
+    
+   
 
+    {/* User Menu */}
+    <div className="relative">
+      <button
+        onClick={() => setShowUserMenu(!showUserMenu)}
+        className="flex items-center gap-1.5 bg-white/40 backdrop-blur-md rounded-full px-3 py-1.5 hover:bg-white/60 transition-colors shadow-sm active:scale-95"
+      >
+        <div className="w-7 h-7 rounded-full overflow-hidden shadow-sm border-2 border-white">
+          <img src={userData.avatar_url} alt="profile" className="w-full h-full object-cover" />
+        </div>
+        <span className="font-bold text-xs text-gray-800 hidden sm:block">{userData.username}</span>
+      </button>
+
+      {/* Dropdown Usuario */}
+      {showUserMenu && (
+        <div className="absolute top-full mt-2 right-0 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 p-4 w-48 z-50 animate-in fade-in slide-in-from-top-2">
+          <div className="space-y-2">
+            <button
+              onClick={() => {
+                setShowUserSettingsModal(true);
+                setShowUserMenu(false);
+              }}
+              className="w-full text-left p-2 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2"
+            >
+              <User className="w-4 h-4" />
+              <span className="text-sm">Perfil</span>
+            </button>
+            <button
+              onClick={onLogout}
+              className="w-full text-left p-2 rounded-xl hover:bg-red-50 transition-colors flex items-center gap-2 text-red-600"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="text-sm">Cerrar Sesión</span>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+      
+        <div className="absolute top-6 left-8 flex items-center gap-3 z-20">
+    {/* Botón Modo Oscuro */}
+    <button
+      onClick={() => setIsDarkMode(!isDarkMode)}
+      className="flex items-center justify-center w-8 h-8 rounded-full bg-[#292e34]/90 shadow-sm border border-gray-600 hover:bg-[#3a3f47] transition-all active:scale-95"
+      title={isDarkMode ? 'Modo claro' : 'Modo oscuro'}
+    >
+      {isDarkMode ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-white" />}
+    </button>
+
+    {/* Centro de Notificaciones */}
+    <div className="relative">
+      <button
+        onClick={() => setShowNotifications(!showNotifications)}
+        className="flex items-center justify-center w-8 h-8 rounded-full bg-black/20 hover:bg-black/30 transition-all border border-black/40 shadow-sm relative group active:scale-95"
+        title="Notificaciones"
+      >
+        <Bell className="w-4 h-4 text-white" />
+        {notifications.length > 0 && (
+          <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border border-white">
+            {notifications.length}
+          </span>
+        )}
+      </button>
+
+      {/* Dropdown de notificaciones */}
+      {showNotifications && (
+        <div className="absolute top-full mt-2 left-0 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 p-4 w-80 z-50 animate-in fade-in slide-in-from-top-2">
+          <h3 className="text-sm font-bold text-gray-800 mb-3">Notificaciones</h3>
+          <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+            {/* ... Contenido de notificaciones ... */}
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
         {/* LEFT COLUMN */}
         <div className="flex flex-col gap-4 w-full xl:w-[32%]">
           {/* Top of Left: Pills & Foco */}
           <div className="flex gap-4">
-            <div className="flex flex-col gap-2.5 w-[30%]">
-              <button className="bg-[#0d9488] text-white py-2 rounded-2xl text-[10px] sm:text-xs font-bold uppercase shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-white/40 transition hover:scale-[1.02] whitespace-nowrap">COACHING</button>
-              <button className="bg-[#7c3aed] text-white py-2 rounded-2xl text-[10px] sm:text-xs font-bold uppercase shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-white/40 transition hover:scale-[1.02] whitespace-nowrap">GRATITUD</button>
-              <button className="bg-[#059669] text-white py-2 rounded-2xl text-[10px] sm:text-xs font-bold uppercase shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-white/40 transition hover:scale-[1.02] whitespace-nowrap">TRIBU</button>
+            <div className="flex flex-col gap-2.5 w-[30%]  pt-13">
+              <ActionButton label="COACHING" color="bg-[#0d9488]" variant="modern" />
+              <ActionButton label="GRATITUD" color="bg-[#7c3aed]" variant="modern" />
+              <ActionButton label="TRIBU" color="bg-[#059669]" variant="modern" />
             </div>
             <div className="flex flex-col gap-2.5 flex-1">
               <div className="flex gap-1.5">
@@ -1198,28 +988,29 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               </div>
             </div>
           </div>
+          <br></br>
 
           {/* Middle of Left */}
-          <div className="flex gap-4">
+          <div className="flex gap-4 ">
             <button
               onClick={() => setShowRecordatorioModal(true)}
-              className="flex-1 bg-white/40 backdrop-blur-md rounded-3xl p-4 shadow-sm border border-white/60 relative flex flex-col items-center pt-10 min-h-[200px] hover:bg-white/50 transition-colors cursor-pointer text-left"
+              className="flex-1 bg-white/40 backdrop-blur-md rounded-3xl p-4 shadow-sm border border-white/60 relative flex flex-col items-center pt-10 min-h-[200px] -w-[500px] hover:bg-white/50 transition-colors cursor-pointer text-left"
             >
               <div className="absolute -top-4 bg-[#0d9488] text-white px-4 py-2 rounded-2xl text-[9px] sm:text-[10px] font-black leading-tight text-center uppercase shadow-sm w-[90%] border border-white/50 scale-105">
                 RECORDATORIO<br />FECHAS IMPORTANTES
               </div>
               <div className="w-full flex-1 flex flex-col gap-2 mt-2">
                 <div className="flex items-center gap-2 bg-white/30 backdrop-blur-sm rounded-xl p-2">
-                  <span className="text-[10px] font-bold text-[#0d9488]">🎂</span>
-                  <span className="text-[10px] text-gray-700">Cumpleaños de mamá - 15 Marzo</span>
+                  <span className="text-[11px] font-bold text-[#0d9488]">🎂</span>
+                  <span className="text-[11px] font-bold text-gray-700">Cumpleaños de mamá - 15 Marzo</span>
                 </div>
                 <div className="flex items-center gap-2 bg-white/30 backdrop-blur-sm rounded-xl p-2">
-                  <span className="text-[10px] font-bold text-[#0d9488]">💊</span>
-                  <span className="text-[10px] text-gray-700">Control médico - 20 Marzo</span>
+                  <span className="text-[11px] font-bold text-[#0d9488]">💊</span>
+                  <span className="text-[11px] font-bold text-gray-700">Control médico - 20 Marzo</span>
                 </div>
                 <div className="flex items-center gap-2 bg-white/30 backdrop-blur-sm rounded-xl p-2">
-                  <span className="text-[10px] font-bold text-[#0d9488]">📅</span>
-                  <span className="text-[10px] text-gray-700">Reunión importante - 25 Marzo</span>
+                  <span className="text-[11px] font-bold text-[#0d9488]">📅</span>
+                  <span className="text-[11px] font-bold text-gray-700">Reunión importante - 25 Marzo</span>
                 </div>
               </div>
               <div className="mt-auto pt-2 flex justify-center">
@@ -1229,20 +1020,20 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               </div>
             </button>
             <div className="flex-1 flex flex-col gap-3">
-              <div className="bg-white/40 backdrop-blur-md rounded-[1.5rem] p-3 shadow-sm border border-white/60 flex-1 flex flex-col items-center justify-start pt-3">
-                <h3 className="text-[10px] font-bold text-center uppercase text-gray-800 mb-1">OBJETIVO DE LA SEMANA</h3>
+              <div className="bg-white/40 backdrop-blur-md rounded-[1.5rem] p-3 shadow-sm border border-white/60 flex-1 flex flex-col items-center justify-start pt-2 w-[200px] -mt-3">
+                <h3 className="text-[11px] font-bold text-center uppercase text-gray-800 mb-1">OBJETIVO DE LA SEMANA</h3>
                 <div className="w-full space-y-2 mt-1 px-2">
-                  <input type="text" className="w-full bg-transparent border-b-[1.5px] border-gray-400 focus:outline-none focus:border-gray-600 text-[10px] text-gray-800 pb-0.5" defaultValue={objetivo?.texto1 || ''} onBlur={(e) => handleObjetivoBlur('texto1', e.target.value)} />
-                  <input type="text" className="w-full bg-transparent border-b-[1.5px] border-gray-400 focus:outline-none focus:border-gray-600 text-[10px] text-gray-800 pb-0.5" defaultValue={objetivo?.texto2 || ''} onBlur={(e) => handleObjetivoBlur('texto2', e.target.value)} />
-                  <input type="text" className="w-[60%] mx-auto block bg-transparent border-b-[1.5px] border-gray-400 focus:outline-none focus:border-gray-600 text-[10px] text-gray-800 pb-0.5" defaultValue={objetivo?.texto3 || ''} onBlur={(e) => handleObjetivoBlur('texto3', e.target.value)} />
+                  <input type="text" className="w-full bg-transparent border-b-[1.5px] border-gray-400 focus:outline-none focus:border-gray-600 text-[11px] font-bold text-gray-800 pb-0.5" defaultValue={objetivo?.texto1 || ''} onBlur={(e) => handleObjetivoBlur('texto1', e.target.value)} />
+                  <input type="text" className="w-full bg-transparent border-b-[1.5px] border-gray-400 focus:outline-none focus:border-gray-600 text-[11px] font-bold text-gray-800 pb-0.5" defaultValue={objetivo?.texto2 || ''} onBlur={(e) => handleObjetivoBlur('texto2', e.target.value)} />
+                  <input type="text" className="w-[60%] mx-auto block bg-transparent border-b-[1.5px] border-gray-400 focus:outline-none focus:border-gray-600 text-[11px] font-bold text-gray-800 pb-0.5" defaultValue={objetivo?.texto3 || ''} onBlur={(e) => handleObjetivoBlur('texto3', e.target.value)} />
                 </div>
               </div>
               <div className="mt-3">
                 <div
                   onClick={() => setShowDelegarModal(true)}
-                  className="bg-white/50 backdrop-blur-md rounded-[1.5rem] p-4 border border-white/60 hover:bg-white/60 transition-all cursor-pointer shadow-sm group"
+                  className="bg-white/50 backdrop-blur-md rounded-[1.5rem] p-4 border border-white/60 hover:bg-white/60 transition-all cursor-pointer shadow-sm group w-[200px]"
                 >
-                  <div className="flex items-center justify-between mb-3 px-1">
+                  <div className="flex items-center justify-between mb-3 px-1 ">
                     <h4 className="text-[9px] font-black uppercase text-gray-600 tracking-[0.15em] mb-0">Kanban Backlog</h4>
                     <div className="bg-[#1e3a5f]/10 px-2 py-0.5 rounded-full">
                       <span className="text-[8px] font-bold text-[#1e3a5f]">{kanbanTasks.filter(t => t.columna === 'Agenda' || t.columna === 'Backlog').length} Pendientes</span>
@@ -1280,61 +1071,60 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           </div>
 
           {/* Bottom Left - Acciones por Delegar */}
-          <div className="mt-auto pt-6 w-full">
-            <div 
-              className="w-full bg-[#fef3c7]/50 backdrop-blur-md rounded-3xl p-4 shadow-sm border border-white/60 group"
-            >
-              <div className="bg-[#d97706] text-white px-4 py-1.5 rounded-2xl text-[10px] font-bold text-center uppercase shadow-sm border border-white/50 mb-3 transition-colors">
-                ACCIONES POR DELEGAR
-              </div>
+          <div className="mt-auto pt-6 w-[250px]">
+  <div
+    className="w-full bg-[#fef3c7]/50 backdrop-blur-md rounded-3xl p-4 shadow-sm border border-white/60 group cursor-pointer hover:bg-[#fef3c7]/70 transition-colors"
+    onClick={() => setShowAccionesDelegarModal(true)}
+  >
+    <div className="bg-[#d97706] text-white px-4 py-1.5 rounded-2xl text-[10px] font-bold text-center uppercase shadow-sm border border-white/50 mb-3 transition-colors flex items-center justify-center gap-2">
+      <div className="w-1.5 h-1.5 rounded-full bg-white opacity-60"></div>
+      ACCIONES POR DELEGAR
+      <div className="w-1.5 h-1.5 rounded-full bg-white opacity-60"></div>
+    </div>
 
-              <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1 custom-scrollbar">
-                {kanbanTasks
-                  .filter(t => t.columna === 'Delegar')
-                  .map(task => (
-                    <div key={task.id} className="bg-white/60 p-2 rounded-xl text-[9px] border border-white/40 flex items-center justify-between gap-2 hover:bg-white/80 transition-colors">
-                      <span className="font-bold text-gray-700 truncate flex-1">{task.titulo}</span>
-                      <button
-                        onClick={() => openDelegationModal(task)}
-                        className="shrink-0 p-1 bg-[#d97706] text-white rounded-lg hover:bg-[#b45309] transition-colors"
-                        title="Delegar por email"
-                      >
-                        <Send className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                {kanbanTasks.filter(t => t.columna === 'Delegar').length === 0 && (
-                  <p className="text-[8px] text-gray-400 text-center italic py-2">No hay tareas para delegar</p>
-                )}
-              </div>
-              <button
-                onClick={() => {
-                  setDelegationTab('received');
-                  setShowDelegationModal(true);
-                }}
-                className="mt-2 w-full py-2 bg-[#d97706] text-white text-[10px] font-bold rounded-xl hover:bg-[#b45309] transition-colors flex items-center justify-center gap-1"
-              >
-                <Send className="w-3 h-3" />
-                Ver Delegaciones
-              </button>
-            </div>
+    {/* <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1 custom-scrollbar">
+      {kanbanTasks
+        .filter(t => t.columna === 'Delegar')
+        .map(task => (
+          <div key={task.id} className="bg-white/60 p-2 rounded-xl text-[9px] border border-white/40 flex items-center justify-between gap-2 hover:bg-white/80 transition-colors">
+            <span className="font-bold text-gray-700 truncate flex-1">{task.titulo}</span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                openDelegationModal(task);
+              }}
+              className="shrink-0 p-1 bg-[#d97706] text-white rounded-lg hover:bg-[#b45309] transition-colors"
+              title="Delegar por email"
+            >
+              <Send className="w-3 h-3" />
+            </button>
           </div>
+        ))}
+      {kanbanTasks.filter(t => t.columna === 'Delegar').length === 0 && (
+        <p className="text-[8px] text-gray-400 text-center italic py-2">No hay tareas para delegar</p>
+      )}
+    </div> */}
+    {/* <button
+      onClick={(e) => {
+        e.stopPropagation();
+        setDelegationTab('received');
+        setShowDelegationModal(true);
+      }}
+      className="mt-3 w-full py-2 bg-gradient-to-r from-[#d97706] to-[#b45309] text-white text-[10px] font-bold rounded-xl hover:shadow-md transition-all flex items-center justify-center gap-2"
+    >
+      <Send className="w-3 h-3" />
+      Ver Delegaciones
+    </button> */}
+  </div>
+</div>
 
         </div>
 
         {/* CENTER COLUMN */}
         <div className="flex flex-col gap-3 w-full xl:w-[32%] relative items-center">
-          {/* Logo Area */}
-          <div className="bg-white/60 backdrop-blur-xl rounded-[2rem] shadow-[0_2px_15px_rgba(0,0,0,0.03)] border border-white/60 p-3 w-full flex justify-center mt-[-5px]">
-            <img
-              src="/focusia-logo.png"
-              alt="Focusia"
-              className="h-16 object-contain drop-shadow-sm"
-            />
-          </div>
-
+            <div className="bg-pink-200 rounded-2xl w-[410px] h-[100px] shadow-md border border-pink-300"></div>
           {/* Tabs */}
-          <div className="bg-[#f1f5f9]/60 backdrop-blur-md rounded-full px-2 py-1.5 shadow-sm border border-white/80 flex items-center justify-center w-[98%] max-w-[320px] gap-2">
+          <div className="bg-[#1e293b]/90 backdrop-blur-md rounded-full px-2 py-1.5 shadow-sm border border-white/80 flex items-center justify-center w-[98%] max-w-[320px] gap-2">
             <button onClick={() => setShowMetaAnualModal(true)} className="text-[10px] font-bold uppercase px-2 py-1 rounded-full hover:bg-white/50 transition-colors text-gray-800 tracking-wide">ANUAL</button>
             <button onClick={() => setShowMetaMensualModal(true)} className="text-[10px] font-bold uppercase px-2 py-1 rounded-full hover:bg-white/50 transition-colors text-gray-800 tracking-wide border-x border-gray-400/50">MENSUAL</button>
             <button onClick={() => setShowMetaSemanalModal(true)} className="text-[10px] font-bold uppercase px-2 py-1 rounded-full hover:bg-white/50 transition-colors text-gray-800 tracking-wide border-r border-gray-400/50">SEMANAL</button>
@@ -1342,7 +1132,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           </div>
 
           {/* Time Blocking Table */}
-          <div className="bg-gradient-to-b from-[#f8fafc]/80 to-[#f1f5f9]/80 backdrop-blur-xl rounded-[2rem] shadow-[0_4px_15px_rgba(0,0,0,0.05)] border border-white/70 w-full overflow-hidden flex flex-col flex-1 mb-1 relative">
+          <div className="bg-gradient-to-b from-[#f8fafc]/80 to-[#f1f5f9]/80 backdrop-blur-xl rounded-[2rem] shadow-[0_4px_15px_rgba(0,0,0,0.05)] border border-white/70 overflow-hidden flex flex-col mb-1 relative h-[450px]">
             <div className="px-5 py-2.5 flex justify-between items-center z-10">
               <h3 className="text-[13px] font-black uppercase tracking-widest text-[#0f172a]">TIME BLOCKING</h3>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a2b3c" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
@@ -1360,7 +1150,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                   </thead>
                   <tbody>
                     {defaultHours.map((h, i) => {
-                      const block = timeBlocks.find(t => t.hora === h);
+                      const block = timeBlocks.find((t: TimeBlockData) => t.hora === h);
                       return (
                         <tr key={h} className={`border-b border-t border-[#0f766e] ${i % 2 === 0 ? 'bg-[#0d7377]' : 'bg-[#0f8a84]'} h-[20px] sm:h-[22px]`}>
                           <td className="text-center font-medium border-r border-white/20">{h}:00</td>
@@ -1391,31 +1181,25 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           </div>
 
           {/* Bottom Pills */}
-          <div className="flex flex-wrap justify-center gap-1.5 mt-2">
+          <div className="flex  gap-2.5 mt-20">
             {['HUMOR', 'EJERCICIOS', 'HOBBIES', 'VIAJES', 'DIVERSIÓN', 'REFLEXIÓN'].map(item => (
-              <button key={item} className="bg-[#f59e0b] text-white px-2.5 py-1.5 rounded-full text-[9px] font-bold uppercase shadow-sm border border-white/60 transition hover:bg-[#d97706] hover:scale-105 whitespace-nowrap">
-                {item}
-              </button>
+              <ActionButton key={item} label={item} color="bg-[#f59e0b]" variant="modern" className="flex-1 text-[8px] px-2 py-1.5 rounded-full" />
             ))}
           </div>
         </div>
 
         {/* RIGHT COLUMN */}
-        <div className="flex flex-col gap-4 w-full xl:w-[36%]">
-          {/* Top of Right */}
+        <div className="flex flex-col gap-4 w-full xl:w-[36%] z-10">
+          
+          {/* Bloque Superior: Botones Cursos/RRSS y Notas */}
           <div className="flex justify-between items-start">
             <div className="flex flex-col gap-3 w-[65%] pr-3">
               <div className="flex gap-1.5">
-                <button className="bg-[#3b82f6] text-white py-2 px-2 flex-1 rounded-2xl text-[10px] font-black uppercase shadow-sm border border-white/40 transition hover:scale-[1.02]">CURSOS</button>
-                <button className="bg-[#ec4899] text-white py-2 px-2 flex-1 rounded-2xl text-[10px] font-black uppercase shadow-sm border border-white/40 transition hover:scale-[1.02]">RRSS</button>
-                <button
-                  onClick={() => setShowBillModal(true)}
-                  className="bg-[#6366f1] text-white py-2 px-2 flex-1 rounded-2xl text-[10px] font-black uppercase shadow-sm border border-white/40 transition hover:scale-[1.02] flex items-center justify-center gap-1"
-                >
-                  <CreditCard className="w-3 h-3" /> CUENTAS
-                </button>
+                <ActionButton label="CURSOS" color="bg-[#3b82f6]" variant="modern" className="flex-1" />
+                <ActionButton label="RRSS" color="bg-[#ec4899]" variant="modern" className="flex-1" />
+                <ActionButton label="CUENTAS" color="bg-[#6366f1]" variant="modern" className="flex-1" icon={<CreditCard className="w-3 h-3" />} onClick={() => setShowBillModal(true)} />
               </div>
-              <div className="bg-gradient-to-br from-[#fef9c3]/80 to-[#fef3c7]/80 backdrop-blur-xl rounded-[2rem] p-4 shadow-sm border border-white/60 h-[170px] flex flex-col items-center pt-3">
+              <div className="bg-gradient-to-br from-[#fef9c3]/80 to-[#fef3c7]/80 backdrop-blur-xl rounded-[2rem] p-4 shadow-sm border border-white/60 h-[140px] flex flex-col items-center pt-3">
                 <h3 className="text-[12px] font-black uppercase text-gray-800 tracking-widest text-center mt-2 mb-2">KEEP BLOCK DE NOTAS</h3>
                 <textarea
                   className="w-full flex-1 bg-transparent resize-none border-none outline-none text-[10px] text-gray-800 placeholder-gray-400"
@@ -1426,72 +1210,78 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               </div>
             </div>
 
-            <div className="flex flex-col gap-2.5 w-[33%] pl-1">
-              <button
-                onClick={() => setShowMedicamentosModal(true)}
-                className="bg-[#ef4444] text-white py-2.5 rounded-2xl text-[10px] font-bold uppercase shadow-sm border border-white/40 transition hover:scale-[1.02] whitespace-nowrap flex items-center justify-center gap-1"
-              >
-                <Pill className="w-3 h-3" /> MEDICAMENTOS
-              </button>
-              <button className="bg-[#8b5cf6] text-white py-2.5 rounded-2xl text-[10px] font-bold uppercase shadow-sm border border-white/40 transition hover:scale-[1.02] whitespace-nowrap">CUMPLEAÑOS</button>
-              <div className="h-[25px]"></div>
-              <button className="bg-[#059669] text-white py-2.5 rounded-2xl text-[11px] font-bold uppercase shadow-sm border border-white/40 transition hover:scale-[1.02] whitespace-nowrap">FOCUS</button>
+            <div className="flex flex-col gap-2.5 w-[33%] pt-14">
+              <ActionButton label="MEDICAMENTOS" color="bg-[#ef4444]" variant="modern" icon={<Pill className="w-3 h-3" />} onClick={() => setShowMedicamentosModal(true)} />
+              <ActionButton label="CUMPLEAÑOS" color="bg-[#8b5cf6]" variant="modern" />
+              <ActionButton label="FOCUS" color="bg-[#059669]" variant="modern" />
             </div>
           </div>
 
-          {/* Middle of Right */}
-          <div className="flex gap-3 min-h-[190px]">
-            <div className="flex flex-col gap-3 w-[55%]">
-              <div className="bg-[#f0fdf4] backdrop-blur-xl rounded-[1.5rem] p-4 shadow-[0_2px_10px_rgba(0,0,0,0.05)] border border-white/80 flex flex-col items-center justify-center relative w-[85%] ml-2">
+          {/* Bloque Medio: Calendario y Hora de Oro */}
+          <div className="flex gap-3 min-h-[200px] mt-3 ">
+            <div className="flex flex-col gap-5 w-[55%]">
+              <div className="bg-white/40 backdrop-blur-md rounded-[1.5rem] p-3 shadow-sm border border-white/60 flex-1 flex flex-col items-center justify-start pt-3">
                 <div className="absolute top-2 right-2 text-gray-800"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg></div>
                 <h3 className="text-xl font-black uppercase text-gray-900 leading-[1] mt-1">{currentDate.dia} {currentDate.numero}</h3>
                 <h3 className="text-xl font-black uppercase text-gray-900 leading-[1] my-[2px]">{currentDate.mes}</h3>
                 <h3 className="text-[19px] font-black text-gray-900 leading-[1]">{currentDate.anio}</h3>
               </div>
-              <div className="flex flex-col gap-1.5 items-center w-full mt-2 pr-4">
-                <h3 className="text-[10px] font-bold uppercase text-gray-800 text-center w-full shrink-0">MI MISIÓN DE HOYES:</h3>
-                <div className="w-[100px] h-[100px] rounded-2xl overflow-hidden shadow-sm border border-white/60 mb-2 mt-1">
+              
+              <div className="flex flex-col gap-2.0 items-center w-full mt-2 pr-4">
+                <h3 className="text-[20px] font-bold uppercase text-gray-800 text-center w-full shrink-0">MI MISIÓN DE HOY ES:</h3>
+                <div className="w-[150px] h-[150px] rounded-2xl overflow-hidden shadow-sm border border-white/60 mb-2 mt-1 w-[200px] h-[200px]">
                   <img src={misionHoy?.imagen_url || "https://images.unsplash.com/photo-1542596594-649edbc13630?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"} alt="mission" className="w-full h-full object-cover transform scale-110 object-top" />
                 </div>
               </div>
             </div>
 
-            <div className="w-[45%] bg-gradient-to-b from-[#fef3c7]/90 via-[#fde68a]/80 to-[#fcd34d]/70 backdrop-blur-xl rounded-[2rem] p-4 shadow-sm border border-white/80 flex flex-col items-center pt-6">
+            {/* LA HORA DE ORO FAMILIAR */}
+            <div className="w-[160px] h-[400px] bg-gradient-to-b from-[#fef3c7]/90 via-[#fde68a]/80 to-[#fcd34d]/70 backdrop-blur-xl rounded-[2rem] p-4 shadow-sm border border-white/80 flex flex-col items-center justify-center -ml-2">
               <h3 className="text-[11px] font-bold uppercase text-center text-gray-800 leading-tight">LA HORA DE ORO<br />FAMILIAR</h3>
+              <span className="text-3xl mt-2">👨‍👩‍👧</span>
             </div>
           </div>
 
-          {/* Bottom Right - Clima */}
-          <div className="w-full flex justify-end">
-            <div className="bg-gradient-to-r from-[#7dd3fc]/70 to-[#38bdf8]/70 backdrop-blur-md rounded-[1.5rem] px-4 py-2.5 shadow-sm border border-white/60 w-[90%] mt-auto relative overflow-hidden flex items-center gap-3 mr-1">
+          {/* --- NUEVA UBICACIÓN DEL CLIMA --- */}
+          {/* Situado en la parte inferior de la columna derecha, debajo de la Hora de Oro */}
+          <div className="w-[250px] translate-x-30 mt-16 ">
+            <div className="bg-gradient-to-r from-[#7dd3fc]/70 to-[#38bdf8]/70 backdrop-blur-md rounded-[1.5rem] px-5 py-4 shadow-sm border border-white/60 relative overflow-hidden flex items-center gap-4 group hover:shadow-lg transition-all mx-auto max-w-[95%]">
+              
               {clima.loading ? (
                 <div className="flex items-center gap-2 w-full justify-center">
                   <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-[10px] text-gray-500">Obteniendo clima...</span>
+                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Obteniendo clima...</span>
                 </div>
               ) : clima.error ? (
                 <div className="flex flex-col items-center w-full">
-                  <span className="text-[10px] font-bold uppercase text-gray-500">CLIMA EN MI COMUNA</span>
-                  <span className="text-[9px] text-red-400">{clima.error}</span>
+                  <span className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">CLIMA EN MI COMUNA</span>
+                  <span className="text-[9px] text-red-400 font-medium">{clima.error}</span>
                 </div>
               ) : (
                 <>
-                  <span className="text-3xl leading-none">{clima.icono}</span>
+                  {/* Icono Grande */}
+                  <span className="text-4xl leading-none group-hover:scale-110 transition-transform">{clima.icono}</span>
+                  
+                  {/* Detalles Centrales */}
                   <div className="flex flex-col flex-1 min-w-0">
-                    <span className="text-[9px] font-bold uppercase text-blue-700 truncate">{clima.lugar}</span>
-                    <span className="text-[10px] text-gray-600">{clima.descripcion}</span>
+                    <span className="text-[10px] font-black uppercase text-blue-900 truncate tracking-tight">{clima.lugar}</span>
+                    <span className="text-[11px] font-bold text-gray-700 capitalize">{clima.descripcion}</span>
                   </div>
-                  <div className="flex flex-col items-end shrink-0">
-                    <span className="text-[22px] font-black text-gray-800 leading-none">{clima.temp}°</span>
-                    <span className="text-[9px] text-gray-500">💧 {clima.humedad}%</span>
+                  
+                  {/* Temperatura y Humedad Derecha */}
+                  <div className="flex flex-col items-end shrink-0 pl-2">
+                    <span className="text-[26px] font-black text-gray-900 leading-none">{clima.temp}°</span>
+                    <span className="text-[10px] font-bold text-gray-600 tracking-tighter mt-0.5">💧 {clima.humedad}% HR</span>
                   </div>
                 </>
               )}
+
+              {/* Fondo decorativo sutil (efecto de luz) */}
+              <div className="absolute top-0 right-0 w-20 h-20 bg-white/20 rounded-full blur-2xl pointer-events-none" />
             </div>
           </div>
         </div>
-
-      </div>
+      </main>
 
       {/* Modal: Acciones por Delegar */}
       {showDelegarModal && (
@@ -1804,6 +1594,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       )}
 
       {/* Modal: Meta Anual */}
+       
       {showMetaAnualModal && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] flex items-center justify-center p-4"
@@ -1828,9 +1619,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                   <div key={index} className="flex items-center gap-3 bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-white/40">
                     <button
                       onClick={() => {
-                        setXpStats(prev => ({ ...prev, tasksCompleted: prev.tasksCompleted + 1 }));
+                        setXpStats((prev: XPStats) => ({ ...prev, tasksCompleted: prev.tasksCompleted + 1 }));
                         addXP(500, 'Meta anual completada');
-                        setMetaAnual(metaAnual.filter((_, i) => i !== index));
+                        setMetaAnual(metaAnual.filter((_: string, i: number) => i !== index));
                       }}
                       className="w-6 h-6 rounded-full border-2 border-[#0d9488] flex items-center justify-center hover:bg-[#0d9488]/20 transition-colors flex-shrink-0"
                     >
@@ -1900,9 +1691,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                   <div key={index} className="flex items-center gap-3 bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-white/40">
                     <button
                       onClick={() => {
-                        setXpStats(prev => ({ ...prev, tasksCompleted: prev.tasksCompleted + 1 }));
+                        setXpStats((prev: XPStats) => ({ ...prev, tasksCompleted: prev.tasksCompleted + 1 }));
                         addXP(XP_CONFIG.MONTHLY_GOAL, 'Meta mensual completada');
-                        setMetaMensual(metaMensual.filter((_, i) => i !== index));
+                        setMetaMensual(metaMensual.filter((_: string, i: number) => i !== index));
                       }}
                       className="w-6 h-6 rounded-full border-2 border-[#7c3aed] flex items-center justify-center hover:bg-[#7c3aed]/20 transition-colors flex-shrink-0"
                     >
@@ -1972,9 +1763,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                   <div key={index} className="flex items-center gap-3 bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-white/40">
                     <button
                       onClick={() => {
-                        setXpStats(prev => ({ ...prev, tasksCompleted: prev.tasksCompleted + 1 }));
+                        setXpStats((prev: XPStats) => ({ ...prev, tasksCompleted: prev.tasksCompleted + 1 }));
                         addXP(XP_CONFIG.WEEKLY_GOAL, 'Meta semanal completada');
-                        setMetaSemanal(metaSemanal.filter((_, i) => i !== index));
+                        setMetaSemanal(metaSemanal.filter((_: string, i: number) => i !== index));
                       }}
                       className="w-6 h-6 rounded-full border-2 border-[#d97706] flex items-center justify-center hover:bg-[#d97706]/20 transition-colors flex-shrink-0"
                     >
@@ -2044,9 +1835,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                   <div key={index} className="flex items-center gap-3 bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-white/40">
                     <button
                       onClick={() => {
-                        setXpStats(prev => ({ ...prev, tasksCompleted: prev.tasksCompleted + 1 }));
+                        setXpStats((prev: XPStats) => ({ ...prev, tasksCompleted: prev.tasksCompleted + 1 }));
                         addXP(XP_CONFIG.DAILY_GOAL, 'Meta diaria completada', BADGES[0].condition);
-                        setMetaDiaria(metaDiaria.filter((_, i) => i !== index));
+                        setMetaDiaria(metaDiaria.filter((_: string, i: number) => i !== index));
                       }}
                       className="w-6 h-6 rounded-full border-2 border-[#059669] flex items-center justify-center hover:bg-[#059669]/20 transition-colors flex-shrink-0"
                     >
@@ -2326,11 +2117,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
                 {/* Cuadrante 1: DO (Urgente e Importante) */}
-                <div className="bg-red-50/50 rounded-3xl p-5 border border-red-100 flex flex-col min-h-[250px]">
+                <div className="bg-gradient-to-br from-red-50/50 to-red-100/30 rounded-3xl p-5 border border-red-100 flex flex-col min-h-[250px]">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xs font-black text-red-600 uppercase tracking-widest">1. HACER (Urgente)</h3>
+                    <h3 className="text-[11px] font-bold text-red-600 uppercase tracking-widest">1. HACER (Urgente)</h3>
                     <div className="bg-red-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">Crítico</div>
                   </div>
                   <div className="flex-1 space-y-2 mb-4">
@@ -2367,9 +2158,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 </div>
 
                 {/* Cuadrante 2: SCHEDULE (No Urgente, Importante) */}
-                <div className="bg-blue-50/50 rounded-3xl p-5 border border-blue-100 flex flex-col min-h-[250px]">
+                <div className="bg-gradient-to-br from-blue-50/50 to-blue-100/30 rounded-3xl p-5 border border-blue-100 flex flex-col min-h-[250px]">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xs font-black text-blue-600 uppercase tracking-widest">2. AGENDAR (Visión)</h3>
+                    <h3 className="text-[11px] font-bold text-blue-600 uppercase tracking-widest">2. AGENDAR (Visión)</h3>
                     <div className="bg-blue-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">Crecimiento</div>
                   </div>
                   <div className="flex-1 space-y-2 mb-4">
@@ -2406,9 +2197,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 </div>
 
                 {/* Cuadrante 3: DELEGATE (Urgente, No Importante) */}
-                <div className="bg-orange-50/50 rounded-3xl p-5 border border-orange-100 flex flex-col min-h-[250px]">
+                <div className="bg-gradient-to-br from-orange-50/50 to-orange-100/30 rounded-3xl p-5 border border-orange-100 flex flex-col min-h-[250px]">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xs font-black text-orange-600 uppercase tracking-widest">3. DELEGAR (Interrupciones)</h3>
+                    <h3 className="text-[11px] font-bold text-orange-600 uppercase tracking-widest">3. DELEGAR (Interrupciones)</h3>
                     <div className="bg-orange-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">Interferencias</div>
                   </div>
                   <div className="flex-1 space-y-2 mb-4">
@@ -2445,9 +2236,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 </div>
 
                 {/* Cuadrante 4: ELIMINATE (No Urgente, No Importante) */}
-                <div className="bg-gray-100/50 rounded-3xl p-5 border border-gray-200 flex flex-col min-h-[250px]">
+                <div className="bg-gradient-to-br from-gray-100/50 to-gray-200/30 rounded-3xl p-5 border border-gray-200 flex flex-col min-h-[250px]">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest">4. ELIMINAR (Distracciones)</h3>
+                    <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">4. ELIMINAR (Distracciones)</h3>
                     <div className="bg-gray-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase">Basura</div>
                   </div>
                   <div className="flex-1 space-y-2 mb-4">
@@ -2598,7 +2389,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                                 m.id === med.id ? { ...m, completado: !m.completado } : m
                               ));
                               if (!wasCompleted) {
-                                setXpStats(prev => ({ ...prev, medicationsTaken: prev.medicationsTaken + 1 }));
+                                setXpStats((prev: XPStats) => ({ ...prev, medicationsTaken: prev.medicationsTaken + 1 }));
                                 addXP(XP_CONFIG.MEDICATION_TAKEN, 'Medicamento tomado');
                               }
                             }}
@@ -2930,7 +2721,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                       Aceptar
                     </button>
                     <button
-                      onClick={() => setPendingInvitations(pendingInvitations.filter(i => i.id !== inv.id))}
+                      onClick={() => setPendingInvitations(pendingInvitations.filter((i: InvitationData) => i.id !== inv.id))}
                       className="flex-1 py-1.5 bg-gray-200 text-gray-700 text-xs font-bold rounded-lg hover:bg-gray-300 transition-colors"
                     >
                       Ignorar
@@ -3029,6 +2820,64 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
             <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-center">
               <p className="text-[10px] text-gray-400 font-medium italic">Correo electrónico: {userData.email}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Acciones por Delegar */}
+      {showAccionesDelegarModal && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] flex items-center justify-center p-4"
+          onClick={() => setShowAccionesDelegarModal(false)}
+        >
+          <div
+            className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#d97706] to-[#f59e0b]">
+              <h2 className="text-lg font-bold uppercase text-white">Acciones por Delegar</h2>
+              <button
+                onClick={() => setShowAccionesDelegarModal(false)}
+                className="p-2 rounded-full hover:bg-white/30 transition-colors"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
+                {kanbanTasks
+                  .filter(t => t.columna === 'Delegar')
+                  .map(task => (
+                    <div key={task.id} className="bg-white/60 p-3 rounded-xl border border-white/40 flex items-center justify-between gap-3 hover:bg-white/80 transition-colors">
+                      <span className="font-bold text-gray-700 flex-1">{task.titulo}</span>
+                      <button
+                        onClick={() => {
+                          setShowAccionesDelegarModal(false);
+                          openDelegationModal(task);
+                        }}
+                        className="shrink-0 p-2 bg-[#d97706] text-white rounded-lg hover:bg-[#b45309] transition-colors"
+                        title="Delegar por email"
+                      >
+                        <Send className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                {kanbanTasks.filter(t => t.columna === 'Delegar').length === 0 && (
+                  <p className="text-sm text-gray-400 text-center italic py-4">No hay tareas para delegar</p>
+                )}
+              </div>
+              <button
+                onClick={() => {
+                  setShowAccionesDelegarModal(false);
+                  setDelegationTab('received');
+                  setShowDelegationModal(true);
+                }}
+                className="mt-4 w-full py-3 bg-[#d97706] text-white text-sm font-bold rounded-xl hover:bg-[#b45309] transition-colors flex items-center justify-center gap-2"
+              >
+                <Send className="w-4 h-4" />
+                Ver Delegaciones
+              </button>
             </div>
           </div>
         </div>

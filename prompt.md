@@ -135,3 +135,44 @@ Backend: Despliega en Railway configurando variables de entorno (SECRET_KEY, DB_
 Base de Datos: Migra los datos a PostgreSQL en la nube.
 
 Seguridad: Activa SSL (HTTPS), desactiva DEBUG = True y configura la Whitelist de CORS para que solo el dominio de Focusia acceda a la API."
+
+#mision de auditoria 
+
+Eres un auditor de producto especializado en apps de productividad y planificación estratégica. Tu tarea es evaluar si la aplicación FOCUSIA cumple con los requisitos de su definición original, basándote en la siguiente especificación:
+
+DEFINICIÓN DEL PRODUCTO
+Visión: Focusia es un sistema de dirección estratégica personal que transforma intención en ejecución medible. No es una agenda ni una lista de tareas. Guía al usuario en 5 niveles: (1) diagnóstico personal con Rueda de la Vida, (2) definición de Gran Meta Anual, (3) construcción de 12 Objetivos Mensuales, (4) planificación estratégica semanal, (5) ejecución diaria con seguimiento visual.
+Público objetivo: Adultos mayores de 40 años con múltiples responsabilidades (laborales, familiares, financieras), en procesos de reinvención o crecimiento personal, que necesitan estructura — no motivación.
+Promesa de valor: El usuario toma decisiones estratégicas, no acumula pendientes. Cada acción se traduce en progreso visible hacia su gran meta anual.
+Funcionalidades MVP obligatorias a verificar:
+
+Motor de Dirección Anual (diagnóstico + Rueda de la Vida + Gran Meta + 12 objetivos mensuales automáticos)
+Sistema de Objetivos Mensuales con Matriz de Eisenhower inteligente
+Microcapacitaciones previas a la acción (gestión del tiempo, hábitos, toma de decisiones)
+Planificación Semanal Estratégica con conexión visible a objetivo mensual
+Agenda inteligente con recordatorios estratégicos (incluye simulación de llamada y mensajes tipo WhatsApp)
+Panel de Desarrollo de Habilidades (métricas de autodisciplina, constancia, gestión del tiempo)
+Sistema de Recompensa Estratégica (logros, reportes de progreso acumulado)
+Interfaz por niveles: Básico / Intermedio / Avanzado
+Panel "Enfoque Hoy" (meta anual + objetivo mensual + 3 acciones del día + estado semanal)
+Compañero Estratégico Permanente (retroalimentación, detección de desviaciones, ajustes)
+Simplicidad de uso: máx. 3 decisiones por pantalla, configuración en 7 minutos, modo "Solo Hoy"
+
+Valor diferencial a validar:
+
+Conexión coherente entre agenda diaria ↔ objetivos mensuales ↔ meta anual
+Integración de formación práctica dentro del flujo de planificación
+Espacios de enfoque mental y gratitud (respaldo neurocientífico)
+El sistema reduce carga cognitiva, no la aumenta
+
+
+TU TAREA:
+Con base en lo que te presento del estado actual de la app (descripción, capturas, flujos o código), evalúa:
+
+✅ ¿Qué requisitos se cumplen correctamente?
+⚠️ ¿Cuáles están parcialmente implementados?
+❌ ¿Cuáles están ausentes o desalineados con la visión?
+🔍 ¿Hay elementos implementados que contradicen la propuesta de valor o el público objetivo?
+📋 Genera una tabla de cumplimiento con puntaje del 1 al 5 por cada funcionalidad MVP.
+
+Sé directo, específico y constructivo. El objetivo es identificar brechas reales entre la visión del producto y lo que existe hoy.
