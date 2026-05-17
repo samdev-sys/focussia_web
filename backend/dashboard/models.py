@@ -2,8 +2,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
-    # Custom users can be extended later if needed
-    pass
+    avatar_url = models.CharField(max_length=500, blank=True, default='')
+    bio = models.TextField(blank=True, default='')
 
 class RuedaVida(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='rueda_vida')
@@ -25,25 +25,32 @@ class KanbanTask(models.Model):
     titulo = models.CharField(max_length=255)
     descripcion = models.TextField(blank=True)
     columna = models.CharField(max_length=50, default='Backlog')
+    fecha_hora = models.DateTimeField(null=True, blank=True)
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_tasks')
+    workspace = models.ForeignKey('Workspace', on_delete=models.CASCADE, null=True, blank=True, related_name='kanban_tasks')
 
 class Recordatorio(models.Model):
     CATEGORIAS = (
         ('Medicamento', 'Medicamento'),
         ('Cumpleaños', 'Cumpleaños'),
         ('HoraOro', 'Hora de Oro'),
+        ('Equipo', 'Equipo'),
+        ('Otro', 'Otro'),
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='recordatorios')
     titulo = models.CharField(max_length=255)
     categoria = models.CharField(max_length=50, choices=CATEGORIAS)
     fecha_hora = models.DateTimeField()
     activo = models.BooleanField(default=True)
+    tomado = models.BooleanField(default=False)
+    workspace = models.ForeignKey('Workspace', on_delete=models.CASCADE, null=True, blank=True, related_name='recordatorios')
 
 class ObjetivoSemana(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='objetivo_semana')
     texto1 = models.CharField(max_length=255, blank=True)
     texto2 = models.CharField(max_length=255, blank=True)
     texto3 = models.CharField(max_length=255, blank=True)
-    
+
 class KeepNota(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='keep_nota')
     contenido = models.TextField(blank=True)
@@ -86,6 +93,7 @@ class MatrixItem(models.Model):
     quadrant = models.CharField(max_length=20, choices=QUADRANTS)
     is_done = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    workspace = models.ForeignKey('Workspace', on_delete=models.CASCADE, null=True, blank=True, related_name='matrix_items')
 
     class Meta:
         ordering = ['created_at']
@@ -97,7 +105,89 @@ class Factura(models.Model):
     fecha_vencimiento = models.DateField()
     pagado = models.BooleanField(default=False)
     creado_en = models.DateTimeField(auto_now_add=True)
+    workspace = models.ForeignKey('Workspace', on_delete=models.CASCADE, null=True, blank=True, related_name='facturas')
 
     class Meta:
         ordering = ['fecha_vencimiento']
 
+class Workspace(models.Model):
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_workspaces')
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+class WorkspaceMember(models.Model):
+    ROLES = (
+        ('owner', 'Owner'),
+        ('admin', 'Admin'),
+        ('member', 'Member'),
+        ('viewer', 'Viewer'),
+    )
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name='members')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='workspace_memberships')
+    role = models.CharField(max_length=20, choices=ROLES, default='member')
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['workspace', 'user']
+        ordering = ['role', 'joined_at']
+
+class Invitation(models.Model):
+    STATUSES = (
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('declined', 'Declined'),
+        ('expired', 'Expired'),
+    )
+    workspace = models.ForeignKey(Workspace, on_delete=models.CASCADE, related_name='invitations')
+    email = models.EmailField()
+    role = models.CharField(max_length=20, choices=WorkspaceMember.ROLES, default='member')
+    token = models.CharField(max_length=64, unique=True)
+    status = models.CharField(max_length=20, choices=STATUSES, default='pending')
+    invited_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_invitations')
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+class Delegation(models.Model):
+    STATUSES = (
+        ('pending', 'Pendiente'),
+        ('accepted', 'Aceptada'),
+        ('completed', 'Completada'),
+        ('rejected', 'Rechazada'),
+    )
+    task = models.ForeignKey(KanbanTask, on_delete=models.CASCADE, related_name='delegations')
+    delegator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='delegations_sent')
+    delegate = models.ForeignKey(User, on_delete=models.CASCADE, related_name='delegations_received')
+    delegate_email = models.EmailField()
+    message = models.TextField(blank=True, default='')
+    status = models.CharField(max_length=20, choices=STATUSES, default='pending')
+    token = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+class Notification(models.Model):
+    TYPES = (
+        ('invitation', 'Invitación'),
+        ('delegation', 'Delegación'),
+        ('reminder', 'Recordatorio'),
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    type = models.CharField(max_length=20, choices=TYPES)
+    title = models.CharField(max_length=255)
+    message = models.TextField(blank=True, default='')
+    data = models.JSONField(default=dict, blank=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']

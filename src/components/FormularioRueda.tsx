@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { api } from '../services/api';
 import { Loader2, Save } from 'lucide-react';
+import { api } from '../services/api';
 
 interface CategoriaRueda {
   id: number;
@@ -23,15 +23,10 @@ export const FormularioRueda: React.FC<FormularioRuedaProps> = ({ onClose, onSav
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem('access_token');
-        const response = await fetch('http://localhost:8000/api/rueda-vida-completa/', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        const data = await response.json();
+        const response = await api.get('/api/rueda-vida-completa/');
+        const data = response.data;
         setCategorias(data);
-        
+
         const initial: Record<number, number> = {};
         data.forEach((cat: CategoriaRueda) => {
           initial[cat.id] = cat.puntaje;
@@ -53,15 +48,7 @@ export const FormularioRueda: React.FC<FormularioRuedaProps> = ({ onClose, onSav
   const handleSave = async () => {
     setSaving(true);
     try {
-      const token = localStorage.getItem('access_token');
-      await fetch('http://localhost:8000/api/rueda-vida-completa/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ puntajes })
-      });
+      await api.post('/api/rueda-vida-completa/', { puntajes });
       onSaved?.();
       onClose();
     } catch (err) {

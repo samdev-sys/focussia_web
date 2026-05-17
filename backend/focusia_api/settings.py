@@ -14,9 +14,15 @@ def load_env(env_path):
             if not line or line.startswith('#') or '=' not in line:
                 continue
             key, _, value = line.partition('=')
-            os.environ.setdefault(key.strip(), value.strip())
+            value = value.strip()
+            if (value.startswith('"') and value.endswith('"')) or (
+                value.startswith("'") and value.endswith("'")
+            ):
+                value = value[1:-1]
+            os.environ.setdefault(key.strip(), value)
 
 load_env(BASE_DIR / '.env')
+load_env(BASE_DIR.parent / '.env')
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-focusia-dev-key-2026')
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
@@ -74,11 +80,11 @@ WSGI_APPLICATION = 'focusia_api.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'focusia_db',
-        'USER': 'postgres',
-        'PASSWORD': 'Enero4432#',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.environ.get('DB_NAME', 'focusia_db'),
+        'USER': os.environ.get('DB_USER', 'postgres'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'Enero4432#'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
 
@@ -113,6 +119,24 @@ SIMPLE_JWT = {
 # Configuración CORS para el frontend en React/Vite
 CORS_ALLOW_ALL_ORIGINS = True
 # CORS_ALLOWED_ORIGINS = ["http://localhost:3000"]
+
+# Django Q2 (tareas programadas) — opcional
+try:
+    import django_q
+    INSTALLED_APPS.append('django_q')
+    Q_CLUSTER = {
+        'name': 'focusia',
+        'orm': 'default',
+        'workers': 2,
+        'timeout': 60,
+        'retry': 120,
+        'queue_limit': 50,
+        'bulk': 10,
+        'catch_up': False,
+        'sync': False,
+    }
+except ImportError:
+    pass
 
 # Soporte para login con email
 AUTHENTICATION_BACKENDS = [

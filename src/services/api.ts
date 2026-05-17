@@ -235,11 +235,20 @@ export interface RecordatorioData {
   categoria: string;
   fecha_hora: string;
   activo: boolean;
+  tomado: boolean;
 }
 
 export const recordatorioService = {
   getAll: async (): Promise<RecordatorioData[]> => {
     const response = await api.get('/api/recordatorios/');
+    return response.data;
+  },
+  getDue: async (): Promise<RecordatorioData[]> => {
+    const response = await api.get('/api/recordatorios/due/');
+    return response.data;
+  },
+  getPendientes: async (): Promise<RecordatorioData[]> => {
+    const response = await api.get('/api/recordatorios/pendientes/');
     return response.data;
   },
   create: async (data: Omit<RecordatorioData, 'id'>): Promise<RecordatorioData> => {
@@ -248,6 +257,10 @@ export const recordatorioService = {
   },
   update: async (id: number, data: Partial<RecordatorioData>): Promise<RecordatorioData> => {
     const response = await api.patch(`/api/recordatorios/${id}/`, data);
+    return response.data;
+  },
+  marcarTomado: async (id: number): Promise<RecordatorioData> => {
+    const response = await api.post(`/api/recordatorios/${id}/marcar_tomado/`);
     return response.data;
   },
   delete: async (id: number): Promise<void> => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   workspaceService, invitationService, delegationService, authService, notificationService, kanbanService, recordatorioService, ruedaVidaService, ruedaService, timeBlockService, objetivoSemanaService, keepNotaService, misionHoyService, billService, matrixService,
   InvitationData, DelegationData, NotificationData, WorkspaceData, WorkspaceMemberData, RuedaVidaData, RuedaCategoria, TimeBlockData, ObjetivoSemanaData, KeepNotaData, MisionHoyData, RecordatorioData, FacturaData, MatrixItemData, KanbanTaskData
@@ -8,8 +8,10 @@ import {
 import { KanbanBoard } from './components/KanbanBoard';
 import { NotificationToast } from './components/NotificationToast';
 import { FormularioRueda } from './components/FormularioRueda';
+import { useReminderToasts } from './hooks/useReminderToasts';
 import { ActionButton } from './components/ActionButton';
-import { X, Moon, Sun, LogOut, User, Plus, ArrowRight, Calendar, Edit3, Info, CheckCircle2, Play, ChevronRight, Target, TrendingUp, CalendarDays, CheckCircle, CreditCard, Landmark, Receipt, AlertCircle, CheckSquare, Pill, Clock, Edit, Check, Zap, Trophy, Star, Shield, Flame, Users, Settings, Mail, Copy, Crown, ShieldCheck, UserPlus, Trash2, Send, Briefcase, Bell, MessageSquare } from 'lucide-react';
+import { AiMissionAssistant } from './components/AiMissionAssistant';
+import { X, Moon, Sun, LogOut, User, Plus, ArrowRight, Calendar, Edit3, Info, CheckCircle2, Play, ChevronRight, Target, TrendingUp, CalendarDays, CheckCircle, CreditCard, Landmark, Receipt, AlertCircle, CheckSquare, Pill, Clock, Edit, Check, Zap, Trophy, Star, Shield, Flame, Users, Settings, Mail, Copy, Crown, ShieldCheck, UserPlus, Trash2, Send, Briefcase, Bell, MessageSquare, Sparkles } from 'lucide-react';
 
 
 interface DashboardProps {
@@ -139,9 +141,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [editandoMedicamento, setEditandoMedicamento] = useState<number | null>(null);
   const [facturas, setFacturas] = useState<FacturaData[]>([]);
   const [matrixItems, setMatrixItems] = useState<MatrixItemData[]>([]);
-  const [recordatorios, setRecordatorios] = useState<RecordatorioData[]>([]);
-  const [takenMedications, setTakenMedications] = useState<Set<number>>(new Set());
-  const [activeNotification, setActiveNotification] = useState<RecordatorioData | null>(null);
+  const [savedRecordatorios, setSavedRecordatorios] = useState<RecordatorioData[]>([]);
+  const [editingRecordatorio, setEditingRecordatorio] = useState<RecordatorioData | null>(null);
+  const [showAiMissionModal, setShowAiMissionModal] = useState(false);
+  const [selectedMissionText, setSelectedMissionText] = useState<string | null>(null);
   const [timeBlocks, setTimeBlocks] = useState<TimeBlockData[]>([]);
   const [objetivo, setObjetivo] = useState<ObjetivoSemanaData | null>(null);
   const [keepNota, setKeepNota] = useState<KeepNotaData | null>(null);
@@ -564,59 +567,38 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     setShowDelegationModal(true);
   };
 
-  const fetchRecordatorios = async () => {
+  const { activeReminder, dismissReminder, markAsTaken } = useReminderToasts();
+
+  const fetchSavedRecordatorios = useCallback(async () => {
     try {
       const data = await recordatorioService.getAll();
-      setRecordatorios(data);
+      setSavedRecordatorios(data);
     } catch (err) {
-      console.error('Error fetching recordatorios:', err);
+      console.error('Error fetching saved recordatorios:', err);
     }
-  };
-
-  const checkReminders = () => {
-    const now = new Date();
-    const today = now.toISOString().split('T')[0];
-
-    recordatorios.forEach((rec: RecordatorioData) => {
-      if (!rec.activo) return;
-      if (takenMedications.has(rec.id)) return;
-
-      const recDate = new Date(rec.fecha_hora);
-      const recDateStr = recDate.toISOString().split('T')[0];
-
-      if (recDateStr === today) {
-        const recMinutes = recDate.getHours() * 60 + recDate.getMinutes();
-        const nowMinutes = now.getHours() * 60 + now.getMinutes();
-
-        if (Math.abs(recMinutes - nowMinutes) <= 1) {
-          setActiveNotification(rec);
-        }
-      }
-    });
-  };
-
-  const handleMarkTaken = async (id: number) => {
-    try {
-      await recordatorioService.update(id, { activo: false });
-      setTakenMedications((prev: Set<number>) => new Set([...prev, id]));
-      setActiveNotification(null);
-    } catch (err) {
-      console.error('Error marking medication as taken:', err);
-    }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchRecordatorios();
+    fetchSavedRecordatorios();
+  }, [fetchSavedRecordatorios]);
 
-    const interval = setInterval(() => {
-      fetchRecordatorios();
-      checkReminders();
-    }, 60000);
+  const medicamentosFromBackend = useMemo(() =>
+    savedRecordatorios.filter(r => r.categoria === 'Medicamento'),
+    [savedRecordatorios]
+  );
 
-    checkReminders();
-
-    return () => clearInterval(interval);
-  }, [recordatorios.length]);
+  useEffect(() => {
+    const fromBackend = medicamentosFromBackend.map(r => ({
+      id: r.id,
+      nombre: r.titulo,
+      hora: new Date(r.fecha_hora).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false }),
+      dosis: 1,
+      completado: r.tomado,
+    }));
+    if (fromBackend.length > 0) {
+      setMedicamentos(fromBackend);
+    }
+  }, [medicamentosFromBackend]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -838,20 +820,25 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         {/* LEFT SECTION: Modo Oscuro y Notificaciones */}
        
         {/* CENTER SECTION: Logo Ancla Visual */}
-        <div className="absolute left-1/2 -top-1 -translate-x-1/2 pointer-events-none -ml-6">
-          <img
-            src="/focusia-logo.png"
-            alt="Focusia"
-            className="h-10 md:h-12 object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.1)] pointer-events-auto hover:scale-110 transition-transform duration-300"
-          />
-        </div>
+       
 
         {/* RIGHT SECTION: Workspace y Usuario */}
         
       </header>
       {/* MAIN CONTENT AREA */}
-      <main className="w-full max-w-[1240px] h-[1300px] bg-white/25 backdrop-blur-3xl border border-white/50 shadow-[0_4px_30px_rgba(0,0,0,0.05)] rounded-[3.5rem] p-8 z-10 flex flex-col xl:flex-row gap-5">
-      
+      <main className="w-full max-w-[1240px] bg-white/25 backdrop-blur-3xl border border-white/50 shadow-[0_4px_30px_rgba(0,0,0,0.05)] rounded-[3.5rem] p-8 z-10 flex flex-col xl:flex-row gap-5">
+
+      <div className="absolute left-1/2 -top-1 -translate-x-1/2 pointer-events-none -ml-6 mt-7">
+          <img
+            src="/focusia-logo.png"
+            alt="Focusia"
+            className="h-10 md:h-12 object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.1)] pointer-events-auto hover:scale-110 transition-transform duration-300"
+          />
+        </div> 
+
+
+
+
       <div className="absolute top-6 right-8 flex items-center gap-2 sm:gap-4 z-20">
     
    
@@ -999,19 +986,52 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               <div className="absolute -top-4 bg-[#0d9488] text-white px-4 py-2 rounded-2xl text-[9px] sm:text-[10px] font-black leading-tight text-center uppercase shadow-sm w-[90%] border border-white/50 scale-105">
                 RECORDATORIO<br />FECHAS IMPORTANTES
               </div>
-              <div className="w-full flex-1 flex flex-col gap-2 mt-2">
-                <div className="flex items-center gap-2 bg-white/30 backdrop-blur-sm rounded-xl p-2">
-                  <span className="text-[11px] font-bold text-[#0d9488]">🎂</span>
-                  <span className="text-[11px] font-bold text-gray-700">Cumpleaños de mamá - 15 Marzo</span>
-                </div>
-                <div className="flex items-center gap-2 bg-white/30 backdrop-blur-sm rounded-xl p-2">
-                  <span className="text-[11px] font-bold text-[#0d9488]">💊</span>
-                  <span className="text-[11px] font-bold text-gray-700">Control médico - 20 Marzo</span>
-                </div>
-                <div className="flex items-center gap-2 bg-white/30 backdrop-blur-sm rounded-xl p-2">
-                  <span className="text-[11px] font-bold text-[#0d9488]">📅</span>
-                  <span className="text-[11px] font-bold text-gray-700">Reunión importante - 25 Marzo</span>
-                </div>
+              <div className="w-[140px] h-[290px] flex flex-col gap-2 mt-2 overflow-y-auto">
+                {savedRecordatorios.slice(0, 3).map(r => {
+                  const icons: Record<string, string> = { Medicamento: '💊', Cumpleaños: '🎂', HoraOro: '⭐', Equipo: '👥' };
+                  const fecha = new Date(r.fecha_hora).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+                  return (
+                    <div key={r.id} className="group flex items-center gap-2 bg-white/30 backdrop-blur-sm rounded-xl p-2 shrink-0 relative">
+                      <span className="text-[11px] font-bold text-[#0d9488]">{icons[r.categoria] || '📅'}</span>
+                      <span className="text-[11px] font-bold text-gray-700 truncate flex-1">{r.titulo} - {fecha}</span>
+                      <div className="hidden group-hover:flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingRecordatorio(r);
+                            setShowRecordatorioModal(true);
+                          }}
+                          className="p-1 rounded-full hover:bg-white/50 transition-colors"
+                          title="Editar"
+                        >
+                          <Edit3 className="w-3 h-3 text-gray-500" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`¿Eliminar "${r.titulo}"?`)) {
+                              recordatorioService.delete(r.id).then(() => {
+                                fetchSavedRecordatorios();
+                              }).catch(console.error);
+                            }
+                          }}
+                          className="p-1 rounded-full hover:bg-red-100 transition-colors"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-3 h-3 text-red-400" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+                {savedRecordatorios.length === 0 && (
+                  <div className="flex items-center gap-2 bg-white/30 backdrop-blur-sm rounded-xl p-2 shrink-0">
+                    <span className="text-[11px] font-bold text-[#0d9488]">📅</span>
+                    <span className="text-[11px] font-bold text-gray-400 italic">Sin recordatorios aún</span>
+                  </div>
+                )}
               </div>
               <div className="mt-auto pt-2 flex justify-center">
                 <span className="text-[9px] text-[#0d9488] flex items-center gap-1">
@@ -1122,7 +1142,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
         {/* CENTER COLUMN */}
         <div className="flex flex-col gap-3 w-full xl:w-[32%] relative items-center">
-            <div className="bg-pink-200 rounded-2xl w-[410px] h-[100px] shadow-md border border-pink-300"></div>
+            <div className="bg-pink-200 rounded-2xl w-[410px] h-[90px] shadow-md border border-pink-300 mt-10"></div>
           {/* Tabs */}
           <div className="bg-[#1e293b]/90 backdrop-blur-md rounded-full px-2 py-1.5 shadow-sm border border-white/80 flex items-center justify-center w-[98%] max-w-[320px] gap-2">
             <button onClick={() => setShowMetaAnualModal(true)} className="text-[10px] font-bold uppercase px-2 py-1 rounded-full hover:bg-white/50 transition-colors text-gray-800 tracking-wide">ANUAL</button>
@@ -1132,7 +1152,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           </div>
 
           {/* Time Blocking Table */}
-          <div className="bg-gradient-to-b from-[#f8fafc]/80 to-[#f1f5f9]/80 backdrop-blur-xl rounded-[2rem] shadow-[0_4px_15px_rgba(0,0,0,0.05)] border border-white/70 overflow-hidden flex flex-col mb-1 relative h-[450px]">
+          <div className="bg-gradient-to-b from-[#f8fafc]/80 to-[#f1f5f9]/80 backdrop-blur-xl rounded-[2rem] shadow-[0_4px_15px_rgba(0,0,0,0.05)] border border-white/70 overflow-hidden flex flex-col mb-1 relative h-[420px]">
             <div className="px-5 py-2.5 flex justify-between items-center z-10">
               <h3 className="text-[13px] font-black uppercase tracking-widest text-[#0f172a]">TIME BLOCKING</h3>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a2b3c" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
@@ -1199,7 +1219,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 <ActionButton label="RRSS" color="bg-[#ec4899]" variant="modern" className="flex-1" />
                 <ActionButton label="CUENTAS" color="bg-[#6366f1]" variant="modern" className="flex-1" icon={<CreditCard className="w-3 h-3" />} onClick={() => setShowBillModal(true)} />
               </div>
-              <div className="bg-gradient-to-br from-[#fef9c3]/80 to-[#fef3c7]/80 backdrop-blur-xl rounded-[2rem] p-4 shadow-sm border border-white/60 h-[140px] flex flex-col items-center pt-3">
+              <div className="bg-gradient-to-br from-[#fef9c3]/80 to-[#fef3c7]/80 backdrop-blur-xl rounded-[2rem] p-4 shadow-sm border border-white/60 h-[140px] flex flex-col items-center pt-3 -mt-2">
                 <h3 className="text-[12px] font-black uppercase text-gray-800 tracking-widest text-center mt-2 mb-2">KEEP BLOCK DE NOTAS</h3>
                 <textarea
                   className="w-full flex-1 bg-transparent resize-none border-none outline-none text-[10px] text-gray-800 placeholder-gray-400"
@@ -1229,9 +1249,20 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               
               <div className="flex flex-col gap-2.0 items-center w-full mt-2 pr-4">
                 <h3 className="text-[20px] font-bold uppercase text-gray-800 text-center w-full shrink-0">MI MISIÓN DE HOY ES:</h3>
-                <div className="w-[150px] h-[150px] rounded-2xl overflow-hidden shadow-sm border border-white/60 mb-2 mt-1 w-[200px] h-[200px]">
+                <button
+                  onClick={() => setShowAiMissionModal(true)}
+                  className="w-[150px] h-[150px] rounded-2xl overflow-hidden shadow-sm border border-white/60 mb-2 mt-1 w-[200px] h-[200px] cursor-pointer hover:ring-2 hover:ring-purple-400 transition-all group relative"
+                >
                   <img src={misionHoy?.imagen_url || "https://images.unsplash.com/photo-1542596594-649edbc13630?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"} alt="mission" className="w-full h-full object-cover transform scale-110 object-top" />
-                </div>
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
+                    <Sparkles className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </button>
+                {selectedMissionText && (
+                  <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-purple-200 max-w-[200px] text-center">
+                    <p className="text-[10px] font-bold text-purple-700 leading-tight">{selectedMissionText}</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1315,16 +1346,22 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       {showRecordatorioModal && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] flex items-center justify-center p-4"
-          onClick={() => setShowRecordatorioModal(false)}
+          onClick={() => {
+            setShowRecordatorioModal(false);
+            setEditingRecordatorio(null);
+          }}
         >
           <div
             className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#0d9488] to-[#14b8a6]">
-              <h2 className="text-lg font-bold uppercase text-white">Nuevo Recordatorio</h2>
+              <h2 className="text-lg font-bold uppercase text-white">{editingRecordatorio ? 'Editar Recordatorio' : 'Nuevo Recordatorio'}</h2>
               <button
-                onClick={() => setShowRecordatorioModal(false)}
+                onClick={() => {
+                  setShowRecordatorioModal(false);
+                  setEditingRecordatorio(null);
+                }}
                 className="p-2 rounded-full hover:bg-white/30 transition-colors"
               >
                 <X className="w-5 h-5 text-white" />
@@ -1339,13 +1376,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 const categoria = formData.get('categoria') as string;
 
                 if (titulo && fecha && categoria) {
-                  recordatorioService.create({
-                    titulo,
-                    fecha_hora: fecha,
-                    categoria,
-                    activo: true
-                  }).then(() => {
+                  const payload = { titulo, fecha_hora: fecha, categoria };
+                  const action = editingRecordatorio
+                    ? recordatorioService.update(editingRecordatorio.id, payload)
+                    : recordatorioService.create({ ...payload, activo: true, tomado: false });
+
+                  action.then(() => {
                     setShowRecordatorioModal(false);
+                    setEditingRecordatorio(null);
+                    fetchSavedRecordatorios();
                   }).catch(console.error);
                 }
               }}
@@ -1357,6 +1396,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                   type="text"
                   name="titulo"
                   required
+                  defaultValue={editingRecordatorio?.titulo || ''}
                   placeholder="Ej: Cumpleaños de mamá"
                   className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#a5c5ea] bg-white/50"
                 />
@@ -1367,6 +1407,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                   type="datetime-local"
                   name="fecha"
                   required
+                  defaultValue={editingRecordatorio ? new Date(editingRecordatorio.fecha_hora).toISOString().slice(0, 16) : ''}
                   className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#a5c5ea] bg-white/50"
                 />
               </div>
@@ -1375,6 +1416,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 <select
                   name="categoria"
                   required
+                  defaultValue={editingRecordatorio?.categoria || ''}
                   className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#a5c5ea] bg-white/50"
                 >
                   <option value="">Seleccionar...</option>
@@ -1387,7 +1429,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowRecordatorioModal(false)}
+                  onClick={() => {
+                    setShowRecordatorioModal(false);
+                    setEditingRecordatorio(null);
+                  }}
                   className="flex-1 px-4 py-2 rounded-xl border border-gray-300 text-gray-600 font-medium hover:bg-gray-50 transition-colors"
                 >
                   Cancelar
@@ -1396,13 +1441,26 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                   type="submit"
                   className="flex-1 px-4 py-2 rounded-xl bg-[#0d9488] text-white font-bold hover:bg-[#0f766e] transition-colors"
                 >
-                  Guardar
+                  {editingRecordatorio ? 'Actualizar' : 'Guardar'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      <AiMissionAssistant
+        isOpen={showAiMissionModal}
+        onClose={() => setShowAiMissionModal(false)}
+        metaAnual={metaAnual}
+        metaMensual={metaMensual}
+        metaSemanal={metaSemanal}
+        metaDiaria={metaDiaria}
+        onSelectMission={(mission) => {
+          setSelectedMissionText(mission);
+          setShowAiMissionModal(false);
+        }}
+      />
 
       {/* Modal: Inicio / Cómo funciona */}
       {showInicioModal && (
@@ -2287,12 +2345,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           </div>
         </div>
       )}
-      {activeNotification && (
+      {activeReminder && (
         <NotificationToast
-          recordatorio={activeNotification}
-          onClose={() => setActiveNotification(null)}
-          onMarkTaken={() => handleMarkTaken(activeNotification.id)}
-          showMarkTaken={activeNotification.categoria === 'Medicamento'}
+          recordatorio={activeReminder}
+          onClose={dismissReminder}
+          onMarkTaken={() => markAsTaken(activeReminder.id)}
+          showMarkTaken={activeReminder.categoria === 'Medicamento'}
         />
       )}
 
@@ -2353,16 +2411,31 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                     </div>
                   </div>
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       if (nuevoMedicamento.nombre.trim()) {
-                        setMedicamentos([...medicamentos, {
-                          id: Date.now(),
-                          nombre: nuevoMedicamento.nombre,
-                          hora: nuevoMedicamento.hora,
-                          dosis: nuevoMedicamento.dosis,
-                          completado: false
-                        }]);
-                        setNuevoMedicamento({ nombre: '', hora: '08:00', dosis: 1 });
+                        const now = new Date();
+                        const [h, m] = nuevoMedicamento.hora.split(':');
+                        const fecha = new Date(now.getFullYear(), now.getMonth(), now.getDate(), +h, +m);
+                        try {
+                          const saved = await recordatorioService.create({
+                            titulo: nuevoMedicamento.nombre,
+                            fecha_hora: fecha.toISOString(),
+                            categoria: 'Medicamento',
+                            activo: true,
+                            tomado: false,
+                          });
+                          setMedicamentos([...medicamentos, {
+                            id: saved.id,
+                            nombre: saved.titulo,
+                            hora: nuevoMedicamento.hora,
+                            dosis: nuevoMedicamento.dosis,
+                            completado: false,
+                          }]);
+                          setNuevoMedicamento({ nombre: '', hora: '08:00', dosis: 1 });
+                          fetchSavedRecordatorios();
+                        } catch (err) {
+                          console.error('Error saving medication:', err);
+                        }
                       }
                     }}
                     className="w-full py-2 bg-[#ef4444] text-white rounded-xl font-bold text-sm hover:bg-[#dc2626] transition-colors flex items-center justify-center gap-2"
@@ -2383,18 +2456,24 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <button
-                            onClick={() => {
+                            onClick={async () => {
                               const wasCompleted = med.completado;
                               setMedicamentos(medicamentos.map(m =>
                                 m.id === med.id ? { ...m, completado: !m.completado } : m
                               ));
-                              if (!wasCompleted) {
-                                setXpStats((prev: XPStats) => ({ ...prev, medicationsTaken: prev.medicationsTaken + 1 }));
-                                addXP(XP_CONFIG.MEDICATION_TAKEN, 'Medicamento tomado');
+                              try {
+                                if (!wasCompleted) {
+                                  await recordatorioService.marcarTomado(med.id);
+                                  setXpStats((prev: XPStats) => ({ ...prev, medicationsTaken: prev.medicationsTaken + 1 }));
+                                  addXP(XP_CONFIG.MEDICATION_TAKEN, 'Medicamento tomado');
+                                  fetchSavedRecordatorios();
+                                }
+                              } catch (err) {
+                                console.error('Error updating medication:', err);
                               }
                             }}
                             className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${med.completado ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-[#ef4444]'
-                              }`}
+                            }`}
                           >
                             {med.completado && <Check className="w-4 h-4 text-white" />}
                           </button>
@@ -2413,7 +2492,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                           </div>
                         </div>
                         <button
-                          onClick={() => setMedicamentos(medicamentos.filter(m => m.id !== med.id))}
+                          onClick={async () => {
+                            setMedicamentos(medicamentos.filter(m => m.id !== med.id));
+                            try {
+                              await recordatorioService.delete(med.id);
+                              fetchSavedRecordatorios();
+                            } catch (err) {
+                              console.error('Error deleting medication:', err);
+                            }
+                          }}
                           className="p-1 text-gray-400 hover:text-red-500 transition-colors"
                         >
                           <X className="w-4 h-4" />
@@ -2774,6 +2861,26 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                   </div>
                 </div>
                 <p className="text-xs text-gray-500 mt-2 font-medium">Vista previa del avatar</p>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">Elige un avatar</label>
+                <div className="grid grid-cols-6 gap-2">
+                  {['Ashley','conrad','John','Lia','Monroe','Sophya'].map((name) => {
+                    const avatarPath = `/avartars/${name}.jpeg`;
+                    return (
+                      <button
+                        key={name}
+                        onClick={() => setNewAvatarUrl(avatarPath)}
+                        className={`w-full aspect-square rounded-xl overflow-hidden border-2 transition-all hover:scale-105 active:scale-95 ${
+                          newAvatarUrl === avatarPath ? 'border-gray-900 ring-2 ring-gray-900/20' : 'border-gray-100 hover:border-gray-300'
+                        }`}
+                      >
+                        <img src={avatarPath} alt={name} className="w-full h-full object-cover" />
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="space-y-4">
