@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "name": "react-example",
   "private": true,
   "version": "0.0.0",
@@ -37,5 +38,10 @@
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
+=======
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3"
+>>>>>>> 8c976f39bc00522dd4adee3b44ab562eb5c8e635
   }
 }
