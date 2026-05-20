@@ -1,0 +1,436 @@
+import secrets
+from datetime import timedelta
+from django.utils import timezone
+from rest_framework import viewsets, permissions, status
+from rest_framework.decorators import api_view, permission_classes, action
+from rest_framework.response import Response
+from django.db import IntegrityError, models
+from .models import (
+    User, RuedaVida, TimeBlock, KanbanTask, Recordatorio, ObjetivoSemana,
+    KeepNota, MisionHoy, CategoriaRueda, RegistroRueda, MatrixItem, Factura,
+    Workspace, WorkspaceMember, Invitation, Delegation, Notification
+)
+from .serializers import (
+    UserSerializer, UserDetailSerializer, RuedaVidaSerializer, TimeBlockSerializer,
+    KanbanTaskSerializer, RecordatorioSerializer, ObjetivoSemanaSerializer,
+    KeepNotaSerializer, MisionHoySerializer, CategoriaRuedaSerializer,
+    RegistroRuedaSerializer, GuardarRuedaSerializer, MatrixItemSerializer,
+    FacturaSerializer, WorkspaceSerializer, WorkspaceDetailSerializer,
+    WorkspaceMemberSerializer, InvitationSerializer, DelegationSerializer,
+    NotificationSerializer
+)
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+    def get_permissions(self):
+        if self.action == 'create':
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
+
+    def get_serializer_class(self):
+        if self.action in ['retrieve', 'update', 'partial_update', 'me']:
+            return UserDetailSerializer
+        return UserSerializer
+
+    @action(detail=False, methods=['get', 'patch', 'delete'])
+    def me(self, request):
+        if request.method == 'GET':
+            serializer = UserDetailSerializer(request.user)
+            return Response(serializer.data)
+        elif request.method == 'PATCH':
+            serializer = UserDetailSerializer(request.user, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+        elif request.method == 'DELETE':
+            request.user.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+class BaseUserViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+class RuedaVidaViewSet(BaseUserViewSet):
+    queryset = RuedaVida.objects.all()
+    serializer_class = RuedaVidaSerializer
+
+class TimeBlockViewSet(BaseUserViewSet):
+    queryset = TimeBlock.objects.all()
+    serializer_class = TimeBlockSerializer
+
+class KanbanTaskViewSet(BaseUserViewSet):
+    queryset = KanbanTask.objects.all()
+    serializer_class = KanbanTaskSerializer
+
+class RecordatorioViewSet(BaseUserViewSet):
+    queryset = Recordatorio.objects.all()
+    serializer_class = RecordatorioSerializer
+
+    @action(detail=False, methods=['get'])
+    def due(self, request):
+        now = timezone.now()
+        due = self.get_queryset().filter(
+            activo=True,
+            tomado=False,
+            fecha_hora__lte=now + timedelta(minutes=1),
+            fecha_hora__gte=now - timedelta(minutes=2),
+        )
+        serializer = self.get_serializer(due, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def pendientes(self, request):
+        qs = self.get_queryset().filter(activo=True, tomado=False)
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def marcar_tomado(self, request, pk=None):
+        recordatorio = self.get_object()
+        recordatorio.tomado = True
+        recordatorio.activo = False
+        recordatorio.save()
+        return Response(self.get_serializer(recordatorio).data)
+
+class ObjetivoSemanaViewSet(BaseUserViewSet):
+    queryset = ObjetivoSemana.objects.all()
+    serializer_class = ObjetivoSemanaSerializer
+
+class KeepNotaViewSet(BaseUserViewSet):
+    queryset = KeepNota.objects.all()
+    serializer_class = KeepNotaSerializer
+
+class MisionHoyViewSet(BaseUserViewSet):
+    queryset = MisionHoy.objects.all()
+    serializer_class = MisionHoySerializer
+
+class CategoriaRuedaViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = CategoriaRueda.objects.filter(activo=True)
+    serializer_class = CategoriaRuedaSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+class RegistroRuedaViewSet(BaseUserViewSet):
+    queryset = RegistroRueda.objects.all()
+    serializer_class = RegistroRuedaSerializer
+
+class MatrixItemViewSet(BaseUserViewSet):
+    queryset = MatrixItem.objects.all()
+    serializer_class = MatrixItemSerializer
+
+class FacturaViewSet(BaseUserViewSet):
+    queryset = Factura.objects.all()
+    serializer_class = FacturaSerializer
+
+
+class WorkspaceViewSet(viewsets.ModelViewSet):
+    serializer_class = WorkspaceSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Workspace.objects.filter(members__user=self.request.user)
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return WorkspaceDetailSerializer
+        return WorkspaceSerializer
+
+    def perform_create(self, serializer):
+        workspace = serializer.save(owner=self.request.user)
+        WorkspaceMember.objects.create(
+            workspace=workspace,
+            user=self.request.user,
+            role='owner'
+        )
+
+    @action(detail=True, methods=['post'])
+    def invite(self, request, pk=None):
+        workspace = self.get_object()
+        member = workspace.members.filter(user=request.user).first()
+        if not member or member.role not in ['owner', 'admin']:
+            return Response({'error': 'No tienes permisos para invitar'}, status=status.HTTP_403_FORBIDDEN)
+
+        email = request.data.get('email')
+        role = request.data.get('role', 'member')
+        if not email:
+            return Response({'error': 'Email requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        token = secrets.token_urlsafe(32)
+        invitation = Invitation.objects.create(
+            workspace=workspace,
+            email=email,
+            role=role,
+            token=token,
+            invited_by=request.user,
+            expires_at=timezone.now() + timedelta(days=7)
+        )
+
+        Notification.objects.create(
+            user=workspace.owner,
+            type='invitation',
+            title=f'Nueva invitación a {workspace.name}',
+            message=f'Se invitó a {email} al workspace {workspace.name}',
+            data={'invitation_id': invitation.id, 'workspace_id': workspace.id}
+        )
+
+        return Response({'token': token, 'email': email})
+
+    @action(detail=True, methods=['post'])
+    def remove_member(self, request, pk=None):
+        workspace = self.get_object()
+        member = workspace.members.filter(user=request.user).first()
+        if not member or member.role not in ['owner', 'admin']:
+            return Response({'error': 'No tienes permisos'}, status=status.HTTP_403_FORBIDDEN)
+
+        user_id = request.data.get('user_id')
+        target = workspace.members.filter(user_id=user_id).first()
+        if not target:
+            return Response({'error': 'Miembro no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+        if target.role == 'owner':
+            return Response({'error': 'No puedes eliminar al propietario'}, status=status.HTTP_400_BAD_REQUEST)
+        target.delete()
+        return Response({'status': 'ok'})
+
+    @action(detail=True, methods=['post'])
+    def update_member_role(self, request, pk=None):
+        workspace = self.get_object()
+        member = workspace.members.filter(user=request.user).first()
+        if not member or member.role not in ['owner', 'admin']:
+            return Response({'error': 'No tienes permisos'}, status=status.HTTP_403_FORBIDDEN)
+
+        user_id = request.data.get('user_id')
+        new_role = request.data.get('role')
+        target = workspace.members.filter(user_id=user_id).first()
+        if not target:
+            return Response({'error': 'Miembro no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+        if target.role == 'owner':
+            return Response({'error': 'No puedes cambiar el rol del propietario'}, status=status.HTTP_400_BAD_REQUEST)
+        target.role = new_role
+        target.save()
+        return Response({'status': 'ok'})
+
+    @action(detail=True, methods=['get'])
+    def members_for_delegation(self, request, pk=None):
+        workspace = self.get_object()
+        members = workspace.members.exclude(user=request.user)
+        data = [{
+            'user_id': m.user.id,
+            'username': m.user.username,
+            'email': m.user.email,
+            'avatar_url': m.user.avatar_url,
+            'role': m.role
+        } for m in members]
+        return Response(data)
+
+
+class InvitationViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = InvitationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Invitation.objects.filter(email=self.request.user.email)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def my_workspaces(request):
+    workspaces = Workspace.objects.filter(members__user=request.user)
+    serializer = WorkspaceSerializer(workspaces, many=True, context={'request': request})
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def accept_invitation(request):
+    token = request.data.get('token')
+    try:
+        invitation = Invitation.objects.get(token=token, status='pending')
+    except Invitation.DoesNotExist:
+        return Response({'error': 'Invitación no válida o expirada'}, status=status.HTTP_404_NOT_FOUND)
+
+    if invitation.expires_at and invitation.expires_at < timezone.now():
+        invitation.status = 'expired'
+        invitation.save()
+        return Response({'error': 'Invitación expirada'}, status=status.HTTP_410_GONE)
+
+    if invitation.email != request.user.email:
+        return Response({'error': 'Esta invitación no es para tu email'}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        WorkspaceMember.objects.create(
+            workspace=invitation.workspace,
+            user=request.user,
+            role=invitation.role
+        )
+    except IntegrityError:
+        return Response({'error': 'Ya eres miembro de este workspace'}, status=status.HTTP_400_BAD_REQUEST)
+
+    invitation.status = 'accepted'
+    invitation.save()
+
+    Notification.objects.create(
+        user=invitation.workspace.owner,
+        type='invitation',
+        title=f'{request.user.username} aceptó la invitación',
+        message=f'{request.user.username} se unió a {invitation.workspace.name}',
+        data={'workspace_id': invitation.workspace.id}
+    )
+
+    return Response({'workspace_id': invitation.workspace.id})
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def decline_invitation(request):
+    token = request.data.get('token')
+    try:
+        invitation = Invitation.objects.get(token=token, status='pending')
+    except Invitation.DoesNotExist:
+        return Response({'error': 'Invitación no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
+    invitation.status = 'declined'
+    invitation.save()
+    return Response({'status': 'ok'})
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([permissions.IsAuthenticated])
+def rueda_vida_completa(request):
+    if request.method == 'GET':
+        categorias = CategoriaRueda.objects.filter(activo=True).order_by('orden')
+        registros = RegistroRueda.objects.filter(user=request.user)
+
+        result = []
+        for cat in categorias:
+            reg = registros.filter(categoria=cat).first()
+            result.append({
+                'id': cat.id,
+                'nombre': cat.nombre,
+                'icono': cat.icono,
+                'puntaje': reg.puntaje if reg else 5
+            })
+        return Response(result)
+
+    elif request.method == 'POST':
+        puntajes = request.data.get('puntajes', {})
+
+        for cat_id, puntaje in puntajes.items():
+            try:
+                categoria = CategoriaRueda.objects.get(id=cat_id, activo=True)
+                RegistroRueda.objects.update_or_create(
+                    user=request.user,
+                    categoria=categoria,
+                    defaults={'puntaje': puntaje}
+                )
+            except CategoriaRueda.DoesNotExist:
+                continue
+
+        return Response({'status': 'ok'})
+
+
+class DelegationViewSet(viewsets.GenericViewSet):
+    serializer_class = DelegationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Delegation.objects.filter(
+            models.Q(delegator=self.request.user) | models.Q(delegate=self.request.user)
+        )
+
+    def list(self, request):
+        sent = Delegation.objects.filter(delegator=request.user)
+        received = Delegation.objects.filter(delegate=request.user)
+        return Response({
+            'sent': DelegationSerializer(sent, many=True).data,
+            'received': DelegationSerializer(received, many=True).data,
+        })
+
+    def create(self, request):
+        task_id = request.data.get('task_id')
+        email = request.data.get('email')
+        message = request.data.get('message', '')
+
+        if not task_id or not email:
+            return Response({'error': 'task_id y email requeridos'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            task = KanbanTask.objects.get(id=task_id, user=request.user)
+        except KanbanTask.DoesNotExist:
+            return Response({'error': 'Tarea no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
+        delegate = User.objects.filter(email=email).first()
+        token = secrets.token_urlsafe(32)
+
+        delegation = Delegation.objects.create(
+            task=task,
+            delegator=request.user,
+            delegate=delegate if delegate else request.user,
+            delegate_email=email,
+            message=message,
+            token=token
+        )
+
+        if delegate:
+            Notification.objects.create(
+                user=delegate,
+                type='delegation',
+                title=f'{request.user.username} te delegó una tarea',
+                message=task.titulo,
+                data={'delegation_id': delegation.id, 'token': token}
+            )
+
+        delegation_link = f'/delegation/{token}'
+        return Response({
+            'token': token,
+            'delegate_email': email,
+            'delegate_registered': delegate is not None,
+            'delegation_link': delegation_link
+        })
+
+    def retrieve(self, request, pk=None):
+        delegation = Delegation.objects.filter(token=pk).first()
+        if not delegation:
+            return Response({'error': 'Delegación no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = DelegationSerializer(delegation)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'], url_path='(?P<token>[^/.]+)')
+    def handle_action(self, request, token=None):
+        delegation = Delegation.objects.filter(token=token).first()
+        if not delegation:
+            return Response({'error': 'Delegación no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
+        action = request.data.get('action')
+        if action == 'accept':
+            delegation.status = 'accepted'
+        elif action == 'reject':
+            delegation.status = 'rejected'
+        elif action == 'complete':
+            delegation.status = 'completed'
+        else:
+            return Response({'error': 'Acción no válida'}, status=status.HTTP_400_BAD_REQUEST)
+
+        delegation.save()
+        return Response(DelegationSerializer(delegation).data)
+
+
+class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Notification.objects.filter(user=self.request.user)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def pending_invitations(request):
+    invitations = Invitation.objects.filter(email=request.user.email, status='pending')
+    serializer = InvitationSerializer(invitations, many=True)
+    return Response(serializer.data)
