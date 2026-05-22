@@ -6,7 +6,7 @@ from .views import (
     CategoriaRuedaViewSet, RegistroRuedaViewSet, MatrixItemViewSet, FacturaViewSet,
     WorkspaceViewSet, InvitationViewSet, DelegationViewSet, NotificationViewSet,
     rueda_vida_completa, my_workspaces, accept_invitation, decline_invitation,
-    pending_invitations
+    pending_invitations, ai_mission, delegation_by_token
 )
 
 router = DefaultRouter()
@@ -33,5 +33,7 @@ urlpatterns = [
     path('workspaces/accept_invitation/', accept_invitation, name='accept-invitation'),
     path('workspaces/decline_invitation/', decline_invitation, name='decline-invitation'),
     path('pending-invitations/', pending_invitations, name='pending-invitations'),
+    path('ai/mission/', ai_mission, name='ai-mission'),
+    path('delegations/by-token/<str:token>/', delegation_by_token, name='delegation-by-token'),
     path('', include(router.urls)),
 ]

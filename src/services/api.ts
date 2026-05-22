@@ -7,49 +7,25 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
-
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
 
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    
-    if (error.response?.status === 401 && !originalRequest._retry) {
+
+    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/token/')) {
       originalRequest._retry = true;
-      
-      const refreshToken = localStorage.getItem('refresh_token');
-      
-      if (refreshToken) {
-        try {
-          const response = await axios.post(`${API_BASE_URL}/api/token/refresh/`, {
-            refresh: refreshToken,
-          });
-          
-          const { access } = response.data;
-          localStorage.setItem('access_token', access);
-          
-          originalRequest.headers.Authorization = `Bearer ${access}`;
-          return api(originalRequest);
-        } catch (refreshError) {
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          window.location.href = '/';
-          return Promise.reject(refreshError);
-        }
+
+      try {
+        await axios.post(`${API_BASE_URL}/api/token/refresh/`, {}, { withCredentials: true });
+        return api(originalRequest);
+      } catch {
+        return Promise.reject(error);
       }
     }
-    
+
     return Promise.reject(error);
   }
 );
@@ -113,6 +89,9 @@ export const authService = {
   },
   deleteAccount: async (): Promise<void> => {
     await api.delete('/api/users/me/');
+  },
+  logout: async (): Promise<void> => {
+    await api.post('/api/token/logout/');
   },
 };
 

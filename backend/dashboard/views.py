@@ -1,10 +1,16 @@
+import json
 import secrets
+import logging
+import urllib.request
+import urllib.error
 from datetime import timedelta
+from django.conf import settings
 from django.utils import timezone
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from django.db import IntegrityError, models
+from django.http import Http404
 from .models import (
     User, RuedaVida, TimeBlock, KanbanTask, Recordatorio, ObjetivoSemana,
     KeepNota, MisionHoy, CategoriaRueda, RegistroRueda, MatrixItem, Factura,
@@ -17,8 +23,10 @@ from .serializers import (
     RegistroRuedaSerializer, GuardarRuedaSerializer, MatrixItemSerializer,
     FacturaSerializer, WorkspaceSerializer, WorkspaceDetailSerializer,
     WorkspaceMemberSerializer, InvitationSerializer, DelegationSerializer,
-    NotificationSerializer
+    NotificationSerializer, AiMissionSerializer
 )
+
+logger = logging.getLogger('focusia.security')
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -47,6 +55,15 @@ class UserViewSet(viewsets.ModelViewSet):
         elif request.method == 'DELETE':
             request.user.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+class IsMineOrReadOnly:
+    def get_object(self):
+        obj = super().get_object()
+        if hasattr(obj, 'user') and obj.user != self.request.user:
+            raise Http404
+        if hasattr(obj, 'delegator') and obj.delegator != self.request.user and obj.delegate != self.request.user:
+            raise Http404
+        return obj
 
 class BaseUserViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
@@ -168,7 +185,7 @@ class WorkspaceViewSet(viewsets.ModelViewSet):
             role=role,
             token=token,
             invited_by=request.user,
-            expires_at=timezone.now() + timedelta(days=7)
+            expires_at=timezone.now() + timedelta(hours=48)
         )
 
         Notification.objects.create(
@@ -334,18 +351,21 @@ def rueda_vida_completa(request):
         return Response({'status': 'ok'})
 
 
-class DelegationViewSet(viewsets.GenericViewSet):
+class DelegationViewSet(IsMineOrReadOnly, viewsets.GenericViewSet):
     serializer_class = DelegationSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        now = timezone.now()
         return Delegation.objects.filter(
-            models.Q(delegator=self.request.user) | models.Q(delegate=self.request.user)
+            models.Q(delegator=self.request.user) | models.Q(delegate=self.request.user),
+            models.Q(expires_at__isnull=True) | models.Q(expires_at__gt=now),
         )
 
     def list(self, request):
-        sent = Delegation.objects.filter(delegator=request.user)
-        received = Delegation.objects.filter(delegate=request.user)
+        qs = self.get_queryset()
+        sent = qs.filter(delegator=request.user)
+        received = qs.filter(delegate=request.user)
         return Response({
             'sent': DelegationSerializer(sent, many=True).data,
             'received': DelegationSerializer(received, many=True).data,
@@ -373,8 +393,11 @@ class DelegationViewSet(viewsets.GenericViewSet):
             delegate=delegate if delegate else request.user,
             delegate_email=email,
             message=message,
-            token=token
+            token=token,
+            expires_at=timezone.now() + timedelta(hours=72),
         )
+
+        log_security_event(request.user, 'delegation_created', f'task={task_id} email={email}')
 
         if delegate:
             Notification.objects.create(
@@ -397,6 +420,8 @@ class DelegationViewSet(viewsets.GenericViewSet):
         delegation = Delegation.objects.filter(token=pk).first()
         if not delegation:
             return Response({'error': 'Delegación no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+        if delegation.expires_at and delegation.expires_at < timezone.now():
+            return Response({'error': 'Delegación expirada'}, status=status.HTTP_410_GONE)
         serializer = DelegationSerializer(delegation)
         return Response(serializer.data)
 
@@ -405,6 +430,8 @@ class DelegationViewSet(viewsets.GenericViewSet):
         delegation = Delegation.objects.filter(token=token).first()
         if not delegation:
             return Response({'error': 'Delegación no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+        if delegation.expires_at and delegation.expires_at < timezone.now():
+            return Response({'error': 'Delegación expirada'}, status=status.HTTP_410_GONE)
 
         action = request.data.get('action')
         if action == 'accept':
@@ -417,6 +444,7 @@ class DelegationViewSet(viewsets.GenericViewSet):
             return Response({'error': 'Acción no válida'}, status=status.HTTP_400_BAD_REQUEST)
 
         delegation.save()
+        log_security_event(request.user, f'delegation_{action}', f'token={token}')
         return Response(DelegationSerializer(delegation).data)
 
 
@@ -433,4 +461,48 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
 def pending_invitations(request):
     invitations = Invitation.objects.filter(email=request.user.email, status='pending')
     serializer = InvitationSerializer(invitations, many=True)
+    return Response(serializer.data)
+
+
+def log_security_event(user, action, detail=''):
+    logger.info(f'[SECURITY] user={user.id} action={action} detail={detail}')
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def ai_mission(request):
+    serializer = AiMissionSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    api_key = settings.GEMINI_API_KEY
+    if not api_key:
+        return Response({'error': 'Gemini API key no configurada'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    prompt = serializer.validated_data['prompt']
+    try:
+        body = json.dumps({'contents': [{'parts': [{'text': prompt}]}]}).encode()
+        req = urllib.request.Request(
+            f'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}',
+            data=body,
+            headers={'Content-Type': 'application/json'},
+            method='POST',
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read())
+        text = data['candidates'][0]['content']['parts'][0]['text']
+        return Response({'text': text})
+    except Exception as e:
+        logger.exception('Error calling Gemini API')
+        return Response({'error': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def delegation_by_token(request, token):
+    delegation = Delegation.objects.filter(token=token).first()
+    if not delegation:
+        return Response({'error': 'Delegación no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+    if delegation.expires_at and delegation.expires_at < timezone.now():
+        return Response({'error': 'Delegación expirada'}, status=status.HTTP_410_GONE)
+    serializer = DelegationSerializer(delegation)
     return Response(serializer.data)

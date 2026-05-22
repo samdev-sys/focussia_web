@@ -147,6 +147,9 @@ class DelegationSerializer(serializers.ModelSerializer):
         fields = ['id', 'task', 'task_title', 'delegator', 'delegator_username', 'delegate', 'delegate_username', 'delegate_email', 'message', 'status', 'token', 'created_at']
         read_only_fields = ['token', 'created_at', 'updated_at']
 
+class AiMissionSerializer(serializers.Serializer):
+    prompt = serializers.CharField()
+
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
