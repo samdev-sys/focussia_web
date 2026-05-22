@@ -1,13 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Loader2, Save } from 'lucide-react';
-import { api } from '../services/api';
-
-interface CategoriaRueda {
-  id: number;
-  nombre: string;
-  icono: string;
-  puntaje: number;
-}
+import { Loader2, Save, AlertCircle } from 'lucide-react';
+import { ruedaService, RuedaCategoria } from '../services/api';
 
 interface FormularioRuedaProps {
   onClose: () => void;
@@ -15,24 +8,24 @@ interface FormularioRuedaProps {
 }
 
 export const FormularioRueda: React.FC<FormularioRuedaProps> = ({ onClose, onSaved }) => {
-  const [categorias, setCategorias] = useState<CategoriaRueda[]>([]);
+  const [categorias, setCategorias] = useState<RuedaCategoria[]>([]);
   const [puntajes, setPuntajes] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await api.get('/api/rueda-vida-completa/');
-        const data = response.data;
+        const data = await ruedaService.getCompleta();
         setCategorias(data);
-
         const initial: Record<number, number> = {};
-        data.forEach((cat: CategoriaRueda) => {
+        data.forEach((cat: RuedaCategoria) => {
           initial[cat.id] = cat.puntaje;
         });
         setPuntajes(initial);
       } catch (err) {
+        setError('Error al cargar las categorías');
         console.error('Error fetching rueda data:', err);
       } finally {
         setLoading(false);
@@ -47,11 +40,13 @@ export const FormularioRueda: React.FC<FormularioRuedaProps> = ({ onClose, onSav
 
   const handleSave = async () => {
     setSaving(true);
+    setError('');
     try {
-      await api.post('/api/rueda-vida-completa/', { puntajes });
+      await ruedaService.guardar(puntajes);
       onSaved?.();
       onClose();
     } catch (err) {
+      setError('Error al guardar. Intenta de nuevo.');
       console.error('Error saving rueda:', err);
     } finally {
       setSaving(false);
@@ -102,6 +97,12 @@ export const FormularioRueda: React.FC<FormularioRuedaProps> = ({ onClose, onSav
         ))}
       </div>
       
+      {error && (
+        <div className="flex items-center gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          {error}
+        </div>
+      )}
       <div className="flex gap-3 pt-4">
         <button
           onClick={onClose}

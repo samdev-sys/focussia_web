@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
-  workspaceService, invitationService, delegationService, authService, notificationService, kanbanService, recordatorioService, ruedaVidaService, ruedaService, timeBlockService, objetivoSemanaService, keepNotaService, misionHoyService, billService, matrixService,
-  InvitationData, DelegationData, NotificationData, WorkspaceData, WorkspaceMemberData, RuedaVidaData, RuedaCategoria, TimeBlockData, ObjetivoSemanaData, KeepNotaData, MisionHoyData, RecordatorioData, FacturaData, MatrixItemData, KanbanTaskData
+  workspaceService, invitationService, delegationService, authService, notificationService, kanbanService, recordatorioService, ruedaService, timeBlockService, objetivoSemanaService, keepNotaService, misionHoyService, billService, matrixService,
+  InvitationData, DelegationData, NotificationData, WorkspaceData, WorkspaceMemberData, RuedaCategoria, TimeBlockData, ObjetivoSemanaData, KeepNotaData, MisionHoyData, RecordatorioData, FacturaData, MatrixItemData, KanbanTaskData
 } from './services/api';
 
 
@@ -81,7 +81,6 @@ const getLevelFromXP = (xp: number): { level: number; currentXP: number; nextLev
 };
 
 const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
-  const [rueda, setRueda] = useState<RuedaVidaData | null>(null);
   const [ruedaCompleta, setRuedaCompleta] = useState<RuedaCategoria[]>([]);
   const [showDelegarModal, setShowDelegarModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -112,6 +111,26 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [inviteLink, setInviteLink] = useState('');
   const [showInviteLink, setShowInviteLink] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
+
+  const phrases = useMemo(
+    () => [
+      'Empieza el día con foco y energía.',
+      'Prioriza lo importante y avanza con calma.',
+      'Tus metas de hoy construyen tu éxito de mañana.',
+      'Organiza, ejecuta y celebra cada pequeño logro.',
+      'Haz de tu jornada una cadena de acciones significativas.'
+    ],
+    []
+  );
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setCurrentPhraseIndex((prevIndex) => (prevIndex + 1) % phrases.length);
+    }, 8000);
+
+    return () => clearInterval(intervalId);
+  }, [phrases.length]);
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const [showUserSettingsModal, setShowUserSettingsModal] = useState(false);
   const [showDelegationModal, setShowDelegationModal] = useState(false);
@@ -666,8 +685,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [ruedaRes, ruedaCompletaRes, tbRes, objRes, keepRes, misRes, factRes, matrixRes, kanbanRes] = await Promise.all([
-          ruedaVidaService.get().catch(() => null),
+        const [ruedaCompletaRes, tbRes, objRes, keepRes, misRes, factRes, matrixRes, kanbanRes] = await Promise.all([
           ruedaService.getCompleta().catch(() => []),
           timeBlockService.getAll().catch(() => []),
           objetivoSemanaService.get().catch(() => null),
@@ -678,7 +696,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           kanbanService.getAll().catch(() => [])
         ]);
 
-        setRueda(Array.isArray(ruedaRes) ? ruedaRes[0] : ruedaRes);
         setRuedaCompleta(ruedaCompletaRes);
         setTimeBlocks(Array.isArray(tbRes) ? tbRes : []);
         setObjetivo(Array.isArray(objRes) ? objRes[0] : objRes);
@@ -922,51 +939,97 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         <div className="flex flex-col gap-4 w-full xl:w-[32%]">
           {/* Top of Left: Pills & Foco */}
           <div className="flex gap-4">
-            <div className="flex flex-col gap-2.5 w-[30%]  pt-13">
-              <ActionButton label="COACHING" color="bg-[#0d9488]" variant="modern" />
-              <ActionButton label="GRATITUD" color="bg-[#7c3aed]" variant="modern" />
-              <ActionButton label="TRIBU" color="bg-[#059669]" variant="modern" />
-            </div>
-            <div className="flex flex-col gap-2.5 flex-1">
+             <div className="flex gap-4">
+  <div className="bg-white/40 backdrop-blur-sm border border-white/20 rounded-2xl p-4 flex flex-col gap-3 w-[340%] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mt-10">
+    {/* 1. COACHING */}
+    <ActionButton 
+      label="COACHING" 
+      color="bg-gradient-to-r from-[#1e3a8a] via-[#0b153a] to-[#040817]" 
+      variant="dark" 
+    />
+    
+    {/* 2. TRIBU (Movido a la segunda posición) */}
+    <ActionButton 
+      label="TRIBU" 
+      color="bg-gradient-to-r from-[#1e3a8a] via-[#0b153a] to-[#040817]" 
+      variant="dark" 
+    />
+    
+    {/* 3. GRATITUD (Movido a la tercera posición) */}
+    <ActionButton 
+      label="GRATITUD" 
+      color="bg-gradient-to-r from-[#1e3a8a] via-[#0b153a] to-[#040817]" 
+      variant="dark" 
+    />
+  </div>
+</div>
+            <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-3 flex flex-col gap-3 w-full shadow-[0_8px_32px_rgba(31,38,135,0.03)]">
               <div className="flex gap-1.5">
                 <button
                   onClick={() => setShowInicioModal(true)}
-                  className="bg-[#1e3a5f] text-white py-1.5 px-2 rounded-2xl text-[10px] font-bold uppercase shadow-md flex-1 transition hover:bg-[#2d4a6f]"
+                  className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"
                 >
                   INICIO
                 </button>
                 <button
                   onClick={() => setShowRuedaVideoModal(true)}
-                  className="bg-[#059669] text-white py-1.5 px-2 rounded-2xl text-[10px] font-bold uppercase shadow-md flex-1 transition hover:bg-[#047857] flex items-center justify-center gap-1"
-                >
-                  <Play className="w-3 h-3" /> RUEDA
+                  className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"
+                  >
+                   RUEDA
                 </button>
                 <button
                   onClick={() => setShowMatrizVideoModal(true)}
-                  className="bg-[#1e3a5f] text-white py-1.5 px-2 rounded-2xl text-[10px] font-bold uppercase shadow-md flex-1 transition hover:bg-[#2d4a6f] flex items-center justify-center gap-1"
+                  className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"
                 >
-                  <Play className="w-3 h-3" /> MATRIZ
+                  MATRIZ
                 </button>
               </div>
               <div
-                onClick={() => setShowRuedaVideoModal(true)}
-                className="bg-gradient-to-br from-[#f0fdf4] to-[#ecfdf5] backdrop-blur-md rounded-3xl p-3 sm:p-4 shadow-sm border border-white/60 h-full flex flex-col justify-center relative overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-[10px] font-bold uppercase text-gray-800 leading-tight">FOCO DE MARZO SEGUN RUEDA DE LA VIDA</h3>
-                  <button className="p-1 rounded-full hover:bg-white/50 transition-colors">
-                    <Edit3 className="w-3 h-3 text-gray-500" />
-                  </button>
-                </div>
-                <div className="flex items-center gap-3 relative z-10 w-full">
-                  <div className="w-[60px] h-[60px] shrink-0 rounded-full shadow-sm border-[6px] border-[#ede8db] relative overflow-hidden transition-all duration-500 ease-in-out" style={{ background: getConicGradient() }}>
-                    <div className="w-5 h-5 bg-[#ede8db] rounded-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
-                    <div className="w-[4px] h-full bg-[#ede8db] absolute left-1/2 top-0 -translate-x-1/2"></div>
-                    <div className="w-full h-[4px] bg-[#ede8db] absolute top-1/2 left-0 -translate-y-1/2"></div>
-                  </div>
+  onClick={() => setShowRuedaVideoModal(true)}
+  className="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden flex flex-col flex-1 cursor-pointer hover:shadow-md transition-shadow"
+>
+  {/* BARRA HEADER OSCURA DE LA TARJETA */}
+  <div className="bg-gradient-to-r from-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-bold tracking-widest uppercase">
+    RUEDA DE LA VIDA
+  </div>
+
+  {/* CONTENIDO INTERNO: GRÁFICO + CATEGORÍAS */}
+  <div className="p-3 sm:p-4 flex items-center justify-between gap-4 flex-1 bg-white">
+    
+    {/* LADO IZQUIERDO: EL GRÁFICO SVG EXACTO DE LA RUEDA SEGMENTADA */}
+    <div className="w-[110px] h-[110px] shrink-0 relative flex items-center justify-center">
+      <svg
+        viewBox="0 0 100 100"
+        className="w-full h-full transform -rotate-22.5" // Rotación base para alinear los segmentos simétricamente
+      >
+        {/* Segmento 1 - Vino Tinto (Superior Centro) */}
+        <path d="M 50 50 L 50 2 A 48 48 0 0 1 83.94 16.06 Z" fill="#911d33" stroke="#fff" strokeWidth="1.5" />
+        {/* Segmento 2 - Azul Oscuro */}
+        <path d="M 50 50 L 83.94 16.06 A 48 48 0 0 1 98 50 Z" fill="#0c5a75" stroke="#fff" strokeWidth="1.5" />
+        {/* Segmento 3 - Azul Claro */}
+        <path d="M 50 50 L 98 50 A 48 48 0 0 1 83.94 83.94 Z" fill="#00a3e0" stroke="#fff" strokeWidth="1.5" />
+        {/* Segmento 4 - Turquesa */}
+        <path d="M 50 50 L 83.94 83.94 A 48 48 0 0 1 50 98 Z" fill="#4cd2e4" stroke="#fff" strokeWidth="1.5" />
+        {/* Segmento 5 - Verde Menta */}
+        <path d="M 50 50 L 50 98 A 48 48 0 0 1 16.06 83.94 Z" fill="#4fd1a5" stroke="#fff" strokeWidth="1.5" />
+        {/* Segmento 6 - Amarillo Pastel */}
+        <path d="M 50 50 L 16.06 83.94 A 48 48 0 0 1 2 50 Z" fill="#fcd34d" stroke="#fff" strokeWidth="1.5" />
+        {/* Segmento 7 - Naranja Claro */}
+        <path d="M 50 50 L 2 50 A 48 48 0 0 1 16.06 16.06 Z" fill="#f97316" stroke="#fff" strokeWidth="1.5" />
+        {/* Segmento 8 - Coral / Rosado */}
+        <path d="M 50 50 L 16.06 16.06 A 48 48 0 0 1 50 2 Z" fill="#f43f5e" stroke="#fff" strokeWidth="1.5" />
+      </svg>
+
+      {/* CÍRCULO CENTRAL BLANCO CON TEXTO */}
+      <div className="w-11 h-11 bg-white rounded-full absolute shadow-[0_2px_6px_rgba(0,0,0,0.1)] flex items-center justify-center z-10 border border-slate-100">
+        <span className="text-[7px] text-[#1e293b] font-black uppercase tracking-tighter text-center leading-none select-none">
+          Wheel<br /><span className="text-slate-500 font-bold">of life</span>
+        </span>
+      </div>
+    </div>
                   <div className="flex flex-col gap-1 flex-1">
                     {ruedaCompleta.slice(0, 3).map((cat) => (
-                      <div key={cat.id} className="bg-black text-white text-[9px] py-1 px-2 rounded-full text-center font-bold tracking-widest uppercase shadow-sm flex items-center justify-center gap-1">
+                      <div key={cat.id} className="bg-gradient-to-r from-[#ffe29f] to-[#ffa3a3] text-slate-800 text-[9px] sm:text-[10px] py-1 px-3 rounded-md text-center font-bold tracking-widest uppercase shadow-sm border border-orange-200/40 transition-transform hover:scale-[1.03]">
                         {cat.icono} {cat.nombre.substring(0, 6)} ({cat.puntaje})
                       </div>
                     ))}
@@ -1142,7 +1205,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
         {/* CENTER COLUMN */}
         <div className="flex flex-col gap-3 w-full xl:w-[32%] relative items-center">
-            <div className="bg-pink-200 rounded-2xl w-[410px] h-[90px] shadow-md border border-pink-300 mt-10"></div>
+            <div className="bg-pink-200 rounded-2xl w-[410px] h-[90px] shadow-md border border-pink-300 mt-10 flex items-center justify-center px-5 py-4">
+            <p className="text-[14px] font-semibold text-[#1e293b] text-center leading-tight">
+              {phrases[currentPhraseIndex]}
+            </p>
+          </div>
           {/* Tabs */}
           <div className="bg-[#1e293b]/90 backdrop-blur-md rounded-full px-2 py-1.5 shadow-sm border border-white/80 flex items-center justify-center w-[98%] max-w-[320px] gap-2">
             <button onClick={() => setShowMetaAnualModal(true)} className="text-[10px] font-bold uppercase px-2 py-1 rounded-full hover:bg-white/50 transition-colors text-gray-800 tracking-wide">ANUAL</button>
@@ -1589,7 +1656,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               <FormularioRueda
                 onClose={() => setShowRuedaModal(false)}
                 onSaved={() => {
-                  ruedaService.getCompleta().then(setRuedaCompleta);
+                  ruedaService.getCompleta().then(setRuedaCompleta).catch(console.error);
+                  addXP(XP_CONFIG.RUEDA_COMPLETE, 'Rueda de la Vida completada');
+                  setXpStats(prev => ({ ...prev, ruedaCompleted: prev.ruedaCompleted + 1 }));
                 }}
               />
             </div>

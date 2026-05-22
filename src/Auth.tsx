@@ -58,9 +58,7 @@ export default function AuthPanel({ onLogin }: AuthPanelProps) {
     setIsLoading(true);
     try {
       if (isLogin) {
-        const response = await authService.login(formData.email, formData.password);
-        localStorage.setItem('access_token', response.access);
-        localStorage.setItem('refresh_token', response.refresh);
+        await authService.login(formData.email, formData.password);
         onLogin(formData.email);
       } else {
         await authService.register(formData.name, formData.email, formData.password);

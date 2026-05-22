@@ -28,6 +28,7 @@ class KanbanTask(models.Model):
     fecha_hora = models.DateTimeField(null=True, blank=True)
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_tasks')
     workspace = models.ForeignKey('Workspace', on_delete=models.CASCADE, null=True, blank=True, related_name='kanban_tasks')
+    uuid = models.CharField(max_length=36, blank=True, default='')
 
 class Recordatorio(models.Model):
     CATEGORIAS = (
@@ -171,6 +172,7 @@ class Delegation(models.Model):
     token = models.CharField(max_length=64, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ['-created_at']

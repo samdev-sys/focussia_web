@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { GoogleGenAI } from '@google/genai';
 import { X, Sparkles, RefreshCw, Send, Lightbulb, Target, Check } from 'lucide-react';
+import { api } from '../services/api';
 
 interface AiMissionAssistantProps {
   isOpen: boolean;
@@ -37,14 +37,6 @@ export const AiMissionAssistant: React.FC<AiMissionAssistantProps> = ({
   const generateIdeas = async (customPrompt?: string) => {
     setLoading(true);
     try {
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey) {
-        setMessages(prev => [...prev, { role: 'ai', content: '⚠️ La clave de API de Gemini no está configurada. Revisa el archivo .env con tu GEMINI_API_KEY.' }]);
-        setLoading(false);
-        return;
-      }
-
-      const ai = new GoogleGenAI({ apiKey });
       const goalsContext = buildGoalsContext();
 
       const prompt = customPrompt || `Eres un coach personal experto en productividad. Basado en los siguientes objetivos de un usuario, genera 3 ideas específicas, concretas y ACCIONABLES para su MISIÓN DE HOY (la tarea más importante que debe realizar hoy). Cada idea debe poder completarse en un solo día y estar alineada con sus metas.
@@ -59,12 +51,8 @@ Instrucciones:
 
 Responde ÚNICAMENTE con 3 ideas numeradas (1., 2., 3.), una por línea. Sin saludos, sin introducciones, sin texto adicional.`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash',
-        contents: prompt,
-      });
-
-      const text = response.text || '';
+      const response = await api.post('/api/ai/mission/', { prompt });
+      const text = response.data.text;
       const lines = text.split('\n')
         .filter((line: string) => /^\d+[\.\)]/.test(line.trim()))
         .map((line: string) => line.replace(/^\d+[\.\)]\s*/, '').trim())

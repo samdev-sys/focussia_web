@@ -90,6 +90,8 @@ Zonas Horarias: Asegura que la lógica use la hora local del usuario en Colombia
 
 Estado: Permite marcar medicamentos como 'Tomados' para que la tarjeta cambie de estado visualmente."
 
+
+
 Misión #6: Integración de la Rueda de la Vida (Prompt para el Agente)
 Este prompt le dice a tu agente de IA (Antigravity) cómo programar esta lógica exacta. Pégalo en tu entorno de desarrollo.
 
@@ -122,7 +124,124 @@ Una vez guardados con éxito, redirecciona al dashboard principal.
 
 El componente del gráfico de radar que maquetamos en la Misión #1 debe cambiar para recibir datos reales (chartData) de la API, usando la librería Recharts."
 
-🌍 Misión #7: Despliegue a Producción (Go-Live)
+mision #7 : 
+Eres un experto en seguridad fullstack. Voy a darte tareas específicas de hardening para una aplicación llamada Focusia.
+
+Stack:
+- Backend: Django 4.2 + Django REST Framework + SimpleJWT
+- Frontend: React + Vite + Tailwind CSS + axios
+- Base de datos: PostgreSQL
+- Auth: JWT con access token (1 día) + refresh token (7 días)
+- Almacenamiento actual de tokens: localStorage
+
+Reglas para cada corrección:
+1. Muestra el código ANTES y DESPUÉS con la corrección.
+2. Explica en máximo 3 líneas por qué resuelve la vulnerabilidad.
+3. Si hay pasos de migración, listarlos numerados.
+4. No cambies funcionalidad, solo hardening.
+
+---
+
+TAREA 1 — Credenciales en settings.py
+El archivo tiene credenciales reales como defaults:
+  SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-focusia-dev-key-2026')
+  'PASSWORD': os.environ.get('DB_PASSWORD', 'Enero4432#')
+  DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+Genera: a) settings.py sin ningún default con valor real, lanzar ImproperlyConfigured si falta la variable. b) .env.example completo. c) Instrucción para rotar SECRET_KEY.
+
+---
+
+TAREA 2 — JWT en localStorage → cookies HttpOnly
+Actualmente Auth.tsx guarda tokens en localStorage y api.ts los lee.
+Genera: a) Vista Django para /api/token/ que setee cookies HttpOnly + SameSite=Strict + Secure. b) Vista /api/token/logout/ que elimine las cookies. c) Auth.tsx y api.ts actualizados con withCredentials:true, sin localStorage. d) App.tsx verificando sesión con GET /api/users/me/.
+
+---
+
+TAREA 3 — CORS wildcard + sin rate limiting
+CORS_ALLOW_ALL_ORIGINS = True y sin throttling.
+Genera: a) CORS_ALLOWED_ORIGINS desde variable de entorno + CORS_ALLOW_CREDENTIALS=True. b) Throttling en REST_FRAMEWORK: 5/min anon, 100/min user. c) LoginRateThrottle personalizado aplicado a la vista de token.
+
+---
+
+TAREA 4 — API key de Gemini en el frontend
+AiMissionAssistant.tsx llama a Gemini directamente con una API key.
+Genera: a) Vista Django POST /api/ai/mission/ que proxee la llamada a Gemini desde el servidor. b) Serializer con validación de input. c) AiMissionAssistant.tsx refactorizado para llamar al endpoint propio.
+
+---
+
+TAREA 5 — IDOR por IDs secuenciales
+BaseUserViewSet no valida ownership en operaciones destructivas.
+Genera: a) Mixin IsMineOrReadOnly que retorne 404 si obj.user != request.user. b) Campo uuid en KanbanTask (sin cambiar PK). c) Serializer y api.ts actualizados para usar uuid como identificador público.
+
+---
+
+TAREA 6 — Sin cabeceras de seguridad
+No hay CSP, HSTS, X-Frame-Options configurados.
+Genera: a) Configuración completa en settings.py. b) Middleware SecurityHeadersMiddleware con CSP adaptada a los dominios externos que usa Focusia (open-meteo, nominatim, ui-avatars, unsplash). c) Instrucción para ajustar en desarrollo.
+
+---
+
+TAREA 7 — Sin validadores de contraseña ni logging
+AUTH_PASSWORD_VALIDATORS = [] y sin logs de seguridad.
+Genera: a) AUTH_PASSWORD_VALIDATORS completo con los 4 validadores Django. b) Configuración LOGGING a archivo security.log. c) Decorador @log_security_event aplicado a acciones críticas (delete account, change role, accept invitation).
+
+---
+
+TAREA 8 — Tokens de delegación sin expiración
+El modelo Delegation no tiene expires_at. Invitaciones expiran en 7 días.
+Genera: a) Migración para agregar expires_at a Delegation (default: +72h). b) Validación de expiración en las vistas. c) Reducir invitaciones a 48h. d) Management command cleanup_expired_tokens programado en django-q2.
+
+
+mision#8: Actúa como un Ingeniero de Software Full-Stack Experto en React, Tailwind CSS, Django y PostgreSQL. Necesito implementar un flujo de Onboarding completo de 11 pantallas para la aplicación basándome en el siguiente diagnóstico y plan de refactorización.
+
+---
+
+### 1. OBJETIVO GENERAL
+Mover la selección de avatar del modal de perfil post-login al flujo de entrada, crear una experiencia de onboarding de 11 pantallas persistente, y asegurar que el usuario no pueda acceder al Dashboard sin haber completado este flujo.
+
+---
+
+### 2. BACKEND (Django & PostgreSQL)
+Modifica el modelo de usuario y crea el endpoint necesario para dar persistencia al flujo:
+
+1. **Campos en el Modelo User:** Añade los 8 campos necesarios para almacenar el progreso del onboarding (ej. `onboarding_completed` (Boolean), `avatar_url` (String), y los campos específicos para las respuestas de las pantallas del onboarding).
+2. **Endpoint:** Crea un endpoint `PATCH /api/users/me/onboarding/` que permita actualizar el progreso pantalla a pantalla o al finalizar el flujo.
+3. **Serializers:** Asegura que el endpoint de autenticación actual y el de `/api/users/me/` devuelvan el estado de `onboarding_completed`.
+
+---
+
+### 3. FRONTEND: REESTRUCTURACIÓN DE APP.TSX (Control de Rutas)
+Actualmente, `App.tsx` evalúa el acceso de la siguiente manera:
+- `token en localStorage` ➔ Redirige a `<Dashboard />`
+
+Debes refactorizar la lógica de enrutamiento para que funcione así:
+- `token en localStorage` ➔ Verificar `onboarding_completed` (desde el estado global o fetch inicial).
+  - Si `onboarding_completed === true` ➔ Redirige a `<Dashboard />`
+  - Si `onboarding_completed === false` ➔ Redirige y renderiza `<OnboardingFlow />`
+
+---
+
+### 4. FRONTEND: COMPONENTE ONBOARDINGFLOW (11 Pantallas)
+Crea un componente contenedor `<OnboardingFlow />` en React que maneje el estado del paso actual (`step`).
+
+**Lineamientos de diseño y UI (Tailwind CSS):**
+- **Reutilización de Avatares:** Mueve la lógica de selección de los 6 avatares (actualmente en el modal de perfil post-login) a la pantalla correspondiente de este flujo. Corrige el path de las imágenes de `/avartars/` a `/avatars/`.
+- **Formularios y Validación:** Integra o sigue el estándar de validación ya usado en `Auth.tsx`.
+- **MVP de Videos:** Para las pantallas que solicitan videos de 10-20 segundos, sustitúyelos temporalmente por animaciones fluidas con CSS o Lottie (con un contenedor preparado para cambiar fácilmente a una etiqueta `<video>` en el futuro).
+- **Persistencia:** Al avanzar entre bloques clave o al dar click en "Finalizar" en la pantalla 11, realiza la petición al endpoint `PATCH` para guardar las respuestas y marcar `onboarding_completed: true`, redirigiendo automáticamente al Dashboard.
+- **Sistema de Notificaciones:** Usa el sistema de notificaciones global ya existente en la app para mostrar errores de validación o éxito al guardar.
+
+---
+
+### REQUERIMIENTO DE SALIDA
+Por favor, genera:
+1. El código de la migración de Django y la actualización del modelo/vista.
+2. El código refactorizado de `App.tsx` con el nuevo control de flujo.
+3. La estructura base del componente `<OnboardingFlow />` y el manejo de sus 11 estados o pantallas en React.
+
+Proporciona un código limpio, modular, bien tipado con TypeScript (para el frontend) y listo para producción.
+
+🌍 Misión #9: Despliegue a Producción (Go-Live)
 Objetivo: Lanzar la aplicación a una URL pública.
 
 Prompt:
