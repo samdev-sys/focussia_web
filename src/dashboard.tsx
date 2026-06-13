@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   workspaceService, invitationService, delegationService, authService, notificationService, kanbanService, recordatorioService, ruedaService, timeBlockService, objetivoSemanaService, keepNotaService, misionHoyService, billService, matrixService,
   InvitationData, DelegationData, NotificationData, WorkspaceData, WorkspaceMemberData, RuedaCategoria, TimeBlockData, ObjetivoSemanaData, KeepNotaData, MisionHoyData, RecordatorioData, FacturaData, MatrixItemData, KanbanTaskData
@@ -17,7 +17,14 @@ import { X, Moon, Sun, LogOut, User, Plus, ArrowRight, Calendar, Edit3, Info, Ch
 interface DashboardProps {
   onLogout: () => void;
 }
-
+interface FechasImportantesProps {
+  dayActive?: number;
+  recordatorios?: RecordatorioData[];
+  onDayClick?: (dia: number) => void;
+  onAddRecordatorio?: (dia: number) => void;
+  onEditRecordatorio?: (r: RecordatorioData) => void;
+  onDeleteRecordatorio?: (id: string | number) => void;
+}
 interface XPStats {
   totalXP: number;
   level: number;
@@ -79,6 +86,10 @@ const getLevelFromXP = (xp: number): { level: number; currentXP: number; nextLev
   }
   return { level, currentXP: xp - LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1], nextLevelXP: 0, progress: 100 };
 };
+
+const espaciosVacios = [''];
+  const diasMes = Array.from({ length: 30 }, (_, i) => i + 1);
+
 
 const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [ruedaCompleta, setRuedaCompleta] = useState<RuedaCategoria[]>([]);
@@ -162,6 +173,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [matrixItems, setMatrixItems] = useState<MatrixItemData[]>([]);
   const [savedRecordatorios, setSavedRecordatorios] = useState<RecordatorioData[]>([]);
   const [editingRecordatorio, setEditingRecordatorio] = useState<RecordatorioData | null>(null);
+  const [fechasDayActive, setFechasDayActive] = useState<number>(16);
   const [showAiMissionModal, setShowAiMissionModal] = useState(false);
   const [selectedMissionText, setSelectedMissionText] = useState<string | null>(null);
   const [timeBlocks, setTimeBlocks] = useState<TimeBlockData[]>([]);
@@ -364,6 +376,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     if (code <= 99) return { icono: '⛈️', descripcion: 'Tormenta' };
     return { icono: '🌤️', descripcion: 'Variable' };
   };
+  const Card: React.FC<{ title?: string; children?: React.ReactNode; className?: string }> = ({ title, children, className = "" }) => (
+  <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col ${className}`}>
+    {title && (
+      <div className="bg-gradient-to-r from-[#193EC4]  to-[#18033A] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-nonep-3.5 space-y-3 bg-white flex items-center justify-center h-[30px]">
+        {title}
+      </div>
+    )}
+    <div className="p-3 flex-1">{children}</div>
+  </div>
+);
+
 
   useEffect(() => {
     const fetchClima = async (lat: number, lon: number) => {
@@ -940,56 +963,54 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           {/* Top of Left: Pills & Foco */}
           <div className="flex gap-4">
              <div className="flex gap-4">
-  <div className="bg-white/40 backdrop-blur-sm border border-white/20 rounded-2xl p-4 flex flex-col gap-3 w-[340%] shadow-[0_4px_20px_rgba(0,0,0,0.02)] mt-10">
+  <div className="bg-white/40 backdrop-blur-sm border border-white/20 rounded-xl p-3 flex flex-col gap-6 w-[140px] shadow-[0_4px_10px_rgba(0,0,0,0.02)] mt-10">
     {/* 1. COACHING */}
     <ActionButton 
       label="COACHING" 
-      color="bg-gradient-to-r from-[#1e3a8a] via-[#0b153a] to-[#040817]" 
-      variant="dark" 
+      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
+      
     />
-    
     {/* 2. TRIBU (Movido a la segunda posición) */}
     <ActionButton 
       label="TRIBU" 
-      color="bg-gradient-to-r from-[#1e3a8a] via-[#0b153a] to-[#040817]" 
-      variant="dark" 
+      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
+      
     />
-    
     {/* 3. GRATITUD (Movido a la tercera posición) */}
     <ActionButton 
       label="GRATITUD" 
-      color="bg-gradient-to-r from-[#1e3a8a] via-[#0b153a] to-[#040817]" 
-      variant="dark" 
+      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
+      
     />
   </div>
 </div>
-            <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-3 flex flex-col gap-3 w-full shadow-[0_8px_32px_rgba(31,38,135,0.03)]">
+            <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-3 flex flex-col gap-3 w-[250px] shadow-[0_8px_32px_rgba(31,38,135,0.03)] -ml-2">
               <div className="flex gap-1.5">
                 <button
                   onClick={() => setShowInicioModal(true)}
-                  className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"
+                  className="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"
                 >
                   INICIO
                 </button>
                 <button
                   onClick={() => setShowRuedaVideoModal(true)}
-                  className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"
+                  className="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"
                   >
                    RUEDA
                 </button>
                 <button
                   onClick={() => setShowMatrizVideoModal(true)}
-                  className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"
+                  className="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"
                 >
                   MATRIZ
                 </button>
               </div>
               <div
   onClick={() => setShowRuedaVideoModal(true)}
-  className="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden flex flex-col flex-1 cursor-pointer hover:shadow-md transition-shadow"
+  className="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden flex flex-col flex-1 cursor-pointer hover:shadow-md  border border-black-200/40 transition-shadow  "
 >
   {/* BARRA HEADER OSCURA DE LA TARJETA */}
-  <div className="bg-gradient-to-r from-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-bold tracking-widest uppercase">
+  <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5  rounded-md text-[10px] sm:text-xs font-bold tracking-widest uppercase">
     RUEDA DE LA VIDA
   </div>
 
@@ -998,39 +1019,108 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     
     {/* LADO IZQUIERDO: EL GRÁFICO SVG EXACTO DE LA RUEDA SEGMENTADA */}
     <div className="w-[110px] h-[110px] shrink-0 relative flex items-center justify-center">
-      <svg
-        viewBox="0 0 100 100"
-        className="w-full h-full transform -rotate-22.5" // Rotación base para alinear los segmentos simétricamente
-      >
-        {/* Segmento 1 - Vino Tinto (Superior Centro) */}
-        <path d="M 50 50 L 50 2 A 48 48 0 0 1 83.94 16.06 Z" fill="#911d33" stroke="#fff" strokeWidth="1.5" />
-        {/* Segmento 2 - Azul Oscuro */}
-        <path d="M 50 50 L 83.94 16.06 A 48 48 0 0 1 98 50 Z" fill="#0c5a75" stroke="#fff" strokeWidth="1.5" />
-        {/* Segmento 3 - Azul Claro */}
-        <path d="M 50 50 L 98 50 A 48 48 0 0 1 83.94 83.94 Z" fill="#00a3e0" stroke="#fff" strokeWidth="1.5" />
-        {/* Segmento 4 - Turquesa */}
-        <path d="M 50 50 L 83.94 83.94 A 48 48 0 0 1 50 98 Z" fill="#4cd2e4" stroke="#fff" strokeWidth="1.5" />
-        {/* Segmento 5 - Verde Menta */}
-        <path d="M 50 50 L 50 98 A 48 48 0 0 1 16.06 83.94 Z" fill="#4fd1a5" stroke="#fff" strokeWidth="1.5" />
-        {/* Segmento 6 - Amarillo Pastel */}
-        <path d="M 50 50 L 16.06 83.94 A 48 48 0 0 1 2 50 Z" fill="#fcd34d" stroke="#fff" strokeWidth="1.5" />
-        {/* Segmento 7 - Naranja Claro */}
-        <path d="M 50 50 L 2 50 A 48 48 0 0 1 16.06 16.06 Z" fill="#f97316" stroke="#fff" strokeWidth="1.5" />
-        {/* Segmento 8 - Coral / Rosado */}
-        <path d="M 50 50 L 16.06 16.06 A 48 48 0 0 1 50 2 Z" fill="#f43f5e" stroke="#fff" strokeWidth="1.5" />
-      </svg>
+  <svg
+    viewBox="0 0 100 100"
+    className="w-full h-full transform -rotate-22.5" // Rotación base original para alinear los quesitos
+  >
+    {/* ─── 🎨 SEGMENTOS DE COLORES ORIGINALES ─── */}
+    {/* Segmento 1 - Vino Tinto (Salud) */}
+    <path d="M 50 50 L 50 2 A 48 48 0 0 1 83.94 16.06 Z" fill="#911d33" stroke="#fff" strokeWidth="1.5" />
+    {/* Segmento 2 - Azul Oscuro (Familia) */}
+    <path d="M 50 50 L 83.94 16.06 A 48 48 0 0 1 98 50 Z" fill="#0c5a75" stroke="#fff" strokeWidth="1.5" />
+    {/* Segmento 3 - Azul Claro (Trabajo / Dinero) */}
+    <path d="M 50 50 L 98 50 A 48 48 0 0 1 83.94 83.94 Z" fill="#00a3e0" stroke="#fff" strokeWidth="1.5" />
+    {/* Segmento 4 - Turquesa (Social / Amigos) */}
+    <path d="M 50 50 L 83.94 83.94 A 48 48 0 0 1 50 98 Z" fill="#4cd2e4" stroke="#fff" strokeWidth="1.5" />
+    {/* Segmento 5 - Verde Menta (Espiritual) */}
+    <path d="M 50 50 L 50 98 A 48 48 0 0 1 16.06 83.94 Z" fill="#4fd1a5" stroke="#fff" strokeWidth="1.5" />
+    {/* Segmento 6 - Amarillo Pastel (Amor) */}
+    <path d="M 50 50 L 16.06 83.94 A 48 48 0 0 1 2 50 Z" fill="#fcd34d" stroke="#fff" strokeWidth="1.5" />
+    {/* Segmento 7 - Naranja Claro (Mente / Ideas) */}
+    <path d="M 50 50 L 2 50 A 48 48 0 0 1 16.06 16.06 Z" fill="#f97316" stroke="#fff" strokeWidth="1.5" />
+    {/* Segmento 8 - Coral / Rosado (Profesión / Éxito) */}
+    <path d="M 50 50 L 16.06 16.06 A 48 48 0 0 1 50 2 Z" fill="#f43f5e" stroke="#fff" strokeWidth="1.5" />
 
-      {/* CÍRCULO CENTRAL BLANCO CON TEXTO */}
-      <div className="w-11 h-11 bg-white rounded-full absolute shadow-[0_2px_6px_rgba(0,0,0,0.1)] flex items-center justify-center z-10 border border-slate-100">
-        <span className="text-[7px] text-[#1e293b] font-black uppercase tracking-tighter text-center leading-none select-none">
-          Wheel<br /><span className="text-slate-500 font-bold">of life</span>
-        </span>
-      </div>
-    </div>
+    {/* ─── 🛠️ ICONOS CORREGIDOS Y CENTRADOS MILIMÉTRICAMENTE ─── */}
+
+    {/* 💓 1. SALUD (Vino Tinto - Centro Superior Derecho) */}
+    {/* Ubicación calculada: x=69, y=23 */}
+   <g transform="translate(72, 19) rotate(22.5)" fill="none" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M-4.5 -2.5 a 2.2 2.2 0 0 1 4.4 0 l 0.1 0.1 l 0.1 -0.1 a 2.2 2.2 0 0 1 4.4 0 c 0 2.5 -4.5 5.5 -4.5 5.5 s -4.5 -3 -4.5 -5.5 Z" fill="white" strokeWidth="0" />
+      <path d="M-5 1.5 l 2 0 l 1 -2 l 1.5 3.5 l 1 -2.5 l 1.5 1 l 2 0" />
+    </g>
+
+    {/* 👨‍👩‍👧 2. FAMILIA (Azul Oscuro - Lateral Superior Derecho) */}
+    {/* Ubicación calculada: x=77, y=41 */}
+   <g transform="translate(82, 39) rotate(22.5)" fill="white">
+      <circle cx="-2" cy="-2" r="1.8" />
+      <path d="M -5.5 3 a 2.5 2.5 0 0 1 5 0 l 0 1.5 l -5 0 Z" />
+      <circle cx="2.5" cy="-1" r="1.4" />
+      <path d="M 0 3 a 2 2 0 0 1 4 0 l 0 1.5 l -4 0 Z" />
+    </g>
+
+    {/* 💰 3. FINANZAS / MONEDAS (Azul Claro - Lateral Inferior Derecho) */}
+    {/* Ubicación calculada: x=70, y=60 */}
+    <g transform="translate(74, 63) rotate(22.5)" fill="white" stroke="white" strokeWidth="0.6">
+      <ellipse cx="-2" cy="-1" rx="3.2" ry="1.2" />
+      <path d="M -5.2 -1 v 2.2 c 0 0.8 1.5 1.2 3.2 1.2 s 3.2 -0.4 3.2 -1.2 v -2.2" />
+      <ellipse cx="2.5" cy="2" rx="2.5" ry="1" />
+      <path d="M 0 2 v 2.2 c 0 0.6 1.2 1 2.5 1 s 2.5 -0.4 2.5 -1 v -2.2" />
+    </g>
+
+    {/* 💬 4. AMIGOS / SOCIAL (Turquesa - Centro Inferior Derecho) */}
+    {/* Ubicación calculada: x=58, y=71 */}
+    <g transform="translate(60, 77) rotate(22.5)" fill="white">
+      <path d="M -4 -3 c 0 -2.2 2.2 -4 5 -4 s 5 1.8 5 4 c 0 1.3 -0.8 2.4 -2.2 3.1 l 0.7 2.2 l -2.5 -1.2 c -0.3 0 -0.7 0.1 -1 0.1 c -2.8 0 -5 -1.8 -5 -4 Z" />
+      <circle cx="-1.5" cy="-3" r="0.6" fill="#4cd2e4" />
+      <circle cx="1" cy="-3" r="0.6" fill="#4cd2e4" />
+      <circle cx="3.5" cy="-3" r="0.6" fill="#4cd2e4" />
+    </g>
+
+    {/* 🌸 5. ESPIRITUAL / LOTO (Verde Menta - Centro Inferior Izquierdo) */}
+    {/* Ubicación calculada: x=39, y=70 */}
+    <g transform="translate(37, 76) rotate(22.5)" fill="white">
+      <path d="M 0 -4.5 C 1.5 -2 2.5 -0.5 0 2.5 C -2.5 -0.5 -1.5 -2 0 -4.5 Z" />
+      <path d="M 0 -1 C 2 0 4.5 1 3.5 3 C 1 3.5 -0.5 2 0 -1 Z" />
+      <path d="M 0 -1 C -2 0 -4.5 1 -3.5 3 C -1 3.5 0.5 2 0 -1 Z" />
+    </g>
+
+    {/* 💝 6. AMOR (Amarillo Pastel - Lateral Inferior Izquierdo) */}
+    {/* Ubicación calculada: x=25, y=55 */}
+   <g transform="translate(19, 58) rotate(22.5)" fill="white">
+      <path d="M 0 3.5 l -3.3 -3.3 a 2.3 2.3 0 0 1 0 -3.2 a 2.3 2.3 0 0 1 3.3 0 a 2.3 2.3 0 0 1 3.3 0 a 2.3 2.3 0 0 1 0 3.2 Z" />
+    </g>
+
+    {/* 💡 7. INTELECTUAL (Naranja) -> Se movió más a la izquierda y arriba */}
+    <g transform="translate(22, 33) rotate(22.5)" fill="white">
+      <path d="M 0 -4.5 c -2.4 0 -4.2 1.8 -4.2 4.2 c 0 1.5 0.8 2.8 2 3.5 l 0.5 1.8 l 3.4 0 l 0.5 -1.8 c 1.2 -0.7 2 -2 2 -3.5 c 0 -2.4 -1.8 -4.2 -4.2 -4.2 Z" />
+      <rect x="-1.5" y="5.5" width="3" height="1" rx="0.3" fill="white" />
+      <line x1="0" y1="-5.5" x2="0" y2="-7" stroke="white" strokeWidth="0.8" strokeLinecap="round" />
+      <line x1="-4.5" y1="-3" x2="-5.8" y2="-3.5" stroke="white" strokeWidth="0.8" strokeLinecap="round" />
+      <line x1="4.5" y1="-3" x2="5.8" y2="-3.5" stroke="white" strokeWidth="0.8" strokeLinecap="round" />
+    </g>
+
+    {/* 📈 8. PROFESIÓN (Coral) -> Se movió más hacia arriba */}
+    <g transform="translate(37, 16) rotate(22.5)" fill="white">
+      <rect x="-4.5" y="1" width="2" height="3" rx="0.3" />
+      <rect x="-1.5" y="-1.5" width="2" height="5.5" rx="0.3" />
+      <rect x="1.5" y="-4" width="2" height="8" rx="0.3" />
+      <path d="M -4.5 -1.5 l 3 -2.5 l 2.5 1.5 l 3.5 -3.5" fill="none" stroke="white" strokeWidth="1" strokeLinecap="round" />
+      <path d="M 2.5 -6 l 2 0 l 0 2" fill="none" stroke="white" strokeWidth="1" strokeLinejoin="round" />
+    </g>
+  </svg>
+
+  {/* CÍRCULO CENTRAL BLANCO CON TEXTO */}
+  <div className="w-11 h-11 bg-white rounded-full absolute shadow-[0_2px_6px_rgba(0,0,0,0.1)] flex items-center justify-center z-10 border border-slate-100">
+    <span className="text-[7px] text-[#1e293b] font-black uppercase tracking-tighter text-center leading-none select-none">
+      Wheel<br /><span className="text-slate-500 font-bold">of life</span>
+    </span>
+  </div>
+</div>
                   <div className="flex flex-col gap-1 flex-1">
                     {ruedaCompleta.slice(0, 3).map((cat) => (
-                      <div key={cat.id} className="bg-gradient-to-r from-[#ffe29f] to-[#ffa3a3] text-slate-800 text-[9px] sm:text-[10px] py-1 px-3 rounded-md text-center font-bold tracking-widest uppercase shadow-sm border border-orange-200/40 transition-transform hover:scale-[1.03]">
-                        {cat.icono} {cat.nombre.substring(0, 6)} ({cat.puntaje})
+                      <div key={cat.id} className="bg-gradient-to-r from-[#ffe29f] to-[#ffa3a3] text-slate-800 text-[9px] sm:text-[10px] py-1 px-3 rounded-md text-center font-bold tracking-widest uppercase shadow-sm border border-black-200/40 transition-transform hover:scale-[1.03]">
+                         {cat.nombre.substring(0, 6)} 
                       </div>
                     ))}
                   </div>
@@ -1042,237 +1132,218 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
           {/* Middle of Left */}
           <div className="flex gap-4 ">
-            <button
-              onClick={() => setShowRecordatorioModal(true)}
-              className="flex-1 bg-white/40 backdrop-blur-md rounded-3xl p-4 shadow-sm border border-white/60 relative flex flex-col items-center pt-10 min-h-[200px] -w-[500px] hover:bg-white/50 transition-colors cursor-pointer text-left"
-            >
-              <div className="absolute -top-4 bg-[#0d9488] text-white px-4 py-2 rounded-2xl text-[9px] sm:text-[10px] font-black leading-tight text-center uppercase shadow-sm w-[90%] border border-white/50 scale-105">
-                RECORDATORIO<br />FECHAS IMPORTANTES
-              </div>
-              <div className="w-[140px] h-[290px] flex flex-col gap-2 mt-2 overflow-y-auto">
-                {savedRecordatorios.slice(0, 3).map(r => {
-                  const icons: Record<string, string> = { Medicamento: '💊', Cumpleaños: '🎂', HoraOro: '⭐', Equipo: '👥' };
-                  const fecha = new Date(r.fecha_hora).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
-                  return (
-                    <div key={r.id} className="group flex items-center gap-2 bg-white/30 backdrop-blur-sm rounded-xl p-2 shrink-0 relative">
-                      <span className="text-[11px] font-bold text-[#0d9488]">{icons[r.categoria] || '📅'}</span>
-                      <span className="text-[11px] font-bold text-gray-700 truncate flex-1">{r.titulo} - {fecha}</span>
-                      <div className="hidden group-hover:flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingRecordatorio(r);
-                            setShowRecordatorioModal(true);
-                          }}
-                          className="p-1 rounded-full hover:bg-white/50 transition-colors"
-                          title="Editar"
-                        >
-                          <Edit3 className="w-3 h-3 text-gray-500" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (window.confirm(`¿Eliminar "${r.titulo}"?`)) {
-                              recordatorioService.delete(r.id).then(() => {
-                                fetchSavedRecordatorios();
-                              }).catch(console.error);
-                            }
-                          }}
-                          className="p-1 rounded-full hover:bg-red-100 transition-colors"
-                          title="Eliminar"
-                        >
-                          <Trash2 className="w-3 h-3 text-red-400" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-                {savedRecordatorios.length === 0 && (
-                  <div className="flex items-center gap-2 bg-white/30 backdrop-blur-sm rounded-xl p-2 shrink-0">
-                    <span className="text-[11px] font-bold text-[#0d9488]">📅</span>
-                    <span className="text-[11px] font-bold text-gray-400 italic">Sin recordatorios aún</span>
-                  </div>
-                )}
-              </div>
-              <div className="mt-auto pt-2 flex justify-center">
-                <span className="text-[9px] text-[#0d9488] flex items-center gap-1">
-                  <Plus className="w-3 h-3" /> Agregar recordatorio
-                </span>
-              </div>
-            </button>
-            <div className="flex-1 flex flex-col gap-3">
-              <div className="bg-white/40 backdrop-blur-md rounded-[1.5rem] p-3 shadow-sm border border-white/60 flex-1 flex flex-col items-center justify-start pt-2 w-[200px] -mt-3">
-                <h3 className="text-[11px] font-bold text-center uppercase text-gray-800 mb-1">OBJETIVO DE LA SEMANA</h3>
-                <div className="w-full space-y-2 mt-1 px-2">
-                  <input type="text" className="w-full bg-transparent border-b-[1.5px] border-gray-400 focus:outline-none focus:border-gray-600 text-[11px] font-bold text-gray-800 pb-0.5" defaultValue={objetivo?.texto1 || ''} onBlur={(e) => handleObjetivoBlur('texto1', e.target.value)} />
-                  <input type="text" className="w-full bg-transparent border-b-[1.5px] border-gray-400 focus:outline-none focus:border-gray-600 text-[11px] font-bold text-gray-800 pb-0.5" defaultValue={objetivo?.texto2 || ''} onBlur={(e) => handleObjetivoBlur('texto2', e.target.value)} />
-                  <input type="text" className="w-[60%] mx-auto block bg-transparent border-b-[1.5px] border-gray-400 focus:outline-none focus:border-gray-600 text-[11px] font-bold text-gray-800 pb-0.5" defaultValue={objetivo?.texto3 || ''} onBlur={(e) => handleObjetivoBlur('texto3', e.target.value)} />
-                </div>
-              </div>
-              <div className="mt-3">
-                <div
-                  onClick={() => setShowDelegarModal(true)}
-                  className="bg-white/50 backdrop-blur-md rounded-[1.5rem] p-4 border border-white/60 hover:bg-white/60 transition-all cursor-pointer shadow-sm group w-[200px]"
-                >
-                  <div className="flex items-center justify-between mb-3 px-1 ">
-                    <h4 className="text-[9px] font-black uppercase text-gray-600 tracking-[0.15em] mb-0">Kanban Backlog</h4>
-                    <div className="bg-[#1e3a5f]/10 px-2 py-0.5 rounded-full">
-                      <span className="text-[8px] font-bold text-[#1e3a5f]">{kanbanTasks.filter(t => t.columna === 'Agenda' || t.columna === 'Backlog').length} Pendientes</span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    {kanbanTasks
-                      .filter(t => t.columna === 'Agenda' || t.columna === 'Backlog')
-                      .slice(0, 3)
-                      .map((task) => (
-                        <div key={task.id} className="bg-white/70 backdrop-blur-sm rounded-xl p-2.5 text-[10px] text-gray-800 border border-white/40 shadow-sm flex flex-col gap-1 group-hover:translate-x-1 transition-transform">
-                          <span className="font-bold line-clamp-1">{task.titulo}</span>
-                          {task.fecha_hora && (
-                            <div className="flex items-center gap-1 text-[8px] text-[#4f46e5] font-bold">
-                              <Clock className="w-2 h-2" />
-                              <span>{new Date(task.fecha_hora).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    {kanbanTasks.filter(t => t.columna === 'Agenda' || t.columna === 'Backlog').length === 0 && (
-                      <div className="text-[9px] text-gray-400 text-center italic py-4 bg-white/30 rounded-xl border border-dashed border-gray-400/30">
-                        No hay tareas pendientes
-                      </div>
-                    )}
-                    {kanbanTasks.filter(t => t.columna === 'Agenda' || t.columna === 'Backlog').length > 3 && (
-                      <p className="text-[8px] text-[#1e3a5f] font-bold text-center mt-2 uppercase tracking-tighter">+ Ver todas</p>
-                    )}
-                  </div>
-                </div>
-              </div>
+            <DynamicKanbanBacklog />
+        
+  <div className="bg-white/60 backdrop-blur-sm  rounded-2xl  flex flex-col   w-[200px] h-[200px] shadow-[0_0_0px_rgb(255, 255, 255)] -ml-2 -mt-8">
+  
+  {/* 🎯 TARJETA INTERNA BLANCA DE OBJETIVOS */}
+  <div className="bg-white shadow-[0_2px_4px_rgb(247, 243, 243)] overflow-hidden flex flex-col min-h-[200px] w-full rounded-md ">
+    
+    {/* BARRA HEADER COMPLETA (Fusión perfecta en los bordes superiores) */}
+    <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-none w-[200px]">
+      OBJETIVO SEMANAL
+    </div>
+    
 
+    {/* CUERPO INTERNO CON INPUTS COMPLETAMENTE INTEGRADOS */}
+    <div className="bg-gradient-to-r from-[#A70EEE] via-[#7028E2] to-[#193EC4] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-nonep-3.5 space-y-3 bg-white flex-1 flex flex-col justify-center mt-2">
+      
+      {/* Input Objetivo Primario */}
+      <div className="w-full">
+        <textarea
+        className="w-full flex-1 bg-transparent text-[11px] font-medium text-slate-700 italic placeholder:text-slate-400 focus:outline-none resize-none leading-relaxed scrollbar-hide"
+          placeholder="Escriba aquí el objetivo primario..."
+          rows={6}
+          defaultValue={objetivo?.texto1 || ''} 
+          onBlur={(e) => handleObjetivoBlur('texto1', e.target.value)} 
+        />
+      </div>
 
+     
+      
+
+    </div>
+
+  </div>
             </div>
+
+          <div className="bg-white/60 backdrop-blur-sm rounded-2xl flex flex-col h-[250px] shadow-[0_0_0px_rgb(255,255,255)] mt-44 -ml-54 ">
+            <FechasImportantesCard
+              dayActive={fechasDayActive}
+              recordatorios={savedRecordatorios}
+              onDayClick={(dia) => {
+                setFechasDayActive(dia);
+                setShowRecordatorioModal(true);
+              }}
+              onAddRecordatorio={(dia) => {
+                setFechasDayActive(dia);
+                setShowRecordatorioModal(true);
+              }}
+              onEditRecordatorio={(r) => {
+                setEditingRecordatorio(r);
+                setFechasDayActive(new Date(r.fecha_hora).getDate());
+                setShowRecordatorioModal(true);
+              }}
+              onDeleteRecordatorio={async (id) => {
+                try {
+                  await recordatorioService.delete(id);
+                  fetchSavedRecordatorios();
+                } catch (err) {
+                  console.error('Error deleting recordatorio:', err);
+                }
+              }}
+            />
           </div>
 
           {/* Bottom Left - Acciones por Delegar */}
-          <div className="mt-auto pt-6 w-[250px]">
-  <div
-    className="w-full bg-[#fef3c7]/50 backdrop-blur-md rounded-3xl p-4 shadow-sm border border-white/60 group cursor-pointer hover:bg-[#fef3c7]/70 transition-colors"
-    onClick={() => setShowAccionesDelegarModal(true)}
-  >
-    <div className="bg-[#d97706] text-white px-4 py-1.5 rounded-2xl text-[10px] font-bold text-center uppercase shadow-sm border border-white/50 mb-3 transition-colors flex items-center justify-center gap-2">
-      <div className="w-1.5 h-1.5 rounded-full bg-white opacity-60"></div>
-      ACCIONES POR DELEGAR
-      <div className="w-1.5 h-1.5 rounded-full bg-white opacity-60"></div>
-    </div>
+          <AccionesPorDelegarInline />
 
-    {/* <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1 custom-scrollbar">
-      {kanbanTasks
-        .filter(t => t.columna === 'Delegar')
-        .map(task => (
-          <div key={task.id} className="bg-white/60 p-2 rounded-xl text-[9px] border border-white/40 flex items-center justify-between gap-2 hover:bg-white/80 transition-colors">
-            <span className="font-bold text-gray-700 truncate flex-1">{task.titulo}</span>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                openDelegationModal(task);
-              }}
-              className="shrink-0 p-1 bg-[#d97706] text-white rounded-lg hover:bg-[#b45309] transition-colors"
-              title="Delegar por email"
-            >
-              <Send className="w-3 h-3" />
-            </button>
-          </div>
-        ))}
-      {kanbanTasks.filter(t => t.columna === 'Delegar').length === 0 && (
-        <p className="text-[8px] text-gray-400 text-center italic py-2">No hay tareas para delegar</p>
-      )}
-    </div> */}
-    {/* <button
-      onClick={(e) => {
-        e.stopPropagation();
-        setDelegationTab('received');
-        setShowDelegationModal(true);
-      }}
-      className="mt-3 w-full py-2 bg-gradient-to-r from-[#d97706] to-[#b45309] text-white text-[10px] font-bold rounded-xl hover:shadow-md transition-all flex items-center justify-center gap-2"
-    >
-      <Send className="w-3 h-3" />
-      Ver Delegaciones
-    </button> */}
-  </div>
-</div>
-
+        </div>
+        
         </div>
 
         {/* CENTER COLUMN */}
-        <div className="flex flex-col gap-3 w-full xl:w-[32%] relative items-center">
-            <div className="bg-pink-200 rounded-2xl w-[410px] h-[90px] shadow-md border border-pink-300 mt-10 flex items-center justify-center px-5 py-4">
+<div className="flex flex-col gap-3 w-full xl:w-[32%] relative items-center">
+          <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-3 flex flex-col gap-3 w-[250px] shadow-[0_8px_32px_rgba(31,38,135,0.03)] mt-12">
             <p className="text-[14px] font-semibold text-[#1e293b] text-center leading-tight">
               {phrases[currentPhraseIndex]}
             </p>
           </div>
           {/* Tabs */}
-          <div className="bg-[#1e293b]/90 backdrop-blur-md rounded-full px-2 py-1.5 shadow-sm border border-white/80 flex items-center justify-center w-[98%] max-w-[320px] gap-2">
-            <button onClick={() => setShowMetaAnualModal(true)} className="text-[10px] font-bold uppercase px-2 py-1 rounded-full hover:bg-white/50 transition-colors text-gray-800 tracking-wide">ANUAL</button>
-            <button onClick={() => setShowMetaMensualModal(true)} className="text-[10px] font-bold uppercase px-2 py-1 rounded-full hover:bg-white/50 transition-colors text-gray-800 tracking-wide border-x border-gray-400/50">MENSUAL</button>
-            <button onClick={() => setShowMetaSemanalModal(true)} className="text-[10px] font-bold uppercase px-2 py-1 rounded-full hover:bg-white/50 transition-colors text-gray-800 tracking-wide border-r border-gray-400/50">SEMANAL</button>
-            <button onClick={() => setShowMetaDiariaModal(true)} className="text-[10px] font-bold uppercase px-2 py-1 rounded-full hover:bg-white/50 transition-colors text-gray-800 tracking-wide">DIARIA</button>
-          </div>
+<div className="flex justify-between items-center gap-2 w-full max-w-[500px] mx-auto my-2 ml-4">
+  
+  {/* BOTÓN ANUAL */}
+  <button 
+    onClick={() => setShowMetaAnualModal(true)} 
+    className="flex-1 bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-lg text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
+  >
+    Anual
+  </button>
 
+  {/* BOTÓN MENSUAL */}
+  <button 
+    onClick={() => setShowMetaMensualModal(true)} 
+    className="flex-1 bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-lg text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
+  >
+    Mensual
+  </button>
+
+  {/* BOTÓN SEMANAL */}
+  <button 
+    onClick={() => setShowMetaSemanalModal(true)} 
+    className="flex-1 bg-gradient-to-l from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-lg text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
+  >
+    Semanal
+  </button>
+
+  {/* BOTÓN DIARIA */}
+  <button 
+    onClick={() => setShowMetaDiariaModal(true)} 
+    className="flex-1 bg-gradient-to-l from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-lg text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
+  >
+    Diaria
+  </button>
+
+        </div>
           {/* Time Blocking Table */}
-          <div className="bg-gradient-to-b from-[#f8fafc]/80 to-[#f1f5f9]/80 backdrop-blur-xl rounded-[2rem] shadow-[0_4px_15px_rgba(0,0,0,0.05)] border border-white/70 overflow-hidden flex flex-col mb-1 relative h-[420px]">
-            <div className="px-5 py-2.5 flex justify-between items-center z-10">
-              <h3 className="text-[13px] font-black uppercase tracking-widest text-[#0f172a]">TIME BLOCKING</h3>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a2b3c" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-            </div>
-
-            <div className="px-1.5 pb-1.5 h-full">
-              <div className="w-full bg-[#0d9488] backdrop-blur-md rounded-2xl shadow-inner h-[100%] border border-[#0f766e] overflow-hidden">
-                <table className="w-full text-[10px] text-white table-fixed border-collapse h-full">
-                  <thead>
-                    <tr className="border-b border-[#8daacd]">
-                      <th className="font-semibold uppercase w-12 py-1 text-center border-r border-[#8daacd] text-[9px]">TIME</th>
-                      <th className="font-semibold uppercase py-1 text-center border-r border-[#8daacd] text-[9px]">WORK IN PROGRESS</th>
-                      <th className="font-semibold uppercase w-14 py-1 text-center text-[9px]">STATUS</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {defaultHours.map((h, i) => {
-                      const block = timeBlocks.find((t: TimeBlockData) => t.hora === h);
-                      return (
-                        <tr key={h} className={`border-b border-t border-[#0f766e] ${i % 2 === 0 ? 'bg-[#0d7377]' : 'bg-[#0f8a84]'} h-[20px] sm:h-[22px]`}>
-                          <td className="text-center font-medium border-r border-white/20">{h}:00</td>
-                          <td className="border-r border-white/20 px-2">
-                            <input
-                              type="text"
-                              className="w-full bg-transparent text-white outline-none placeholder-white/40"
-                              placeholder="..."
-                              defaultValue={block?.tarea || ''}
-                              onBlur={(e) => handleTimeBlockBlur(h, e.target.value)}
-                            />
-                          </td>
-                          <td className="text-center">
-                            <input
-                              type="checkbox"
-                              className="accent-blue-200 cursor-pointer"
-                              checked={block?.estado || false}
-                              onChange={(e) => handleTimeBlockStatus(h, e.target.checked)}
-                            />
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+        <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-3 flex flex-col w-full h-[530px] shadow-[0_8px_32px_rgba(31,38,135,0.03)] overflow-hidden ml-10">
+  
+  {/* 👇 SOLUCIÓN: Agrupamos estos dos elementos en un bloque compacto sin GAP */}
+  <div className="w-full  flex flex-col overflow-hidden rounded-xl border border-slate-200/60 shadow-xs">
+    
+    {/* BARRA HEADER DEL TIME BLOCKING */}
+    <div className="bg-gradient-to-r from-[#0E12EE] via-[#A70EEE] to-[#193EC4] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-nonep-3.5 space-y-3 bg-white flex-1 flex flex-col justify-center mt-2">
+      TIME BLOCKING
+    </div>
+  {/* CONTENEDOR CON SCROLL DE LA TABLA */}
+  <div className="overflow-y-auto max-h-[520px] bg-white/40 scrollbar-hide rounded-b-xl">
+      <table className="w-full text-[11px] border-collapse table-fixed">
+        
+        <thead className="sticky top-0 z-20 bg-white/90 backdrop-blur-md shadow-2xs">
+          <tr>
+            <th className="w-20 p-2 border-b border-slate-100">
+              <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-orange-200/40 text-center">
+                TIME
               </div>
-            </div>
+            </th>
+            <th className="p-2 border-b border-slate-100">
+              <div className="w-full bg-gradient-to-r from-[#fecaca] to-[#ffa3a3] text-slate-800 text-[10px] py-1.5 px-2 rounded-lg font-black tracking-wider uppercase border border-red-200/40 text-center">
+                WORK IN PROGRESS
+              </div>
+            </th>
+            <th className="w-24 p-2 border-b border-slate-100">
+              <div className="w-full bg-gradient-to-r from-[#ffa3a3] to-[#fca5a5] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-red-300/40 text-center">
+                STATUS
+              </div>
+            </th>
+          </tr>
+        </thead>
+
+      {/* CUERPO DE HORARIOS (FILAS) */}
+      <tbody>
+  {defaultHours.map((h, i) => {
+    const block = timeBlocks.find((t: TimeBlockData) => t.hora === h);
+    const statusText = block?.estado === true ? 'Done' : (block?.estado as unknown as string) === 'doing' ? 'Doing' : '';
+
+    return (
+      <tr 
+        key={h} 
+        /* 🌟 CAMBIO: Se aplica bg-slate-50/40 de forma base para simular el fondo gris tenue de la tabla */
+        className="hover:bg-white/60 bg-slate-50/40 transition-colors h-[36px]"
+      >
+        
+        {/* CELDA 1: INDICADOR HORARIO */}
+        <td className="py-1 text-center font-bold text-slate-700 w-20">
+          <span className="inline-block px-2 py-0.5 border border-slate-200 rounded-md text-[10px] bg-white shadow-3xs select-none">
+            {h < 10 ? `0${h}:00` : `${h}:00`}
+          </span>
+        </td>
+
+        {/* CELDA 2: INPUT DENTRO DE RECUADRO BLANCO SOFT UI */}
+        <td className="py-1 px-2.5">
+          {/* 🌟 SOLUCIÓN: Este div genera el recuadro blanco flotante con sombra y microborde gris */}
+          <div className="w-full bg-white border border-slate-200/70 rounded-md px-2 py-0.5 shadow-3xs flex items-center transition-all focus-within:border-indigo-500/50">
+            <input
+              type="text"
+              className={`w-full bg-transparent outline-none text-[11px] text-slate-700 placeholder:text-slate-400 placeholder:italic ${
+                statusText === 'Done' ? 'line-through text-slate-400 italic' : 'font-medium'
+              }`}
+              placeholder="Escriba aquí..."
+              defaultValue={block?.tarea || ''}
+              onBlur={(e) => handleTimeBlockBlur(h, e.target.value)}
+            />
+          </div>
+        </td>
+
+        {/* CELDA 3: ESTADOS DINÁMICOS */}
+        <td className="w-24 py-1 px-2 text-center">
+          {statusText === 'Done' && (
+            <span className="block w-full rounded-md text-[9px] py-0.5 font-bold bg-slate-100 text-slate-500 border border-slate-200 shadow-3xs select-none">
+              Done
+            </span>
+          )}
+          {statusText === 'Doing' && (
+            <span className="block w-full rounded-md text-[9px] py-0.5 font-black bg-white text-slate-900 border border-slate-200/60 shadow-xs animate-pulse select-none">
+              Doing
+            </span>
+          )}
+          {statusText === '' && (
+            <span className="block w-full h-4 bg-transparent" />
+          )}
+        </td>
+
+      </tr>
+    );
+  })}
+</tbody>
+
+    </table>
+  </div>
+        </div>
           </div>
 
-          {/* Bottom Pills */}
-          <div className="flex  gap-2.5 mt-20">
-            {['HUMOR', 'EJERCICIOS', 'HOBBIES', 'VIAJES', 'DIVERSIÓN', 'REFLEXIÓN'].map(item => (
-              <ActionButton key={item} label={item} color="bg-[#f59e0b]" variant="modern" className="flex-1 text-[8px] px-2 py-1.5 rounded-full" />
-            ))}
-          </div>
+          <CategoriasMenu />
+          <CardAyudaIA onSubmit={() => setShowAiMissionModal(true)} />
         </div>
 
         {/* RIGHT COLUMN */}
@@ -1280,105 +1351,53 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           
           {/* Bloque Superior: Botones Cursos/RRSS y Notas */}
           <div className="flex justify-between items-start">
-            <div className="flex flex-col gap-3 w-[65%] pr-3">
-              <div className="flex gap-1.5">
-                <ActionButton label="CURSOS" color="bg-[#3b82f6]" variant="modern" className="flex-1" />
-                <ActionButton label="RRSS" color="bg-[#ec4899]" variant="modern" className="flex-1" />
-                <ActionButton label="CUENTAS" color="bg-[#6366f1]" variant="modern" className="flex-1" icon={<CreditCard className="w-3 h-3" />} onClick={() => setShowBillModal(true)} />
-              </div>
-              <div className="bg-gradient-to-br from-[#fef9c3]/80 to-[#fef3c7]/80 backdrop-blur-xl rounded-[2rem] p-4 shadow-sm border border-white/60 h-[140px] flex flex-col items-center pt-3 -mt-2">
-                <h3 className="text-[12px] font-black uppercase text-gray-800 tracking-widest text-center mt-2 mb-2">KEEP BLOCK DE NOTAS</h3>
-                <textarea
-                  className="w-full flex-1 bg-transparent resize-none border-none outline-none text-[10px] text-gray-800 placeholder-gray-400"
-                  placeholder="Escribe tus notas aquí..."
-                  defaultValue={keepNota?.contenido || ''}
-                  onBlur={handleKeepNotaBlur}
-                ></textarea>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-2.5 w-[33%] pt-14">
-              <ActionButton label="MEDICAMENTOS" color="bg-[#ef4444]" variant="modern" icon={<Pill className="w-3 h-3" />} onClick={() => setShowMedicamentosModal(true)} />
-              <ActionButton label="CUMPLEAÑOS" color="bg-[#8b5cf6]" variant="modern" />
-              <ActionButton label="FOCUS" color="bg-[#059669]" variant="modern" />
-            </div>
-          </div>
-
-          {/* Bloque Medio: Calendario y Hora de Oro */}
-          <div className="flex gap-3 min-h-[200px] mt-3 ">
-            <div className="flex flex-col gap-5 w-[55%]">
-              <div className="bg-white/40 backdrop-blur-md rounded-[1.5rem] p-3 shadow-sm border border-white/60 flex-1 flex flex-col items-center justify-start pt-3">
-                <div className="absolute top-2 right-2 text-gray-800"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg></div>
-                <h3 className="text-xl font-black uppercase text-gray-900 leading-[1] mt-1">{currentDate.dia} {currentDate.numero}</h3>
-                <h3 className="text-xl font-black uppercase text-gray-900 leading-[1] my-[2px]">{currentDate.mes}</h3>
-                <h3 className="text-[19px] font-black text-gray-900 leading-[1]">{currentDate.anio}</h3>
-              </div>
-              
-              <div className="flex flex-col gap-2.0 items-center w-full mt-2 pr-4">
-                <h3 className="text-[20px] font-bold uppercase text-gray-800 text-center w-full shrink-0">MI MISIÓN DE HOY ES:</h3>
-                <button
-                  onClick={() => setShowAiMissionModal(true)}
-                  className="w-[150px] h-[150px] rounded-2xl overflow-hidden shadow-sm border border-white/60 mb-2 mt-1 w-[200px] h-[200px] cursor-pointer hover:ring-2 hover:ring-purple-400 transition-all group relative"
-                >
-                  <img src={misionHoy?.imagen_url || "https://images.unsplash.com/photo-1542596594-649edbc13630?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"} alt="mission" className="w-full h-full object-cover transform scale-110 object-top" />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
-                    <Sparkles className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </div>
-                </button>
-                {selectedMissionText && (
-                  <div className="bg-purple-50/80 backdrop-blur-sm rounded-xl px-3 py-2 border border-purple-200 max-w-[200px] text-center">
-                    <p className="text-[10px] font-bold text-purple-700 leading-tight">{selectedMissionText}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* LA HORA DE ORO FAMILIAR */}
-            <div className="w-[160px] h-[400px] bg-gradient-to-b from-[#fef3c7]/90 via-[#fde68a]/80 to-[#fcd34d]/70 backdrop-blur-xl rounded-[2rem] p-4 shadow-sm border border-white/80 flex flex-col items-center justify-center -ml-2">
-              <h3 className="text-[11px] font-bold uppercase text-center text-gray-800 leading-tight">LA HORA DE ORO<br />FAMILIAR</h3>
-              <span className="text-3xl mt-2">👨‍👩‍👧</span>
-            </div>
-          </div>
-
-          {/* --- NUEVA UBICACIÓN DEL CLIMA --- */}
-          {/* Situado en la parte inferior de la columna derecha, debajo de la Hora de Oro */}
-          <div className="w-[250px] translate-x-30 mt-16 ">
-            <div className="bg-gradient-to-r from-[#7dd3fc]/70 to-[#38bdf8]/70 backdrop-blur-md rounded-[1.5rem] px-5 py-4 shadow-sm border border-white/60 relative overflow-hidden flex items-center gap-4 group hover:shadow-lg transition-all mx-auto max-w-[95%]">
-              
-              {clima.loading ? (
-                <div className="flex items-center gap-2 w-full justify-center">
-                  <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Obteniendo clima...</span>
+            <div className="flex flex-col w-[250px] pr-3">
+              <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-3 flex flex-col gap-3 w-[250px] shadow-[0_8px_32px_rgba(31,38,135,0.03)] ml-2 h-[240px]">
+                <div className="p-1 flex gap-1 flex justify-between items-center gap-1  max-w-md -ml-1 w-[80px]">
+                  <ActionButton label="CURSOS" color="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" />
+                  <ActionButton label="RRSS" color="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" />
+                  <ActionButton label="CUENTAS" color="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"  onClick={() => setShowBillModal(true)} />
                 </div>
-              ) : clima.error ? (
-                <div className="flex flex-col items-center w-full">
-                  <span className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">CLIMA EN MI COMUNA</span>
-                  <span className="text-[9px] text-red-400 font-medium">{clima.error}</span>
-                </div>
-              ) : (
-                <>
-                  {/* Icono Grande */}
-                  <span className="text-4xl leading-none group-hover:scale-110 transition-transform">{clima.icono}</span>
-                  
-                  {/* Detalles Centrales */}
-                  <div className="flex flex-col flex-1 min-w-0">
-                    <span className="text-[10px] font-black uppercase text-blue-900 truncate tracking-tight">{clima.lugar}</span>
-                    <span className="text-[11px] font-bold text-gray-700 capitalize">{clima.descripcion}</span>
-                  </div>
-                  
-                  {/* Temperatura y Humedad Derecha */}
-                  <div className="flex flex-col items-end shrink-0 pl-2">
-                    <span className="text-[26px] font-black text-gray-900 leading-none">{clima.temp}°</span>
-                    <span className="text-[10px] font-bold text-gray-600 tracking-tighter mt-0.5">💧 {clima.humedad}% HR</span>
-                  </div>
-                </>
-              )}
+                <BlockDeNotas />
+              </div>
+            </div>
 
-              {/* Fondo decorativo sutil (efecto de luz) */}
-              <div className="absolute top-0 right-0 w-20 h-20 bg-white/20 rounded-full blur-2xl pointer-events-none" />
+            <div className="bg-white/40 backdrop-blur-sm border border-white/20 rounded-xl p-3 flex flex-col gap-6 w-[140px] shadow-[0_4px_10px_rgba(0,0,0,0.02)] mt-10 ml-4">
+              <ActionButton label="MEDICAMENTOS" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern"  onClick={() => setShowMedicamentosModal(true)} />
+              <ActionButton label="CUMPLEAÑOS" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern" />
+              <ActionButton label="FOCUS" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern" />
             </div>
           </div>
-        </div>
+
+          {/* Bloque Calendario */}
+          <div className="flex flex-col items-start w-full mb-4 ml-2">
+            <CalendarWidget />
+          </div>
+
+          {/* Bloque Medio: Misión */}
+          <div className="flex flex-col items-start w-full mb-8 ml-2">
+            <MiMisionHoy mision={selectedMissionText} avatarUrl={userData.avatar_url} />
+          </div>
+
+          {/* Bloque Hora de Oro Familiar */}
+          <div className="flex flex-col items-start w-[230px] h-[600px] -mt-127 ml-45 rounded-md">
+            <HoraDeOroFamiliar />
+          </div>
+
+          {/* Bloque Clima */}
+          <div className="flex flex-col items-start w-full h-[250px] mb-4">
+            <ClimaComuna
+              temp={clima.temp}
+              descripcion={clima.descripcion}
+              lugar={clima.lugar}
+              loading={clima.loading}
+              error={clima.error}
+              icono={clima.icono}
+              humedad={clima.humedad}
+              sensacion={clima.sensacion}
+            />
+          </div>
+   </div>
       </main>
 
       {/* Modal: Acciones por Delegar */}
@@ -1562,7 +1581,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-[#0d9488]">
                     <CheckCircle2 className="w-5 h-5" />
-                    <h3 className="font-bold uppercase text-sm">Rueda de la Vida</h3>
+                    <h3 className="font-bold uppercase text-sm">Vida</h3>
                   </div>
                   <p className="text-sm text-gray-600 leading-relaxed">
                     Visualiza el equilibrio de tu vida en tiempo real. Haz clic en el gráfico central para actualizar tus puntajes y ajustar tu foco mensual.
@@ -1695,7 +1714,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 <Play className="w-12 h-12 text-white ml-1" />
               </div>
               <h3 className="text-xl font-bold text-gray-800 mb-2">Mira el video instructivo</h3>
-              <p className="text-sm text-gray-500 mb-6">Aprende cómo填写 tu Rueda de la Vida en pocos minutos</p>
+              <p className="text-sm text-gray-500 mb-6">Aprende cómo elaborar tu Rueda de la Vida en pocos minutos</p>
 
               <div className="flex flex-col gap-3">
                 <button
@@ -3307,3 +3326,663 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 };
 
 export default Dashboard;
+export const FechasImportantesCard: React.FC<FechasImportantesProps> = ({ dayActive = new Date().getDate(), recordatorios, onDayClick, onAddRecordatorio, onEditRecordatorio, onDeleteRecordatorio }) => {
+  const ahora = new Date();
+  const añoActual = ahora.getFullYear();
+  const mesActual = ahora.getMonth();
+
+  const nombreMeses = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+
+  const diasSemana = [
+    { label: 'SUN', isSunday: true, isSaturday: false },
+    { label: 'MON', isSunday: false, isSaturday: false },
+    { label: 'TUE', isSunday: false, isSaturday: false },
+    { label: 'WED', isSunday: false, isSaturday: false },
+    { label: 'THU', isSunday: false, isSaturday: false },
+    { label: 'FRI', isSunday: false, isSaturday: false },
+    { label: 'SAT', isSunday: false, isSaturday: true },
+  ];
+
+  const primerDia = new Date(añoActual, mesActual, 1);
+  const diasEnMes = new Date(añoActual, mesActual + 1, 0).getDate();
+  const diaSemanaInicio = primerDia.getDay();
+
+  const paddingInicial = Array.from({ length: diaSemanaInicio }, (_, i) => i);
+  const diasDelMes = Array.from({ length: diasEnMes }, (_, index) => index + 1);
+
+  const recordatoriosPorDia = useMemo(() => {
+    const map: Record<number, RecordatorioData[]> = {};
+    if (recordatorios) {
+      recordatorios.forEach(r => {
+        const d = new Date(r.fecha_hora);
+        if (d.getMonth() === mesActual && d.getFullYear() === añoActual) {
+          const dia = d.getDate();
+          if (!map[dia]) map[dia] = [];
+          map[dia].push(r);
+        }
+      });
+    }
+    return map;
+  }, [recordatorios, mesActual, añoActual]);
+
+  const recordatoriosHoy = recordatoriosPorDia[dayActive] || [];
+
+  return (
+   
+    <div className="bg-white shadow-[0_2px_4px_rgb(247,243,243)] flex flex-col h-full w-[200px] p-1.5 overflow-hidden">
+  {/* TÍTULO PRINCIPAL */}
+  <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-none w-full">
+    FECHAS IMPORTANTES
+  </div>
+  
+  {/* 1️⃣ RECUADRO EXTERIOR (Señalado por la flecha inferior en la imagen) */}
+  <div className="p-1.5 flex-1 flex flex-col overflow-hidden border border-slate-300/80 rounded-xl bg-slate-50/30 w-full">
+    
+    {/* 2️⃣ RECUADRO INTERIOR MARCADO (Señalado por la flecha superior en la imagen) */}
+    <div className="border border-slate-800 rounded-lg p-2 flex-1 flex flex-col bg-white w-full overflow-hidden">
+      
+      {/* CONTENEDOR DEL ENCABEZADO (AÑO, MES Y BOTÓN +) */}
+      <div className="flex justify-between items-center text-slate-800 font-black text-[10px] mb-2 tracking-wider select-none w-full">
+        
+        {/* 🗓️ BADGE DEL AÑO */}
+        <div className="bg-gradient-to-r from-[#fecaca] to-[#ffa3a3] border border-slate-200/80 rounded-md px-1.5 py-0.5 shadow-3xs font-black text-slate-700 shrink-0">
+          {añoActual}
+        </div>
+
+        {/* 🔄 CONTENEDOR DEL MES Y EL BOTÓN (+) */}
+        <div className="flex items-center gap-1 font-black text-slate-800 shrink-0">
+          <span className="tracking-widest text-[11px]">{nombreMeses[mesActual]}</span>
+          
+          {/* BOTÓN MÁS (+) */}
+          <button
+            type="button"
+            onClick={() => onAddRecordatorio?.(dayActive)}
+            className="w-3.5 h-3.5 rounded-md bg-white border border-slate-200 shadow-3xs text-slate-700 flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all"
+            title="Añadir recordatorio"
+          >
+            <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* CUERPO DEL CALENDARIO */}
+      <div className="w-full bg-white flex-1 flex flex-col justify-between overflow-hidden">
+        
+        {/* CABECERA DE DÍAS (GRID DE 7 COLUMNAS) */}
+        <div className="w-full border-t border-slate-100 pt-1.5">
+          <div className="grid grid-cols-7 text-[8px] font-black text-center mb-1 select-none w-full">
+            {diasSemana.map((dia) => (
+              <span 
+                key={dia.label} 
+                className={`tracking-wider ${
+                  dia.isSunday 
+                    ? 'text-rose-400 font-black' 
+                    : dia.isSaturday 
+                    ? 'text-indigo-400 font-black' 
+                    : 'text-slate-400'
+                }`}
+              >
+                {dia.label}
+              </span>
+            ))}
+          </div>
+
+          {/* MATRIZ DE NÚMEROS DEL MES */}
+          <div className="grid grid-cols-7 text-[10px] font-bold text-center gap-y-0.05 text-slate-700 w-full overflow-hidden">
+            {paddingInicial.map((_, idx) => (
+              <span key={`blank-${idx}`} className="block h-4" />
+            ))}
+
+            {diasDelMes.map((dia) => {
+              const celdaIndex = (dia + paddingInicial.length) % 7;
+              const esDomingo = celdaIndex === 1;
+              const esSabado = celdaIndex === 0;
+              const esDiaSeleccionado = dia === dayActive;
+              const tieneRecordatorio = !!recordatoriosPorDia[dia];
+
+              return (
+                <div 
+                  key={dia} 
+                  className="h-4 flex items-center justify-center relative cursor-pointer w-full" 
+                  onClick={() => onDayClick?.(dia)}
+                >
+                  {esDiaSeleccionado ? (
+                    <span className="w-4 h-4 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-black text-[9px] shadow-3xs select-none">
+                      {dia}
+                    </span>
+                  ) : (
+                    <span className={`text-[9px] 
+                      ${esDomingo ? 'text-rose-500 font-black' : ''} 
+                      ${esSabado ? 'text-slate-900 font-black' : ''} 
+                      ${!esDomingo && !esSabado ? 'font-medium hover:text-slate-900 transition-colors' : ''}
+                    `}>
+                      {dia}
+                    </span>
+                  )}
+
+                  {tieneRecordatorio && (
+                    <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2">
+                      <div className="w-1 h-1 rounded-full bg-rose-400" />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* SECCIÓN INFERIOR DE RECORDATORIOS */}
+        {recordatorios && recordatorios.length > 0 && (
+          <div className="pt-1 border-t border-slate-100 space-y-0.5 mt-1 shrink-0 overflow-y-auto max-h-[50px] scrollbar-hide">
+            {recordatorios.map(r => {
+              const fecha = new Date(r.fecha_hora);
+              const dia = fecha.getDate();
+              return (
+                <div key={r.id} className="flex items-center gap-1 px-1 group">
+                  <span className="text-[8px] font-bold text-indigo-500 shrink-0 w-3 text-right">{dia}</span>
+                  <span className="text-[8px] font-medium text-slate-700 truncate flex-1">{r.titulo}</span>
+                  <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onEditRecordatorio?.(r); }}
+                      className="w-3 h-3 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors"
+                      title="Editar"
+                    >
+                      <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onDeleteRecordatorio?.(r.id); }}
+                      className="w-3 h-3 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors"
+                      title="Eliminar"
+                    >
+                      <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+    </div> {/* FIN DEL RECUADRO INTERIOR */}
+  </div> {/* FIN DEL RECUADRO EXTERIOR */}
+</div>
+     
+  );
+};
+
+const AccionesPorDelegarInline: React.FC = () => {
+  const [acciones, setAcciones] = useState([
+    { id: 1, accion: '', responsable: '' },
+    { id: 2, accion: '', responsable: '' },
+    { id: 3, accion: '', responsable: '' },
+  ]);
+
+  const handleInputChange = (id: number, field: 'accion' | 'responsable', value: string) => {
+    setAcciones(
+      acciones.map((item) =>
+        item.id === id ? { ...item, [field]: value } : item
+      )
+    );
+  };
+
+  return (
+    <div className="bg-white rounded-md border-2 border-gray-100 shadow-md overflow-hidden max-w-[300px] h-[200px] mx-auto -ml-106 mt-110">
+      <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-none w-[300px]">
+        ACCIONES POR DELEGAR
+      </div>
+      <table className="w-full border-collapse">
+        <thead>
+          <tr>
+            <th className="w-1/2 p-2 border-b border-slate-100">
+              <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-orange-200/40 text-center">ACCIÓN</div>
+            </th>
+            <th className="w-1/2 p-2 border-b border-slate-100">
+              <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-orange-200/40 text-center">RESPONSABLE</div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {acciones.map((item) => (
+            <tr key={item.id}>
+              <td className="p-1">
+                <input
+                  type="text"
+                  className="w-full border border-gray-200 rounded text-[10px] p-1 h-6 focus:outline-none focus:border-orange-300"
+                  placeholder="Escriba aquí"
+                  value={item.accion}
+                  onChange={(e) => handleInputChange(item.id, 'accion', e.target.value)}
+                />
+              </td>
+              <td className="p-1">
+                <input
+                  type="text"
+                  className="w-full border border-gray-200 rounded text-[10px] p-1 h-6 focus:outline-none focus:border-orange-300"
+                  placeholder="Nombre"
+                  value={item.responsable}
+                  onChange={(e) => handleInputChange(item.id, 'responsable', e.target.value)}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+const CategoriasMenu: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('SALUD');
+
+  const categorias = [
+    { id: 'humor', label: 'HUMOR', esPrimario: false },
+    { id: 'salud', label: 'SALUD', esPrimario: true },
+    { id: 'hobbyes', label: 'HOBBYES', esPrimario: false },
+    { id: 'viajes', label: 'VIAJES', esPrimario: false },
+    { id: 'diversion', label: 'DIVERSIÓN', esPrimario: true },
+    { id: 'reflexion', label: 'REFLEXIÓN', esPrimario: false },
+  ];
+
+  return (
+    <div className=" flex justify-between items-center gap-1  max-w-2xl mx-auto w-full mt-40 -ml-14">
+      {categorias.slice(0, 3).map((cat) => (
+        <button
+          key={cat.id}
+          onClick={() => setActiveTab(cat.label)}
+          className={`text-[9px] px-4 py-2 rounded-lg font-black uppercase flex-1 transition-colors duration-200 ${
+            cat.esPrimario
+              ? 'bg-gradient-to-r from-[#040817] via-[#0b153a] to-[#2b44ff] text-white'
+              : 'bg-gradient-to-r from-[#040817] via-[#0b153a] to-[#2b44ff] text-white'
+          }`}
+        >
+          {cat.label}
+        </button>
+      ))}
+      <div className="flex-shrink-0 p-1.5 mx-1 flex items-center justify-center">
+        <img
+          src='public/focusia-logo.png'
+          alt="F"
+          className="w-12 h-12 "
+        />
+      </div>
+      {categorias.slice(3).map((cat) => (
+        <button
+          key={cat.id}
+          onClick={() => setActiveTab(cat.label)}
+          className={`text-[9px] px-4 py-2 rounded-lg font-black uppercase flex-1 transition-colors duration-200 ${
+            cat.esPrimario
+              ? 'bg-gradient-to-r from-[#040817] via-[#0b153a] to-[#2b44ff] text-white'
+              : 'bg-gradient-to-r from-[#040817] via-[#0b153a] to-[#2b44ff] text-white'
+          }`}
+        >
+          {cat.label}
+        </button>
+      ))}
+    </div>
+  );
+};
+
+const DynamicKanbanBacklog: React.FC = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [rowCount, setRowCount] = useState(10);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const containerHeight = entry.contentRect.height;
+        const rowHeight = 28;
+        const calculatedRows = Math.floor(containerHeight / rowHeight);
+        setRowCount(Math.max(5, calculatedRows));
+      }
+    });
+
+    resizeObserver.observe(containerRef.current);
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  return (
+    <div className="w-[210px] h-[450px] bg-white/60 backdrop-blur-sm border border-white/30 rounded-md p-0 shadow-[0_8px_32px_rgba(31,38,135,0.03)] -mt-8 -ml-2 flex flex-col overflow-hidden">
+      <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-none w-full">
+        KANBAN BACKLOG
+      </div>
+      <div className="p-3 pb-2 flex gap-2 shrink-0">
+        <span className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[9px] py-1 px-1 rounded-lg font-black tracking-wider uppercase shadow-xs border border-orange-200/40 select-none text-center">
+          Acción
+        </span>
+        <span className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[9px] py-1 px-1 rounded-lg font-black tracking-wider uppercase shadow-xs border border-orange-200/40 select-none text-center">
+          Matriz
+        </span>
+      </div>
+      <div ref={containerRef} className="flex-1 overflow-hidden px-2 pb-2 space-y-1">
+        {[...Array(rowCount)].map((_, i) => (
+          <div key={i} className="flex items-center gap-1 h-6 ">
+            <input
+              type="text"
+              placeholder="Escriba aquí"
+              className="flex-1 text-[10px] h-5  bg-transparent border border-slate-700 rounded-md outline-none placeholder:text-gray-400"
+            />
+            <div className="flex gap-0.5 border border-black-200 rounded-md px-1 py-0.5">
+              {['H', 'P', 'D', 'B'].map(l => (
+                <span
+                  key={l}
+                  className="w-3 h-3 flex items-center justify-center bg-gray-800 text-white text-[6px] rounded-full shrink-0"
+                >
+                  {l}
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const CardAyudaIA: React.FC<{ onSubmit?: () => void }> = ({ onSubmit }) => {
+  const [pregunta, setPregunta] = useState('');
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && pregunta.trim() !== '') {
+      setPregunta('');
+      onSubmit?.();
+    }
+  };
+
+  return (
+    <div className="bg-white p-5 rounded-md border border-indigo-200 shadow-sm flex flex-col items-center -mt-40 w-[500px]  ml-10">
+      <div className="text-[11px] font-black uppercase text-gray-800 mb-2 select-none">
+        ¿Necesitas Ayuda?
+      </div>
+      <input
+        type="text"
+        value={pregunta}
+        onChange={(e) => setPregunta(e.target.value)}
+        onKeyDown={handleKeyDown}
+        className="w-full border-none border-b border-dotted border-gray-400 text-center text-xs focus:ring-0 italic text-gray-500 py-1 bg-transparent placeholder-gray-400/70 outline-none"
+        placeholder="Pregúntale a la IA ..................................................................................................."
+      />
+    </div>
+  );
+};
+
+const BlockDeNotas: React.FC = () => {
+  const [lineas, setLineas] = useState<Record<number, string>>({});
+  const [rowCount, setRowCount] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const notaIdRef = useRef<number | null>(null);
+  const cargadoRef = useRef(false);
+
+  useEffect(() => {
+    if (cargadoRef.current) return;
+    cargadoRef.current = true;
+    keepNotaService.get().then((data) => {
+      if (data.length > 0) {
+        const nota = data[0];
+        notaIdRef.current = nota.id;
+        const partes = (nota.contenido || '').split('\n');
+        const obj: Record<number, string> = {};
+        partes.forEach((p, i) => { obj[i] = p; });
+        setLineas(obj);
+      }
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const values = Object.keys(lineas).sort((a, b) => Number(a) - Number(b)).map(k => lineas[Number(k)]);
+    const contenido = values.join('\n').trim();
+    if (contenido === '') return;
+    const id = notaIdRef.current;
+    const timer = setTimeout(() => {
+      if (id !== null) {
+        keepNotaService.update(id, { contenido }).catch(() => {});
+      } else {
+        keepNotaService.create({ contenido } as any).then((res) => {
+          notaIdRef.current = res.id;
+        }).catch(() => {});
+      }
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [lineas]);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const calculateRows = () => {
+      const containerHeight = containerRef.current!.clientHeight;
+      const rowHeightWithGap = 22;
+      const paddingCompensation = 8;
+      const calculatedRows = Math.floor((containerHeight - paddingCompensation) / rowHeightWithGap);
+      setRowCount(Math.max(1, calculatedRows));
+    };
+
+    const resizeObserver = new ResizeObserver(() => {
+      calculateRows();
+    });
+
+    resizeObserver.observe(containerRef.current);
+    calculateRows();
+
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  const handleLineChange = (index: number, value: string) => {
+    setLineas((prev) => ({
+      ...prev,
+      [index]: value,
+    }));
+  };
+
+  return (
+    <div className="bg-white flex flex-col flex-1 h-full min-h-[160px]">
+      <div className="bg-gradient-to-r from-[#030616] via-[#0b1442] to-[#512bd4] text-white text-center py-1.5 font-bold text-xs uppercase tracking-widest border-b border-black/20 rounded-md select-none shrink-0">
+        BLOCK DE NOTAS
+      </div>
+      <div
+        ref={containerRef}
+        className="flex-1 overflow-hidden px-2 pb-2 pt-1.5 space-y-1.5 relative"
+      >
+        {[...Array(rowCount)].map((_, index) => (
+          <div
+            key={index}
+            className="w-full bg-[#f4f5f8] rounded-md h-4 flex items-center border border-transparent focus-within:border-slate-200 transition-all shrink-0"
+          >
+            <input
+              type="text"
+              value={lineas[index] || ''}
+              onChange={(e) => handleLineChange(index, e.target.value)}
+              placeholder="Escriba aquí"
+              className="w-full bg-transparent border-none outline-none focus:ring-0 text-slate-700 italic text-[10px] font-normal placeholder-gray-400 px-2"
+            />
+          </div>
+        ))}
+        <div className="absolute bottom-0 right-0 w-[65px] h-[65px] pointer-events-none z-10 flex items-center justify-center">
+          <img
+            alt="Bulb"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdxe_ps6FSLi8QbnwjEBRbjdfat6rX39n0ca23r229_cQIAgkBI5LVy4DXIBKVM27BP8mg3hfIJBAMjusej41wZ-PcTILlGH_ScXB8H0UNTezYI49xjrf6_febZLKIkMHtX5GpoGjsV9TIK31S3HI2CiwlaJcEdqvqg87oMo8ozjbh_MsjLylh_Zh-cxx8iWUDLVU7sYu7dAoNxgAidG-okpCTa3mxMT2X1inV6wCU_SAJ7GhLKPfzDM7Z2XfJ61brhoviOhrgyQY"
+            className="w-full h-full object-contain select-none filter drop-shadow-sm"
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+function HoraDeOroFamiliar(): React.ReactElement {
+  const goldHours = [
+    "LUNES", "LUNES", "MARTES", "MARTES", "MIERCOLES", "MIERCOLES",
+    "JUEVES", "JUEVES", "VIERNES", "VIERNES", "SÁBADO", "SÁBADO",
+    "DOMINGO", "DOMINGO"
+  ];
+
+  const [acciones, setAcciones] = useState<Record<number, string>>({});
+
+  const handleInputChange = (index: number, value: string) => {
+    setAcciones((prev) => ({
+      ...prev,
+      [index]: value,
+    }));
+  };
+
+  return (
+    <div className="bg-white  border-2 border-gray-100 card-shadow overflow-hidden w-full max-w-md select-none rounded-md">
+      <div className="bg-[#0b153a] text-white text-center py-2.5 font-black text-xs uppercase tracking-widest w-full rounded-md">
+        HORA DE ORO FAMILIAR
+      </div>
+      <div className="grid grid-cols-[1fr_60px] gap-1.5 text-[10px] font-black text-center text-slate-800 px-2 py-1 bg-transparent select-none">
+  
+  {/* 🏷️ BOTÓN: ACCIÓN */}
+  <div className="bg-gradient-to-r from-[#ffe4a0] via-[#ff9b9b] to-[#ff7a7a] py-1 uppercase tracking-wider rounded-md border border-black/80 shadow-sm flex items-center justify-center">
+    ACCIÓN
+  </div>
+  
+  {/* 🏷️ BOTÓN: DÍAS */}
+  <div className="bg-gradient-to-r from-[#ffe4a0] to-[#ff7a7a] py-1 uppercase tracking-wider rounded-md border border-black/80 shadow-sm flex items-center justify-center">
+    DÍAS
+  </div>
+
+</div>
+      <div className="p-1.5 space-y-1 max-h-[380px] overflow-y-auto">
+        {goldHours.map((day, index) => (
+          <div key={index} className="flex gap-1 items-center">
+            <input
+              type="text"
+              value={acciones[index] || ''}
+              onChange={(e) => handleInputChange(index, e.target.value)}
+              placeholder="Escriba aquí"
+              className="flex-1 border border-gray-200 rounded-md text-[10px] px-2 h-6 focus:ring-0 focus:border-indigo-300 outline-none placeholder:text-gray-400 font-medium text-slate-700"
+            />
+            <span className="text-[8px] font-black border border-gray-300 bg-slate-50 text-slate-600 rounded-md py-1 w-14 text-center uppercase shrink-0 tracking-tighter">
+              {day}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ClimaComuna({ temp, descripcion, lugar, loading, error, icono, humedad, sensacion }: {
+  temp: number; descripcion: string; lugar: string;
+  loading: boolean; error: string; icono: string;
+  humedad: number; sensacion: number;
+}): React.ReactElement {
+  return (
+  <div className="bg-white rounded-md border-2 border-gray-100 shadow-md overflow-hidden max-w-[300px] h-[200px] mx-auto ml-20 -mt-33">
+    <div className="bg-white rounded-md border-2 border-gray-100 card-shadow overflow-hidden w-full max-w-sm select-none gap-2 flex flex-col"> 
+      <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-none w-[300px]">
+        CLIMA EN MI COMUNA
+      </div>
+       
+      <div className="p-3 text-[10px] font-medium text-slate-700">
+        {loading ? (
+          <div className="flex items-center gap-2 justify-center py-2">
+            <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Obteniendo clima...</span>
+          </div>
+        ) : error ? (
+          <div className="text-center py-2">
+            <span className="text-[9px] text-red-400 font-medium">{error}</span>
+          </div>
+        ) : (
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                <th className="w-1/2 p-1 border-b border-slate-100">
+                  <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-orange-200/40 text-center">TIEMPO</div>
+                </th>
+                <th className="w-1/2 p-1 border-b border-slate-100">
+                  <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-orange-200/40 text-center">DETALLE</div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="p-1">
+                  <span className="font-black text-slate-900">{icono}</span> {descripcion}
+                </td>
+                <td className="p-1 text-gray-400 italic">Ahora</td>
+              </tr>
+              <tr>
+                <td className="p-1">
+                  <span className="font-black text-slate-900">{temp}°C</span> Temperatura
+                </td>
+                <td className="p-1 text-gray-400 italic">Actual</td>
+              </tr>
+              <tr>
+                <td className="p-1">
+                  <span className="font-black text-slate-900">{humedad}%</span> Humedad
+                </td>
+                <td className="p-1 text-gray-400 italic">{lugar}</td>
+              </tr>
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  </div>
+  );
+}
+
+function MiMisionHoy({ mision, avatarUrl }: { mision: string | null; avatarUrl: string | undefined }): React.ReactElement {
+  const misionText = mision || 'Terminar carpeta Wireframe del proyecto';
+  const avatarSrc = avatarUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuD_9bAoe76XpMkvgcAUyoqOsMCBddvrJ_uiX4k2mz8_CRRQiM9Md4m5eUA3lT-XhkFdJFFaduIIKsqjINp3-VbYi88LAsvyYzyd7zxO0NNBFX5yFOd5gvVkk5UrelYNZYJrCQZOE9x0bxRawElR3OKkIZg7Z6DeXMUQeuO4WG7F5ONIflSQUQBqNpJSAy8Jjo0YJT_k7YR2OEnQa2OkgxtYtWC5HzpiynKxW4YrQ8_YobAlpdwXp6pGTfYcvewsgX1B43G5LpnOuis";
+
+  return (
+    <div className="bg-white gap-1 rounded-md border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.05)] overflow-hidden w-[170px] flex flex-col select-none">
+      <div className="bg-[#1e2540] text-white text-center py-2 font-black text-[10px] uppercase tracking-wider w-full shrink-0 rounded-md">
+        MI MISIÓN DE HOY
+      </div>
+      <div className="bg-gradient-to-br from-[#ffa1a1] via-[#ffccd5] to-[#ffe3a8] flex-1 flex flex-col justify-between items-center relative min-h-[175px] pt-4 overflow-hidden">
+        <p className="text-center font-bold text-slate-800 text-[12px] leading-snug italic px-3 z-10 tracking-tight">
+          &ldquo;{misionText}&rdquo;
+        </p>
+        <div className="w-full h-[110px] mt-auto flex items-end justify-center z-0 relative">
+          <img
+            alt="Profile"
+            className="w-[90%] h-full object-contain object-bottom select-none pointer-events-none filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.15)]"
+            src={avatarSrc}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CalendarWidget(): React.ReactElement {
+  const ahora = new Date();
+  const año = ahora.getFullYear();
+  const nombreMeses = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const mes = nombreMeses[ahora.getMonth()];
+  const dia = ahora.getDate();
+
+  return (
+    <div className="bg-white rounded-md gap-1  border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.05)] overflow-hidden w-[170px] select-none flex flex-col">
+      <div className="bg-[#0b0f19] px-3 py-1.5 flex items-center justify-center gap-1.5 border-b border-white/5 shrink-0 rounded-md">
+        <div className="w-4 h-4 bg-white/10 rounded flex items-center justify-center text-[10px]">📅</div>
+        <span className="text-white font-black text-[13px] tracking-wide">{año}</span>
+      </div>
+      
+      <div className="bg-gradient-to-br from-[#3b0717] via-[#1e0b36] to-[#0f172a] p-3 flex flex-col items-center justify-center flex-1 min-h-[175px]">
+        <div className="w-[115px] bg-white rounded-2xl shadow-[0_10px_25px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col items-center relative pt-1.5">
+          <div className="absolute top-0 flex gap-2 justify-center w-full -mt-0.5 z-10">
+            <span className="w-[3px] h-[7px] bg-slate-300 rounded-full block opacity-80"></span>
+            <span className="w-[3px] h-[7px] bg-slate-300 rounded-full block opacity-80"></span>
+            <span className="w-[3px] h-[7px] bg-slate-300 rounded-full block opacity-80"></span>
+            <span className="w-[3px] h-[7px] bg-slate-300 rounded-full block opacity-80"></span>
+          </div>
+          <div className="w-full bg-[#3b82f6] text-center py-0.5">
+            <span className="text-white font-extrabold text-[11px] tracking-wide block">{mes}</span>
+          </div>
+          <div className="bg-white w-full py-2 flex items-center justify-center">
+            <span className="text-[#111827] text-[42px] font-black tracking-tighter block leading-none py-1">{dia}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
