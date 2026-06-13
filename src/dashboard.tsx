@@ -1111,41 +1111,82 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                   <input type="text" className="w-[60%] mx-auto block bg-transparent border-b-[1.5px] border-gray-400 focus:outline-none focus:border-gray-600 text-[11px] font-bold text-gray-800 pb-0.5" defaultValue={objetivo?.texto3 || ''} onBlur={(e) => handleObjetivoBlur('texto3', e.target.value)} />
                 </div>
               </div>
-              <div className="mt-3">
+              <div className="bg-[#0b153a]/[0.04] backdrop-blur-md border border-white/60 p-3 shadow-[0_4px_24px_rgba(11,21,58,0.03)] w-full rounded-2xl flex flex-col justify-between">
                 <div
                   onClick={() => setShowDelegarModal(true)}
-                  className="bg-white/50 backdrop-blur-md rounded-[1.5rem] p-4 border border-white/60 hover:bg-white/60 transition-all cursor-pointer shadow-sm group w-[200px]"
+                  className="bg-white border border-slate-200/60 shadow-xs overflow-hidden flex flex-col min-h-[240px] w-full cursor-pointer hover:shadow-md transition-shadow rounded-xl"
                 >
-                  <div className="flex items-center justify-between mb-3 px-1 ">
-                    <h4 className="text-[9px] font-black uppercase text-gray-600 tracking-[0.15em] mb-0">Kanban Backlog</h4>
-                    <div className="bg-[#1e3a5f]/10 px-2 py-0.5 rounded-full">
-                      <span className="text-[8px] font-bold text-[#1e3a5f]">{kanbanTasks.filter(t => t.columna === 'Agenda' || t.columna === 'Backlog').length} Pendientes</span>
+                  <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase relative shadow-xs rounded-t-xl">
+                    KANBAN BACKLOG
+                  </div>
+
+                  <div className="p-3 pb-0 flex gap-2">
+                    <span className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase shadow-xs border border-black-200/40 select-none text-center">
+                      Acción
+                    </span>
+                    <span className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase shadow-xs border border-black-200/40 select-none text-center">
+                      Matriz
+                    </span>
+                  </div>
+
+                  <div className="p-3 flex-1 overflow-y-auto max-h-[160px]">
+                    <table className="w-full text-[11px] border-collapse table-fixed">
+                      <tbody>
+                        {kanbanTasks
+                          .filter(t => t.columna === 'Agenda' || t.columna === 'Backlog')
+                          .slice(0, 10)
+                          .map((task) => {
+                            const statusText = (task as any).estado === true ? 'Done' : 'Doing';
+                            return (
+                              <tr key={task.id} className="border-b border-slate-100/60 hover:bg-white/80 transition-colors h-[34px]">
+                                <td className="py-1 text-center w-[70px]">
+                                  {task.fecha_hora ? (
+                                    <span className="inline-block px-2 py-0.5 border border-slate-300 rounded-md text-[9px] bg-white text-slate-700 font-bold shadow-3xs">
+                                      {new Date(task.fecha_hora).toLocaleDateString('es-CO', {
+                                        day: '2-digit',
+                                        month: 'short',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })}
+                                    </span>
+                                  ) : (
+                                    <span className="inline-block px-2 py-0.5 border border-slate-300 rounded-md text-[9px] bg-white text-slate-700 font-bold shadow-3xs">-</span>
+                                  )}
+                                </td>
+                                <td className="py-1 px-3">
+                                  <span className="line-clamp-1 font-medium text-slate-700">{task.titulo}</span>
+                                </td>
+                                <td className="py-1 px-2 text-center w-[60px]">
+                                  {statusText === 'Done' && (
+                                    <span className="block w-full rounded-md text-[9px] py-0.5 font-bold bg-slate-200 text-slate-600 border border-slate-300">
+                                      Done
+                                    </span>
+                                  )}
+                                  {statusText === 'Doing' && (
+                                    <span className="block w-full rounded-md text-[9px] py-0.5 font-extrabold bg-white text-slate-900 border-2 border-slate-800 animate-pulse">
+                                      Doing
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        {kanbanTasks.filter(t => t.columna === 'Agenda' || t.columna === 'Backlog').length === 0 && (
+                          <tr>
+                            <td colSpan={3} className="text-center py-6">
+                              <span className="inline-block border border-dashed border-slate-300/60 rounded-lg px-4 py-2 text-[10px] text-slate-400 italic">Escriba aquí...</span>
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {kanbanTasks.filter(t => t.columna === 'Agenda' || t.columna === 'Backlog').length > 3 && (
+                    <div className="p-2 border-t border-slate-100 text-center bg-slate-50/30">
+                      <p className="text-[8px] text-[#0b153a] font-extrabold uppercase tracking-wider">+ Ver todas</p>
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    {kanbanTasks
-                      .filter(t => t.columna === 'Agenda' || t.columna === 'Backlog')
-                      .slice(0, 3)
-                      .map((task) => (
-                        <div key={task.id} className="bg-white/70 backdrop-blur-sm rounded-xl p-2.5 text-[10px] text-gray-800 border border-white/40 shadow-sm flex flex-col gap-1 group-hover:translate-x-1 transition-transform">
-                          <span className="font-bold line-clamp-1">{task.titulo}</span>
-                          {task.fecha_hora && (
-                            <div className="flex items-center gap-1 text-[8px] text-[#4f46e5] font-bold">
-                              <Clock className="w-2 h-2" />
-                              <span>{new Date(task.fecha_hora).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    {kanbanTasks.filter(t => t.columna === 'Agenda' || t.columna === 'Backlog').length === 0 && (
-                      <div className="text-[9px] text-gray-400 text-center italic py-4 bg-white/30 rounded-xl border border-dashed border-gray-400/30">
-                        No hay tareas pendientes
-                      </div>
-                    )}
-                    {kanbanTasks.filter(t => t.columna === 'Agenda' || t.columna === 'Backlog').length > 3 && (
-                      <p className="text-[8px] text-[#1e3a5f] font-bold text-center mt-2 uppercase tracking-tighter">+ Ver todas</p>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
 
