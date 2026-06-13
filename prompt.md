@@ -40,7 +40,7 @@ ObjetivoSemana: Textos de los 3 objetivos semanales.
 
 KeepNota: Contenido de texto para el block de notas.
 
-MisionHoy: URL de la imagen de la misión del día.
+MisionHoy: URL del avartar de usuario 
 
 API: Crea endpoints REST para CRUD en cada sección.
 
