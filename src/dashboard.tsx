@@ -1186,7 +1186,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               }}
               onDeleteRecordatorio={async (id) => {
                 try {
-                  await recordatorioService.delete(id);
+                  const recordatorioId = typeof id === 'string' ? Number(id) : id;
+                  if (Number.isNaN(recordatorioId)) return;
+                  await recordatorioService.delete(recordatorioId);
                   fetchSavedRecordatorios();
                 } catch (err) {
                   console.error('Error deleting recordatorio:', err);
@@ -3877,7 +3879,7 @@ function ClimaComuna({ temp, descripcion, lugar, loading, error, icono, humedad,
       <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-none w-[300px]">
         CLIMA EN MI COMUNA
       </div>
-       
+      
       <div className="p-3 text-[10px] font-medium text-slate-700">
         {loading ? (
           <div className="flex items-center gap-2 justify-center py-2">
