@@ -1,3 +1,4 @@
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from .models import User, RuedaVida, TimeBlock, KanbanTask, Recordatorio, ObjetivoSemana, KeepNota, MisionHoy, CategoriaRueda, RegistroRueda, MatrixItem, Factura, Workspace, WorkspaceMember, Invitation, Delegation, Notification
 
@@ -6,6 +7,10 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'password', 'avatar_url', 'bio']
         extra_kwargs = {'password': {'write_only': True}}
+
+    def validate_password(self, value):
+        validate_password(value)
+        return value
 
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
@@ -19,43 +24,43 @@ class UserDetailSerializer(serializers.ModelSerializer):
 class RuedaVidaSerializer(serializers.ModelSerializer):
     class Meta:
         model = RuedaVida
-        fields = '__all__'
+        fields = ['id', 'user', 'salud', 'amistad', 'dinero']
         read_only_fields = ['user']
 
 class TimeBlockSerializer(serializers.ModelSerializer):
     class Meta:
         model = TimeBlock
-        fields = '__all__'
+        fields = ['id', 'user', 'hora', 'tarea', 'estado']
         read_only_fields = ['user']
 
 class KanbanTaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = KanbanTask
-        fields = '__all__'
+        fields = ['id', 'user', 'titulo', 'descripcion', 'columna', 'fecha_hora', 'assigned_to', 'workspace', 'uuid']
         read_only_fields = ['user']
 
 class RecordatorioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recordatorio
-        fields = '__all__'
+        fields = ['id', 'user', 'titulo', 'categoria', 'fecha_hora', 'activo', 'tomado', 'workspace']
         read_only_fields = ['user']
 
 class ObjetivoSemanaSerializer(serializers.ModelSerializer):
     class Meta:
         model = ObjetivoSemana
-        fields = '__all__'
+        fields = ['id', 'user', 'texto1', 'texto2', 'texto3']
         read_only_fields = ['user']
 
 class KeepNotaSerializer(serializers.ModelSerializer):
     class Meta:
         model = KeepNota
-        fields = '__all__'
+        fields = ['id', 'user', 'contenido']
         read_only_fields = ['user']
 
 class MisionHoySerializer(serializers.ModelSerializer):
     class Meta:
         model = MisionHoy
-        fields = '__all__'
+        fields = ['id', 'user', 'texto', 'imagen_url']
         read_only_fields = ['user']
 
 class CategoriaRuedaSerializer(serializers.ModelSerializer):
@@ -78,13 +83,13 @@ class GuardarRuedaSerializer(serializers.Serializer):
 class MatrixItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = MatrixItem
-        fields = '__all__'
+        fields = ['id', 'user', 'task', 'quadrant', 'is_done', 'created_at', 'workspace']
         read_only_fields = ['user', 'created_at']
 
 class FacturaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Factura
-        fields = '__all__'
+        fields = ['id', 'user', 'nombre', 'monto', 'fecha_vencimiento', 'pagado', 'creado_en', 'workspace']
         read_only_fields = ['user', 'creado_en']
 
 class WorkspaceMemberSerializer(serializers.ModelSerializer):

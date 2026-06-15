@@ -56,7 +56,7 @@ class EmailTokenObtainPairView(TokenObtainPairView):
             )
 
 class CookieTokenRefreshView(TokenRefreshView):
-    throttle_classes = []
+    throttle_classes = [LoginRateThrottle]
 
     def post(self, request, *args, **kwargs):
         refresh = request.COOKIES.get('refresh_token') or request.data.get('refresh')

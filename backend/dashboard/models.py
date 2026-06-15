@@ -58,6 +58,7 @@ class KeepNota(models.Model):
 
 class MisionHoy(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='mision_hoy')
+    texto = models.TextField(blank=True, default='')
     imagen_url = models.URLField(blank=True, default='https://images.unsplash.com/photo-1542596594-649edbc13630?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80')
 
 class CategoriaRueda(models.Model):

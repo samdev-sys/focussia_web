@@ -42,6 +42,12 @@ class UserViewSet(viewsets.ModelViewSet):
             return UserDetailSerializer
         return UserSerializer
 
+    def list(self, request, *args, **kwargs):
+        return Response(
+            {'detail': 'Listado no disponible. Usa /me/ para tus datos.'},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+
     @action(detail=False, methods=['get', 'patch', 'delete'])
     def me(self, request):
         if request.method == 'GET':
@@ -473,26 +479,33 @@ def log_security_event(user, action, detail=''):
 def ai_mission(request):
     serializer = AiMissionSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-
-    api_key = settings.GEMINI_API_KEY
-    if not api_key:
-        return Response({'error': 'Gemini API key no configurada'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-
     prompt = serializer.validated_data['prompt']
+
+    api_key = settings.GROQ_API_KEY
+    if not api_key:
+        return Response({'error': 'GROQ_API_KEY no configurada'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
     try:
-        body = json.dumps({'contents': [{'parts': [{'text': prompt}]}]}).encode()
+        body = json.dumps({
+            'model': 'llama-3.3-70b-versatile',
+            'messages': [{'role': 'user', 'content': prompt}],
+        }).encode()
         req = urllib.request.Request(
-            f'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}',
+            'https://api.groq.com/openai/v1/chat/completions',
             data=body,
-            headers={'Content-Type': 'application/json'},
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {api_key}',
+                'User-Agent': 'Mozilla/5.0',
+            },
             method='POST',
         )
         with urllib.request.urlopen(req, timeout=30) as resp:
             data = json.loads(resp.read())
-        text = data['candidates'][0]['content']['parts'][0]['text']
+        text = data['choices'][0]['message']['content']
         return Response({'text': text})
     except Exception as e:
-        logger.exception('Error calling Gemini API')
+        logger.exception('Error calling Groq API')
         return Response({'error': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
 
 
