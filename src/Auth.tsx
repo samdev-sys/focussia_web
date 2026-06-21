@@ -10,9 +10,10 @@ function cn(...inputs: ClassValue[]) {
 
 interface AuthPanelProps {
   onLogin: (email: string) => void;
+  onRegister?: () => void;
 }
 
-export default function AuthPanel({ onLogin }: AuthPanelProps) {
+export default function AuthPanel({ onLogin, onRegister }: AuthPanelProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -62,8 +63,8 @@ export default function AuthPanel({ onLogin }: AuthPanelProps) {
         onLogin(formData.email);
       } else {
         await authService.register(formData.name, formData.email, formData.password);
-        setIsLogin(true);
-        setErrors({});
+        await authService.login(formData.email, formData.password);
+        onRegister?.();
       }
     } catch (err: any) {
       if (err.response?.status === 401 || err.response?.status === 400) {
@@ -97,9 +98,9 @@ export default function AuthPanel({ onLogin }: AuthPanelProps) {
       </div>
 
       <div className="relative w-full max-w-md">
-        <div className="absolute -inset-1 bg-gradient-to-r from-[#FFB5E8] via-[#D1C4E9] to-[#B5DEFF] rounded-[2rem] opacity-30 blur-xl" />
+        <div className="absolute -inset-1 bg-gradient-to-r from-[#FFB5E8] via-[#D1C4E9] to-[#B5DEFF] rounded-md opacity-30 blur-xl" />
 
-        <div className="relative bg-white/40 backdrop-blur-2xl border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.05)] rounded-[2.5rem] p-8 md:p-10">
+        <div className="relative bg-white/40 backdrop-blur-2xl border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.05)] rounded-md p-8 md:p-10">
           <div className="text-center mb-8 flex flex-col items-center">
             <div className="flex items-center justify-center w-full h-16 mb-4">
               <img src="public/focusia-logo.png" alt="Focusia Logo" className="h-full object-contain" />

@@ -4,12 +4,6 @@ from django.contrib.auth.models import AbstractUser
 class User(AbstractUser):
     avatar_url = models.CharField(max_length=500, blank=True, default='')
     bio = models.TextField(blank=True, default='')
-    last_activity = models.DateTimeField(null=True, blank=True)
-    locked_until = models.DateTimeField(null=True, blank=True)
-    failed_login_attempts = models.IntegerField(default=0)
-    onboarding_completed = models.BooleanField(default=False)
-    onboarding_data = models.JSONField(default=dict, blank=True)
-
 
 class LoginAttempt(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='login_attempts')
@@ -29,16 +23,10 @@ class RuedaVida(models.Model):
     dinero = models.IntegerField(default=5)
 
 class TimeBlock(models.Model):
-    ESTADO_CHOICES = [
-        ('pending', 'Pending'),
-        ('doing', 'Doing'),
-        ('done', 'Done'),
-    ]
-    
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='time_blocks')
     hora = models.IntegerField()
     tarea = models.CharField(max_length=255, blank=True)
-    estado = models.CharField(max_length=10, choices=ESTADO_CHOICES, default='pending')
+    estado = models.CharField(max_length=10, default='pending')
 
     class Meta:
         ordering = ['hora']
@@ -100,11 +88,50 @@ class RegistroRueda(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='registros_rueda')
     categoria = models.ForeignKey(CategoriaRueda, on_delete=models.CASCADE)
     puntaje = models.IntegerField(default=5)
+    comentario = models.TextField(blank=True, default='', help_text='Comentario opcional del usuario sobre esta área')
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ['user', 'categoria']
         ordering = ['categoria__orden']
+
+
+class DiagnosticoRueda(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='diagnostico_rueda')
+    promedio_general = models.FloatField(default=0, help_text='Promedio general de todos los puntajes')
+    nivel_equilibrio = models.CharField(max_length=20, default='medio',
+        help_text='Crítico | Bajo | Medio | Bueno | Excelente')
+    pico_alto = models.CharField(max_length=100, blank=True, default='')
+    pico_bajo = models.CharField(max_length=100, blank=True, default='')
+    foco_1 = models.CharField(max_length=100, blank=True, default='', help_text='Nombre del área foco 1')
+    foco_2 = models.CharField(max_length=100, blank=True, default='', help_text='Nombre del área foco 2')
+    foco_3 = models.CharField(max_length=100, blank=True, default='', help_text='Nombre del área foco 3')
+    justificacion_focos = models.TextField(blank=True, default='', help_text='Justificación estratégica de los 3 focos seleccionados')
+    creado = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Diagnóstico de Rueda'
+        verbose_name_plural = 'Diagnósticos de Rueda'
+
+    def __str__(self):
+        return f'Diagnóstico {self.user.username}'
+
+
+class AccionSugerida(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='acciones_sugeridas')
+    area_foco = models.CharField(max_length=100, help_text='Nombre del área foco a la que pertenece')
+    texto = models.TextField(help_text='Descripción de la acción sugerida')
+    enviada_kanban = models.BooleanField(default=False, help_text='Si ya fue enviada al Kanban Backlog')
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Acción Sugerida'
+        verbose_name_plural = 'Acciones Sugeridas'
+        ordering = ['-creado']
+
+    def __str__(self):
+        return f'{self.area_foco}: {self.texto[:50]}'
 
 class MatrixItem(models.Model):
     QUADRANTS = (
@@ -219,33 +246,233 @@ class Notification(models.Model):
         ordering = ['-created_at']
 
 
-class MetaUsuario(models.Model):
-    TIPO_CHOICES = [
-        ('anual', 'Anual'),
-        ('mensual', 'Mensual'),
-        ('semanal', 'Semanal'),
-        ('diaria', 'Diaria'),
-    ]
-    
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='metas')
-    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
-    texto = models.CharField(max_length=500)
-    completada = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['tipo', 'created_at']
-
-
-class GranMetaAnual(models.Model):
+class MetaAnual(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='metas_anuales')
-    texto_meta = models.TextField()
-    frase_resumen = models.CharField(max_length=300, blank=True, default='')
-    desglose_smart = models.JSONField(default=dict, blank=True)
-    respuestas = models.JSONField(default=dict, blank=True)
-    is_vigente = models.BooleanField(default=False)
-    fecha_creacion = models.DateTimeField(auto_now_add=True)
-    fecha_aprobacion = models.DateTimeField(null=True, blank=True)
+    titulo = models.CharField(max_length=255)
+    descripcion = models.TextField(blank=True, default='')
+    fecha_inicio = models.DateField()
+    fecha_fin = models.DateField()
+    aprobada = models.BooleanField(default=False)
+    creado = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-fecha_creacion']
+        ordering = ['-creado']
+
+    def __str__(self):
+        return f'{self.titulo} ({self.user.username})'
+
+
+class ObjetivoMensual(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='objetivos_mensuales')
+    meta_anual = models.ForeignKey(MetaAnual, on_delete=models.SET_NULL, null=True, blank=True, related_name='objetivos_mensuales')
+    mes = models.IntegerField(choices=[(i, str(i)) for i in range(1, 13)])
+    titulo = models.CharField(max_length=255)
+    descripcion = models.TextField(blank=True, default='')
+    completado = models.BooleanField(default=False)
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-meta_anual', 'mes']
+
+    def __str__(self):
+        return f'{self.titulo} (Mes {self.mes})'
+
+
+class PropuestaIA(models.Model):
+    class ImpactoChoices(models.TextChoices):
+        ESTRUCTURAL = 'estructural', 'ESTRUCTURAL_SATURACIÓN'
+        ESTRATEGICO_CRITICO = 'estrategico_critico', 'ESTRATÉGICO_CRÍTICO'
+        DE_PRIORIDAD = 'de_prioridad', 'PRIORIDAD_REORGANIZACIÓN'
+
+    class DecisionChoices(models.TextChoices):
+        APLICAR = 'aplicar', 'Aplicar Ajuste Ahora'
+        REVISAR = 'revisar', 'Revisar Después'
+        MANTENER = 'mantener', 'Mantener Planificación Actual'
+        IGNORADO = 'ignorado', 'Ignorado'
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='propuestas_ia')
+    tipo_impacto = models.CharField(max_length=30, choices=ImpactoChoices.choices)
+    situacion_clara = models.TextField()
+    explicacion_impacto = models.TextField()
+    propuesta_ajuste = models.TextField()
+    fase_detectada = models.CharField(max_length=50, blank=True, default='')
+    respondida = models.BooleanField(default=False)
+    decision_usuario = models.CharField(max_length=20, choices=DecisionChoices.choices, blank=True, default='')
+    leida = models.BooleanField(default=False)
+    resultado_json = models.JSONField(default=dict, blank=True,
+        help_text='Payload completo de la respuesta del motor de IA según especificación del sistema')
+    creada = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-creada']
+
+    def __str__(self):
+        return f'Propuesta {self.tipo_impacto} para {self.user.username}'
+
+
+class ConfiguracionUsuario(models.Model):
+    class VozGenero(models.TextChoices):
+        MASCULINO = 'masculino', 'Masculino'
+        FEMENINO = 'femenino', 'Femenino'
+
+    class EstiloComunicacion(models.TextChoices):
+        SUAVE = 'suave', 'Suave'
+        DIRECTO = 'directo', 'Directo / Estructurado'
+
+    class NivelExigencia(models.TextChoices):
+        BAJO = 'bajo', 'Bajo'
+        MEDIO = 'medio', 'Medio'
+        ALTO = 'alto', 'Alto'
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='configuracion')
+    voz_genero = models.CharField(max_length=10, choices=VozGenero.choices, default=VozGenero.FEMENINO)
+    estilo_comunicacion = models.CharField(max_length=10, choices=EstiloComunicacion.choices, default=EstiloComunicacion.SUAVE)
+    nivel_exigencia = models.CharField(max_length=5, choices=NivelExigencia.choices, default=NivelExigencia.MEDIO)
+    frecuencia_intervenciones = models.IntegerField(default=24, help_text='Horas entre intervenciones permitidas')
+    canales_interaccion = models.JSONField(default=list, blank=True,
+        help_text='Canales habilitados: ["notificacion", "simulacion_llamada", "whatsapp_simulado", "buzon_ia"]')
+    ventana_inicio = models.TimeField(default='07:00', help_text='Inicio de ventana de intervención')
+    ventana_fin = models.TimeField(default='22:00', help_text='Fin de ventana de intervención')
+    avatar_index = models.IntegerField(default=0, help_text='0=sin selección, 1-6=avatar seleccionado en onboarding')
+    onboarding_completado = models.BooleanField(default=False, help_text='Indica si el usuario completó el flujo de onboarding')
+    video_inicial_visto = models.BooleanField(default=False, help_text='Indica si el usuario ya vio el video introductorio post-onboarding')
+    ultimo_ingreso = models.DateTimeField(null=True, blank=True, help_text='Timestamp del último acceso al hub post-onboarding')
+    conteo_ingresos_hub = models.IntegerField(default=0, help_text='Número de veces que el usuario ha ingresado al hub post-onboarding')
+    creado = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Configuración de Usuario'
+        verbose_name_plural = 'Configuraciones de Usuarios'
+
+    def __str__(self):
+        return f'Config {self.user.username}'
+
+
+class InteraccionUsuario(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='interacciones')
+    tipo = models.CharField(max_length=50, db_index=True,
+        help_text='Tipo de evento: video_view, tutorial_click, guided_tour_step, config_change, etc.')
+    metadata = models.JSONField(default=dict, blank=True,
+        help_text='Datos adicionales: tiempo_visto, origen, categoria, paso, etc.')
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-creado']
+        verbose_name = 'Interacción de Usuario'
+        verbose_name_plural = 'Interacciones de Usuarios'
+
+    def __str__(self):
+        return f'{self.tipo} - {self.user.username}'
+
+
+class Activacion(models.Model):
+    class TipoActivacion(models.TextChoices):
+        TRADICIONAL = 'tradicional', 'Recordatorio Tradicional'
+        SIMULADA = 'simulada', 'Activación Simulada (Llamada/WhatsApp)'
+        CON_INTENCION = 'con_intencion', 'Activación con Intención (Propósito)'
+        ADAPTATIVA = 'adaptativa', 'Activación Adaptativa (IA)'
+
+    class EstadoActivacion(models.TextChoices):
+        PENDIENTE = 'pendiente', 'Pendiente'
+        ENVIADA = 'enviada', 'Enviada'
+        VISTA = 'vista', 'Vista'
+        RESPONDIDA = 'respondida', 'Respondida'
+        IGNORADA = 'ignorada', 'Ignorada'
+        FALLIDA = 'fallida', 'Fallida'
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='activaciones')
+    tipo = models.CharField(max_length=20, choices=TipoActivacion.choices)
+    estado = models.CharField(max_length=15, choices=EstadoActivacion.choices, default=EstadoActivacion.PENDIENTE)
+    titulo = models.CharField(max_length=255)
+    mensaje = models.TextField()
+    mensaje_intencion = models.TextField(blank=True, default='',
+        help_text='Mensaje que vincula con propósito mayor (para activaciones con intención)')
+    metadata = models.JSONField(default=dict, blank=True,
+        help_text='Datos extras: tarea_id, bloque_id, url_simulacion, etc.')
+    ventana_programada = models.DateTimeField(null=True, blank=True,
+        help_text='Momento óptimo calculado por IA para enviar')
+    enviada_en = models.DateTimeField(null=True, blank=True)
+    leida_en = models.DateTimeField(null=True, blank=True)
+    respondida_en = models.DateTimeField(null=True, blank=True)
+    creada = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-creada']
+
+    def __str__(self):
+        return f'[{self.tipo}] {self.titulo} - {self.user.username}'
+
+
+class MonthlyPlan(models.Model):
+    class Status(models.TextChoices):
+        PROPUESTA = 'PROPUESTA', 'Propuesta'
+        APROBADA = 'APROBADA', 'Aprobada'
+        PENDIENTE_REVISION = 'PENDIENTE_REVISION', 'Pendiente de Revisión'
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='monthly_plans')
+    annual_goal = models.ForeignKey(MetaAnual, on_delete=models.CASCADE, related_name='monthly_plans')
+    cycle_start_month = models.IntegerField(help_text='Mes de inicio del ciclo (1-12)')
+    cycle_start_year = models.IntegerField(help_text='Año de inicio del ciclo')
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PROPUESTA)
+    approved_at = models.DateTimeField(null=True, blank=True)
+    creado = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-creado']
+
+    def __str__(self):
+        return f'Plan Mensual ({self.cycle_start_month}/{self.cycle_start_year}) - {self.user.username}'
+
+
+class MonthlyGoal(models.Model):
+    class ComplexityLevel(models.TextChoices):
+        BASE = 'BASE', 'Base'
+        EJECUCION = 'EJECUCION', 'Ejecución'
+        CONSOLIDACION = 'CONSOLIDACION', 'Consolidación'
+        CIERRE = 'CIERRE', 'Cierre'
+
+    class GoalStatus(models.TextChoices):
+        PROPUESTA = 'PROPUESTA', 'Propuesta'
+        EDITADA = 'EDITADA', 'Editada'
+        APROBADA = 'APROBADA', 'Aprobada'
+        PENDIENTE = 'PENDIENTE', 'Pendiente'
+
+    plan = models.ForeignKey(MonthlyPlan, on_delete=models.CASCADE, related_name='goals')
+    month_order = models.IntegerField(help_text='Posición en el ciclo personalizado (1-12)')
+    calendar_month = models.IntegerField(help_text='Mes real del calendario gregoriano (1-12)')
+    calendar_year = models.IntegerField(help_text='Año real del calendario gregoriano')
+    monthly_goal_text = models.CharField(max_length=500, help_text='Frase de la meta mensual')
+    brief_explanation = models.TextField(blank=True, default='', help_text='Justificación de 1-2 líneas')
+    annual_goal_relation = models.TextField(blank=True, default='', help_text='Conexión con la meta anual')
+    complexity_level = models.CharField(max_length=15, choices=ComplexityLevel.choices, default=ComplexityLevel.BASE)
+    status = models.CharField(max_length=15, choices=GoalStatus.choices, default=GoalStatus.PROPUESTA)
+    edited_by_user = models.BooleanField(default=False, help_text='Flag de auditoría para métricas de IA')
+    version = models.IntegerField(default=1, help_text='Contador de control de cambios')
+    creado = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['month_order']
+        unique_together = ['plan', 'month_order']
+
+    def __str__(self):
+        return f'Mes {self.month_order}: {self.monthly_goal_text[:50]}'
+
+
+class MatrizLearningProgress(models.Model):
+    class Status(models.TextChoices):
+        INCOMPLETO = 'INCOMPLETO', 'Incompleto'
+        COMPLETADO = 'COMPLETADO', 'Completado'
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='matriz_progress')
+    status = models.CharField(max_length=15, choices=Status.choices, default=Status.INCOMPLETO)
+    video_watched = models.BooleanField(default=False)
+    practice_score = models.IntegerField(default=0, help_text='Número de aciertos en la trivia')
+    completed_at = models.DateTimeField(null=True, blank=True)
+    creado = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'MatrizProgress - {self.user.username} - {self.status}'

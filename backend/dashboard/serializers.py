@@ -1,6 +1,6 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
-from .models import User, RuedaVida, TimeBlock, KanbanTask, Recordatorio, ObjetivoSemana, KeepNota, MisionHoy, CategoriaRueda, RegistroRueda, MatrixItem, Factura, Workspace, WorkspaceMember, Invitation, Delegation, Notification, MetaUsuario, GranMetaAnual
+from .models import User, RuedaVida, TimeBlock, KanbanTask, Recordatorio, ObjetivoSemana, KeepNota, MisionHoy, CategoriaRueda, RegistroRueda, MatrixItem, Factura, Workspace, WorkspaceMember, Invitation, Delegation, Notification, MetaAnual, ObjetivoMensual, PropuestaIA, ConfiguracionUsuario, Activacion, InteraccionUsuario, DiagnosticoRueda, AccionSugerida, MonthlyPlan, MonthlyGoal, MatrizLearningProgress
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -161,24 +161,128 @@ class NotificationSerializer(serializers.ModelSerializer):
         fields = ['id', 'type', 'title', 'message', 'data', 'is_read', 'created_at']
         read_only_fields = ['created_at']
 
-class MetaUsuarioSerializer(serializers.ModelSerializer):
+
+class MetaAnualSerializer(serializers.ModelSerializer):
     class Meta:
-        model = MetaUsuario
-        fields = ['id', 'tipo', 'texto', 'completada', 'created_at']
-        read_only_fields = ['created_at']
+        model = MetaAnual
+        fields = ['id', 'user', 'titulo', 'descripcion', 'fecha_inicio', 'fecha_fin', 'aprobada', 'creado']
+        read_only_fields = ['user', 'creado']
 
-class GranMetaAnualSerializer(serializers.ModelSerializer):
+
+class ObjetivoMensualSerializer(serializers.ModelSerializer):
     class Meta:
-        model = GranMetaAnual
-        fields = ['id', 'texto_meta', 'frase_resumen', 'desglose_smart', 'respuestas', 'is_vigente', 'fecha_creacion', 'fecha_aprobacion']
-        read_only_fields = ['fecha_creacion', 'fecha_aprobacion']
+        model = ObjetivoMensual
+        fields = ['id', 'user', 'meta_anual', 'mes', 'titulo', 'descripcion', 'completado', 'creado']
+        read_only_fields = ['user', 'creado']
 
-class SmartMetaInputSerializer(serializers.Serializer):
-    area = serializers.CharField()
-    resultado = serializers.CharField()
-    impacto = serializers.CharField()
-    rueda_data = serializers.ListField(child=serializers.DictField(), required=False, default=list)
 
-class SmartMetaEditSerializer(serializers.Serializer):
-    meta_id = serializers.IntegerField()
-    comentario = serializers.CharField()
+class PropuestaIASerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PropuestaIA
+        fields = [
+            'id', 'user', 'tipo_impacto', 'situacion_clara',
+            'explicacion_impacto', 'propuesta_ajuste', 'fase_detectada',
+            'respondida', 'decision_usuario', 'leida', 'resultado_json', 'creada',
+        ]
+        read_only_fields = ['user', 'creada']
+
+
+class InteraccionUsuarioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InteraccionUsuario
+        fields = ['id', 'tipo', 'metadata', 'creado']
+        read_only_fields = ['creado']
+
+
+class ContextoAnalisisInputSerializer(serializers.Serializer):
+    meta_anual = serializers.JSONField(allow_null=True, required=False, default=None)
+    metricas_ejecucion = serializers.JSONField(required=False, default=dict)
+    historial_alertas = serializers.JSONField(required=False, default=dict)
+    tareas_detalladas_backlog = serializers.ListField(
+        child=serializers.JSONField(), required=False, default=list,
+    )
+
+
+class ConfiguracionUsuarioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConfiguracionUsuario
+        exclude = ['user', 'creado', 'actualizado']
+
+
+class ActivacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Activacion
+        fields = [
+            'id', 'user', 'tipo', 'estado', 'titulo', 'mensaje',
+            'mensaje_intencion', 'metadata', 'ventana_programada',
+            'enviada_en', 'leida_en', 'respondida_en', 'creada',
+        ]
+        read_only_fields = ['user', 'creada']
+
+
+class DiagnosticoRuedaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DiagnosticoRueda
+        fields = '__all__'
+        read_only_fields = ['user', 'creado', 'actualizado']
+
+
+class AccionSugeridaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AccionSugerida
+        fields = ['id', 'area_foco', 'texto', 'enviada_kanban', 'creado']
+        read_only_fields = ['user', 'creado']
+
+
+class EnviarAccionKanbanSerializer(serializers.Serializer):
+    accion_id = serializers.IntegerField()
+
+
+class GenerarDiagnosticoInputSerializer(serializers.Serializer):
+    puntajes = serializers.DictField(child=serializers.IntegerField(min_value=1, max_value=10))
+    comentarios = serializers.DictField(child=serializers.CharField(allow_blank=True), required=False)
+
+
+class GenerarAccionesInputSerializer(serializers.Serializer):
+    area_foco = serializers.CharField(max_length=100)
+
+
+class MonthlyGoalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MonthlyGoal
+        fields = [
+            'id', 'plan', 'month_order', 'calendar_month', 'calendar_year',
+            'monthly_goal_text', 'brief_explanation', 'annual_goal_relation',
+            'complexity_level', 'status', 'edited_by_user', 'version',
+            'creado', 'actualizado',
+        ]
+        read_only_fields = ['creado', 'actualizado']
+
+
+class MonthlyPlanSerializer(serializers.ModelSerializer):
+    goals = MonthlyGoalSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = MonthlyPlan
+        fields = [
+            'id', 'user', 'annual_goal', 'cycle_start_month', 'cycle_start_year',
+            'status', 'approved_at', 'creado', 'actualizado', 'goals',
+        ]
+        read_only_fields = ['user', 'creado', 'actualizado']
+
+
+class MonthlyPlanCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MonthlyPlan
+        fields = ['annual_goal', 'cycle_start_month', 'cycle_start_year']
+
+
+class EditGoalInputSerializer(serializers.Serializer):
+    user_instruction = serializers.CharField(max_length=1000)
+
+
+class MatrizLearningProgressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MatrizLearningProgress
+        fields = ['id', 'status', 'video_watched', 'practice_score', 'completed_at', 'creado', 'actualizado']
+        read_only_fields = ['creado', 'actualizado']
