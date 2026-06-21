@@ -58,7 +58,7 @@ interface TimeBlock {
   id: number;
   hora: number;
   tarea: string;
-  estado: boolean;
+  estado: string;
 }
 
 interface UseTimeBlocksReturn {
@@ -86,7 +86,7 @@ export const useTimeBlocks = (): UseTimeBlocksReturn => {
         id: index + 1,
         hora,
         tarea: '',
-        estado: false,
+        estado: 'pending',
       }));
       
       try {
@@ -101,7 +101,7 @@ export const useTimeBlocks = (): UseTimeBlocksReturn => {
         id: index + 1,
         hora,
         tarea: '',
-        estado: false,
+        estado: 'pending',
       })));
     } finally {
       setLoading(false);

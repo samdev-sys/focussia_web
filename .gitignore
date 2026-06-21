@@ -39,6 +39,11 @@ egg/
 *.egg-info/
 dist/
 
+# Backend static files (generated)
+backend/staticfiles/
+backend/cookies.txt
+backend/security.log
+
 # Database
 db.sqlite3
 *.sqlite3

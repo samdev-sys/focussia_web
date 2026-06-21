@@ -1,21 +1,31 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
-  workspaceService, invitationService, delegationService, authService, notificationService, kanbanService, recordatorioService, ruedaService, timeBlockService, objetivoSemanaService, keepNotaService, misionHoyService, billService, matrixService,
-  InvitationData, DelegationData, NotificationData, WorkspaceData, WorkspaceMemberData, RuedaCategoria, TimeBlockData, ObjetivoSemanaData, KeepNotaData, MisionHoyData, RecordatorioData, FacturaData, MatrixItemData, KanbanTaskData
+  workspaceService, invitationService, delegationService, authService, notificationService, kanbanService, recordatorioService, ruedaService, timeBlockService, objetivoSemanaService, keepNotaService, misionHoyService, billService, matrixService, monthlyService,
+  InvitationData, DelegationData, NotificationData, WorkspaceData, WorkspaceMemberData, RuedaCategoria, ResumenRuedaDashboard, TimeBlockData, ObjetivoSemanaData, KeepNotaData, MisionHoyData, RecordatorioData, FacturaData, MatrixItemData, KanbanTaskData
 } from './services/api';
 
 
 import { KanbanBoard } from './components/KanbanBoard';
 import { NotificationToast } from './components/NotificationToast';
 import { FormularioRueda } from './components/FormularioRueda';
+import DiagnosticoRueda from './components/DiagnosticoRueda';
 import { useReminderToasts } from './hooks/useReminderToasts';
 import { ActionButton } from './components/ActionButton';
 import { AiMissionAssistant } from './components/AiMissionAssistant';
+import { MetaAnualForm } from './components/MetaAnualForm';
+import { BuzonPropuestas } from './components/BuzonPropuestas';
+import { MicroFlujoAjuste } from './components/MicroFlujoAjuste';
+import { ConfiguracionPanel } from './components/ConfiguracionPanel';
+import { PlanificarModal } from './components/PlanificarModal';
+import MonthlyWizard from './components/MonthlyWizard';
+import MonthlyCalendar from './components/MonthlyCalendar';
+import MatrizEisenhower from './components/MatrizEisenhower';
 import { X, Moon, Sun, LogOut, User, Plus, ArrowRight, Calendar, Edit3, Info, CheckCircle2, Play, ChevronRight, Target, TrendingUp, CalendarDays, CheckCircle, CreditCard, Landmark, Receipt, AlertCircle, CheckSquare, Pill, Clock, Edit, Check, Zap, Trophy, Star, Shield, Flame, Users, Settings, Mail, Copy, Crown, ShieldCheck, UserPlus, Trash2, Send, Briefcase, Bell, MessageSquare, Sparkles } from 'lucide-react';
 
 
 interface DashboardProps {
   onLogout: () => void;
+  onBackToHub?: () => void;
 }
 interface FechasImportantesProps {
   dayActive?: number;
@@ -98,12 +108,23 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [showRecordatorioModal, setShowRecordatorioModal] = useState(false);
   const [showRuedaModal, setShowRuedaModal] = useState(false);
   const [showRuedaVideoModal, setShowRuedaVideoModal] = useState(false);
+  const [showDiagnosticoRueda, setShowDiagnosticoRueda] = useState(false);
+  const [resumenRueda, setResumenRueda] = useState<ResumenRuedaDashboard | null>(null);
   const [showMatrizVideoModal, setShowMatrizVideoModal] = useState(false);
   const [showMatrizFormModal, setShowMatrizFormModal] = useState(false);
   const [showMetaAnualModal, setShowMetaAnualModal] = useState(false);
-  const [showMetaMensualModal, setShowMetaMensualModal] = useState(false);
+  const [showMonthlyWizard, setShowMonthlyWizard] = useState(false);
+  const [showMonthlyCalendar, setShowMonthlyCalendar] = useState(false);
+  const [showMatrizEisenhower, setShowMatrizEisenhower] = useState(false);
+  const [monthlyStatus, setMonthlyStatus] = useState<{has_approved_annual: boolean; has_monthly_plan: boolean; plan_status: string | null}>({has_approved_annual: false, has_monthly_plan: false, plan_status: null});
   const [showMetaSemanalModal, setShowMetaSemanalModal] = useState(false);
   const [showMetaDiariaModal, setShowMetaDiariaModal] = useState(false);
+  const [showMetaAnualForm, setShowMetaAnualForm] = useState(false);
+  const [metaAnualHint, setMetaAnualHint] = useState<string | undefined>(undefined);
+  const [showBuzonPropuestas, setShowBuzonPropuestas] = useState(false);
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
+  const [showMicroFlujo, setShowMicroFlujo] = useState(false);
+  const [microFlujoPropuesta, setMicroFlujoPropuesta] = useState<any>(null);
   const [showMedicamentosModal, setShowMedicamentosModal] = useState(false);
   const [showInicioModal, setShowInicioModal] = useState(false);
   const [showBillModal, setShowBillModal] = useState(false);
@@ -152,6 +173,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [delegations, setDelegations] = useState<{ sent: DelegationData[]; received: DelegationData[] }>({ sent: [], received: [] });
   const [delegationTab, setDelegationTab] = useState<'create' | 'received'>('create');
   const [showAccionesDelegarModal, setShowAccionesDelegarModal] = useState(false);
+  const [taskToPlanificar, setTaskToPlanificar] = useState<KanbanTaskData | null>(null);
 
   const [userData, setUserData] = useState({ username: 'Brenda', email: '', avatar_url: '' });
   const [newAvatarUrl, setNewAvatarUrl] = useState('');
@@ -286,11 +308,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     'Aumentar ingresos un 30%',
     'Finalizar proyecto de certificación'
   ]);
-  const [metaMensual, setMetaMensual] = useState<string[]>([
-    'Leer 4 libros de desarrollo personal',
-    'Ahorrar $500 USD',
-    'Mejorar hábitos de sueño'
-  ]);
   const [metaSemanal, setMetaSemanal] = useState<string[]>([
     'Ejercicio 4 veces',
     'Terminar módulo de curso online',
@@ -319,12 +336,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         } else {
           setMetaAnual(metaAnual.map((m: string, i: number) => i === editingMetaIndex ? newMetaText.trim() : m));
         }
-      } else if (editingMetaType === 'mensual') {
-        if (editingMetaIndex === -1) {
-          setMetaMensual([...metaMensual, newMetaText.trim()]);
-        } else {
-          setMetaMensual(metaMensual.map((m: string, i: number) => i === editingMetaIndex ? newMetaText.trim() : m));
-        }
       } else if (editingMetaType === 'semanal') {
         if (editingMetaIndex === -1) {
           setMetaSemanal([...metaSemanal, newMetaText.trim()]);
@@ -346,7 +357,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
   const handleDeleteMeta = (type: string, index: number) => {
     if (type === 'anual') setMetaAnual(metaAnual.filter((_: string, i: number) => i !== index));
-    else if (type === 'mensual') setMetaMensual(metaMensual.filter((_: string, i: number) => i !== index));
     else if (type === 'semanal') setMetaSemanal(metaSemanal.filter((_: string, i: number) => i !== index));
     else if (type === 'diaria') setMetaDiaria(metaDiaria.filter((_: string, i: number) => i !== index));
   };
@@ -708,7 +718,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [ruedaCompletaRes, tbRes, objRes, keepRes, misRes, factRes, matrixRes, kanbanRes] = await Promise.all([
+        const [ruedaCompletaRes, tbRes, objRes, keepRes, misRes, factRes, matrixRes, kanbanRes, resumenRuedaRes] = await Promise.all([
           ruedaService.getCompleta().catch(() => []),
           timeBlockService.getAll().catch(() => []),
           objetivoSemanaService.get().catch(() => null),
@@ -716,10 +726,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           misionHoyService.get().catch(() => null),
           billService.getAll().catch(() => []),
           matrixService.getAll().catch(() => []),
-          kanbanService.getAll().catch(() => [])
+          kanbanService.getAll().catch(() => []),
+          ruedaService.resumenDashboard().catch(() => null)
         ]);
 
         setRuedaCompleta(ruedaCompletaRes);
+        setResumenRueda(resumenRuedaRes as ResumenRuedaDashboard | null);
         setTimeBlocks(Array.isArray(tbRes) ? tbRes : []);
         setObjetivo(Array.isArray(objRes) ? objRes[0] : objRes);
         setKeepNota(Array.isArray(keepRes) ? keepRes[0] : keepRes);
@@ -727,6 +739,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         setFacturas(Array.isArray(factRes) ? factRes : []);
         setMatrixItems(Array.isArray(matrixRes) ? matrixRes : []);
         setKanbanTasks(Array.isArray(kanbanRes) ? kanbanRes : []);
+
+        const monthlyStatusRes = await monthlyService.checkStatus().catch(() => ({has_approved_annual: false, has_monthly_plan: false, plan_status: null}));
+        setMonthlyStatus(monthlyStatusRes);
 
       } catch (error) {
         console.error("Error fetching initial data:", error);
@@ -757,7 +772,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       if (block) {
         await timeBlockService.update(block.id, { tarea: value });
       } else {
-        const newBlock = await timeBlockService.create({ hora, tarea: value, estado: false });
+        const newBlock = await timeBlockService.create({ hora, tarea: value, estado: 'pending' });
         setTimeBlocks(prev => [...prev, newBlock]);
       }
       showSaving();
@@ -766,12 +781,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     }
   };
 
-  const handleTimeBlockStatus = async (hora: number, estado: boolean) => {
+  const handleTimeBlockStatus = async (hora: number, estado: string) => {
     const block = timeBlocks.find((t: TimeBlockData) => t.hora === hora);
     try {
       if (block) {
         await timeBlockService.update(block.id, { estado });
-        // update local state so it doesn't revert
         setTimeBlocks((prev: TimeBlockData[]) => prev.map((t: TimeBlockData) => t.id === block.id ? { ...t, estado } : t));
       } else {
         const newBlock = await timeBlockService.create({ hora, tarea: '', estado });
@@ -855,7 +869,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       <div className="fixed bottom-[10%] right-[10%] w-[35%] h-[35%] bg-yellow-100/30 rounded-full mix-blend-multiply filter blur-[100px] opacity-70 z-0 pointer-events-none"></div>
 
       {/* TOP HEADER */}
-      <header className="w-full max-w-[1240px] flex items-center justify-between mb-4 z-50 relative px-4 text-gray-600 mx-auto">
+      <header className="w-full max-w-[1240px] flex items-center justify-between mb-4 z-50 relative px-2 sm:px-4 text-gray-600 mx-auto">
 
         {/* LEFT SECTION: Modo Oscuro y Notificaciones */}
        
@@ -866,7 +880,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         
       </header>
       {/* MAIN CONTENT AREA */}
-      <main className="w-full max-w-[1240px] bg-white/25 backdrop-blur-3xl border border-white/50 shadow-[0_4px_30px_rgba(0,0,0,0.05)] rounded-[3.5rem] p-8 z-10 flex flex-col xl:flex-row gap-5">
+      <main className="w-full  bg-white/25 backdrop-blur-3xl border border-white/50 shadow-[0_4px_30px_rgba(0,0,0,0.05)] p-4 sm:p-8 z-10 flex flex-col xl:flex-row gap-5">
 
       <div className="absolute left-1/2 -top-1 -translate-x-1/2 pointer-events-none -ml-6 mt-7">
           <img
@@ -932,6 +946,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       {isDarkMode ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-white" />}
     </button>
 
+
+    
+
+    {/* Configuración */}
+    <button
+      onClick={() => setShowConfigPanel(true)}
+      className="flex items-center justify-center w-8 h-8 rounded-full bg-black/20 hover:bg-black/30 transition-all border border-black/40 shadow-sm active:scale-95"
+      title="Configuración del Sistema"
+    >
+      <Settings className="w-4 h-4 text-white" />
+    </button>
+
     {/* Centro de Notificaciones */}
     <div className="relative">
       <button
@@ -961,186 +987,156 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         {/* LEFT COLUMN */}
         <div className="flex flex-col gap-4 w-full xl:w-[32%]">
           {/* Top of Left: Pills & Foco */}
-          <div className="flex gap-4">
-             <div className="flex gap-4">
-  <div className="bg-white/40 backdrop-blur-sm border border-white/20 rounded-xl p-3 flex flex-col gap-6 w-[140px] shadow-[0_4px_10px_rgba(0,0,0,0.02)] mt-10">
+          <div className="flex flex-col sm:flex-row gap-4">
+             <div className="flex flex-col sm:flex-row gap-4">
+  <div className="bg-white/40 backdrop-blur-sm border border-white/20 rounded-md p-3 flex flex-row sm:flex-col gap-3 sm:gap-6 w-full sm:w-[140px] shadow-[0_4px_10px_rgba(0,0,0,0.02)] mt-10">
     {/* 1. COACHING */}
     <ActionButton 
       label="COACHING" 
-      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
+      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
       
     />
     {/* 2. TRIBU (Movido a la segunda posición) */}
     <ActionButton 
       label="TRIBU" 
-      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
+      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
       
     />
     {/* 3. GRATITUD (Movido a la tercera posición) */}
     <ActionButton 
       label="GRATITUD" 
-      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
+      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
       
     />
+    {/* 4. DELEGAR */}
+   
   </div>
 </div>
-            <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-3 flex flex-col gap-3 w-[250px] shadow-[0_8px_32px_rgba(31,38,135,0.03)] -ml-2">
-              <div className="flex gap-1.5">
+            <div className="bg-white rounded-md border border-gray-200 shadow-sm p-3 flex flex-col gap-2 w-full sm:w-[250px] sm:-ml-2">
+              <div className="flex gap-2">
                 <button
                   onClick={() => setShowInicioModal(true)}
-                  className="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"
+                  className="bg-gradient-to-r from-[#000000] to-[#3533cd] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] flex-1"
                 >
                   INICIO
                 </button>
                 <button
-                  onClick={() => setShowRuedaVideoModal(true)}
-                  className="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"
+                  onClick={() => setShowDiagnosticoRueda(true)}
+                  className="bg-gradient-to-r from-[#000000] to-[#3533cd] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] flex-1"
                   >
                    RUEDA
                 </button>
                 <button
                   onClick={() => setShowMatrizVideoModal(true)}
-                  className="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"
+                  className="bg-gradient-to-r from-[#000000] to-[#3533cd] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] flex-1"
                 >
                   MATRIZ
                 </button>
               </div>
               <div
-  onClick={() => setShowRuedaVideoModal(true)}
-  className="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden flex flex-col flex-1 cursor-pointer hover:shadow-md  border border-black-200/40 transition-shadow  "
+  onClick={() => setShowDiagnosticoRueda(true)}
+  className="bg-white rounded-md border border-black-200/60 shadow-sm overflow-hidden flex flex-col flex-1 cursor-pointer hover:shadow-md transition-shadow h-[120px] "
 >
-  {/* BARRA HEADER OSCURA DE LA TARJETA */}
-  <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5  rounded-md text-[10px] sm:text-xs font-bold tracking-widest uppercase">
-    RUEDA DE LA VIDA
+  <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 rounded-md text-[10px] sm:text-xs font-bold tracking-widest uppercase mt-2"> RUEDA DE LA VIDA
   </div>
 
-  {/* CONTENIDO INTERNO: GRÁFICO + CATEGORÍAS */}
-  <div className="p-3 sm:p-4 flex items-center justify-between gap-4 flex-1 bg-white">
-    
-    {/* LADO IZQUIERDO: EL GRÁFICO SVG EXACTO DE LA RUEDA SEGMENTADA */}
-    <div className="w-[110px] h-[110px] shrink-0 relative flex items-center justify-center">
-  <svg
-    viewBox="0 0 100 100"
-    className="w-full h-full transform -rotate-22.5" // Rotación base original para alinear los quesitos
-  >
-    {/* ─── 🎨 SEGMENTOS DE COLORES ORIGINALES ─── */}
-    {/* Segmento 1 - Vino Tinto (Salud) */}
-    <path d="M 50 50 L 50 2 A 48 48 0 0 1 83.94 16.06 Z" fill="#911d33" stroke="#fff" strokeWidth="1.5" />
-    {/* Segmento 2 - Azul Oscuro (Familia) */}
-    <path d="M 50 50 L 83.94 16.06 A 48 48 0 0 1 98 50 Z" fill="#0c5a75" stroke="#fff" strokeWidth="1.5" />
-    {/* Segmento 3 - Azul Claro (Trabajo / Dinero) */}
-    <path d="M 50 50 L 98 50 A 48 48 0 0 1 83.94 83.94 Z" fill="#00a3e0" stroke="#fff" strokeWidth="1.5" />
-    {/* Segmento 4 - Turquesa (Social / Amigos) */}
-    <path d="M 50 50 L 83.94 83.94 A 48 48 0 0 1 50 98 Z" fill="#4cd2e4" stroke="#fff" strokeWidth="1.5" />
-    {/* Segmento 5 - Verde Menta (Espiritual) */}
-    <path d="M 50 50 L 50 98 A 48 48 0 0 1 16.06 83.94 Z" fill="#4fd1a5" stroke="#fff" strokeWidth="1.5" />
-    {/* Segmento 6 - Amarillo Pastel (Amor) */}
-    <path d="M 50 50 L 16.06 83.94 A 48 48 0 0 1 2 50 Z" fill="#fcd34d" stroke="#fff" strokeWidth="1.5" />
-    {/* Segmento 7 - Naranja Claro (Mente / Ideas) */}
-    <path d="M 50 50 L 2 50 A 48 48 0 0 1 16.06 16.06 Z" fill="#f97316" stroke="#fff" strokeWidth="1.5" />
-    {/* Segmento 8 - Coral / Rosado (Profesión / Éxito) */}
-    <path d="M 50 50 L 16.06 16.06 A 48 48 0 0 1 50 2 Z" fill="#f43f5e" stroke="#fff" strokeWidth="1.5" />
-
-    {/* ─── 🛠️ ICONOS CORREGIDOS Y CENTRADOS MILIMÉTRICAMENTE ─── */}
-
-    {/* 💓 1. SALUD (Vino Tinto - Centro Superior Derecho) */}
-    {/* Ubicación calculada: x=69, y=23 */}
-   <g transform="translate(72, 19) rotate(22.5)" fill="none" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M-4.5 -2.5 a 2.2 2.2 0 0 1 4.4 0 l 0.1 0.1 l 0.1 -0.1 a 2.2 2.2 0 0 1 4.4 0 c 0 2.5 -4.5 5.5 -4.5 5.5 s -4.5 -3 -4.5 -5.5 Z" fill="white" strokeWidth="0" />
-      <path d="M-5 1.5 l 2 0 l 1 -2 l 1.5 3.5 l 1 -2.5 l 1.5 1 l 2 0" />
-    </g>
-
-    {/* 👨‍👩‍👧 2. FAMILIA (Azul Oscuro - Lateral Superior Derecho) */}
-    {/* Ubicación calculada: x=77, y=41 */}
-   <g transform="translate(82, 39) rotate(22.5)" fill="white">
-      <circle cx="-2" cy="-2" r="1.8" />
-      <path d="M -5.5 3 a 2.5 2.5 0 0 1 5 0 l 0 1.5 l -5 0 Z" />
-      <circle cx="2.5" cy="-1" r="1.4" />
-      <path d="M 0 3 a 2 2 0 0 1 4 0 l 0 1.5 l -4 0 Z" />
-    </g>
-
-    {/* 💰 3. FINANZAS / MONEDAS (Azul Claro - Lateral Inferior Derecho) */}
-    {/* Ubicación calculada: x=70, y=60 */}
-    <g transform="translate(74, 63) rotate(22.5)" fill="white" stroke="white" strokeWidth="0.6">
-      <ellipse cx="-2" cy="-1" rx="3.2" ry="1.2" />
-      <path d="M -5.2 -1 v 2.2 c 0 0.8 1.5 1.2 3.2 1.2 s 3.2 -0.4 3.2 -1.2 v -2.2" />
-      <ellipse cx="2.5" cy="2" rx="2.5" ry="1" />
-      <path d="M 0 2 v 2.2 c 0 0.6 1.2 1 2.5 1 s 2.5 -0.4 2.5 -1 v -2.2" />
-    </g>
-
-    {/* 💬 4. AMIGOS / SOCIAL (Turquesa - Centro Inferior Derecho) */}
-    {/* Ubicación calculada: x=58, y=71 */}
-    <g transform="translate(60, 77) rotate(22.5)" fill="white">
-      <path d="M -4 -3 c 0 -2.2 2.2 -4 5 -4 s 5 1.8 5 4 c 0 1.3 -0.8 2.4 -2.2 3.1 l 0.7 2.2 l -2.5 -1.2 c -0.3 0 -0.7 0.1 -1 0.1 c -2.8 0 -5 -1.8 -5 -4 Z" />
-      <circle cx="-1.5" cy="-3" r="0.6" fill="#4cd2e4" />
-      <circle cx="1" cy="-3" r="0.6" fill="#4cd2e4" />
-      <circle cx="3.5" cy="-3" r="0.6" fill="#4cd2e4" />
-    </g>
-
-    {/* 🌸 5. ESPIRITUAL / LOTO (Verde Menta - Centro Inferior Izquierdo) */}
-    {/* Ubicación calculada: x=39, y=70 */}
-    <g transform="translate(37, 76) rotate(22.5)" fill="white">
-      <path d="M 0 -4.5 C 1.5 -2 2.5 -0.5 0 2.5 C -2.5 -0.5 -1.5 -2 0 -4.5 Z" />
-      <path d="M 0 -1 C 2 0 4.5 1 3.5 3 C 1 3.5 -0.5 2 0 -1 Z" />
-      <path d="M 0 -1 C -2 0 -4.5 1 -3.5 3 C -1 3.5 0.5 2 0 -1 Z" />
-    </g>
-
-    {/* 💝 6. AMOR (Amarillo Pastel - Lateral Inferior Izquierdo) */}
-    {/* Ubicación calculada: x=25, y=55 */}
-   <g transform="translate(19, 58) rotate(22.5)" fill="white">
-      <path d="M 0 3.5 l -3.3 -3.3 a 2.3 2.3 0 0 1 0 -3.2 a 2.3 2.3 0 0 1 3.3 0 a 2.3 2.3 0 0 1 3.3 0 a 2.3 2.3 0 0 1 0 3.2 Z" />
-    </g>
-
-    {/* 💡 7. INTELECTUAL (Naranja) -> Se movió más a la izquierda y arriba */}
-    <g transform="translate(22, 33) rotate(22.5)" fill="white">
-      <path d="M 0 -4.5 c -2.4 0 -4.2 1.8 -4.2 4.2 c 0 1.5 0.8 2.8 2 3.5 l 0.5 1.8 l 3.4 0 l 0.5 -1.8 c 1.2 -0.7 2 -2 2 -3.5 c 0 -2.4 -1.8 -4.2 -4.2 -4.2 Z" />
-      <rect x="-1.5" y="5.5" width="3" height="1" rx="0.3" fill="white" />
-      <line x1="0" y1="-5.5" x2="0" y2="-7" stroke="white" strokeWidth="0.8" strokeLinecap="round" />
-      <line x1="-4.5" y1="-3" x2="-5.8" y2="-3.5" stroke="white" strokeWidth="0.8" strokeLinecap="round" />
-      <line x1="4.5" y1="-3" x2="5.8" y2="-3.5" stroke="white" strokeWidth="0.8" strokeLinecap="round" />
-    </g>
-
-    {/* 📈 8. PROFESIÓN (Coral) -> Se movió más hacia arriba */}
-    <g transform="translate(37, 16) rotate(22.5)" fill="white">
-      <rect x="-4.5" y="1" width="2" height="3" rx="0.3" />
-      <rect x="-1.5" y="-1.5" width="2" height="5.5" rx="0.3" />
-      <rect x="1.5" y="-4" width="2" height="8" rx="0.3" />
-      <path d="M -4.5 -1.5 l 3 -2.5 l 2.5 1.5 l 3.5 -3.5" fill="none" stroke="white" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 2.5 -6 l 2 0 l 0 2" fill="none" stroke="white" strokeWidth="1" strokeLinejoin="round" />
-    </g>
-  </svg>
-
-  {/* CÍRCULO CENTRAL BLANCO CON TEXTO */}
-  <div className="w-11 h-11 bg-white rounded-full absolute shadow-[0_2px_6px_rgba(0,0,0,0.1)] flex items-center justify-center z-10 border border-slate-100">
-    <span className="text-[7px] text-[#1e293b] font-black uppercase tracking-tighter text-center leading-none select-none">
-      Wheel<br /><span className="text-slate-500 font-bold">of life</span>
-    </span>
+  <div className="p-2 flex items-center justify-between gap-2 flex-1 bg-white">
+    <div className="w-[90px] h-[90px] shrink-0 relative flex items-center justify-center">
+      <svg viewBox="0 0 100 100" className="w-full h-full">
+        {/* Segmentos de colores - 8 segmentos */}
+        <path d="M 50 50 L 50 2 A 48 48 0 0 1 83.94 16.06 Z" fill="#c0392b" stroke="#fff" strokeWidth="1.5" />
+        <path d="M 50 50 L 83.94 16.06 A 48 48 0 0 1 98 50 Z" fill="#2c3e50" stroke="#fff" strokeWidth="1.5" />
+        <path d="M 50 50 L 98 50 A 48 48 0 0 1 83.94 83.94 Z" fill="#3498db" stroke="#fff" strokeWidth="1.5" />
+        <path d="M 50 50 L 83.94 83.94 A 48 48 0 0 1 50 98 Z" fill="#5dade2" stroke="#fff" strokeWidth="1.5" />
+        <path d="M 50 50 L 50 98 A 48 48 0 0 1 16.06 83.94 Z" fill="#1abc9c" stroke="#fff" strokeWidth="1.5" />
+        <path d="M 50 50 L 16.06 83.94 A 48 48 0 0 1 2 50 Z" fill="#f1c40f" stroke="#fff" strokeWidth="1.5" />
+        <path d="M 50 50 L 2 50 A 48 48 0 0 1 16.06 16.06 Z" fill="#e67e22" stroke="#fff" strokeWidth="1.5" />
+        <path d="M 50 50 L 16.06 16.06 A 48 48 0 0 1 50 2 Z" fill="#e74c3c" stroke="#fff" strokeWidth="1.5" />
+        
+        {/* Iconos centrados en cada segmento (centroide a 2/3 del radio) */}
+        
+        {/* Top-right 1 (rojo oscuro #c0392b) - Salud: Corazón + ECG - centro (62, 20) */}
+        <path d="M58 17 C58 14.5 60.5 13.5 62 15.5 C63.5 13.5 66 14.5 66 17 C66 20 62 23 62 23 C62 23 58 20 58 17Z" fill="white"/>
+        <polyline points="55,20 58,20 59.5,17 62,21 64,18 65.5,20 69,20" stroke="#c0392b" strokeWidth="0.8" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+        
+        {/* Top-right 2 (azul oscuro #2c3e50) - Familia: 3 personas - centro (80, 38) */}
+        <circle cx="76" cy="34" r="2.5" fill="white"/>
+        <path d="M72 40 Q76 44 80 40" fill="white"/>
+        <circle cx="84" cy="34" r="2.5" fill="white"/>
+        <path d="M80 40 Q84 44 88 40" fill="white"/>
+        <circle cx="80" cy="32" r="2" fill="white" opacity="0.7"/>
+        
+        {/* Right (azul #3498db) - Finanzas: Dollar - centro (80, 62) */}
+        <text x="80" y="65" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold" fontFamily="Arial">$</text>
+        
+        {/* Bottom-right (celeste #5dade2) - Vida social: Personas - centro (62, 80) */}
+        <circle cx="58" cy="77" r="2" fill="white"/>
+        <circle cx="66" cy="77" r="2" fill="white"/>
+        <circle cx="62" cy="75" r="1.8" fill="white"/>
+        <path d="M55 82 Q58 85 61 82" fill="white"/>
+        <path d="M63 82 Q66 85 69 82" fill="white"/>
+        
+        {/* Bottom (verde agua #1abc9c) - Loto - centro (38, 80) */}
+        <ellipse cx="35" cy="78" rx="2" ry="4" fill="white" transform="rotate(-15 35 78)"/>
+        <ellipse cx="38" cy="78" rx="2" ry="4" fill="white"/>
+        <ellipse cx="41" cy="78" rx="2" ry="4" fill="white" transform="rotate(15 41 78)"/>
+        <ellipse cx="36.5" cy="80" rx="1.5" ry="3" fill="white" opacity="0.7"/>
+        <ellipse cx="39.5" cy="80" rx="1.5" ry="3" fill="white" opacity="0.7"/>
+        
+        {/* Bottom-left (amarillo #f1c40f) - Amor: Corazón - centro (20, 62) */}
+        <path d="M17 59 C17 56.5 19.5 55.5 21 57.5 C22.5 55.5 25 56.5 25 59 C25 62 21 65 21 65 C21 65 17 62 17 59Z" fill="white"/>
+        
+        {/* Left (naranja #e67e22) - Bombilla - centro (20, 38) */}
+        <circle cx="20" cy="35" r="4" fill="white"/>
+        <rect x="18.5" y="39" width="3" height="1.5" rx="0.5" fill="white"/>
+        <rect x="18" y="41" width="4" height="1.5" rx="0.5" fill="white"/>
+        <line x1="20" y1="30" x2="20" y2="28" stroke="#e67e22" strokeWidth="0.8" strokeLinecap="round"/>
+        <line x1="24" y1="35" x2="26" y2="35" stroke="#e67e22" strokeWidth="0.8" strokeLinecap="round"/>
+        <line x1="23" y1="32" x2="25" y2="30" stroke="#e67e22" strokeWidth="0.8" strokeLinecap="round"/>
+        <line x1="17" y1="32" x2="15" y2="30" stroke="#e67e22" strokeWidth="0.8" strokeLinecap="round"/>
+        
+        {/* Top-left (rojo coral #e74c3c) - Gráfica: Barras + flecha - centro (38, 20) */}
+        <polyline points="34,26 37,22 40,24 43,18" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+        <polygon points="43,18 43,21 40,19" fill="white"/>
+        <line x1="34" y1="26" x2="34" y2="28" stroke="white" strokeWidth="1" strokeLinecap="round"/>
+        <line x1="37" y1="22" x2="37" y2="28" stroke="white" strokeWidth="1" strokeLinecap="round"/>
+        <line x1="40" y1="24" x2="40" y2="28" stroke="white" strokeWidth="1" strokeLinecap="round"/>
+        <line x1="43" y1="18" x2="43" y2="28" stroke="white" strokeWidth="1" strokeLinecap="round"/>
+        
+        {/* Centro */}
+        <circle cx="50" cy="50" r="16" fill="#1a1a2e"/>
+        <text x="50" y="47" textAnchor="middle" fill="white" fontSize="6" fontWeight="bold" fontFamily="sans-serif">Wheel</text>
+        <text x="50" y="55" textAnchor="middle" fill="white" fontSize="6" fontWeight="bold" fontFamily="sans-serif">of life</text>
+      </svg>
+    </div>
+    <div className="flex flex-col gap-1.5 flex-1 justify-center">
+      <div className="bg-gradient-to-r from-[#ffe29f] via-[#fec89a] to-[#f8a4a4] text-slate-800 text-[8px] sm:text-[9px] py-1.5 px-2 rounded font-black tracking-wider uppercase text-center shadow-sm border border-orange-200/30">
+        SALUD
+      </div>
+      <div className="bg-gradient-to-r from-[#ffe29f] via-[#fec89a] to-[#f8a4a4] text-slate-800 text-[8px] sm:text-[9px] py-1.5 px-2 rounded font-black tracking-wider uppercase text-center shadow-sm border border-orange-200/30">
+        AMISTAD
+      </div>
+      <div className="bg-gradient-to-r from-[#ffe29f] via-[#fec89a] to-[#f8a4a4] text-slate-800 text-[8px] sm:text-[9px] py-1.5 px-2 rounded font-black tracking-wider uppercase text-center shadow-sm border border-orange-200/30">
+        DINERO
+      </div>
+    </div>
   </div>
-</div>
-                  <div className="flex flex-col gap-1 flex-1">
-                    {ruedaCompleta.slice(0, 3).map((cat) => (
-                      <div key={cat.id} className="bg-gradient-to-r from-[#ffe29f] to-[#ffa3a3] text-slate-800 text-[9px] sm:text-[10px] py-1 px-3 rounded-md text-center font-bold tracking-widest uppercase shadow-sm border border-black-200/40 transition-transform hover:scale-[1.03]">
-                         {cat.nombre.substring(0, 6)} 
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
+        </div>
           <br></br>
 
           {/* Middle of Left */}
-          <div className="flex gap-4 ">
-            <DynamicKanbanBacklog />
+          <div className="flex flex-col sm:flex-row gap-4 ">
+            <DynamicKanbanBacklog kanbanTasks={kanbanTasks} setKanbanTasks={setKanbanTasks} onPlanificar={(task) => setTaskToPlanificar(task)} />
         
-  <div className="bg-white/60 backdrop-blur-sm  rounded-2xl  flex flex-col   w-[200px] h-[200px] shadow-[0_0_0px_rgb(255, 255, 255)] -ml-2 -mt-8">
+  <div className="bg-white/60 backdrop-blur-sm  rounded-2xl  flex flex-col   w-full sm:w-[200px] h-[200px] shadow-[0_0_0px_rgb(255, 255, 255)] sm:-ml-2 sm:-mt-8">
   
   {/* 🎯 TARJETA INTERNA BLANCA DE OBJETIVOS */}
   <div className="bg-white shadow-[0_2px_4px_rgb(247, 243, 243)] overflow-hidden flex flex-col min-h-[200px] w-full rounded-md ">
     
     {/* BARRA HEADER COMPLETA (Fusión perfecta en los bordes superiores) */}
-    <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-none w-[200px]">
+    <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-none w-full sm:w-[200px]">
       OBJETIVO SEMANAL
     </div>
     
@@ -1198,34 +1194,43 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           </div>
 
           {/* Bottom Left - Acciones por Delegar */}
-          <AccionesPorDelegarInline />
-
+          <AccionesPorDelegarInline kanbanTasks={kanbanTasks} onOpenDelegation={(task) => { openDelegationModal(task); }} />
+         
         </div>
         
         </div>
 
         {/* CENTER COLUMN */}
 <div className="flex flex-col gap-3 w-full xl:w-[32%] relative items-center">
-          <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-3 flex flex-col gap-3 w-[250px] shadow-[0_8px_32px_rgba(31,38,135,0.03)] mt-12">
+          <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-3 flex flex-col gap-3 w-full sm:w-[250px] shadow-[0_8px_32px_rgba(31,38,135,0.03)] mt-12">
             <p className="text-[14px] font-semibold text-[#1e293b] text-center leading-tight">
               {phrases[currentPhraseIndex]}
             </p>
           </div>
           {/* Tabs */}
-<div className="flex justify-between items-center gap-2 w-full max-w-[500px] mx-auto my-2 ml-4">
+<div className="flex justify-between items-center gap-2 w-full max-w-[500px] mx-auto my-2 sm:ml-4">
   
-  {/* BOTÓN ANUAL */}
+  {/* BOTÓN ANUAL → Gran Meta Anual */}
   <button 
-    onClick={() => setShowMetaAnualModal(true)} 
-    className="flex-1 bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-lg text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
+    onClick={() => setShowMetaAnualForm(true)} 
+    className="flex-1 bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-md text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
   >
     Anual
   </button>
 
   {/* BOTÓN MENSUAL */}
   <button 
-    onClick={() => setShowMetaMensualModal(true)} 
-    className="flex-1 bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-lg text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
+    onClick={() => {
+      if (monthlyStatus.plan_status === 'APROBADA') {
+        setShowMonthlyCalendar(true);
+      } else if (monthlyStatus.has_approved_annual) {
+        setShowMonthlyWizard(true);
+      } else {
+        setMetaAnualHint('Para usar Metas Mensuales primero debes crear y aprobar tu Gran Meta Anual.');
+        setShowMetaAnualForm(true);
+      }
+    }} 
+    className="flex-1 bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-md text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
   >
     Mensual
   </button>
@@ -1233,7 +1238,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   {/* BOTÓN SEMANAL */}
   <button 
     onClick={() => setShowMetaSemanalModal(true)} 
-    className="flex-1 bg-gradient-to-l from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-lg text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
+    className="flex-1 bg-gradient-to-l from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-md text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
   >
     Semanal
   </button>
@@ -1241,7 +1246,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   {/* BOTÓN DIARIA */}
   <button 
     onClick={() => setShowMetaDiariaModal(true)} 
-    className="flex-1 bg-gradient-to-l from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-lg text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
+    className="flex-1 bg-gradient-to-l from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-md text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
   >
     Diaria
   </button>
@@ -1264,17 +1269,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         <thead className="sticky top-0 z-20 bg-white/90 backdrop-blur-md shadow-2xs">
           <tr>
             <th className="w-20 p-2 border-b border-slate-100">
-              <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-orange-200/40 text-center">
+              <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-black-200/40 text-center">
                 TIME
               </div>
             </th>
             <th className="p-2 border-b border-slate-100">
-              <div className="w-full bg-gradient-to-r from-[#fecaca] to-[#ffa3a3] text-slate-800 text-[10px] py-1.5 px-2 rounded-lg font-black tracking-wider uppercase border border-red-200/40 text-center">
+              <div className="w-full bg-gradient-to-r from-[#fecaca] to-[#ffa3a3] text-slate-800 text-[10px] py-1.5 px-2 rounded-lg font-black tracking-wider uppercase border border-black-200/40 text-center">
                 WORK IN PROGRESS
               </div>
             </th>
             <th className="w-24 p-2 border-b border-slate-100">
-              <div className="w-full bg-gradient-to-r from-[#ffa3a3] to-[#fca5a5] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-red-300/40 text-center">
+              <div className="w-full bg-gradient-to-r from-[#ffa3a3] to-[#fca5a5] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-black-300/40 text-center">
                 STATUS
               </div>
             </th>
@@ -1285,7 +1290,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       <tbody>
   {defaultHours.map((h, i) => {
     const block = timeBlocks.find((t: TimeBlockData) => t.hora === h);
-    const statusText = block?.estado === true ? 'Done' : (block?.estado as unknown as string) === 'doing' ? 'Doing' : '';
+    const statusText = block?.estado === 'done' ? 'Done' : block?.estado === 'doing' ? 'Doing' : '';
 
     return (
       <tr 
@@ -1352,22 +1357,22 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         <div className="flex flex-col gap-4 w-full xl:w-[36%] z-10">
           
           {/* Bloque Superior: Botones Cursos/RRSS y Notas */}
-          <div className="flex justify-between items-start">
-            <div className="flex flex-col w-[250px] pr-3">
-              <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-3 flex flex-col gap-3 w-[250px] shadow-[0_8px_32px_rgba(31,38,135,0.03)] ml-2 h-[240px]">
-                <div className="p-1 flex gap-1 flex justify-between items-center gap-1  max-w-md -ml-1 w-[80px]">
-                  <ActionButton label="CURSOS" color="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" />
-                  <ActionButton label="RRSS" color="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" />
-                  <ActionButton label="CUENTAS" color="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"  onClick={() => setShowBillModal(true)} />
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
+            <div className="flex flex-col w-full sm:w-[250px] pr-3">
+              <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-md p-3 flex flex-col gap-3 w-full sm:w-[250px] shadow-[0_8px_32px_rgba(31,38,135,0.03)] sm:ml-2 h-[230px]">
+                <div className="p-0 flex gap-1 flex justify-between items-center gap-1  max-w-md -ml-1 w-[80px]">
+                  <ActionButton label="CURSOS" color="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" />
+                  <ActionButton label="RRSS" color="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" />
+                  <ActionButton label="CUENTAS" color="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"  onClick={() => setShowBillModal(true)} />
                 </div>
                 <BlockDeNotas />
               </div>
             </div>
 
-            <div className="bg-white/40 backdrop-blur-sm border border-white/20 rounded-xl p-3 flex flex-col gap-6 w-[140px] shadow-[0_4px_10px_rgba(0,0,0,0.02)] mt-10 ml-4">
-              <ActionButton label="MEDICAMENTOS" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern"  onClick={() => setShowMedicamentosModal(true)} />
-              <ActionButton label="CUMPLEAÑOS" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern" />
-              <ActionButton label="FOCUS" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern" />
+            <div className="bg-white/40 backdrop-blur-sm border border-white/20 rounded-md p-3 flex flex-row sm:flex-col gap-3 sm:gap-6 w-full sm:w-[140px] shadow-[0_4px_10px_rgba(0,0,0,0.02)] sm:mt-10 sm:ml-4">
+              <ActionButton label="SUPLEMENTOS" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern"  onClick={() => setShowMedicamentosModal(true)} />
+              <ActionButton label="CUMPLEAÑOS" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern" />
+              <ActionButton label="ENFOQUE PRO" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern" />
             </div>
           </div>
 
@@ -1382,7 +1387,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           </div>
 
           {/* Bloque Hora de Oro Familiar */}
-          <div className="flex flex-col items-start w-[230px] h-[600px] -mt-127 ml-45 rounded-md">
+          <div className="flex flex-col items-start w-full sm:w-[230px] h-[600px] sm:-mt-127 sm:ml-45 rounded-md">
             <HoraDeOroFamiliar />
           </div>
 
@@ -1409,7 +1414,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowDelegarModal(false)}
         >
           <div
-            className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-2xl max-h-[80vh] overflow-hidden"
+            className="bg-white/90 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-2xl max-h-[80vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#1e3a5f] to-[#3a5f8a]">
@@ -1440,7 +1445,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           }}
         >
           <div
-            className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
+            className="bg-white/90 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#0d9488] to-[#14b8a6]">
@@ -1537,19 +1542,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         </div>
       )}
 
-      <AiMissionAssistant
-        isOpen={showAiMissionModal}
-        onClose={() => setShowAiMissionModal(false)}
-        metaAnual={metaAnual}
-        metaMensual={metaMensual}
-        metaSemanal={metaSemanal}
-        metaDiaria={metaDiaria}
-        onSelectMission={(mission) => {
-          setSelectedMissionText(mission);
-          setShowAiMissionModal(false);
-        }}
-      />
-
       {/* Modal: Inicio / Cómo funciona */}
       {showInicioModal && (
         <div
@@ -1557,7 +1549,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowInicioModal(false)}
         >
           <div
-            className="bg-white/95 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white/50 w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
+            className="bg-white/95 backdrop-blur-2xl rounded-md shadow-2xl border border-white/50 w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-6 bg-gradient-to-r from-[#1e3a5f] to-[#2d4a6f] text-white">
@@ -1661,7 +1653,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowRuedaModal(false)}
         >
           <div
-            className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-2xl max-h-[85vh] overflow-hidden"
+            className="bg-white/90 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-2xl max-h-[85vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#059669] to-[#0d9488]">
@@ -1694,7 +1686,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowRuedaVideoModal(false)}
         >
           <div
-            className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
+            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#059669] to-[#0d9488]">
@@ -1749,7 +1741,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowMetaAnualModal(false)}
         >
           <div
-            className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
+            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#0d9488] to-[#14b8a6]">
@@ -1814,76 +1806,29 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         </div>
       )}
 
-      {/* Modal: Meta Mensual */}
-      {showMetaMensualModal && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] flex items-center justify-center p-4"
-          onClick={() => setShowMetaMensualModal(false)}
-        >
-          <div
-            className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#7c3aed] to-[#a855f7]">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-white" />
-                <h2 className="text-lg font-bold uppercase text-white">Metas Mensuales</h2>
-              </div>
-              <button onClick={() => setShowMetaMensualModal(false)} className="p-2 rounded-full hover:bg-white/30 transition-colors">
-                <X className="w-5 h-5 text-white" />
-              </button>
-            </div>
-            <div className="p-6 max-h-[60vh] overflow-y-auto">
-              <div className="space-y-3">
-                {metaMensual.map((meta, index) => (
-                  <div key={index} className="flex items-center gap-3 bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-white/40">
-                    <button
-                      onClick={() => {
-                        setXpStats((prev: XPStats) => ({ ...prev, tasksCompleted: prev.tasksCompleted + 1 }));
-                        addXP(XP_CONFIG.MONTHLY_GOAL, 'Meta mensual completada');
-                        setMetaMensual(metaMensual.filter((_: string, i: number) => i !== index));
-                      }}
-                      className="w-6 h-6 rounded-full border-2 border-[#7c3aed] flex items-center justify-center hover:bg-[#7c3aed]/20 transition-colors flex-shrink-0"
-                    >
-                      <Check className="w-4 h-4 text-[#7c3aed]" />
-                    </button>
-                    <span className="flex-1 text-sm text-gray-700">{meta}</span>
-                    <span className="text-[10px] bg-[#7c3aed]/20 text-[#7c3aed] px-2 py-0.5 rounded-full font-medium">+{XP_CONFIG.MONTHLY_GOAL} XP</span>
-                    <button onClick={() => handleEditMeta('mensual', index, meta)} className="text-gray-400 hover:text-[#7c3aed] transition-colors">
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => handleDeleteMeta('mensual', index)} className="text-gray-400 hover:text-red-500 transition-colors">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-                {editingMetaType === 'mensual' && (
-                  <div className="flex items-center gap-2 bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-[#7c3aed]">
-                    <input
-                      type="text"
-                      value={newMetaText}
-                      onChange={(e) => setNewMetaText(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSaveMeta()}
-                      placeholder="Escribe tu meta..."
-                      className="flex-1 text-sm bg-transparent border-none outline-none"
-                      autoFocus
-                    />
-                    <button onClick={handleSaveMeta} className="text-[#7c3aed] font-bold text-sm">Guardar</button>
-                    <button onClick={() => { setEditingMetaType(null); setNewMetaText(''); }} className="text-gray-400 hover:text-red-500">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-                <button
-                  onClick={() => handleAddMeta('mensual')}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-gray-300 text-gray-500 hover:border-[#7c3aed] hover:text-[#7c3aed] transition-colors"
-                >
-                  <Plus className="w-4 h-4" /> Agregar meta
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      {showMonthlyWizard && (
+        <MonthlyWizard
+          onClose={() => setShowMonthlyWizard(false)}
+          onApproved={() => {
+            setShowMonthlyWizard(false);
+            setMonthlyStatus(prev => ({...prev, has_monthly_plan: true, plan_status: 'APROBADA'}));
+          }}
+        />
+      )}
+
+      {showMonthlyCalendar && (
+        <MonthlyCalendar
+          onClose={() => setShowMonthlyCalendar(false)}
+          onOpenMatriz={() => { setShowMonthlyCalendar(false); setShowMatrizEisenhower(true); }}
+        />
+      )}
+
+      {showMatrizEisenhower && (
+        <MatrizEisenhower
+          isOpen={showMatrizEisenhower}
+          onClose={() => setShowMatrizEisenhower(false)}
+          onContinue={() => { setShowMatrizEisenhower(false); }}
+        />
       )}
 
       {/* Modal: Meta Semanal */}
@@ -1893,7 +1838,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowMetaSemanalModal(false)}
         >
           <div
-            className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
+            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#d97706] to-[#f59e0b]">
@@ -1965,7 +1910,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowMetaDiariaModal(false)}
         >
           <div
-            className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
+            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#059669] to-[#10b981]">
@@ -2037,7 +1982,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowBillModal(false)}
         >
           <div
-            className="bg-white/95 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white/50 w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
+            className="bg-white/95 backdrop-blur-2xl rounded-md shadow-2xl border border-white/50 w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-6 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] text-white">
@@ -2189,7 +2134,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowMatrizVideoModal(false)}
         >
           <div
-            className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
+            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#1e3a5f] to-[#2d4a6f]">
@@ -2243,7 +2188,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowMatrizFormModal(false)}
         >
           <div
-            className="bg-[#f8fafc] rounded-[2.5rem] shadow-2xl border border-white/50 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+            className="bg-[#f8fafc] rounded-md shadow-2xl border border-white/50 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-6 bg-white border-b border-gray-100">
@@ -2451,7 +2396,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowMedicamentosModal(false)}
         >
           <div
-            className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col"
+            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#ef4444] to-[#dc2626]">
@@ -2918,7 +2863,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowUserSettingsModal(false)}
         >
           <div 
-            className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden flex flex-col"
+            className="bg-white rounded-md shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-6 bg-gradient-to-r from-gray-800 to-gray-900">
@@ -2936,7 +2881,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               </button>
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
               <div className="flex flex-col items-center">
                 <div className="relative group">
                   <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-100 shadow-lg">
@@ -3003,6 +2948,58 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 </button>
               </div>
 
+              {/* Gamificación */}
+              <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100 space-y-3">
+                <h3 className="text-xs font-bold text-indigo-700 uppercase tracking-widest flex items-center gap-1">
+                  <Trophy className="w-3.5 h-3.5" /> Mi Progreso
+                </h3>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-2xl font-black text-indigo-700">Nivel {getLevelFromXP(xpStats.totalXP).level}</p>
+                    <p className="text-xs text-indigo-500">{xpStats.totalXP} XP total</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-gray-700">{xpStats.streak} día{xpStats.streak !== 1 ? 's' : ''}</p>
+                    <p className="text-[10px] text-gray-400">Racha</p>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-[10px] text-indigo-600 mb-1">
+                    <span>Nivel {getLevelFromXP(xpStats.totalXP).level}</span>
+                    <span>{getLevelFromXP(xpStats.totalXP).currentXP}/{getLevelFromXP(xpStats.totalXP).nextLevelXP} XP</span>
+                  </div>
+                  <div className="w-full bg-indigo-100 rounded-full h-2">
+                    <div className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all" style={{ width: `${getLevelFromXP(xpStats.totalXP).progress}%` }} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="bg-white/60 rounded-lg p-2">
+                    <p className="text-sm font-bold text-gray-800">{xpStats.tasksCompleted}</p>
+                    <p className="text-[9px] text-gray-400">Tareas</p>
+                  </div>
+                  <div className="bg-white/60 rounded-lg p-2">
+                    <p className="text-sm font-bold text-gray-800">{xpStats.kanbanCompleted}</p>
+                    <p className="text-[9px] text-gray-400">Kanban</p>
+                  </div>
+                  <div className="bg-white/60 rounded-lg p-2">
+                    <p className="text-sm font-bold text-gray-800">{xpStats.medicationsTaken}</p>
+                    <p className="text-[9px] text-gray-400">Suplementos</p>
+                  </div>
+                </div>
+                {xpStats.unlockedBadges.length > 0 && (
+                  <div>
+                    <p className="text-[10px] text-indigo-600 font-bold mb-1">Insignias</p>
+                    <div className="flex flex-wrap gap-1">
+                      {BADGES.filter(b => xpStats.unlockedBadges.includes(b.id)).map(b => (
+                        <span key={b.id} className="bg-yellow-100 text-yellow-700 text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <b.icon className="w-2.5 h-2.5" /> {b.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="pt-6 border-t border-gray-100">
                 <h3 className="text-xs font-bold text-red-500 uppercase tracking-widest mb-3">Zona de Peligro</h3>
                 <button
@@ -3029,7 +3026,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowAccionesDelegarModal(false)}
         >
           <div
-            className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
+            className="bg-white/90 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#d97706] to-[#f59e0b]">
@@ -3322,6 +3319,83 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           </div>
         </div>
       )}
+
+      {/* Meta Anual Form */}
+      <MetaAnualForm
+        isOpen={showMetaAnualForm}
+        onClose={() => { setShowMetaAnualForm(false); setMetaAnualHint(undefined); }}
+        hint={metaAnualHint}
+      />
+
+      {/* Planificar Modal */}
+      {taskToPlanificar && (
+        <PlanificarModal
+          task={taskToPlanificar}
+          onClose={() => setTaskToPlanificar(null)}
+          onClassified={(type, titulo) => {
+            kanbanService.getAll().then(data => setKanbanTasks(Array.isArray(data) ? data : []));
+            if (type === 'anual') {
+              setMetaAnual(prev => [...prev, titulo]);
+            } else if (type === 'semanal') {
+              setMetaSemanal(prev => [...prev, titulo]);
+            } else if (type === 'diaria') {
+              setMetaDiaria(prev => [...prev, titulo]);
+            }
+          }}
+        />
+      )}
+
+      {/* Buzón de Propuestas IA */}
+      <BuzonPropuestas
+        isOpen={showBuzonPropuestas}
+        onClose={() => setShowBuzonPropuestas(false)}
+      />
+
+      {/* Microflujo de Ajuste */}
+      {microFlujoPropuesta && (
+        <MicroFlujoAjuste
+          isOpen={showMicroFlujo}
+          onClose={() => { setShowMicroFlujo(false); setMicroFlujoPropuesta(null); }}
+          propuesta={microFlujoPropuesta}
+        />
+      )}
+
+      {/* Configuración del Sistema */}
+      <ConfiguracionPanel
+        isOpen={showConfigPanel}
+        onClose={() => setShowConfigPanel(false)}
+      />
+
+      {/* AiMissionAssistant */}
+      <AiMissionAssistant
+        isOpen={showAiMissionModal}
+        onClose={() => setShowAiMissionModal(false)}
+        metaAnual={metaAnual}
+        metaSemanal={metaSemanal}
+        metaDiaria={metaDiaria}
+        onSelectMission={(mission: string) => {
+          setSelectedMissionText(mission);
+          setShowAiMissionModal(false);
+        }}
+      />
+
+      {showDiagnosticoRueda && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => { setShowDiagnosticoRueda(false); ruedaService.resumenDashboard().then(setResumenRueda).catch(() => {}); }}>
+          <div className="relative w-full h-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()}>
+            <button
+              onClick={() => { setShowDiagnosticoRueda(false); ruedaService.resumenDashboard().then(setResumenRueda).catch(() => {}); }}
+              className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center bg-white/80 hover:bg-white rounded-full shadow-md transition-colors"
+            >
+              <X className="w-4 h-4 text-gray-600" />
+            </button>
+            <DiagnosticoRueda
+              avatarIndex={1}
+              onClose={() => { setShowDiagnosticoRueda(false); ruedaService.resumenDashboard().then(setResumenRueda).catch(() => {}); }}
+              onGoMetaAnual={() => { setShowDiagnosticoRueda(false); setShowMetaAnualForm(true); }}
+            />
+          </div>
+        </div>
+      )}
     </div>
 
   );
@@ -3516,62 +3590,46 @@ export const FechasImportantesCard: React.FC<FechasImportantesProps> = ({ dayAct
   );
 };
 
-const AccionesPorDelegarInline: React.FC = () => {
-  const [acciones, setAcciones] = useState([
-    { id: 1, accion: '', responsable: '' },
-    { id: 2, accion: '', responsable: '' },
-    { id: 3, accion: '', responsable: '' },
-  ]);
+interface AccionesPorDelegarInlineProps {
+  kanbanTasks: KanbanTaskData[];
+  onOpenDelegation: (task: KanbanTaskData) => void;
+}
 
-  const handleInputChange = (id: number, field: 'accion' | 'responsable', value: string) => {
-    setAcciones(
-      acciones.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item
-      )
-    );
-  };
+const AccionesPorDelegarInline: React.FC<AccionesPorDelegarInlineProps> = ({ kanbanTasks, onOpenDelegation }) => {
+  const delegarTasks = useMemo(
+    () => kanbanTasks.filter(t => t.columna === 'Delegar'),
+    [kanbanTasks]
+  );
 
   return (
-    <div className="bg-white rounded-md border-2 border-gray-100 shadow-md overflow-hidden max-w-[300px] h-[200px] mx-auto -ml-106 mt-110">
-      <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-none w-[300px]">
+    <div className="bg-white rounded-md border border-gray-200 shadow-md overflow-hidden w-full sm:w-[300px] h-[200px] mx-auto sm:-ml-106 sm:mt-110 flex flex-col">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-[#1a1a2e] via-[#16213e] to-[#0f3460] text-white text-center py-2 text-[10px] sm:text-xs font-black tracking-widest uppercase select-none w-full shrink-0">
         ACCIONES POR DELEGAR
       </div>
-      <table className="w-full border-collapse">
-        <thead>
-          <tr>
-            <th className="w-1/2 p-2 border-b border-slate-100">
-              <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-orange-200/40 text-center">ACCIÓN</div>
-            </th>
-            <th className="w-1/2 p-2 border-b border-slate-100">
-              <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-orange-200/40 text-center">RESPONSABLE</div>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {acciones.map((item) => (
-            <tr key={item.id}>
-              <td className="p-1">
-                <input
-                  type="text"
-                  className="w-full border border-gray-200 rounded text-[10px] p-1 h-6 focus:outline-none focus:border-orange-300"
-                  placeholder="Escriba aquí"
-                  value={item.accion}
-                  onChange={(e) => handleInputChange(item.id, 'accion', e.target.value)}
-                />
-              </td>
-              <td className="p-1">
-                <input
-                  type="text"
-                  className="w-full border border-gray-200 rounded text-[10px] p-1 h-6 focus:outline-none focus:border-orange-300"
-                  placeholder="Nombre"
-                  value={item.responsable}
-                  onChange={(e) => handleInputChange(item.id, 'responsable', e.target.value)}
-                />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      
+      {/* Column Headers */}
+      <div className="flex gap-1 p-1.5 pb-0 shrink-0">
+        <span className="flex-1 bg-gradient-to-r from-[#ffe29f] via-[#fec89a] to-[#fecaca] text-slate-800 text-[9px] py-1.5 rounded-md font-black tracking-wider uppercase text-center shadow-sm border border-black">
+          ACCIÓN
+        </span>
+        <span className="flex-1 bg-gradient-to-r from-[#ffe29f] via-[#fec89a] to-[#fecaca] text-slate-800 text-[9px] py-1.5 rounded-md font-black tracking-wider uppercase text-center shadow-sm border border-black">
+          RESPONSABLE
+        </span>
+      </div>
+      
+      {/* Task List */}
+      <div className="flex-1 overflow-y-auto px-1.5 py-1 space-y-0.5 custom-scrollbar">
+        {delegarTasks.map(task => (
+          <div key={task.id} className="flex items-center gap-1 h-6">
+            <span className="flex-1 text-[10px] text-gray-700 truncate bg-white/80 rounded px-1.5 h-5 border border-gray-100 leading-5" title={task.titulo}>{task.titulo}</span>
+            <span className="flex-1 text-[10px] text-gray-400 italic truncate bg-white/80 rounded px-1.5 h-5 border border-gray-100 leading-5">Nombre</span>
+          </div>
+        ))}
+        {delegarTasks.length === 0 && (
+          <p className="text-[10px] text-gray-400 text-center italic py-4">Sin tareas para delegar</p>
+        )}
+      </div>
     </div>
   );
 };
@@ -3627,59 +3685,102 @@ const CategoriasMenu: React.FC = () => {
   );
 };
 
-const DynamicKanbanBacklog: React.FC = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [rowCount, setRowCount] = useState(10);
+interface DynamicKanbanBacklogProps {
+  kanbanTasks: KanbanTaskData[];
+  setKanbanTasks: React.Dispatch<React.SetStateAction<KanbanTaskData[]>>;
+  onPlanificar: (task: KanbanTaskData) => void;
+}
 
-  useEffect(() => {
-    if (!containerRef.current) return;
+const DynamicKanbanBacklog: React.FC<DynamicKanbanBacklogProps> = ({ kanbanTasks, setKanbanTasks, onPlanificar }) => {
+  const [newTitle, setNewTitle] = useState('');
+  const [adding, setAdding] = useState(false);
 
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (let entry of entries) {
-        const containerHeight = entry.contentRect.height;
-        const rowHeight = 28;
-        const calculatedRows = Math.floor(containerHeight / rowHeight);
-        setRowCount(Math.max(5, calculatedRows));
-      }
-    });
+  const backlogTasks = useMemo(
+    () => kanbanTasks.filter(t => t.columna === 'Backlog' || t.columna === 'Agenda'),
+    [kanbanTasks]
+  );
 
-    resizeObserver.observe(containerRef.current);
-    return () => resizeObserver.disconnect();
-  }, []);
+  const handleAdd = async () => {
+    if (!newTitle.trim() || adding) return;
+    setAdding(true);
+    try {
+      const created = await kanbanService.create({ titulo: newTitle.trim(), descripcion: '', columna: 'Backlog' });
+      setKanbanTasks(prev => [...prev, created]);
+      setNewTitle('');
+    } catch (err) {
+      console.error('Error adding task:', err);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const handleHacer = async (task: KanbanTaskData) => {
+    try {
+      await kanbanService.update(task.id, { columna: 'Hoy' });
+      setKanbanTasks(prev => prev.map(t => t.id === task.id ? { ...t, columna: 'Hoy' } : t));
+    } catch (err) { console.error(err); }
+  };
+
+  const handleDelegar = async (task: KanbanTaskData) => {
+    try {
+      await kanbanService.update(task.id, { columna: 'Delegar' });
+      setKanbanTasks(prev => prev.map(t => t.id === task.id ? { ...t, columna: 'Delegar' } : t));
+    } catch (err) { console.error(err); }
+  };
+
+  const handleBasura = async (task: KanbanTaskData) => {
+    try {
+      await kanbanService.delete(task.id);
+      setKanbanTasks(prev => prev.filter(t => t.id !== task.id));
+    } catch (err) { console.error(err); }
+  };
 
   return (
-    <div className="w-[210px] h-[450px] bg-white/60 backdrop-blur-sm border border-white/30 rounded-md p-0 shadow-[0_8px_32px_rgba(31,38,135,0.03)] -mt-8 -ml-2 flex flex-col overflow-hidden">
-      <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-none w-full">
+    <div className="w-full sm:w-[210px] h-[450px] bg-white/60 backdrop-blur-sm border border-white/30 rounded-md p-0 shadow-[0_8px_32px_rgba(31,38,135,0.03)] sm:-mt-8 sm:-ml-2 flex flex-col overflow-hidden">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-[#1a1a2e] via-[#16213e] to-[#0f3460] text-white text-center py-2 text-[10px] sm:text-xs font-black tracking-widest uppercase select-none w-full">
         KANBAN BACKLOG
       </div>
-      <div className="p-3 pb-2 flex gap-2 shrink-0">
-        <span className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[9px] py-1 px-1 rounded-lg font-black tracking-wider uppercase shadow-xs border border-orange-200/40 select-none text-center">
-          Acción
+      
+      {/* Add Task Input */}
+      <div className="px-1.5 pt-1 pb-0.5 shrink-0">
+        <div className="flex gap-1">
+          <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleAdd()}
+            placeholder="Escriba aquí..." className="flex-1 text-[10px] h-6 bg-white border border-gray-200 rounded px-2 outline-none focus:border-purple-300 italic text-gray-500 placeholder-gray-400/70" />
+          <button onClick={handleAdd} disabled={!newTitle.trim() || adding}
+            className="w-6 h-6 flex items-center justify-center bg-[#1a1a2e] hover:bg-[#2d3a5c] text-white rounded text-xs font-bold disabled:opacity-40 transition-colors">
+            +
+          </button>
+        </div>
+      </div>
+
+      {/* Column Headers */}
+      <div className="flex gap-1 px-1.5 pb-0">
+        <span className="flex-1 bg-gradient-to-r from-[#ffe29f] via-[#fec89a] to-[#fecaca] text-slate-800 text-[9px] py-1.5 rounded-md font-black tracking-wider uppercase text-center shadow-sm border border-black">
+          ACCIÓN
         </span>
-        <span className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[9px] py-1 px-1 rounded-lg font-black tracking-wider uppercase shadow-xs border border-orange-200/40 select-none text-center">
-          Matriz
+        <span className="w-[72px] bg-gradient-to-r from-[#ffe29f] via-[#fec89a] to-[#fecaca] text-black text-[9px] py-1.5 rounded-md font-black tracking-wider uppercase text-center shadow-sm border border-black">
+          MATRIZ
         </span>
       </div>
-      <div ref={containerRef} className="flex-1 overflow-hidden px-2 pb-2 space-y-1">
-        {[...Array(rowCount)].map((_, i) => (
-          <div key={i} className="flex items-center gap-1 h-6 ">
-            <input
-              type="text"
-              placeholder="Escriba aquí"
-              className="flex-1 text-[10px] h-5  bg-transparent border border-slate-700 rounded-md outline-none placeholder:text-gray-400"
-            />
-            <div className="flex gap-0.5 border border-black-200 rounded-md px-1 py-0.5">
-              {['H', 'P', 'D', 'B'].map(l => (
-                <span
-                  key={l}
-                  className="w-3 h-3 flex items-center justify-center bg-gray-800 text-white text-[6px] rounded-full shrink-0"
-                >
-                  {l}
-                </span>
-              ))}
+      
+      {/* Task List */}
+      <div className="flex-1 overflow-y-auto px-1.5 py-1 space-y-0.5 custom-scrollbar">
+        {backlogTasks.map(task => (
+          <div key={task.id} className="flex items-center gap-1 h-6 group">
+            <span className="flex-1 text-[10px] text-gray-700 truncate bg-white/80 rounded px-1.5 h-5 border border-gray-100" title={task.titulo}>{task.titulo}</span>
+            <div className="flex gap-0.5 shrink-0">
+              <button onClick={() => handleHacer(task)} title="Hacer hoy" className="w-[18px] h-[18px] flex items-center justify-center bg-[#1a1a2e] hover:bg-[#2d3a5c] text-white text-[7px] rounded-full font-bold transition-colors">H</button>
+              <button onClick={() => onPlanificar(task)} title="Planificar" className="w-[18px] h-[18px] flex items-center justify-center bg-[#1a1a2e] hover:bg-[#2d3a5c] text-white text-[7px] rounded-full font-bold transition-colors">P</button>
+              <button onClick={() => handleDelegar(task)} title="Delegar" className="w-[18px] h-[18px] flex items-center justify-center bg-[#1a1a2e] hover:bg-[#2d3a5c] text-white text-[7px] rounded-full font-bold transition-colors">D</button>
+              <button onClick={() => handleBasura(task)} title="Eliminar" className="w-[18px] h-[18px] flex items-center justify-center bg-[#1a1a2e] hover:bg-[#2d3a5c] text-white text-[7px] rounded-full font-bold transition-colors">B</button>
             </div>
           </div>
         ))}
+        {backlogTasks.length === 0 && (
+          <p className="text-[10px] text-gray-400 text-center italic py-4">Sin tareas en backlog</p>
+        )}
       </div>
     </div>
   );
@@ -3780,34 +3881,37 @@ const BlockDeNotas: React.FC = () => {
   };
 
   return (
-    <div className="bg-white flex flex-col flex-1 h-full min-h-[160px]">
-      <div className="bg-gradient-to-r from-[#030616] via-[#0b1442] to-[#512bd4] text-white text-center py-1.5 font-bold text-xs uppercase tracking-widest border-b border-black/20 rounded-md select-none shrink-0">
-        BLOCK DE NOTAS
-      </div>
-      <div
-        ref={containerRef}
-        className="flex-1 overflow-hidden px-2 pb-2 pt-1.5 space-y-1.5 relative"
-      >
-        {[...Array(rowCount)].map((_, index) => (
-          <div
-            key={index}
-            className="w-full bg-[#f4f5f8] rounded-md h-4 flex items-center border border-transparent focus-within:border-slate-200 transition-all shrink-0"
-          >
-            <input
-              type="text"
-              value={lineas[index] || ''}
-              onChange={(e) => handleLineChange(index, e.target.value)}
-              placeholder="Escriba aquí"
-              className="w-full bg-transparent border-none outline-none focus:ring-0 text-slate-700 italic text-[10px] font-normal placeholder-gray-400 px-2"
+    <div className="flex flex-col gap-2 w-full h-[160px]">
+      {/* Card */}
+      <div className="bg-white rounded-md border border--200 shadow-sm overflow-hidden flex flex-col h-[160px]">
+        <div className="bg-gradient-to-r from-[#030616] via-[#0b1442] to-[#512bd4] text-white text-center py-1.5 font-bold text-[10px] sm:text-xs uppercase tracking-widest select-none shrink-0 rounded-md mt-2">
+          BLOCK DE NOTAS
+        </div>
+        <div
+          ref={containerRef}
+          className="flex-1 overflow-hidden px-2 pb-2 pt-1.5 space-y-1.5 relative"
+        >
+          {[...Array(rowCount)].map((_, index) => (
+            <div
+              key={index}
+              className="w-full bg-[#f4f5f8] rounded-md h-4 flex items-center border border-transparent focus-within:border-slate-200 transition-all shrink-0"
+            >
+              <input
+                type="text"
+                value={lineas[index] || ''}
+                onChange={(e) => handleLineChange(index, e.target.value)}
+                placeholder="Escriba aquí"
+                className="w-full bg-transparent border-none outline-none focus:ring-0 text-slate-700 italic text-[10px] font-normal placeholder-gray-400 px-2"
+              />
+            </div>
+          ))}
+          <div className="absolute bottom-0 right-0 w-[65px] h-[65px] pointer-events-none z-10 flex items-center justify-center">
+            <img
+              alt="Bulb"
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdxe_ps6FSLi8QbnwjEBRbjdfat6rX39n0ca23r229_cQIAgkBI5LVy4DXIBKVM27BP8mg3hfIJBAMjusej41wZ-PcTILlGH_ScXB8H0UNTezYI49xjrf6_febZLKIkMHtX5GpoGjsV9TIK31S3HI2CiwlaJcEdqvqg87oMo8ozjbh_MsjLylh_Zh-cxx8iWUDLVU7sYu7dAoNxgAidG-okpCTa3mxMT2X1inV6wCU_SAJ7GhLKPfzDM7Z2XfJ61brhoviOhrgyQY"
+              className="w-full h-full object-contain select-none filter drop-shadow-sm"
             />
           </div>
-        ))}
-        <div className="absolute bottom-0 right-0 w-[65px] h-[65px] pointer-events-none z-10 flex items-center justify-center">
-          <img
-            alt="Bulb"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdxe_ps6FSLi8QbnwjEBRbjdfat6rX39n0ca23r229_cQIAgkBI5LVy4DXIBKVM27BP8mg3hfIJBAMjusej41wZ-PcTILlGH_ScXB8H0UNTezYI49xjrf6_febZLKIkMHtX5GpoGjsV9TIK31S3HI2CiwlaJcEdqvqg87oMo8ozjbh_MsjLylh_Zh-cxx8iWUDLVU7sYu7dAoNxgAidG-okpCTa3mxMT2X1inV6wCU_SAJ7GhLKPfzDM7Z2XfJ61brhoviOhrgyQY"
-            className="w-full h-full object-contain select-none filter drop-shadow-sm"
-          />
         </div>
       </div>
     </div>
@@ -3874,7 +3978,7 @@ function ClimaComuna({ temp, descripcion, lugar, loading, error, icono, humedad,
   humedad: number; sensacion: number;
 }): React.ReactElement {
   return (
-  <div className="bg-white rounded-md border-2 border-gray-100 shadow-md overflow-hidden max-w-[300px] h-[200px] mx-auto ml-20 -mt-33">
+  <div className="bg-white rounded-md border-2 border-gray-100 shadow-md overflow-hidden max-w-[300px] h-[200px] mx-auto ml-20 -mt-38">
     <div className="bg-white rounded-md border-2 border-gray-100 card-shadow overflow-hidden w-full max-w-sm select-none gap-2 flex flex-col"> 
       <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-none w-[300px]">
         CLIMA EN MI COMUNA
