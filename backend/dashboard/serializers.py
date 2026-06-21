@@ -1,6 +1,6 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
-from .models import User, RuedaVida, TimeBlock, KanbanTask, Recordatorio, ObjetivoSemana, KeepNota, MisionHoy, CategoriaRueda, RegistroRueda, MatrixItem, Factura, Workspace, WorkspaceMember, Invitation, Delegation, Notification
+from .models import User, RuedaVida, TimeBlock, KanbanTask, Recordatorio, ObjetivoSemana, KeepNota, MisionHoy, CategoriaRueda, RegistroRueda, MatrixItem, Factura, Workspace, WorkspaceMember, Invitation, Delegation, Notification, MetaUsuario, GranMetaAnual
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -160,3 +160,25 @@ class NotificationSerializer(serializers.ModelSerializer):
         model = Notification
         fields = ['id', 'type', 'title', 'message', 'data', 'is_read', 'created_at']
         read_only_fields = ['created_at']
+
+class MetaUsuarioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetaUsuario
+        fields = ['id', 'tipo', 'texto', 'completada', 'created_at']
+        read_only_fields = ['created_at']
+
+class GranMetaAnualSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GranMetaAnual
+        fields = ['id', 'texto_meta', 'frase_resumen', 'desglose_smart', 'respuestas', 'is_vigente', 'fecha_creacion', 'fecha_aprobacion']
+        read_only_fields = ['fecha_creacion', 'fecha_aprobacion']
+
+class SmartMetaInputSerializer(serializers.Serializer):
+    area = serializers.CharField()
+    resultado = serializers.CharField()
+    impacto = serializers.CharField()
+    rueda_data = serializers.ListField(child=serializers.DictField(), required=False, default=list)
+
+class SmartMetaEditSerializer(serializers.Serializer):
+    meta_id = serializers.IntegerField()
+    comentario = serializers.CharField()

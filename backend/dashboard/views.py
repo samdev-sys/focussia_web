@@ -14,7 +14,8 @@ from django.http import Http404
 from .models import (
     User, RuedaVida, TimeBlock, KanbanTask, Recordatorio, ObjetivoSemana,
     KeepNota, MisionHoy, CategoriaRueda, RegistroRueda, MatrixItem, Factura,
-    Workspace, WorkspaceMember, Invitation, Delegation, Notification
+    Workspace, WorkspaceMember, Invitation, Delegation, Notification, MetaUsuario,
+    GranMetaAnual
 )
 from .serializers import (
     UserSerializer, UserDetailSerializer, RuedaVidaSerializer, TimeBlockSerializer,
@@ -23,7 +24,8 @@ from .serializers import (
     RegistroRuedaSerializer, GuardarRuedaSerializer, MatrixItemSerializer,
     FacturaSerializer, WorkspaceSerializer, WorkspaceDetailSerializer,
     WorkspaceMemberSerializer, InvitationSerializer, DelegationSerializer,
-    NotificationSerializer, AiMissionSerializer
+    NotificationSerializer, AiMissionSerializer, MetaUsuarioSerializer,
+    GranMetaAnualSerializer, SmartMetaInputSerializer, SmartMetaEditSerializer
 )
 
 logger = logging.getLogger('focusia.security')
@@ -519,3 +521,166 @@ def delegation_by_token(request, token):
         return Response({'error': 'Delegación expirada'}, status=status.HTTP_410_GONE)
     serializer = DelegationSerializer(delegation)
     return Response(serializer.data)
+
+
+class BaseUserViewSet(viewsets.ModelViewSet):
+    def get_queryset(self):
+        return super().get_queryset().filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class MetaUsuarioViewSet(BaseUserViewSet):
+    queryset = MetaUsuario.objects.all()
+    serializer_class = MetaUsuarioSerializer
+
+
+def call_groq(prompt, system_prompt=None):
+    api_key = settings.GROQ_API_KEY
+    if not api_key:
+        raise RuntimeError('GROQ_API_KEY no configurada')
+
+    messages = []
+    if system_prompt:
+        messages.append({'role': 'system', 'content': system_prompt})
+    messages.append({'role': 'user', 'content': prompt})
+
+    body = json.dumps({
+        'model': 'llama-3.3-70b-versatile',
+        'messages': messages,
+    }).encode()
+    req = urllib.request.Request(
+        'https://api.groq.com/openai/v1/chat/completions',
+        data=body,
+        headers={
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {api_key}',
+            'User-Agent': 'Mozilla/5.0',
+        },
+        method='POST',
+    )
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        data = json.loads(resp.read())
+    return data['choices'][0]['message']['content']
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def ai_smart_meta(request):
+    serializer = SmartMetaInputSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    area = serializer.validated_data['area']
+    resultado = serializer.validated_data['resultado']
+    impacto = serializer.validated_data['impacto']
+    rueda_data = serializer.validated_data.get('rueda_data', [])
+
+    rueda_str = ', '.join([f"{r.get('nombre','?')}: {r.get('puntaje','?')}/10" for r in rueda_data]) if rueda_data else 'No disponible'
+
+    prompt = f"""Área de mayor transformación: {area}
+Gran resultado deseado: {resultado}
+Impacto emocional deseado: {impacto}
+Puntajes Rueda de la Vida: {rueda_str}
+
+Genera una meta anual SMART en el siguiente formato JSON (sin markdown, solo JSON válido):
+{{"frase_resumen": "Durante este año, lograré...", "S": "Específica", "M": "Medible", "A": "Alcanzable", "R": "Relevante", "T": "Temporal", "texto_meta": "Texto completo de la meta"}}"""
+
+    try:
+        text = call_groq(prompt, 'Eres un coach experto en metodología SMART.')
+        try:
+            smart_data = json.loads(text)
+        except json.JSONDecodeError:
+            start = text.find('{')
+            end = text.rfind('}') + 1
+            if start >= 0 and end > start:
+                smart_data = json.loads(text[start:end])
+            else:
+                return Response({'error': 'Respuesta IA inválida'}, status=status.HTTP_502_BAD_GATEWAY)
+        return Response(smart_data)
+    except Exception as e:
+        logger.exception('Error calling Groq for SMART meta')
+        return Response({'error': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def ai_smart_meta_edit(request):
+    serializer = SmartMetaEditSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    meta_id = serializer.validated_data['meta_id']
+    comentario = serializer.validated_data['comentario']
+
+    try:
+        meta = GranMetaAnual.objects.get(id=meta_id, user=request.user)
+    except GranMetaAnual.DoesNotExist:
+        return Response({'error': 'Meta no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
+    prompt = f"""Meta actual:
+Frase: {meta.frase_resumen}
+Texto: {meta.texto_meta}
+S: {meta.desglose_smart.get('S','')}
+M: {meta.desglose_smart.get('M','')}
+A: {meta.desglose_smart.get('A','')}
+R: {meta.desglose_smart.get('R','')}
+T: {meta.desglose_smart.get('T','')}
+
+El usuario quiere modificarla con este comentario: {comentario}
+
+Genera una nueva meta anual SMART actualizada en el siguiente formato JSON (sin markdown, solo JSON válido):
+{{"frase_resumen": "Durante este año, lograré...", "S": "Específica", "M": "Medible", "A": "Alcanzable", "R": "Relevante", "T": "Temporal", "texto_meta": "Texto completo de la meta"}}"""
+
+    try:
+        text = call_groq(prompt, 'Eres un coach experto en metodología SMART.')
+        try:
+            smart_data = json.loads(text)
+        except json.JSONDecodeError:
+            start = text.find('{')
+            end = text.rfind('}') + 1
+            if start >= 0 and end > start:
+                smart_data = json.loads(text[start:end])
+            else:
+                return Response({'error': 'Respuesta IA inválida'}, status=status.HTTP_502_BAD_GATEWAY)
+        return Response(smart_data)
+    except Exception as e:
+        logger.exception('Error calling Groq for SMART edit')
+        return Response({'error': str(e)}, status=status.HTTP_502_BAD_GATEWAY)
+
+
+class GranMetaAnualViewSet(BaseUserViewSet):
+    queryset = GranMetaAnual.objects.all()
+    serializer_class = GranMetaAnualSerializer
+
+    @action(detail=False, methods=['get'])
+    def vigente(self, request):
+        meta = self.get_queryset().filter(is_vigente=True).first()
+        if not meta:
+            return Response({'data': None})
+        return Response({'data': self.get_serializer(meta).data})
+
+    @action(detail=False, methods=['get'])
+    def historial(self, request):
+        qs = self.get_queryset().order_by('-fecha_creacion')
+        return Response(self.get_serializer(qs, many=True).data)
+
+    @action(detail=False, methods=['get'])
+    def tiene_historial(self, request):
+        count = self.get_queryset().count()
+        return Response({'tiene_historial': count > 0})
+
+    @action(detail=True, methods=['post'])
+    def aprobar(self, request, pk=None):
+        meta = self.get_object()
+        self.get_queryset().filter(is_vigente=True).exclude(id=meta.id).update(is_vigente=False)
+        meta.is_vigente = True
+        meta.fecha_aprobacion = timezone.now()
+        meta.save()
+        return Response(self.get_serializer(meta).data)
+
+    @action(detail=False, methods=['post'])
+    def guardar_borrador(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

@@ -61,6 +61,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'focusia_api.middleware.AccountLockoutMiddleware',
+    'focusia_api.middleware.LastActivityMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'focusia_api.middleware.SecurityHeadersMiddleware',
@@ -131,6 +133,7 @@ REST_FRAMEWORK = {
         'user': '100/minute',
     },
     'EXCEPTION_THROTTLE_CLASSES': [],
+    'EXCEPTION_HANDLER': 'focusia_api.exceptions.custom_exception_handler',
 }
 
 SIMPLE_JWT = {

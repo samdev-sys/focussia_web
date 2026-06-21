@@ -4,6 +4,23 @@ from django.contrib.auth.models import AbstractUser
 class User(AbstractUser):
     avatar_url = models.CharField(max_length=500, blank=True, default='')
     bio = models.TextField(blank=True, default='')
+    last_activity = models.DateTimeField(null=True, blank=True)
+    locked_until = models.DateTimeField(null=True, blank=True)
+    failed_login_attempts = models.IntegerField(default=0)
+    onboarding_completed = models.BooleanField(default=False)
+    onboarding_data = models.JSONField(default=dict, blank=True)
+
+
+class LoginAttempt(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='login_attempts')
+    username = models.CharField(max_length=150)
+    ip_address = models.GenericIPAddressField(blank=True, null=True)
+    user_agent = models.TextField(blank=True, default='')
+    success = models.BooleanField(default=False)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp']
 
 class RuedaVida(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='rueda_vida')
@@ -12,10 +29,16 @@ class RuedaVida(models.Model):
     dinero = models.IntegerField(default=5)
 
 class TimeBlock(models.Model):
+    ESTADO_CHOICES = [
+        ('pending', 'Pending'),
+        ('doing', 'Doing'),
+        ('done', 'Done'),
+    ]
+    
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='time_blocks')
     hora = models.IntegerField()
     tarea = models.CharField(max_length=255, blank=True)
-    estado = models.BooleanField(default=False)
+    estado = models.CharField(max_length=10, choices=ESTADO_CHOICES, default='pending')
 
     class Meta:
         ordering = ['hora']
@@ -194,3 +217,35 @@ class Notification(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+
+class MetaUsuario(models.Model):
+    TIPO_CHOICES = [
+        ('anual', 'Anual'),
+        ('mensual', 'Mensual'),
+        ('semanal', 'Semanal'),
+        ('diaria', 'Diaria'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='metas')
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
+    texto = models.CharField(max_length=500)
+    completada = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['tipo', 'created_at']
+
+
+class GranMetaAnual(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='metas_anuales')
+    texto_meta = models.TextField()
+    frase_resumen = models.CharField(max_length=300, blank=True, default='')
+    desglose_smart = models.JSONField(default=dict, blank=True)
+    respuestas = models.JSONField(default=dict, blank=True)
+    is_vigente = models.BooleanField(default=False)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_aprobacion = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-fecha_creacion']
