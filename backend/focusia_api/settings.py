@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from datetime import timedelta
 from django.core.exceptions import ImproperlyConfigured
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -29,6 +30,7 @@ def _require_env(key):
     if not val:
         raise ImproperlyConfigured(f'Variable de entorno {key} no definida.')
     return val
+
 
 SECRET_KEY = _require_env('SECRET_KEY')
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
@@ -89,14 +91,10 @@ TEMPLATES = [
 WSGI_APPLICATION = 'focusia_api.wsgi.application'
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'focusia_db'),
-        'USER': os.environ.get('DB_USER', 'postgres'),
-        'PASSWORD': _require_env('DB_PASSWORD'),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
-    }
+    'default': dj_database_url.config(
+        default=f"postgresql://{os.environ.get('DB_USER', 'postgres')}:{os.environ.get('DB_PASSWORD', '')}@{os.environ.get('DB_HOST', 'localhost')}:{os.environ.get('DB_PORT', '5432')}/{os.environ.get('DB_NAME', 'focusia_db')}",
+        conn_max_age=600
+    )
 }
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -145,12 +143,19 @@ SIMPLE_JWT = {
     'AUTH_COOKIE_REFRESH': 'refresh_token',
     'AUTH_COOKIE_SECURE': not DEBUG,
     'AUTH_COOKIE_HTTP_ONLY': True,
-    'AUTH_COOKIE_SAMESITE': 'Strict',
+    'AUTH_COOKIE_SAMESITE':'Lax' if DEBUG else 'None',
 }
 
 # CORS
-CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000,http://localhost').split(',')
+raw_cors = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000')
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in raw_cors.split(',') if origin.strip()]
 CORS_ALLOW_CREDENTIALS = True
+# Netlify explícito en producción por seguridad
+if not DEBUG:
+    if "https://focussia.netlify.app" not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append("https://focussia.netlify.app")
+# CSRF requiere obligatoriamente el formato https:// en Django >= 4.0
+CSRF_TRUSTED_ORIGINS = [origin for origin in CORS_ALLOWED_ORIGINS]
 
 # CSRF
 CSRF_TRUSTED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000,http://localhost').split(',')
