@@ -153,10 +153,13 @@ if not DEBUG:
     if "https://focussia.netlify.app" not in CORS_ALLOWED_ORIGINS:
         CORS_ALLOWED_ORIGINS.append("https://focussia.netlify.app")
 # CSRF requiere obligatoriamente el formato https:// en Django >= 4.0
-CSRF_TRUSTED_ORIGINS = [origin for origin in CORS_ALLOWED_ORIGINS]
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 
-# CSRF
-CSRF_TRUSTED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000,http://localhost').split(',')
+# Cookies cross-site (necesario para Netlify -> Railway)
+SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SECURE = True
 
 # Logging de seguridad
 LOGGING = {
