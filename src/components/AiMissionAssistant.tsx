@@ -6,7 +6,6 @@ interface AiMissionAssistantProps {
   isOpen: boolean;
   onClose: () => void;
   metaAnual: string[];
-  metaMensual: string[];
   metaSemanal: string[];
   metaDiaria: string[];
   onSelectMission: (mission: string) => void;
@@ -16,7 +15,6 @@ export const AiMissionAssistant: React.FC<AiMissionAssistantProps> = ({
   isOpen,
   onClose,
   metaAnual,
-  metaMensual,
   metaSemanal,
   metaDiaria,
   onSelectMission,
@@ -29,7 +27,6 @@ export const AiMissionAssistant: React.FC<AiMissionAssistantProps> = ({
 
   const buildGoalsContext = () => [
     `Metas Anuales: ${metaAnual.join(', ')}`,
-    `Metas Mensuales: ${metaMensual.join(', ')}`,
     `Metas Semanales: ${metaSemanal.join(', ')}`,
     `Metas Diarias: ${metaDiaria.join(', ')}`,
   ].join('\n');
@@ -103,7 +100,6 @@ Responde ÚNICAMENTE con 3 ideas numeradas (1., 2., 3.), una por línea. Sin sal
             </h3>
             <div className="space-y-1 text-[11px] text-gray-600">
               <p><span className="font-semibold">Anual:</span> {metaAnual.join(', ')}</p>
-              <p><span className="font-semibold">Mensual:</span> {metaMensual.join(', ')}</p>
               <p><span className="font-semibold">Semanal:</span> {metaSemanal.join(', ')}</p>
               <p><span className="font-semibold">Diaria:</span> {metaDiaria.join(', ')}</p>
             </div>
