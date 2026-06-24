@@ -63,8 +63,6 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'focusia_api.middleware.AccountLockoutMiddleware',
-    'focusia_api.middleware.LastActivityMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'focusia_api.middleware.SecurityHeadersMiddleware',
