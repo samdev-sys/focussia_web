@@ -90,8 +90,7 @@ WSGI_APPLICATION = 'focusia_api.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default=f"postgresql://{os.environ.get('DB_USER', 'postgres')}:{os.environ.get('DB_PASSWORD', '')}@{os.environ.get('DB_HOST', 'localhost')}:{os.environ.get('DB_PORT', '5432')}/{os.environ.get('DB_NAME', 'focusia_db')}",
-        conn_max_age=600
+        default=f"postgres://{os.environ.get('DB_USER', 'postgres')}:{os.environ.get('DB_PASSWORD', '')}@{os.environ.get('DB_HOST', 'localhost')}:{os.environ.get('DB_PORT', '5432')}/{os.environ.get('DB_NAME', 'focusia_db')}"
     )
 }
 
@@ -142,18 +141,24 @@ SIMPLE_JWT = {
     'AUTH_COOKIE_SECURE': not DEBUG,
     'AUTH_COOKIE_HTTP_ONLY': True,
     'AUTH_COOKIE_SAMESITE':'Lax' if DEBUG else 'None',
+    
 }
+SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SECURE = True
 
 # CORS
 raw_cors = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000')
 CORS_ALLOWED_ORIGINS = [origin.strip() for origin in raw_cors.split(',') if origin.strip()]
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 CORS_ALLOW_CREDENTIALS = True
 # Netlify explícito en producción por seguridad
 if not DEBUG:
     if "https://focussia.netlify.app" not in CORS_ALLOWED_ORIGINS:
         CORS_ALLOWED_ORIGINS.append("https://focussia.netlify.app")
 # CSRF requiere obligatoriamente el formato https:// en Django >= 4.0
-CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
+
 
 # Cookies cross-site (necesario para Netlify -> Railway)
 SESSION_COOKIE_SAMESITE = 'None'

@@ -75,12 +75,12 @@ class EmailTokenObtainPairView(TokenObtainPairView):
                 resp = Response({'status': 'ok'}, status=status.HTTP_200_OK)
                 resp.set_cookie(
                     'access_token', access,
-                    httponly=True, secure=secure, samesite='Strict',
+                    httponly=True, secure=True, samesite='None',
                     max_age=86400,
                 )
                 resp.set_cookie(
                     'refresh_token', refresh,
-                    httponly=True, secure=secure, samesite='Strict',
+                    httponly=True, secure=True, samesite='None',
                     max_age=604800,
                 )
                 return resp
@@ -109,12 +109,12 @@ class CookieTokenRefreshView(TokenRefreshView):
             secure = not settings.DEBUG
             response.set_cookie(
                 'access_token', serializer.validated_data.get('access'),
-                httponly=True, secure=secure, samesite='Strict',
+                httponly=True, secure=True, samesite='None',
                 max_age=86400,
             )
             response.set_cookie(
                 'refresh_token', serializer.validated_data.get('refresh'),
-                httponly=True, secure=secure, samesite='Strict',
+                httponly=True, secure=True, samesite='None',
                 max_age=604800,
             )
             if hasattr(request, 'user') and request.user.is_authenticated:
