@@ -41,7 +41,7 @@ export interface TimeBlockData {
   id: number;
   hora: number;
   tarea: string;
-  estado: boolean;
+  estado: 'pending' | 'doing' | 'done';
 }
 
 export interface KanbanTaskData {
@@ -52,12 +52,30 @@ export interface KanbanTaskData {
   fecha_hora?: string;
 }
 
+export interface KanbanActionData {
+  id: string;
+  title: string;
+  source: 'USER_INPUT' | 'RUEDA_VIDA_SUGGESTION';
+  classification_status: 'PENDIENTE' | 'HACER' | 'PLANIFICAR' | 'DELEGAR' | 'ELIMINAR';
+  scheduled_date: string | null;
+  pinned: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 
 export interface MatrixItemData {
   id: number;
   task: string;
   quadrant: 'do' | 'schedule' | 'delegate' | 'eliminate';
   is_done: boolean;
+}
+
+export interface MatrizEisenhowerData {
+  id: number;
+  status: 'INCOMPLETO' | 'COMPLETADO';
+  video_watched: boolean;
+  completed_at: string | null;
 }
 
 export interface FacturaData {
@@ -123,6 +141,9 @@ export const timeBlockService = {
     const response = await api.post('/api/time-blocks/', data);
     return response.data;
   },
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/api/time-blocks/${id}/`);
+  },
 };
 
 export const kanbanService = {
@@ -142,6 +163,30 @@ export const kanbanService = {
   },
   delete: async (id: number): Promise<void> => {
     await api.delete(`/api/kanban-tasks/${id}/`);
+  },
+};
+
+export const kanbanActionService = {
+  getActive: async (): Promise<KanbanActionData[]> => {
+    const response = await api.get('/api/kanban-actions/active/');
+    return response.data;
+  },
+
+  add: async (title: string): Promise<KanbanActionData> => {
+    const response = await api.post('/api/kanban-actions/add/', { title });
+    return response.data;
+  },
+
+  classify: async (id: string, decision: 'H' | 'P' | 'D' | 'E', scheduledDate?: string): Promise<KanbanActionData> => {
+    const payload: Record<string, string> = { decision };
+    if (scheduledDate) payload.scheduled_date = scheduledDate;
+    const response = await api.patch(`/api/kanban-actions/classify/${id}/`, payload);
+    return response.data;
+  },
+
+  pin: async (id: string): Promise<KanbanActionData> => {
+    const response = await api.patch(`/api/kanban-actions/pin/${id}/`);
+    return response.data;
   },
 };
 
@@ -252,6 +297,36 @@ export interface RuedaCategoria {
   nombre: string;
   icono: string;
   puntaje: number;
+  comentario: string;
+}
+
+export interface DiagnosticoRuedaData {
+  promedio_general: number;
+  nivel_equilibrio: string;
+  pico_alto: string;
+  pico_bajo: string;
+  foco_1: string;
+  foco_2: string;
+  foco_3: string;
+  justificacion_focos: string;
+}
+
+export interface AccionSugeridaData {
+  id: number;
+  area_foco: string;
+  texto: string;
+  enviada_kanban: boolean;
+  creado: string;
+}
+
+export interface ResumenRuedaDashboard {
+  tiene_diagnostico: boolean;
+  foco_1?: string;
+  foco_2?: string;
+  foco_3?: string;
+  nivel_equilibrio?: string;
+  promedio_general?: number;
+  promedio_actual?: number;
 }
 
 export const ruedaService = {
@@ -259,9 +334,35 @@ export const ruedaService = {
     const response = await api.get('/api/rueda-vida-completa/');
     return response.data;
   },
-  guardar: async (puntajes: Record<number, number>): Promise<void> => {
-    await api.post('/api/rueda-vida-completa/', { puntajes });
-  }
+  guardar: async (puntajes: Record<number, number>, comentarios?: Record<string, string>): Promise<void> => {
+    const payload: any = { puntajes };
+    if (comentarios) payload.comentarios = comentarios;
+    await api.post('/api/rueda-vida-completa/', payload);
+  },
+  generarDiagnostico: async (puntajes: Record<number, number>, comentarios?: Record<string, string>): Promise<DiagnosticoRuedaData> => {
+    const response = await api.post('/api/rueda/generar-diagnostico/', { puntajes, comentarios });
+    return response.data;
+  },
+  verDiagnostico: async (): Promise<{ diagnostico: DiagnosticoRuedaData | null }> => {
+    const response = await api.get('/api/rueda/diagnostico/');
+    return response.data;
+  },
+  generarAcciones: async (areaFoco: string): Promise<{ acciones: AccionSugeridaData[]; total_area: number; disponibles: number }> => {
+    const response = await api.post('/api/rueda/generar-acciones/', { area_foco: areaFoco });
+    return response.data;
+  },
+  listarAcciones: async (areaFoco?: string): Promise<AccionSugeridaData[]> => {
+    const params = areaFoco ? `?area_foco=${encodeURIComponent(areaFoco)}` : '';
+    const response = await api.get(`/api/rueda/acciones/${params}`);
+    return response.data;
+  },
+  enviarAccionKanban: async (accionId: number): Promise<void> => {
+    await api.post('/api/rueda/enviar-accion-kanban/', { accion_id: accionId });
+  },
+  resumenDashboard: async (): Promise<ResumenRuedaDashboard> => {
+    const response = await api.get('/api/rueda/resumen-dashboard/');
+    return response.data;
+  },
 };
 
 export const matrixService = {
@@ -439,5 +540,223 @@ export const notificationService = {
     const response = await api.get('/api/notifications/');
     return response.data;
   }
+};
+
+export interface MetaAnualData {
+  id: number;
+  titulo: string;
+  descripcion: string;
+  fecha_inicio: string;
+  fecha_fin: string;
+  aprobada: boolean;
+  creado: string;
+}
+
+export interface ObjetivoMensualData {
+  id: number;
+  meta_anual: number | null;
+  mes: number;
+  titulo: string;
+  descripcion: string;
+  completado: boolean;
+  creado: string;
+}
+
+export interface PropuestaIData {
+  id: number;
+  tipo_impacto: 'estructural' | 'estrategico_critico' | 'de_prioridad';
+  situacion_clara: string;
+  explicacion_impacto: string;
+  propuesta_ajuste: string;
+  fase_detectada: string;
+  respondida: boolean;
+  decision_usuario: string;
+  leida: boolean;
+  creada: string;
+}
+
+export const metaAnualService = {
+  getAll: async (): Promise<MetaAnualData[]> => {
+    const response = await api.get('/api/metas-anuales/');
+    return response.data;
+  },
+  get: async (id: number): Promise<MetaAnualData> => {
+    const response = await api.get(`/api/metas-anuales/${id}/`);
+    return response.data;
+  },
+  create: async (data: Omit<MetaAnualData, 'id' | 'creado'>): Promise<MetaAnualData> => {
+    const response = await api.post('/api/metas-anuales/', data);
+    return response.data;
+  },
+  update: async (id: number, data: Partial<MetaAnualData>): Promise<MetaAnualData> => {
+    const response = await api.patch(`/api/metas-anuales/${id}/`, data);
+    return response.data;
+  },
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/api/metas-anuales/${id}/`);
+  },
+};
+
+export const objetivoMensualService = {
+  getAll: async (): Promise<ObjetivoMensualData[]> => {
+    const response = await api.get('/api/objetivos-mensuales/');
+    return response.data;
+  },
+  create: async (data: Omit<ObjetivoMensualData, 'id' | 'creado'>): Promise<ObjetivoMensualData> => {
+    const response = await api.post('/api/objetivos-mensuales/', data);
+    return response.data;
+  },
+  update: async (id: number, data: Partial<ObjetivoMensualData>): Promise<ObjetivoMensualData> => {
+    const response = await api.patch(`/api/objetivos-mensuales/${id}/`, data);
+    return response.data;
+  },
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/api/objetivos-mensuales/${id}/`);
+  },
+};
+
+export const propuestaIAService = {
+  getAll: async (): Promise<PropuestaIData[]> => {
+    const response = await api.get('/api/propuestas-ia/');
+    return response.data;
+  },
+  get: async (id: number): Promise<PropuestaIData> => {
+    const response = await api.get(`/api/propuestas-ia/${id}/`);
+    return response.data;
+  },
+  decidir: async (id: number, decision: string): Promise<PropuestaIData> => {
+    const response = await api.post(`/api/propuestas-ia/${id}/decidir/`, { decision });
+    return response.data;
+  },
+  marcarLeida: async (id: number): Promise<PropuestaIData> => {
+    const response = await api.post(`/api/propuestas-ia/${id}/marcar_leida/`);
+    return response.data;
+  },
+  ejecutarMotor: async (): Promise<any> => {
+    const response = await api.post('/api/ai/ejecutar-motor/');
+    return response.data;
+  },
+};
+
+export interface ConfiguracionData {
+  voz_genero: 'masculino' | 'femenino';
+  estilo_comunicacion: 'suave' | 'directo';
+  nivel_exigencia: 'bajo' | 'medio' | 'alto';
+  frecuencia_intervenciones: number;
+  canales_interaccion: string[];
+  ventana_inicio: string;
+  ventana_fin: string;
+  avatar_index: number;
+  onboarding_completado: boolean;
+  video_inicial_visto: boolean;
+  ultimo_ingreso: string | null;
+}
+
+export interface ActivacionData {
+  id: number;
+  tipo: 'tradicional' | 'simulada' | 'con_intencion' | 'adaptativa';
+  estado: 'pendiente' | 'enviada' | 'vista' | 'respondida' | 'ignorada' | 'fallida';
+  titulo: string;
+  mensaje: string;
+  mensaje_intencion: string;
+  metadata: any;
+  ventana_programada: string | null;
+  enviada_en: string | null;
+  leida_en: string | null;
+  respondida_en: string | null;
+  creada: string;
+}
+
+export const configuracionService = {
+  getMiConfig: async (): Promise<ConfiguracionData> => {
+    const response = await api.get('/api/configuracion/mi_config/');
+    return response.data;
+  },
+  updateMiConfig: async (data: Partial<ConfiguracionData>): Promise<ConfiguracionData> => {
+    const response = await api.patch('/api/configuracion/mi_config/', data);
+    return response.data;
+  },
+};
+
+export const activacionService = {
+  getPendientes: async (): Promise<ActivacionData[]> => {
+    const response = await api.get('/api/activaciones/pendientes/');
+    return response.data;
+  },
+  marcarVista: async (id: number): Promise<ActivacionData> => {
+    const response = await api.post(`/api/activaciones/${id}/marcar_vista/`);
+    return response.data;
+  },
+  marcarRespondida: async (id: number): Promise<ActivacionData> => {
+    const response = await api.post(`/api/activaciones/${id}/marcar_respondida/`);
+    return response.data;
+  },
+};
+
+export interface ContextoAnalisisInput {
+  meta_anual: {
+    id: number;
+    texto_meta: string;
+    desglose_smart?: string;
+  } | null;
+  metricas_ejecucion: {
+    horas_planificadas: number;
+    horas_disponibles_reales: number;
+    tasa_cumplimiento_48h: number;
+    tareas_completadas: number;
+    tareas_backlog: number;
+  };
+  historial_alertas: {
+    ultima_alerta_respondida: boolean;
+    dias_desde_ultima_intervencion: number;
+  };
+  tareas_detalladas_backlog: Array<{
+    id: number;
+    titulo: string;
+    proyecto: string;
+    conectada_a_meta_anual: boolean;
+  }>;
+}
+
+export interface AnalisisContextoOutput {
+  intervencion_necesaria: boolean;
+  tipo_alerta_detectada: 'ESTRATÉGICO_CRÍTICO' | 'ESTRUCTURAL_SATURACIÓN' | 'PRIORIDAD_REORGANIZACIÓN' | null;
+  payload: {
+    bloque_1_impacto_inmediato: {
+      mensaje_gancho: string;
+    };
+    bloque_3_interpretacion_ia: {
+      texto_interpretacion: string;
+      analisis_vector: {
+        que_hizo_bien: string;
+        que_hizo_mal: string;
+        significado_avance: string;
+      };
+    };
+    bloque_4_acciones_disponibles: Array<{
+      accion_key: string;
+      texto_boton: string;
+      sugiere_flujo_adaptativo: boolean;
+    }>;
+  } | null;
+  propuesta_id?: number;
+}
+
+export const matrizEisenhowerService = {
+  getProgress: async (): Promise<MatrizEisenhowerData> => {
+    const response = await api.get('/api/matriz-eisenhower/progress/');
+    return response.data;
+  },
+  updateProgress: async (data: Partial<MatrizEisenhowerData>): Promise<MatrizEisenhowerData> => {
+    const response = await api.patch('/api/matriz-eisenhower/progress/', data);
+    return response.data;
+  },
+};
+
+export const analizarContextoService = {
+  ejecutar: async (input: ContextoAnalisisInput): Promise<AnalisisContextoOutput> => {
+    const response = await api.post('/api/ai/analizar-contexto/', input);
+    return response.data;
+  },
 };
 

@@ -1,21 +1,31 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { 
-  workspaceService, invitationService, delegationService, authService, notificationService, kanbanService, recordatorioService, ruedaService, timeBlockService, objetivoSemanaService, keepNotaService, misionHoyService, billService, matrixService,
-  InvitationData, DelegationData, NotificationData, WorkspaceData, WorkspaceMemberData, RuedaCategoria, TimeBlockData, ObjetivoSemanaData, KeepNotaData, MisionHoyData, RecordatorioData, FacturaData, MatrixItemData, KanbanTaskData
+import {
+  workspaceService, invitationService, delegationService, authService, notificationService, kanbanService, recordatorioService, ruedaService, timeBlockService, objetivoSemanaService, keepNotaService, misionHoyService, billService, matrixService, configuracionService,
+  InvitationData, DelegationData, NotificationData, WorkspaceData, WorkspaceMemberData, RuedaCategoria, ResumenRuedaDashboard, TimeBlockData, ObjetivoSemanaData, KeepNotaData, MisionHoyData, RecordatorioData, FacturaData, MatrixItemData, KanbanTaskData
 } from './services/api';
+import { AVATAR_FILES } from './constants/avatars';
 
 
 import { KanbanBoard } from './components/KanbanBoard';
+import { KanbanBacklog } from './components/KanbanBacklog';
 import { NotificationToast } from './components/NotificationToast';
 import { FormularioRueda } from './components/FormularioRueda';
+import DiagnosticoRueda from './components/DiagnosticoRueda';
+import MatrizEisenhower from './components/MatrizEisenhower';
 import { useReminderToasts } from './hooks/useReminderToasts';
 import { ActionButton } from './components/ActionButton';
 import { AiMissionAssistant } from './components/AiMissionAssistant';
+import { MetaAnualForm } from './components/MetaAnualForm';
+import { BuzonPropuestas } from './components/BuzonPropuestas';
+import { MicroFlujoAjuste } from './components/MicroFlujoAjuste';
+import { ConfiguracionPanel } from './components/ConfiguracionPanel';
+import { PlanificarModal } from './components/PlanificarModal';
 import { X, Moon, Sun, LogOut, User, Plus, ArrowRight, Calendar, Edit3, Info, CheckCircle2, Play, ChevronRight, Target, TrendingUp, CalendarDays, CheckCircle, CreditCard, Landmark, Receipt, AlertCircle, CheckSquare, Pill, Clock, Edit, Check, Zap, Trophy, Star, Shield, Flame, Users, Settings, Mail, Copy, Crown, ShieldCheck, UserPlus, Trash2, Send, Briefcase, Bell, MessageSquare, Sparkles } from 'lucide-react';
 
 
 interface DashboardProps {
   onLogout: () => void;
+  onBackToHub?: () => void;
 }
 interface FechasImportantesProps {
   dayActive?: number;
@@ -91,19 +101,32 @@ const espaciosVacios = [''];
   const diasMes = Array.from({ length: 30 }, (_, i) => i + 1);
 
 
-const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
+const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
+  const kanbanRef = useRef<HTMLDivElement>(null);
   const [ruedaCompleta, setRuedaCompleta] = useState<RuedaCategoria[]>([]);
   const [showDelegarModal, setShowDelegarModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showRecordatorioModal, setShowRecordatorioModal] = useState(false);
   const [showRuedaModal, setShowRuedaModal] = useState(false);
   const [showRuedaVideoModal, setShowRuedaVideoModal] = useState(false);
+  const [showDiagnosticoRueda, setShowDiagnosticoRueda] = useState(false);
+  const [resumenRueda, setResumenRueda] = useState<ResumenRuedaDashboard | null>(null);
+  const [showMatrizEisenhower, setShowMatrizEisenhower] = useState(false);
   const [showMatrizVideoModal, setShowMatrizVideoModal] = useState(false);
   const [showMatrizFormModal, setShowMatrizFormModal] = useState(false);
+  const handleGoKanban = () => {
+    setShowMatrizEisenhower(false);
+    setTimeout(() => kanbanRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+  };
   const [showMetaAnualModal, setShowMetaAnualModal] = useState(false);
   const [showMetaMensualModal, setShowMetaMensualModal] = useState(false);
   const [showMetaSemanalModal, setShowMetaSemanalModal] = useState(false);
   const [showMetaDiariaModal, setShowMetaDiariaModal] = useState(false);
+  const [showMetaAnualForm, setShowMetaAnualForm] = useState(false);
+  const [showBuzonPropuestas, setShowBuzonPropuestas] = useState(false);
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
+  const [showMicroFlujo, setShowMicroFlujo] = useState(false);
+  const [microFlujoPropuesta, setMicroFlujoPropuesta] = useState<any>(null);
   const [showMedicamentosModal, setShowMedicamentosModal] = useState(false);
   const [showInicioModal, setShowInicioModal] = useState(false);
   const [showBillModal, setShowBillModal] = useState(false);
@@ -152,8 +175,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [delegations, setDelegations] = useState<{ sent: DelegationData[]; received: DelegationData[] }>({ sent: [], received: [] });
   const [delegationTab, setDelegationTab] = useState<'create' | 'received'>('create');
   const [showAccionesDelegarModal, setShowAccionesDelegarModal] = useState(false);
+  const [taskToPlanificar, setTaskToPlanificar] = useState<KanbanTaskData | null>(null);
 
-  const [userData, setUserData] = useState({ username: 'Brenda', email: '', avatar_url: '' });
+  const [userData, setUserData] = useState({ username: 'Brenda', email: '', avatar_url: '', avatar_index: 0 });
   const [newAvatarUrl, setNewAvatarUrl] = useState('');
   const [newUsername, setNewUsername] = useState('');
   const [medicamentos, setMedicamentos] = useState<Array<{
@@ -646,13 +670,19 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     const fetchUserData = async () => {
       try {
         const data = await authService.getCurrentUser();
+        const config = await configuracionService.getMiConfig();
+        const avatarIdx = config.avatar_index || 0;
+        const resolvedAvatar = avatarIdx > 0 && AVATAR_FILES[avatarIdx]
+          ? AVATAR_FILES[avatarIdx]
+          : data.avatar_url || `https://ui-avatars.com/api/?name=${data.username}&background=f4d2d2&color=000`;
         setUserData({
           username: data.username,
           email: data.email,
-          avatar_url: data.avatar_url || `https://ui-avatars.com/api/?name=${data.username}&background=f4d2d2&color=000`
+          avatar_url: resolvedAvatar,
+          avatar_index: avatarIdx,
         });
         setNewUsername(data.username);
-        setNewAvatarUrl(data.avatar_url || '');
+        setNewAvatarUrl(resolvedAvatar);
       } catch (err) {
         console.error('Error fetching user data:', err);
       }
@@ -682,10 +712,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         username: newUsername,
         avatar_url: newAvatarUrl
       });
+      const avatarIdx = Object.entries(AVATAR_FILES).find(([_, path]) => path === newAvatarUrl)?.[0];
+      if (avatarIdx) {
+        await configuracionService.updateMiConfig({ avatar_index: parseInt(avatarIdx) } as any);
+      }
       setUserData({
         ...userData,
         username: updated.username,
-        avatar_url: updated.avatar_url || `//api/?name=${updated.username}&background=f4d2d2&color=000`
+        avatar_url: updated.avatar_url || `//api/?name=${updated.username}&background=f4d2d2&color=000`,
+        avatar_index: avatarIdx ? parseInt(avatarIdx) : userData.avatar_index,
       });
       setShowUserSettingsModal(false);
       addXP(50, 'Perfil actualizado');
@@ -708,7 +743,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [ruedaCompletaRes, tbRes, objRes, keepRes, misRes, factRes, matrixRes, kanbanRes] = await Promise.all([
+        const [ruedaCompletaRes, tbRes, objRes, keepRes, misRes, factRes, matrixRes, kanbanRes, resumenRuedaRes] = await Promise.all([
           ruedaService.getCompleta().catch(() => []),
           timeBlockService.getAll().catch(() => []),
           objetivoSemanaService.get().catch(() => null),
@@ -716,10 +751,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           misionHoyService.get().catch(() => null),
           billService.getAll().catch(() => []),
           matrixService.getAll().catch(() => []),
-          kanbanService.getAll().catch(() => [])
+          kanbanService.getAll().catch(() => []),
+          ruedaService.resumenDashboard().catch(() => null)
         ]);
 
         setRuedaCompleta(ruedaCompletaRes);
+        setResumenRueda(resumenRuedaRes as ResumenRuedaDashboard | null);
         setTimeBlocks(Array.isArray(tbRes) ? tbRes : []);
         setObjetivo(Array.isArray(objRes) ? objRes[0] : objRes);
         setKeepNota(Array.isArray(keepRes) ? keepRes[0] : keepRes);
@@ -755,23 +792,28 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     if (block && block.tarea === value) return; // Sin cambios
     try {
       if (block) {
+        // Optimistic update
+        setTimeBlocks((prev: TimeBlockData[]) => prev.map((t: TimeBlockData) => t.id === block.id ? { ...t, tarea: value } : t));
         await timeBlockService.update(block.id, { tarea: value });
       } else {
-        const newBlock = await timeBlockService.create({ hora, tarea: value, estado: false });
+        const newBlock = await timeBlockService.create({ hora, tarea: value, estado: 'pending' });
         setTimeBlocks(prev => [...prev, newBlock]);
       }
       showSaving();
     } catch (e) {
+      // Rollback on error
+      if (block) {
+        setTimeBlocks((prev: TimeBlockData[]) => prev.map((t: TimeBlockData) => t.id === block.id ? { ...t, tarea: block.tarea } : t));
+      }
       console.error("Error saving timeblock", e);
     }
   };
 
-  const handleTimeBlockStatus = async (hora: number, estado: boolean) => {
+  const handleTimeBlockStatus = async (hora: number, estado: 'pending' | 'doing' | 'done') => {
     const block = timeBlocks.find((t: TimeBlockData) => t.hora === hora);
     try {
       if (block) {
         await timeBlockService.update(block.id, { estado });
-        // update local state so it doesn't revert
         setTimeBlocks((prev: TimeBlockData[]) => prev.map((t: TimeBlockData) => t.id === block.id ? { ...t, estado } : t));
       } else {
         const newBlock = await timeBlockService.create({ hora, tarea: '', estado });
@@ -838,7 +880,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     return `conic-gradient(${gradientParts.join(', ')})`;
   };
 
-  const defaultHours = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 23];
+  const defaultHours = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
 
   return (
     <div className="min-h-screen bg-[#e8eef2] bg-cover bg-center bg-no-repeat bg-blend-soft-light text-[#2d2f33] font-sans flex flex-col items-center py-4 px-2 sm:py-6 sm:px-4 relative overflow-auto">
@@ -932,6 +974,33 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       {isDarkMode ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-white" />}
     </button>
 
+    {/* Meta Anual */}
+    <button
+      onClick={() => setShowMetaAnualForm(true)}
+      className="flex items-center justify-center w-8 h-8 rounded-full bg-black/20 hover:bg-black/30 transition-all border border-black/40 shadow-sm active:scale-95"
+      title="Gran Meta Anual"
+    >
+      <Target className="w-4 h-4 text-white" />
+    </button>
+
+    {/* Buzón Propuestas IA */}
+    <button
+      onClick={() => setShowBuzonPropuestas(true)}
+      className="flex items-center justify-center w-8 h-8 rounded-full bg-black/20 hover:bg-black/30 transition-all border border-black/40 shadow-sm active:scale-95"
+      title="Buzón de Propuestas IA"
+    >
+      <Sparkles className="w-4 h-4 text-white" />
+    </button>
+
+    {/* Configuración */}
+    <button
+      onClick={() => setShowConfigPanel(true)}
+      className="flex items-center justify-center w-8 h-8 rounded-full bg-black/20 hover:bg-black/30 transition-all border border-black/40 shadow-sm active:scale-95"
+      title="Configuración del Sistema"
+    >
+      <Settings className="w-4 h-4 text-white" />
+    </button>
+
     {/* Centro de Notificaciones */}
     <div className="relative">
       <button
@@ -982,6 +1051,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
       
     />
+    {/* 4. DELEGAR */}
+   
   </div>
 </div>
             <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-3 flex flex-col gap-3 w-[250px] shadow-[0_8px_32px_rgba(31,38,135,0.03)] -ml-2">
@@ -993,146 +1064,64 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                   INICIO
                 </button>
                 <button
-                  onClick={() => setShowRuedaVideoModal(true)}
+                  onClick={() => setShowDiagnosticoRueda(true)}
                   className="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"
                   >
                    RUEDA
                 </button>
                 <button
-                  onClick={() => setShowMatrizVideoModal(true)}
+                  onClick={() => setShowMatrizEisenhower(true)}
                   className="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"
                 >
                   MATRIZ
                 </button>
               </div>
               <div
-  onClick={() => setShowRuedaVideoModal(true)}
-  className="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden flex flex-col flex-1 cursor-pointer hover:shadow-md  border border-black-200/40 transition-shadow  "
+  onClick={() => setShowDiagnosticoRueda(true)}
+  className="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden flex flex-col flex-1 cursor-pointer hover:shadow-md transition-shadow"
 >
-  {/* BARRA HEADER OSCURA DE LA TARJETA */}
-  <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5  rounded-md text-[10px] sm:text-xs font-bold tracking-widest uppercase">
-    RUEDA DE LA VIDA
+  <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 rounded-md text-[10px] sm:text-xs font-bold tracking-widest uppercase"> RUEDA DE LA VIDA
   </div>
 
-  {/* CONTENIDO INTERNO: GRÁFICO + CATEGORÍAS */}
   <div className="p-3 sm:p-4 flex items-center justify-between gap-4 flex-1 bg-white">
-    
-    {/* LADO IZQUIERDO: EL GRÁFICO SVG EXACTO DE LA RUEDA SEGMENTADA */}
-    <div className="w-[110px] h-[110px] shrink-0 relative flex items-center justify-center">
-  <svg
-    viewBox="0 0 100 100"
-    className="w-full h-full transform -rotate-22.5" // Rotación base original para alinear los quesitos
-  >
-    {/* ─── 🎨 SEGMENTOS DE COLORES ORIGINALES ─── */}
-    {/* Segmento 1 - Vino Tinto (Salud) */}
-    <path d="M 50 50 L 50 2 A 48 48 0 0 1 83.94 16.06 Z" fill="#911d33" stroke="#fff" strokeWidth="1.5" />
-    {/* Segmento 2 - Azul Oscuro (Familia) */}
-    <path d="M 50 50 L 83.94 16.06 A 48 48 0 0 1 98 50 Z" fill="#0c5a75" stroke="#fff" strokeWidth="1.5" />
-    {/* Segmento 3 - Azul Claro (Trabajo / Dinero) */}
-    <path d="M 50 50 L 98 50 A 48 48 0 0 1 83.94 83.94 Z" fill="#00a3e0" stroke="#fff" strokeWidth="1.5" />
-    {/* Segmento 4 - Turquesa (Social / Amigos) */}
-    <path d="M 50 50 L 83.94 83.94 A 48 48 0 0 1 50 98 Z" fill="#4cd2e4" stroke="#fff" strokeWidth="1.5" />
-    {/* Segmento 5 - Verde Menta (Espiritual) */}
-    <path d="M 50 50 L 50 98 A 48 48 0 0 1 16.06 83.94 Z" fill="#4fd1a5" stroke="#fff" strokeWidth="1.5" />
-    {/* Segmento 6 - Amarillo Pastel (Amor) */}
-    <path d="M 50 50 L 16.06 83.94 A 48 48 0 0 1 2 50 Z" fill="#fcd34d" stroke="#fff" strokeWidth="1.5" />
-    {/* Segmento 7 - Naranja Claro (Mente / Ideas) */}
-    <path d="M 50 50 L 2 50 A 48 48 0 0 1 16.06 16.06 Z" fill="#f97316" stroke="#fff" strokeWidth="1.5" />
-    {/* Segmento 8 - Coral / Rosado (Profesión / Éxito) */}
-    <path d="M 50 50 L 16.06 16.06 A 48 48 0 0 1 50 2 Z" fill="#f43f5e" stroke="#fff" strokeWidth="1.5" />
-
-    {/* ─── 🛠️ ICONOS CORREGIDOS Y CENTRADOS MILIMÉTRICAMENTE ─── */}
-
-    {/* 💓 1. SALUD (Vino Tinto - Centro Superior Derecho) */}
-    {/* Ubicación calculada: x=69, y=23 */}
-   <g transform="translate(72, 19) rotate(22.5)" fill="none" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M-4.5 -2.5 a 2.2 2.2 0 0 1 4.4 0 l 0.1 0.1 l 0.1 -0.1 a 2.2 2.2 0 0 1 4.4 0 c 0 2.5 -4.5 5.5 -4.5 5.5 s -4.5 -3 -4.5 -5.5 Z" fill="white" strokeWidth="0" />
-      <path d="M-5 1.5 l 2 0 l 1 -2 l 1.5 3.5 l 1 -2.5 l 1.5 1 l 2 0" />
-    </g>
-
-    {/* 👨‍👩‍👧 2. FAMILIA (Azul Oscuro - Lateral Superior Derecho) */}
-    {/* Ubicación calculada: x=77, y=41 */}
-   <g transform="translate(82, 39) rotate(22.5)" fill="white">
-      <circle cx="-2" cy="-2" r="1.8" />
-      <path d="M -5.5 3 a 2.5 2.5 0 0 1 5 0 l 0 1.5 l -5 0 Z" />
-      <circle cx="2.5" cy="-1" r="1.4" />
-      <path d="M 0 3 a 2 2 0 0 1 4 0 l 0 1.5 l -4 0 Z" />
-    </g>
-
-    {/* 💰 3. FINANZAS / MONEDAS (Azul Claro - Lateral Inferior Derecho) */}
-    {/* Ubicación calculada: x=70, y=60 */}
-    <g transform="translate(74, 63) rotate(22.5)" fill="white" stroke="white" strokeWidth="0.6">
-      <ellipse cx="-2" cy="-1" rx="3.2" ry="1.2" />
-      <path d="M -5.2 -1 v 2.2 c 0 0.8 1.5 1.2 3.2 1.2 s 3.2 -0.4 3.2 -1.2 v -2.2" />
-      <ellipse cx="2.5" cy="2" rx="2.5" ry="1" />
-      <path d="M 0 2 v 2.2 c 0 0.6 1.2 1 2.5 1 s 2.5 -0.4 2.5 -1 v -2.2" />
-    </g>
-
-    {/* 💬 4. AMIGOS / SOCIAL (Turquesa - Centro Inferior Derecho) */}
-    {/* Ubicación calculada: x=58, y=71 */}
-    <g transform="translate(60, 77) rotate(22.5)" fill="white">
-      <path d="M -4 -3 c 0 -2.2 2.2 -4 5 -4 s 5 1.8 5 4 c 0 1.3 -0.8 2.4 -2.2 3.1 l 0.7 2.2 l -2.5 -1.2 c -0.3 0 -0.7 0.1 -1 0.1 c -2.8 0 -5 -1.8 -5 -4 Z" />
-      <circle cx="-1.5" cy="-3" r="0.6" fill="#4cd2e4" />
-      <circle cx="1" cy="-3" r="0.6" fill="#4cd2e4" />
-      <circle cx="3.5" cy="-3" r="0.6" fill="#4cd2e4" />
-    </g>
-
-    {/* 🌸 5. ESPIRITUAL / LOTO (Verde Menta - Centro Inferior Izquierdo) */}
-    {/* Ubicación calculada: x=39, y=70 */}
-    <g transform="translate(37, 76) rotate(22.5)" fill="white">
-      <path d="M 0 -4.5 C 1.5 -2 2.5 -0.5 0 2.5 C -2.5 -0.5 -1.5 -2 0 -4.5 Z" />
-      <path d="M 0 -1 C 2 0 4.5 1 3.5 3 C 1 3.5 -0.5 2 0 -1 Z" />
-      <path d="M 0 -1 C -2 0 -4.5 1 -3.5 3 C -1 3.5 0.5 2 0 -1 Z" />
-    </g>
-
-    {/* 💝 6. AMOR (Amarillo Pastel - Lateral Inferior Izquierdo) */}
-    {/* Ubicación calculada: x=25, y=55 */}
-   <g transform="translate(19, 58) rotate(22.5)" fill="white">
-      <path d="M 0 3.5 l -3.3 -3.3 a 2.3 2.3 0 0 1 0 -3.2 a 2.3 2.3 0 0 1 3.3 0 a 2.3 2.3 0 0 1 3.3 0 a 2.3 2.3 0 0 1 0 3.2 Z" />
-    </g>
-
-    {/* 💡 7. INTELECTUAL (Naranja) -> Se movió más a la izquierda y arriba */}
-    <g transform="translate(22, 33) rotate(22.5)" fill="white">
-      <path d="M 0 -4.5 c -2.4 0 -4.2 1.8 -4.2 4.2 c 0 1.5 0.8 2.8 2 3.5 l 0.5 1.8 l 3.4 0 l 0.5 -1.8 c 1.2 -0.7 2 -2 2 -3.5 c 0 -2.4 -1.8 -4.2 -4.2 -4.2 Z" />
-      <rect x="-1.5" y="5.5" width="3" height="1" rx="0.3" fill="white" />
-      <line x1="0" y1="-5.5" x2="0" y2="-7" stroke="white" strokeWidth="0.8" strokeLinecap="round" />
-      <line x1="-4.5" y1="-3" x2="-5.8" y2="-3.5" stroke="white" strokeWidth="0.8" strokeLinecap="round" />
-      <line x1="4.5" y1="-3" x2="5.8" y2="-3.5" stroke="white" strokeWidth="0.8" strokeLinecap="round" />
-    </g>
-
-    {/* 📈 8. PROFESIÓN (Coral) -> Se movió más hacia arriba */}
-    <g transform="translate(37, 16) rotate(22.5)" fill="white">
-      <rect x="-4.5" y="1" width="2" height="3" rx="0.3" />
-      <rect x="-1.5" y="-1.5" width="2" height="5.5" rx="0.3" />
-      <rect x="1.5" y="-4" width="2" height="8" rx="0.3" />
-      <path d="M -4.5 -1.5 l 3 -2.5 l 2.5 1.5 l 3.5 -3.5" fill="none" stroke="white" strokeWidth="1" strokeLinecap="round" />
-      <path d="M 2.5 -6 l 2 0 l 0 2" fill="none" stroke="white" strokeWidth="1" strokeLinejoin="round" />
-    </g>
-  </svg>
-
-  {/* CÍRCULO CENTRAL BLANCO CON TEXTO */}
-  <div className="w-11 h-11 bg-white rounded-full absolute shadow-[0_2px_6px_rgba(0,0,0,0.1)] flex items-center justify-center z-10 border border-slate-100">
-    <span className="text-[7px] text-[#1e293b] font-black uppercase tracking-tighter text-center leading-none select-none">
-      Wheel<br /><span className="text-slate-500 font-bold">of life</span>
-    </span>
+    <div className="w-[90px] h-[90px] shrink-0 relative flex items-center justify-center">
+      <svg viewBox="0 0 100 100" className="w-full h-full">
+        <path d="M 50 50 L 50 2 A 48 48 0 0 1 83.94 16.06 Z" fill="#911d33" stroke="#fff" strokeWidth="1.5" />
+        <path d="M 50 50 L 83.94 16.06 A 48 48 0 0 1 98 50 Z" fill="#0c5a75" stroke="#fff" strokeWidth="1.5" />
+        <path d="M 50 50 L 98 50 A 48 48 0 0 1 83.94 83.94 Z" fill="#00a3e0" stroke="#fff" strokeWidth="1.5" />
+        <path d="M 50 50 L 83.94 83.94 A 48 48 0 0 1 50 98 Z" fill="#4cd2e4" stroke="#fff" strokeWidth="1.5" />
+        <path d="M 50 50 L 50 98 A 48 48 0 0 1 16.06 83.94 Z" fill="#4fd1a5" stroke="#fff" strokeWidth="1.5" />
+        <path d="M 50 50 L 16.06 83.94 A 48 48 0 0 1 2 50 Z" fill="#fcd34d" stroke="#fff" strokeWidth="1.5" />
+        <path d="M 50 50 L 2 50 A 48 48 0 0 1 16.06 16.06 Z" fill="#f97316" stroke="#fff" strokeWidth="1.5" />
+        <path d="M 50 50 L 16.06 16.06 A 48 48 0 0 1 50 2 Z" fill="#f43f5e" stroke="#fff" strokeWidth="1.5" />
+      </svg>
+    </div>
+    <div className="flex flex-col gap-1 flex-1">
+      {resumenRueda && resumenRueda.tiene_diagnostico && resumenRueda.foco_1 ? (
+        [resumenRueda.foco_1, resumenRueda.foco_2, resumenRueda.foco_3].filter(Boolean).map((foco, i) => (
+          <div key={i} className={`text-[9px] sm:text-[10px] py-1 px-3 rounded-md text-center font-bold tracking-widest uppercase shadow-sm transition-transform hover:scale-[1.03] ${
+            i === 0 ? 'bg-gradient-to-r from-red-100 to-red-200 text-red-800' :
+            i === 1 ? 'bg-gradient-to-r from-amber-100 to-amber-200 text-amber-800' :
+            'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800'
+          }`}>
+            {foco}
+          </div>
+        ))
+      ) : (
+        <div className="text-[10px] text-gray-400 text-center py-4">
+          {resumenRueda === null ? 'Cargando...' : 'Completa tu diagnóstico para ver tus focos estratégicos'}
+        </div>
+      )}
+    </div>
   </div>
-</div>
-                  <div className="flex flex-col gap-1 flex-1">
-                    {ruedaCompleta.slice(0, 3).map((cat) => (
-                      <div key={cat.id} className="bg-gradient-to-r from-[#ffe29f] to-[#ffa3a3] text-slate-800 text-[9px] sm:text-[10px] py-1 px-3 rounded-md text-center font-bold tracking-widest uppercase shadow-sm border border-black-200/40 transition-transform hover:scale-[1.03]">
-                         {cat.nombre.substring(0, 6)} 
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
+        </div>
           <br></br>
 
           {/* Middle of Left */}
-          <div className="flex gap-4 ">
-            <DynamicKanbanBacklog />
+          <div className="flex gap-4 " ref={kanbanRef}>
+            <KanbanBacklog />
         
   <div className="bg-white/60 backdrop-blur-sm  rounded-2xl  flex flex-col   w-[200px] h-[200px] shadow-[0_0_0px_rgb(255, 255, 255)] -ml-2 -mt-8">
   
@@ -1198,8 +1187,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           </div>
 
           {/* Bottom Left - Acciones por Delegar */}
-          <AccionesPorDelegarInline />
-
+          <AccionesPorDelegarInline kanbanTasks={kanbanTasks} onOpenDelegation={(task) => { openDelegationModal(task); }} />
+         
         </div>
         
         </div>
@@ -1214,9 +1203,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           {/* Tabs */}
 <div className="flex justify-between items-center gap-2 w-full max-w-[500px] mx-auto my-2 ml-4">
   
-  {/* BOTÓN ANUAL */}
+  {/* BOTÓN ANUAL → Gran Meta Anual */}
   <button 
-    onClick={() => setShowMetaAnualModal(true)} 
+    onClick={() => setShowMetaAnualForm(true)} 
     className="flex-1 bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-lg text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
   >
     Anual
@@ -1283,14 +1272,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
       {/* CUERPO DE HORARIOS (FILAS) */}
       <tbody>
-  {defaultHours.map((h, i) => {
+      {defaultHours.map((h, i) => {
     const block = timeBlocks.find((t: TimeBlockData) => t.hora === h);
-    const statusText = block?.estado === true ? 'Done' : (block?.estado as unknown as string) === 'doing' ? 'Doing' : '';
+    const estado = block?.estado || 'pending';
 
     return (
       <tr 
         key={h} 
-        /* 🌟 CAMBIO: Se aplica bg-slate-50/40 de forma base para simular el fondo gris tenue de la tabla */
         className="hover:bg-white/60 bg-slate-50/40 transition-colors h-[36px]"
       >
         
@@ -1303,12 +1291,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
         {/* CELDA 2: INPUT DENTRO DE RECUADRO BLANCO SOFT UI */}
         <td className="py-1 px-2.5">
-          {/* 🌟 SOLUCIÓN: Este div genera el recuadro blanco flotante con sombra y microborde gris */}
           <div className="w-full bg-white border border-slate-200/70 rounded-md px-2 py-0.5 shadow-3xs flex items-center transition-all focus-within:border-indigo-500/50">
             <input
               type="text"
               className={`w-full bg-transparent outline-none text-[11px] text-slate-700 placeholder:text-slate-400 placeholder:italic ${
-                statusText === 'Done' ? 'line-through text-slate-400 italic' : 'font-medium'
+                estado === 'done' ? 'line-through text-slate-400 italic' : 'font-medium'
               }`}
               placeholder="Escriba aquí..."
               defaultValue={block?.tarea || ''}
@@ -1317,21 +1304,23 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           </div>
         </td>
 
-        {/* CELDA 3: ESTADOS DINÁMICOS */}
+        {/* CELDA 3: SELECTOR DE ESTADO */}
         <td className="w-24 py-1 px-2 text-center">
-          {statusText === 'Done' && (
-            <span className="block w-full rounded-md text-[9px] py-0.5 font-bold bg-slate-100 text-slate-500 border border-slate-200 shadow-3xs select-none">
-              Done
-            </span>
-          )}
-          {statusText === 'Doing' && (
-            <span className="block w-full rounded-md text-[9px] py-0.5 font-black bg-white text-slate-900 border border-slate-200/60 shadow-xs animate-pulse select-none">
-              Doing
-            </span>
-          )}
-          {statusText === '' && (
-            <span className="block w-full h-4 bg-transparent" />
-          )}
+          <select
+            value={estado}
+            onChange={(e) => handleTimeBlockStatus(h, e.target.value as 'pending' | 'doing' | 'done')}
+            className={`w-full text-[9px] py-0.5 px-1 rounded-md border font-bold text-center cursor-pointer transition-all outline-none appearance-none ${
+              estado === 'done'
+                ? 'bg-slate-100 text-slate-500 border-slate-200'
+                : estado === 'doing'
+                ? 'bg-white text-slate-900 border-slate-200/60 animate-pulse'
+                : 'bg-white text-slate-400 border-slate-200'
+            }`}
+          >
+            <option value="pending">Pending</option>
+            <option value="doing">Doing</option>
+            <option value="done">Done</option>
+          </select>
         </td>
 
       </tr>
@@ -1409,7 +1398,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowDelegarModal(false)}
         >
           <div
-            className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-2xl max-h-[80vh] overflow-hidden"
+            className="bg-white/90 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-2xl max-h-[80vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#1e3a5f] to-[#3a5f8a]">
@@ -1440,7 +1429,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           }}
         >
           <div
-            className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
+            className="bg-white/90 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#0d9488] to-[#14b8a6]">
@@ -1537,19 +1526,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         </div>
       )}
 
-      <AiMissionAssistant
-        isOpen={showAiMissionModal}
-        onClose={() => setShowAiMissionModal(false)}
-        metaAnual={metaAnual}
-        metaMensual={metaMensual}
-        metaSemanal={metaSemanal}
-        metaDiaria={metaDiaria}
-        onSelectMission={(mission) => {
-          setSelectedMissionText(mission);
-          setShowAiMissionModal(false);
-        }}
-      />
-
       {/* Modal: Inicio / Cómo funciona */}
       {showInicioModal && (
         <div
@@ -1557,7 +1533,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowInicioModal(false)}
         >
           <div
-            className="bg-white/95 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white/50 w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
+            className="bg-white/95 backdrop-blur-2xl rounded-md shadow-2xl border border-white/50 w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-6 bg-gradient-to-r from-[#1e3a5f] to-[#2d4a6f] text-white">
@@ -1661,7 +1637,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowRuedaModal(false)}
         >
           <div
-            className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-2xl max-h-[85vh] overflow-hidden"
+            className="bg-white/90 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-2xl max-h-[85vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#059669] to-[#0d9488]">
@@ -1694,7 +1670,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowRuedaVideoModal(false)}
         >
           <div
-            className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
+            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#059669] to-[#0d9488]">
@@ -1749,7 +1725,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowMetaAnualModal(false)}
         >
           <div
-            className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
+            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#0d9488] to-[#14b8a6]">
@@ -1821,7 +1797,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowMetaMensualModal(false)}
         >
           <div
-            className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
+            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#7c3aed] to-[#a855f7]">
@@ -1893,7 +1869,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowMetaSemanalModal(false)}
         >
           <div
-            className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
+            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#d97706] to-[#f59e0b]">
@@ -1965,7 +1941,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowMetaDiariaModal(false)}
         >
           <div
-            className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
+            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#059669] to-[#10b981]">
@@ -2033,39 +2009,39 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       {/* Modal: Checklist de Facturas / Cuentas */}
       {showBillModal && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-end md:items-center justify-center p-0 md:p-4"
           onClick={() => setShowBillModal(false)}
         >
           <div
-            className="bg-white/95 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white/50 w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
+            className="bg-white/95 backdrop-blur-2xl rounded-t-2xl md:rounded-md shadow-2xl border border-white/50 w-full md:max-w-2xl md:w-[90%] max-h-[92vh] md:max-h-[85vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-6 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] text-white">
-              <div className="flex items-center gap-3">
-                <div className="bg-white/20 p-2 rounded-xl">
-                  <Receipt className="w-6 h-6" />
+            <div className="flex items-center justify-between p-4 md:p-6 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] text-white">
+              <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                <div className="bg-white/20 p-1.5 md:p-2 rounded-xl shrink-0">
+                  <Receipt className="w-5 h-5 md:w-6 md:h-6" />
                 </div>
-                <div>
-                  <h2 className="text-xl font-black uppercase tracking-tight">Checklist de Cuentas</h2>
-                  <p className="text-xs opacity-80 font-medium">Control mensual de facturas y pagos</p>
+                <div className="min-w-0">
+                  <h2 className="text-lg md:text-xl font-black uppercase tracking-tight truncate">Checklist de Cuentas</h2>
+                  <p className="text-[10px] md:text-xs opacity-80 font-medium">Control mensual de facturas y pagos</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowBillModal(false)}
-                className="p-2 rounded-full hover:bg-white/20 transition-colors"
+                className="p-1.5 md:p-2 rounded-full hover:bg-white/20 transition-colors shrink-0"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5 md:w-6 md:h-6" />
               </button>
             </div>
 
             <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
               {/* Checklist Section */}
-              <div className="flex-1 p-6 overflow-y-auto border-r border-gray-100">
-                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Facturas Pendientes</h3>
+              <div className="flex-1 p-4 md:p-6 overflow-y-auto md:border-r border-gray-100">
+                <h3 className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest mb-3 md:mb-4">Facturas Pendientes</h3>
                 {facturas.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-40 text-gray-400">
-                    <CheckSquare className="w-8 h-8 mb-2 opacity-20" />
-                    <p className="text-sm">No hay facturas registradas</p>
+                  <div className="flex flex-col items-center justify-center h-32 md:h-40 text-gray-400">
+                    <CheckSquare className="w-6 h-6 md:w-8 md:h-8 mb-2 opacity-20" />
+                    <p className="text-xs md:text-sm">No hay facturas registradas</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -2128,8 +2104,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               </div>
 
               {/* Form Section */}
-              <div className="w-full md:w-72 bg-gray-50 p-6">
-                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Nueva Factura</h3>
+              <div className="w-full md:w-72 bg-gray-50 p-4 md:p-6 border-t md:border-t-0 md:border-l border-gray-100">
+                <h3 className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest mb-3 md:mb-4">Nueva Factura</h3>
                 <form
                   onSubmit={async (e) => {
                     e.preventDefault();
@@ -2148,31 +2124,31 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                       console.error(e);
                     }
                   }}
-                  className="space-y-4"
+                  className="space-y-3 md:space-y-4"
                 >
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Nombre</label>
+                    <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 uppercase mb-1">Nombre</label>
                     <input name="nombre" type="text" required placeholder="Luz, Arriendo, etc." className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1]" />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Monto ($)</label>
+                    <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 uppercase mb-1">Monto ($)</label>
                     <input name="monto" type="number" step="0.01" required placeholder="0.00" className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1]" />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Vencimiento</label>
+                    <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 uppercase mb-1">Vencimiento</label>
                     <input name="fecha" type="date" required className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1]" />
                   </div>
-                  <button type="submit" className="w-full bg-[#6366f1] text-white py-3 rounded-xl font-bold text-sm shadow-md hover:bg-[#4f46e5] transition-all active:scale-95">
+                  <button type="submit" className="w-full bg-[#6366f1] text-white py-2.5 md:py-3 rounded-xl font-bold text-xs md:text-sm shadow-md hover:bg-[#4f46e5] transition-all active:scale-95">
                     Registrar Cobro
                   </button>
                 </form>
 
-                <div className="mt-8 p-4 bg-[#6366f1]/10 rounded-2xl border border-[#6366f1]/20">
-                  <div className="flex items-center gap-2 mb-1 text-[#6366f1]">
-                    <AlertCircle className="w-4 h-4" />
-                    <span className="text-[10px] font-bold uppercase">Total Pendiente</span>
+                <div className="mt-5 md:mt-8 p-3 md:p-4 bg-[#6366f1]/10 rounded-xl md:rounded-2xl border border-[#6366f1]/20">
+                  <div className="flex items-center gap-1.5 md:gap-2 mb-1 text-[#6366f1]">
+                    <AlertCircle className="w-3 h-3 md:w-4 md:h-4" />
+                    <span className="text-[9px] md:text-[10px] font-bold uppercase">Total Pendiente</span>
                   </div>
-                  <p className="text-xl font-black text-[#6366f1]">
+                  <p className="text-lg md:text-xl font-black text-[#6366f1]">
                     ${facturas.filter(f => !f.pagado).reduce((sum, f) => sum + f.monto, 0).toLocaleString()}
                   </p>
                 </div>
@@ -2189,7 +2165,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowMatrizVideoModal(false)}
         >
           <div
-            className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
+            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#1e3a5f] to-[#2d4a6f]">
@@ -2243,7 +2219,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowMatrizFormModal(false)}
         >
           <div
-            className="bg-[#f8fafc] rounded-[2.5rem] shadow-2xl border border-white/50 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+            className="bg-[#f8fafc] rounded-md shadow-2xl border border-white/50 w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-6 bg-white border-b border-gray-100">
@@ -2451,7 +2427,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowMedicamentosModal(false)}
         >
           <div
-            className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col"
+            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#ef4444] to-[#dc2626]">
@@ -3029,7 +3005,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowAccionesDelegarModal(false)}
         >
           <div
-            className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
+            className="bg-white/90 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#d97706] to-[#f59e0b]">
@@ -3322,6 +3298,72 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           </div>
         </div>
       )}
+
+      {/* Meta Anual Form */}
+      <MetaAnualForm
+        isOpen={showMetaAnualForm}
+        onClose={() => setShowMetaAnualForm(false)}
+      />
+
+      {/* Planificar Modal */}
+      {taskToPlanificar && (
+        <PlanificarModal
+          task={taskToPlanificar}
+          onClose={() => setTaskToPlanificar(null)}
+          onClassified={() => {
+            kanbanService.getAll().then(data => setKanbanTasks(Array.isArray(data) ? data : []));
+          }}
+        />
+      )}
+
+      {/* Buzón de Propuestas IA */}
+      <BuzonPropuestas
+        isOpen={showBuzonPropuestas}
+        onClose={() => setShowBuzonPropuestas(false)}
+      />
+
+      {/* Microflujo de Ajuste */}
+      {microFlujoPropuesta && (
+        <MicroFlujoAjuste
+          isOpen={showMicroFlujo}
+          onClose={() => { setShowMicroFlujo(false); setMicroFlujoPropuesta(null); }}
+          propuesta={microFlujoPropuesta}
+        />
+      )}
+
+      {/* Configuración del Sistema */}
+      <ConfiguracionPanel
+        isOpen={showConfigPanel}
+        onClose={() => setShowConfigPanel(false)}
+      />
+
+      {/* AiMissionAssistant */}
+      <AiMissionAssistant
+        isOpen={showAiMissionModal}
+        onClose={() => setShowAiMissionModal(false)}
+        metaAnual={metaAnual}
+        metaMensual={metaMensual}
+        metaSemanal={metaSemanal}
+        metaDiaria={metaDiaria}
+        onSelectMission={(mission: string) => {
+          setSelectedMissionText(mission);
+          setShowAiMissionModal(false);
+        }}
+      />
+
+      {showMatrizEisenhower && (
+        <MatrizEisenhower
+          onClose={() => setShowMatrizEisenhower(false)}
+          onGoKanban={handleGoKanban}
+        />
+      )}
+      {showDiagnosticoRueda && (
+        <DiagnosticoRueda
+          avatarIndex={userData.avatar_index}
+          onClose={() => { setShowDiagnosticoRueda(false); ruedaService.resumenDashboard().then(setResumenRueda).catch(() => {}); }}
+          onGoMetaAnual={() => { setShowDiagnosticoRueda(false); setShowMetaAnualForm(true); }}
+        />
+      )}
     </div>
 
   );
@@ -3516,20 +3558,16 @@ export const FechasImportantesCard: React.FC<FechasImportantesProps> = ({ dayAct
   );
 };
 
-const AccionesPorDelegarInline: React.FC = () => {
-  const [acciones, setAcciones] = useState([
-    { id: 1, accion: '', responsable: '' },
-    { id: 2, accion: '', responsable: '' },
-    { id: 3, accion: '', responsable: '' },
-  ]);
+interface AccionesPorDelegarInlineProps {
+  kanbanTasks: KanbanTaskData[];
+  onOpenDelegation: (task: KanbanTaskData) => void;
+}
 
-  const handleInputChange = (id: number, field: 'accion' | 'responsable', value: string) => {
-    setAcciones(
-      acciones.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item
-      )
-    );
-  };
+const AccionesPorDelegarInline: React.FC<AccionesPorDelegarInlineProps> = ({ kanbanTasks, onOpenDelegation }) => {
+  const delegarTasks = useMemo(
+    () => kanbanTasks.filter(t => t.columna === 'Delegar'),
+    [kanbanTasks]
+  );
 
   return (
     <div className="bg-white rounded-md border-2 border-gray-100 shadow-md overflow-hidden max-w-[300px] h-[200px] mx-auto -ml-106 mt-110">
@@ -3539,37 +3577,31 @@ const AccionesPorDelegarInline: React.FC = () => {
       <table className="w-full border-collapse">
         <thead>
           <tr>
-            <th className="w-1/2 p-2 border-b border-slate-100">
+            <th className="w-2/3 p-2 border-b border-slate-100">
               <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-orange-200/40 text-center">ACCIÓN</div>
             </th>
-            <th className="w-1/2 p-2 border-b border-slate-100">
-              <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-orange-200/40 text-center">RESPONSABLE</div>
+            <th className="w-1/3 p-2 border-b border-slate-100">
+              <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-orange-200/40 text-center">ACCIÓN</div>
             </th>
           </tr>
         </thead>
         <tbody>
-          {acciones.map((item) => (
-            <tr key={item.id}>
+          {delegarTasks.map(task => (
+            <tr key={task.id}>
               <td className="p-1">
-                <input
-                  type="text"
-                  className="w-full border border-gray-200 rounded text-[10px] p-1 h-6 focus:outline-none focus:border-orange-300"
-                  placeholder="Escriba aquí"
-                  value={item.accion}
-                  onChange={(e) => handleInputChange(item.id, 'accion', e.target.value)}
-                />
+                <span className="block text-[10px] text-gray-700 truncate border border-gray-200 rounded p-1 h-6 leading-4">{task.titulo}</span>
               </td>
-              <td className="p-1">
-                <input
-                  type="text"
-                  className="w-full border border-gray-200 rounded text-[10px] p-1 h-6 focus:outline-none focus:border-orange-300"
-                  placeholder="Nombre"
-                  value={item.responsable}
-                  onChange={(e) => handleInputChange(item.id, 'responsable', e.target.value)}
-                />
+              <td className="p-1 text-center">
+                <button onClick={() => onOpenDelegation(task)}
+                  className="text-[9px] bg-amber-500 text-white px-2 py-0.5 rounded hover:bg-amber-600 transition-colors font-bold">
+                  Enviar
+                </button>
               </td>
             </tr>
           ))}
+          {delegarTasks.length === 0 && (
+            <tr><td colSpan={2} className="p-4 text-[10px] text-gray-400 text-center italic">Sin tareas para delegar</td></tr>
+          )}
         </tbody>
       </table>
     </div>
@@ -3627,59 +3659,97 @@ const CategoriasMenu: React.FC = () => {
   );
 };
 
-const DynamicKanbanBacklog: React.FC = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [rowCount, setRowCount] = useState(10);
+interface DynamicKanbanBacklogProps {
+  kanbanTasks: KanbanTaskData[];
+  setKanbanTasks: React.Dispatch<React.SetStateAction<KanbanTaskData[]>>;
+  onPlanificar: (task: KanbanTaskData) => void;
+}
 
-  useEffect(() => {
-    if (!containerRef.current) return;
+const DynamicKanbanBacklog: React.FC<DynamicKanbanBacklogProps> = ({ kanbanTasks, setKanbanTasks, onPlanificar }) => {
+  const [newTitle, setNewTitle] = useState('');
+  const [adding, setAdding] = useState(false);
 
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (let entry of entries) {
-        const containerHeight = entry.contentRect.height;
-        const rowHeight = 28;
-        const calculatedRows = Math.floor(containerHeight / rowHeight);
-        setRowCount(Math.max(5, calculatedRows));
-      }
-    });
+  const backlogTasks = useMemo(
+    () => kanbanTasks.filter(t => t.columna === 'Backlog' || t.columna === 'Agenda'),
+    [kanbanTasks]
+  );
 
-    resizeObserver.observe(containerRef.current);
-    return () => resizeObserver.disconnect();
-  }, []);
+  const handleAdd = async () => {
+    if (!newTitle.trim() || adding) return;
+    setAdding(true);
+    try {
+      const created = await kanbanService.create({ titulo: newTitle.trim(), descripcion: '', columna: 'Backlog' });
+      setKanbanTasks(prev => [...prev, created]);
+      setNewTitle('');
+    } catch (err) {
+      console.error('Error adding task:', err);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const handleHacer = async (task: KanbanTaskData) => {
+    try {
+      await kanbanService.update(task.id, { columna: 'Hoy' });
+      setKanbanTasks(prev => prev.map(t => t.id === task.id ? { ...t, columna: 'Hoy' } : t));
+    } catch (err) { console.error(err); }
+  };
+
+  const handleDelegar = async (task: KanbanTaskData) => {
+    try {
+      await kanbanService.update(task.id, { columna: 'Delegar' });
+      setKanbanTasks(prev => prev.map(t => t.id === task.id ? { ...t, columna: 'Delegar' } : t));
+    } catch (err) { console.error(err); }
+  };
+
+  const handleBasura = async (task: KanbanTaskData) => {
+    try {
+      await kanbanService.delete(task.id);
+      setKanbanTasks(prev => prev.filter(t => t.id !== task.id));
+    } catch (err) { console.error(err); }
+  };
 
   return (
     <div className="w-[210px] h-[450px] bg-white/60 backdrop-blur-sm border border-white/30 rounded-md p-0 shadow-[0_8px_32px_rgba(31,38,135,0.03)] -mt-8 -ml-2 flex flex-col overflow-hidden">
       <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-none w-full">
         KANBAN BACKLOG
       </div>
-      <div className="p-3 pb-2 flex gap-2 shrink-0">
+      <div className="p-2 pb-1 flex gap-1 shrink-0">
         <span className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[9px] py-1 px-1 rounded-lg font-black tracking-wider uppercase shadow-xs border border-orange-200/40 select-none text-center">
           Acción
         </span>
-        <span className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[9px] py-1 px-1 rounded-lg font-black tracking-wider uppercase shadow-xs border border-orange-200/40 select-none text-center">
-          Matriz
-        </span>
+        <div className="flex gap-0.5 items-center">
+          {['H', 'P', 'D', 'B'].map(l => (
+            <span key={l} className="w-4 h-4 flex items-center justify-center bg-gray-800 text-white text-[7px] rounded-full shrink-0 font-bold">{l}</span>
+          ))}
+        </div>
       </div>
-      <div ref={containerRef} className="flex-1 overflow-hidden px-2 pb-2 space-y-1">
-        {[...Array(rowCount)].map((_, i) => (
-          <div key={i} className="flex items-center gap-1 h-6 ">
-            <input
-              type="text"
-              placeholder="Escriba aquí"
-              className="flex-1 text-[10px] h-5  bg-transparent border border-slate-700 rounded-md outline-none placeholder:text-gray-400"
-            />
-            <div className="flex gap-0.5 border border-black-200 rounded-md px-1 py-0.5">
-              {['H', 'P', 'D', 'B'].map(l => (
-                <span
-                  key={l}
-                  className="w-3 h-3 flex items-center justify-center bg-gray-800 text-white text-[6px] rounded-full shrink-0"
-                >
-                  {l}
-                </span>
-              ))}
+      <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-1 custom-scrollbar">
+        {backlogTasks.map(task => (
+          <div key={task.id} className="flex items-center gap-1 h-6 group">
+            <span className="flex-1 text-[10px] text-gray-700 truncate" title={task.titulo}>{task.titulo}</span>
+            <div className="flex gap-0.5 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
+              <button onClick={() => handleHacer(task)} title="Hacer hoy" className="w-4 h-4 flex items-center justify-center bg-emerald-600 hover:bg-emerald-500 text-white text-[7px] rounded-full font-bold transition-colors">H</button>
+              <button onClick={() => onPlanificar(task)} title="Planificar" className="w-4 h-4 flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white text-[7px] rounded-full font-bold transition-colors">P</button>
+              <button onClick={() => handleDelegar(task)} title="Delegar" className="w-4 h-4 flex items-center justify-center bg-amber-600 hover:bg-amber-500 text-white text-[7px] rounded-full font-bold transition-colors">D</button>
+              <button onClick={() => handleBasura(task)} title="Eliminar" className="w-4 h-4 flex items-center justify-center bg-red-600 hover:bg-red-500 text-white text-[7px] rounded-full font-bold transition-colors">B</button>
             </div>
           </div>
         ))}
+        {backlogTasks.length === 0 && (
+          <p className="text-[10px] text-gray-400 text-center italic py-4">Sin tareas en backlog</p>
+        )}
+      </div>
+      <div className="p-2 shrink-0">
+        <div className="flex gap-1">
+          <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleAdd()}
+            placeholder="Nueva tarea..." className="flex-1 text-[10px] h-6 bg-white border border-gray-200 rounded px-2 outline-none focus:border-purple-300" />
+          <button onClick={handleAdd} disabled={!newTitle.trim() || adding}
+            className="w-6 h-6 flex items-center justify-center bg-purple-600 hover:bg-purple-500 text-white rounded text-xs font-bold disabled:opacity-40 transition-colors">
+            +
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -3874,7 +3944,7 @@ function ClimaComuna({ temp, descripcion, lugar, loading, error, icono, humedad,
   humedad: number; sensacion: number;
 }): React.ReactElement {
   return (
-  <div className="bg-white rounded-md border-2 border-gray-100 shadow-md overflow-hidden max-w-[300px] h-[200px] mx-auto ml-20 -mt-33">
+  <div className="bg-white rounded-md border-2 border-gray-100 shadow-md overflow-hidden max-w-[300px] h-[200px] mx-auto ml-20 -mt-25">
     <div className="bg-white rounded-md border-2 border-gray-100 card-shadow overflow-hidden w-full max-w-sm select-none gap-2 flex flex-col"> 
       <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-none w-[300px]">
         CLIMA EN MI COMUNA

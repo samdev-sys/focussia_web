@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from datetime import timedelta
 from django.core.exceptions import ImproperlyConfigured
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -87,14 +88,9 @@ TEMPLATES = [
 WSGI_APPLICATION = 'focusia_api.wsgi.application'
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'focusia_db'),
-        'USER': os.environ.get('DB_USER', 'postgres'),
-        'PASSWORD': _require_env('DB_PASSWORD'),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
-    }
+    'default': dj_database_url.config(
+        default=f"postgres://{os.environ.get('DB_USER', 'postgres')}:{os.environ.get('DB_PASSWORD', '')}@{os.environ.get('DB_HOST', 'localhost')}:{os.environ.get('DB_PORT', '5432')}/{os.environ.get('DB_NAME', 'focusia_db')}"
+    )
 }
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -131,6 +127,7 @@ REST_FRAMEWORK = {
         'user': '100/minute',
     },
     'EXCEPTION_THROTTLE_CLASSES': [],
+    'EXCEPTION_HANDLER': 'focusia_api.exceptions.custom_exception_handler',
 }
 
 SIMPLE_JWT = {
@@ -139,14 +136,22 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_COOKIE': 'access_token',
     'AUTH_COOKIE_REFRESH': 'refresh_token',
-    'AUTH_COOKIE_SECURE': not DEBUG,
+    'AUTH_COOKIE_SECURE': True,
     'AUTH_COOKIE_HTTP_ONLY': True,
-    'AUTH_COOKIE_SAMESITE': 'Strict',
+    'AUTH_COOKIE_SAMESITE': 'None',
 }
+
+SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = True
+
+CSRF_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SECURE = True
 
 # CORS
 CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000,http://localhost:3001').split(',')
 CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 
 # Logging de seguridad
 LOGGING = {

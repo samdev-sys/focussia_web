@@ -14,7 +14,9 @@ from django.http import Http404
 from .models import (
     User, RuedaVida, TimeBlock, KanbanTask, Recordatorio, ObjetivoSemana,
     KeepNota, MisionHoy, CategoriaRueda, RegistroRueda, MatrixItem, Factura,
-    Workspace, WorkspaceMember, Invitation, Delegation, Notification
+    Workspace, WorkspaceMember, Invitation, Delegation, Notification,
+    MetaAnual, ObjetivoMensual, PropuestaIA, ConfiguracionUsuario, MatrizEisenhower, Activacion,
+    InteraccionUsuario, DiagnosticoRueda, AccionSugerida, KanbanAction,
 )
 from .serializers import (
     UserSerializer, UserDetailSerializer, RuedaVidaSerializer, TimeBlockSerializer,
@@ -23,8 +25,15 @@ from .serializers import (
     RegistroRuedaSerializer, GuardarRuedaSerializer, MatrixItemSerializer,
     FacturaSerializer, WorkspaceSerializer, WorkspaceDetailSerializer,
     WorkspaceMemberSerializer, InvitationSerializer, DelegationSerializer,
-    NotificationSerializer, AiMissionSerializer
+    NotificationSerializer, AiMissionSerializer,
+    MetaAnualSerializer, ObjetivoMensualSerializer, PropuestaIASerializer,
+    ConfiguracionUsuarioSerializer, MatrizEisenhowerSerializer, ActivacionSerializer, ContextoAnalisisInputSerializer,
+    InteraccionUsuarioSerializer, GenerarDiagnosticoInputSerializer,
+    DiagnosticoRuedaSerializer, AccionSugeridaSerializer,
+    KanbanActionSerializer, KanbanActionClassifySerializer,
 )
+from .engine import DecisionEngine
+from .engine.phase4_generator import generar_payload_coach
 
 logger = logging.getLogger('focusia.security')
 
@@ -91,6 +100,75 @@ class TimeBlockViewSet(BaseUserViewSet):
 class KanbanTaskViewSet(BaseUserViewSet):
     queryset = KanbanTask.objects.all()
     serializer_class = KanbanTaskSerializer
+
+
+class KanbanActionViewSet(BaseUserViewSet):
+    queryset = KanbanAction.objects.all()
+    serializer_class = KanbanActionSerializer
+
+    @action(detail=False, methods=['get'], url_path='active')
+    def active(self, request):
+        qs = self.get_queryset().filter(
+            classification_status=KanbanAction.ClassificationStatus.PENDIENTE
+        )
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'], url_path='add')
+    def add_action(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        action = serializer.save(
+            user=request.user,
+            source=KanbanAction.Source.USER_INPUT,
+            classification_status=KanbanAction.ClassificationStatus.PENDIENTE,
+        )
+        return Response(
+            KanbanActionSerializer(action).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(detail=False, methods=['patch'], url_path=r'classify/(?P<action_id>[^/.]+)')
+    def classify(self, request, action_id=None):
+        try:
+            action = KanbanAction.objects.get(id=action_id, user=request.user)
+        except KanbanAction.DoesNotExist:
+            return Response(
+                {'detail': 'Acción no encontrada'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if action.classification_status != KanbanAction.ClassificationStatus.PENDIENTE:
+            return Response(
+                {'detail': 'Esta acción ya fue clasificada'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        classify_serializer = KanbanActionClassifySerializer(data=request.data)
+        classify_serializer.is_valid(raise_exception=True)
+
+        decision = classify_serializer.validated_data['decision']
+        new_status = KanbanActionClassifySerializer.ACTION_MAP[decision]
+
+        action.classification_status = new_status
+        if decision == 'P':
+            action.scheduled_date = classify_serializer.validated_data.get('scheduled_date')
+        action.save()
+
+        return Response(KanbanActionSerializer(action).data)
+
+    @action(detail=False, methods=['patch'], url_path=r'pin/(?P<action_id>[^/.]+)')
+    def pin(self, request, action_id=None):
+        try:
+            action = KanbanAction.objects.get(id=action_id, user=request.user)
+        except KanbanAction.DoesNotExist:
+            return Response(
+                {'detail': 'Acción no encontrada'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        action.pinned = not action.pinned
+        action.save()
+        return Response(KanbanActionSerializer(action).data)
 
 class RecordatorioViewSet(BaseUserViewSet):
     queryset = Recordatorio.objects.all()
@@ -336,25 +414,296 @@ def rueda_vida_completa(request):
                 'id': cat.id,
                 'nombre': cat.nombre,
                 'icono': cat.icono,
-                'puntaje': reg.puntaje if reg else 5
+                'puntaje': reg.puntaje if reg else 5,
+                'comentario': reg.comentario if reg else '',
             })
         return Response(result)
 
     elif request.method == 'POST':
         puntajes = request.data.get('puntajes', {})
+        comentarios = request.data.get('comentarios', {})
 
         for cat_id, puntaje in puntajes.items():
             try:
                 categoria = CategoriaRueda.objects.get(id=cat_id, activo=True)
+                defaults = {'puntaje': puntaje}
+                if str(cat_id) in comentarios:
+                    defaults['comentario'] = comentarios[str(cat_id)]
                 RegistroRueda.objects.update_or_create(
                     user=request.user,
                     categoria=categoria,
-                    defaults={'puntaje': puntaje}
+                    defaults=defaults
                 )
             except CategoriaRueda.DoesNotExist:
                 continue
 
         return Response({'status': 'ok'})
+
+
+NIVELES = [
+    (1, 2, 'Crítico'),
+    (3, 4, 'Bajo'),
+    (5, 6, 'Medio'),
+    (7, 8, 'Bueno'),
+    (9, 10, 'Excelente'),
+]
+
+def _nivel_str(puntaje):
+    for lo, hi, label in NIVELES:
+        if lo <= puntaje <= hi:
+            return label
+    return 'Medio'
+
+def _calcular_nivel_equilibrio(promedio):
+    return _nivel_str(round(promedio))
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def generar_diagnostico_rueda(request):
+    serializer = GenerarDiagnosticoInputSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    puntajes = serializer.validated_data['puntajes']
+    comentarios = serializer.validated_data.get('comentarios', {})
+
+    categorias = CategoriaRueda.objects.filter(activo=True).order_by('orden')
+    items = []
+    for cat in categorias:
+        pts = puntajes.get(str(cat.id), puntajes.get(cat.id, 5))
+        cmt = comentarios.get(str(cat.id), '')
+        items.append({'nombre': cat.nombre, 'puntaje': int(pts), 'comentario': cmt})
+
+    if not items:
+        return Response({'error': 'No hay categorías activas'}, status=400)
+
+    promedio = sum(i['puntaje'] for i in items) / len(items)
+    pico_alto = max(items, key=lambda x: x['puntaje'])
+    pico_bajo = min(items, key=lambda x: x['puntaje'])
+    nivel_equilibrio = _calcular_nivel_equilibrio(promedio)
+
+    # Weighted focus selection: score + qualitative boost from comment length/emotion
+    def peso_foco(item):
+        peso_base = item['puntaje']
+        comentario = item['comentario']
+        bonus = min(len(comentario) / 50, 2.0) if comentario else 0
+        return peso_base + bonus
+
+    sorted_items = sorted(items, key=peso_foco)
+    # Pick 3 lowest weighted scores as strategic foci (colateral benefit)
+    focos = sorted_items[:3]
+
+    foco_1, foco_2, foco_3 = focos[0]['nombre'], focos[1]['nombre'], focos[2]['nombre']
+
+    justificacion = (
+        f"Según tu diagnóstico, las áreas {foco_1}, {foco_2} y {foco_3} "
+        f"presentan el mayor potencial de mejora estratégica. "
+        f"Trabajarlas generará un efecto colateral positivo que elevará "
+        f"orgánicamente el equilibrio de las demás áreas de tu vida."
+    )
+
+    diag, _ = DiagnosticoRueda.objects.update_or_create(
+        user=request.user,
+        defaults={
+            'promedio_general': round(promedio, 1),
+            'nivel_equilibrio': nivel_equilibrio,
+            'pico_alto': f"{pico_alto['nombre']} ({pico_alto['puntaje']}/10)",
+            'pico_bajo': f"{pico_bajo['nombre']} ({pico_bajo['puntaje']}/10)",
+            'foco_1': foco_1,
+            'foco_2': foco_2,
+            'foco_3': foco_3,
+            'justificacion_focos': justificacion,
+        }
+    )
+
+    return Response(DiagnosticoRuedaSerializer(diag).data)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def ver_diagnostico_rueda(request):
+    try:
+        diag = DiagnosticoRueda.objects.get(user=request.user)
+        return Response(DiagnosticoRuedaSerializer(diag).data)
+    except DiagnosticoRueda.DoesNotExist:
+        return Response({'diagnostico': None})
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def generar_acciones_rueda(request):
+    serializer = GenerarAccionesInputSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    area_foco = serializer.validated_data['area_foco']
+
+    existing_count = AccionSugerida.objects.filter(user=request.user, area_foco=area_foco).count()
+    if existing_count >= 20:
+        return Response({'error': f'Límite alcanzado: ya tienes 20 acciones para {area_foco}',
+                         'code': 'limite_20'}, status=400)
+
+    CAT_ACCIONES = {
+        'Trabajo': [
+            'Revisa tu carga laboral y prioriza 3 tareas clave para esta semana',
+            'Establece un bloque de 2 horas sin interrupciones para trabajo profundo',
+            'Identifica una tarea que puedas delegar y asígnala a alguien del equipo',
+            'Actualiza tu lista de pendientes y elimina lo que ya no aporta valor',
+            'Programa una pausa activa de 10 minutos entre cada bloque de trabajo',
+        ],
+        'Dinero': [
+            'Registra todos tus gastos de la semana para tener visibilidad financiera',
+            'Revisa tus suscripciones mensuales y cancela las que no uses',
+            'Destina al menos el 10 % de tus ingresos a una meta de ahorro',
+            'Crea un presupuesto simple para el próximo mes',
+            'Identifica un gasto hormiga y sustitúyelo por un hábito financiero sano',
+        ],
+        'Salud': [
+            'Programa una caminata de 20 minutos al aire libre hoy',
+            'Bebe 8 vasos de agua durante el día',
+            'Reduce el consumo de pantallas 30 minutos antes de dormir',
+            'Incorpora una porción extra de verduras en tu comida principal',
+            'Duerme al menos 7 horas esta noche',
+        ],
+        'Pareja': [
+            'Envía un mensaje inesperado a tu pareja solo para decirle que la/lo aprecias',
+            'Propón una cita sencilla sin pantallas: cocinar juntos o caminar',
+            'Pregunta a tu pareja cómo se siente y escucha sin interrumpir',
+            'Escribe una nota con algo que agradezcas de tu relación',
+            'Planeen juntos una actividad que hayan pospuesto por mucho tiempo',
+        ],
+        'Familia': [
+            'Llama a un familiar con el que no hayas hablado en más de una semana',
+            'Propón una comida familiar sin teléfonos celulares',
+            'Pregunta a cada miembro de tu familia cómo fue su día',
+            'Escribe un mensaje de agradecimiento a un familiar',
+            'Organiza una actividad breve para hacer en familia este fin de semana',
+        ],
+        'Espiritualidad': [
+            'Dedica 5 minutos a la meditación o respiración consciente',
+            'Escribe tres cosas por las que estés agradecido hoy',
+            'Lee un pasaje que te inspire o motive',
+            'Sal a caminar en silencio y conecta con tu entorno',
+            'Reflexiona sobre tu propósito personal y escríbelo en una frase',
+        ],
+        'Diversión': [
+            'Escucha tu canción favorita y cántala a todo volumen',
+            'Dedica 30 minutos a un hobby que hayas abandonado',
+            'Ve un episodio de una serie o película que te haga reír',
+            'Juega un juego de mesa o videojuego durante 20 minutos',
+            'Sal a hacer algo que no hagas habitualmente: un museo, un parque, un café nuevo',
+        ],
+        'Entorno': [
+            'Ordena tu escritorio o espacio de trabajo durante 10 minutos',
+            'Abre las ventanas para ventilar tu habitación',
+            'Cambia de lugar un mueble o elemento decorativo para renovar el ambiente',
+            'Dona o guarda algo que ya no uses para liberar espacio',
+            'Incorpora una planta o elemento natural a tu espacio',
+        ],
+        'Desarrollo': [
+            'Lee un artículo o capítulo de un libro sobre un tema que te interese',
+            'Inscríbete en un curso corto en línea (gratuito o accesible)',
+            'Escribe una habilidad que te gustaría desarrollar y el primer paso para lograrlo',
+            'Escucha un podcast de crecimiento personal mientras haces otra actividad',
+            'Pide retroalimentación a alguien de confianza sobre tu desempeño',
+        ],
+        'Contribución': [
+            'Realiza un acto de amabilidad al azar hoy (ayudar a alguien, ceder el paso, donar)',
+            'Escribe un mensaje de agradecimiento a alguien que te haya apoyado',
+            'Identifica una causa que te importe y destina 30 minutos a apoyarla',
+            'Comparte un conocimiento útil con alguien de tu equipo o comunidad',
+            'Ofrece tu tiempo para escuchar a alguien que lo necesite',
+        ],
+    }
+
+    acciones_base = CAT_ACCIONES.get(area_foco, [
+        f'Establece una acción concreta para mejorar en {area_foco}',
+        f'Revisa tu progreso en {area_foco} esta semana',
+        f'Identifica un obstáculo en {area_foco} y busca una solución',
+        f'Consulta a un experto o referencia sobre {area_foco}',
+        f'Dedica 15 minutos a reflexionar sobre {area_foco}',
+    ])
+
+    nuevas = []
+    for texto in acciones_base:
+        if not AccionSugerida.objects.filter(
+            user=request.user, area_foco=area_foco, texto=texto
+        ).exists():
+            nuevas.append(AccionSugerida(user=request.user, area_foco=area_foco, texto=texto))
+
+    if nuevas:
+        creadas = AccionSugerida.objects.bulk_create(nuevas)
+    else:
+        creadas = []
+
+    total = existing_count + len(creadas)
+    disponibles = max(0, 20 - total)
+
+    return Response({
+        'acciones': AccionSugeridaSerializer(creadas, many=True).data,
+        'total_area': total,
+        'disponibles': disponibles,
+    })
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def listar_acciones_rueda(request):
+    area_foco = request.query_params.get('area_foco')
+    qs = AccionSugerida.objects.filter(user=request.user)
+    if area_foco:
+        qs = qs.filter(area_foco=area_foco)
+    return Response(AccionSugeridaSerializer(qs, many=True).data)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def enviar_accion_kanban(request):
+    serializer = EnviarAccionKanbanSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    try:
+        accion = AccionSugerida.objects.get(
+            id=serializer.validated_data['accion_id'], user=request.user
+        )
+    except AccionSugerida.DoesNotExist:
+        return Response({'error': 'Acción no encontrada'}, status=404)
+
+    if accion.enviada_kanban:
+        return Response({'error': 'Esta acción ya fue enviada al Kanban',
+                         'code': 'duplicado'}, status=400)
+
+    KanbanTask.objects.create(
+        user=request.user,
+        titulo=accion.texto,
+        descripcion=f'Acción sugerida desde diagnóstico Rueda de la Vida — Área: {accion.area_foco}',
+        columna='Backlog',
+    )
+    accion.enviada_kanban = True
+    accion.save(update_fields=['enviada_kanban'])
+
+    return Response({'status': 'ok', 'accion_id': accion.id})
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def resumen_rueda_dashboard(request):
+    try:
+        diag = DiagnosticoRueda.objects.get(user=request.user)
+        data = {
+            'foco_1': diag.foco_1,
+            'foco_2': diag.foco_2,
+            'foco_3': diag.foco_3,
+            'nivel_equilibrio': diag.nivel_equilibrio,
+            'promedio_general': diag.promedio_general,
+            'tiene_diagnostico': True,
+        }
+    except DiagnosticoRueda.DoesNotExist:
+        data = {'tiene_diagnostico': False}
+
+    # Include simple average from current scores
+    registros = RegistroRueda.objects.filter(user=request.user)
+    if registros.exists():
+        scores = [r.puntaje for r in registros]
+        data['promedio_actual'] = round(sum(scores) / len(scores), 1)
+
+    return Response(data)
 
 
 class DelegationViewSet(IsMineOrReadOnly, viewsets.GenericViewSet):
@@ -468,6 +817,248 @@ def pending_invitations(request):
     invitations = Invitation.objects.filter(email=request.user.email, status='pending')
     serializer = InvitationSerializer(invitations, many=True)
     return Response(serializer.data)
+
+
+class MetaAnualViewSet(BaseUserViewSet):
+    queryset = MetaAnual.objects.all()
+    serializer_class = MetaAnualSerializer
+
+
+class ObjetivoMensualViewSet(BaseUserViewSet):
+    queryset = ObjetivoMensual.objects.all()
+    serializer_class = ObjetivoMensualSerializer
+
+
+class PropuestaIAViewSet(BaseUserViewSet):
+    queryset = PropuestaIA.objects.all()
+    serializer_class = PropuestaIASerializer
+
+    @action(detail=True, methods=['post'])
+    def decidir(self, request, pk=None):
+        propuesta = self.get_object()
+        decision = request.data.get('decision')
+        if decision not in ('aplicar', 'revisar', 'mantener', 'ignorado'):
+            return Response({'error': 'Decisión no válida'}, status=status.HTTP_400_BAD_REQUEST)
+        engine = DecisionEngine()
+        resultado = engine.procesar_decision(propuesta.id, decision)
+        return Response(PropuestaIASerializer(propuesta).data)
+
+    @action(detail=True, methods=['post'])
+    def marcar_leida(self, request, pk=None):
+        propuesta = self.get_object()
+        propuesta.leida = True
+        propuesta.save()
+        return Response(PropuestaIASerializer(propuesta).data)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def registrar_interaccion(request):
+    serializer = InteraccionUsuarioSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    interaccion = serializer.save(user=request.user)
+    return Response(InteraccionUsuarioSerializer(interaccion).data, status=status.HTTP_201_CREATED)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def marcar_video_visto(request):
+    config, _ = ConfiguracionUsuario.objects.get_or_create(user=request.user)
+    config.video_inicial_visto = True
+    config.save(update_fields=['video_inicial_visto'])
+    return Response({'video_inicial_visto': True})
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def registrar_ingreso_hub(request):
+    config, _ = ConfiguracionUsuario.objects.get_or_create(user=request.user)
+    from django.utils import timezone
+    config.ultimo_ingreso = timezone.now()
+    config.conteo_ingresos_hub = (config.conteo_ingresos_hub or 0) + 1
+    config.save(update_fields=['ultimo_ingreso', 'conteo_ingresos_hub'])
+    return Response({'ultimo_ingreso': config.ultimo_ingreso.isoformat() if config.ultimo_ingreso else None, 'conteo_ingresos': config.conteo_ingresos_hub})
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def ejecutar_motor_decision(request):
+    """
+    Endpoint manual para ejecutar el motor de decisión para el usuario autenticado.
+    Se puede llamar desde un cron/tarea programada o manualmente.
+    """
+    engine = DecisionEngine()
+    resultado = engine.ejecutar_ciclo(request.user)
+    return Response(resultado)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def analizar_contexto(request):
+    """
+    Endpoint principal del motor central de IA de Focusia.
+    Recibe contexto JSON (meta_anual, metricas_ejecucion, historial_alertas,
+    tareas_detalladas_backlog) y retorna intervención estructurada según
+    el árbol de decisiones IF/THEN de la especificación del sistema.
+
+    Casos en orden de prioridad: A (ESTRATÉGICO_CRÍTICO) → B (ESTRUCTURAL_SATURACIÓN) → C (PRIORIDAD_REORGANIZACIÓN)
+    """
+    serializer = ContextoAnalisisInputSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    data = serializer.validated_data
+
+    meta_anual = data.get('meta_anual')
+    historial = data.get('historial_alertas', {})
+
+    # ─── FILTRO DE VIABILIDAD ─────────────────────────────────
+    if not meta_anual or not meta_anual.get('id'):
+        return Response({
+            'intervencion_necesaria': False,
+            'tipo_alerta_detectada': None,
+            'payload': None,
+        })
+
+    if not historial.get('ultima_alerta_respondida', True):
+        return Response({
+            'intervencion_necesaria': False,
+            'tipo_alerta_detectada': None,
+            'payload': None,
+        })
+
+    # ─── DETECCIÓN (prioridad A → B → C) ──────────────────────
+    metricas = data.get('metricas_ejecucion', {})
+    tareas = data.get('tareas_detalladas_backlog', [])
+
+    # CASO A: ESTRATÉGICO_CRÍTICO
+    tareas_conectadas = [t for t in tareas if t.get('conectada_a_meta_anual')]
+    if len(tareas_conectadas) >= 3:
+        tipo_alerta = 'ESTRATÉGICO_CRÍTICO'
+        tipo_impacto = 'estrategico_critico'
+    # CASO B: ESTRUCTURAL_SATURACIÓN
+    elif (metricas.get('horas_planificadas', 0)
+          > metricas.get('horas_disponibles_reales', 1) * 1.30
+          and metricas.get('tasa_cumplimiento_48h', 1) < 0.60):
+        tipo_alerta = 'ESTRUCTURAL_SATURACIÓN'
+        tipo_impacto = 'estructural'
+    # CASO C: PRIORIDAD_REORGANIZACIÓN
+    elif metricas.get('tareas_backlog', 0) >= 5:
+        tipo_alerta = 'PRIORIDAD_REORGANIZACIÓN'
+        tipo_impacto = 'de_prioridad'
+    else:
+        return Response({
+            'intervencion_necesaria': False,
+            'tipo_alerta_detectada': None,
+            'payload': None,
+        })
+
+    # ─── GENERAR PAYLOAD (Groq o defaults) ────────────────────
+    payload = generar_payload_coach(
+        user=request.user,
+        tipo_impacto=tipo_impacto,
+        tipo_alerta=tipo_alerta,
+        meta_anual=meta_anual,
+        metricas=metricas,
+        tareas=tareas,
+    )
+
+    # ─── PERSISTIR PROPUESTA ──────────────────────────────────
+    analisis = payload.get('bloque_3_interpretacion_ia', {})
+    vector = analisis.get('analisis_vector', {})
+    acciones = payload.get('bloque_4_acciones_disponibles', [])
+
+    propuesta = PropuestaIA.objects.create(
+        user=request.user,
+        tipo_impacto=tipo_impacto,
+        situacion_clara=payload.get('bloque_1_impacto_inmediato', {}).get('mensaje_gancho', ''),
+        explicacion_impacto=vector.get('significado_avance', ''),
+        propuesta_ajuste=acciones[0].get('texto_boton', '') if acciones else '',
+        fase_detectada=f'CASO {tipo_alerta}',
+        resultado_json={
+            'intervencion_necesaria': True,
+            'tipo_alerta_detectada': tipo_alerta,
+            'payload': payload,
+        },
+    )
+
+    return Response({
+        'intervencion_necesaria': True,
+        'tipo_alerta_detectada': tipo_alerta,
+        'payload': payload,
+        'propuesta_id': propuesta.id,
+    })
+
+
+class MatrizEisenhowerViewSet(BaseUserViewSet):
+    queryset = MatrizEisenhower.objects.all()
+    serializer_class = MatrizEisenhowerSerializer
+
+    def get_queryset(self):
+        return MatrizEisenhower.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=['get', 'patch'])
+    def progress(self, request):
+        obj, created = MatrizEisenhower.objects.get_or_create(user=request.user)
+        if request.method == 'GET':
+            return Response(MatrizEisenhowerSerializer(obj).data)
+        serializer = MatrizEisenhowerSerializer(obj, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        if 'status' in request.data and request.data['status'] == 'COMPLETADO':
+            obj.completed_at = timezone.now()
+        serializer.save()
+        return Response(MatrizEisenhowerSerializer(obj).data)
+
+
+class ConfiguracionViewSet(BaseUserViewSet):
+    queryset = ConfiguracionUsuario.objects.all()
+    serializer_class = ConfiguracionUsuarioSerializer
+
+    def get_queryset(self):
+        return ConfiguracionUsuario.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=['get', 'patch'])
+    def mi_config(self, request):
+        config, created = ConfiguracionUsuario.objects.get_or_create(user=request.user)
+        if request.method == 'GET':
+            return Response(ConfiguracionUsuarioSerializer(config).data)
+        serializer = ConfiguracionUsuarioSerializer(config, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
+class ActivacionViewSet(BaseUserViewSet):
+    queryset = Activacion.objects.all()
+    serializer_class = ActivacionSerializer
+
+    @action(detail=False, methods=['get'])
+    def pendientes(self, request):
+        qs = self.get_queryset().filter(estado__in=['pendiente', 'enviada'])
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def marcar_vista(self, request, pk=None):
+        activacion = self.get_object()
+        from django.utils import timezone
+        activacion.estado = 'vista'
+        activacion.leida_en = timezone.now()
+        activacion.save()
+        return Response(ActivacionSerializer(activacion).data)
+
+    @action(detail=True, methods=['post'])
+    def marcar_respondida(self, request, pk=None):
+        activacion = self.get_object()
+        from django.utils import timezone
+        activacion.estado = 'respondida'
+        activacion.respondida_en = timezone.now()
+        activacion.save()
+        return Response(ActivacionSerializer(activacion).data)
 
 
 def log_security_event(user, action, detail=''):

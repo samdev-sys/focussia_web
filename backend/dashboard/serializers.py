@@ -1,6 +1,6 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
-from .models import User, RuedaVida, TimeBlock, KanbanTask, Recordatorio, ObjetivoSemana, KeepNota, MisionHoy, CategoriaRueda, RegistroRueda, MatrixItem, Factura, Workspace, WorkspaceMember, Invitation, Delegation, Notification
+from .models import User, RuedaVida, TimeBlock, KanbanTask, Recordatorio, ObjetivoSemana, KeepNota, MisionHoy, CategoriaRueda, RegistroRueda, MatrixItem, Factura, Workspace, WorkspaceMember, Invitation, Delegation, Notification, MetaAnual, ObjetivoMensual, PropuestaIA, ConfiguracionUsuario, MatrizEisenhower, Activacion, InteraccionUsuario, DiagnosticoRueda, AccionSugerida, KanbanAction
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -86,6 +86,13 @@ class MatrixItemSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'task', 'quadrant', 'is_done', 'created_at', 'workspace']
         read_only_fields = ['user', 'created_at']
 
+class MatrizEisenhowerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MatrizEisenhower
+        fields = ['id', 'status', 'video_watched', 'completed_at', 'creado', 'actualizado']
+        read_only_fields = ['creado', 'actualizado']
+
+
 class FacturaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Factura
@@ -160,3 +167,107 @@ class NotificationSerializer(serializers.ModelSerializer):
         model = Notification
         fields = ['id', 'type', 'title', 'message', 'data', 'is_read', 'created_at']
         read_only_fields = ['created_at']
+
+
+class MetaAnualSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetaAnual
+        fields = ['id', 'user', 'titulo', 'descripcion', 'fecha_inicio', 'fecha_fin', 'aprobada', 'creado']
+        read_only_fields = ['user', 'creado']
+
+
+class ObjetivoMensualSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ObjetivoMensual
+        fields = ['id', 'user', 'meta_anual', 'mes', 'titulo', 'descripcion', 'completado', 'creado']
+        read_only_fields = ['user', 'creado']
+
+
+class PropuestaIASerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PropuestaIA
+        fields = [
+            'id', 'user', 'tipo_impacto', 'situacion_clara',
+            'explicacion_impacto', 'propuesta_ajuste', 'fase_detectada',
+            'respondida', 'decision_usuario', 'leida', 'resultado_json', 'creada',
+        ]
+        read_only_fields = ['user', 'creada']
+
+
+class InteraccionUsuarioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InteraccionUsuario
+        fields = ['id', 'tipo', 'metadata', 'creado']
+        read_only_fields = ['creado']
+
+
+class ContextoAnalisisInputSerializer(serializers.Serializer):
+    meta_anual = serializers.JSONField(allow_null=True, required=False, default=None)
+    metricas_ejecucion = serializers.JSONField(required=False, default=dict)
+    historial_alertas = serializers.JSONField(required=False, default=dict)
+    tareas_detalladas_backlog = serializers.ListField(
+        child=serializers.JSONField(), required=False, default=list,
+    )
+
+
+class ConfiguracionUsuarioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConfiguracionUsuario
+        exclude = ['user', 'creado', 'actualizado']
+
+
+class ActivacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Activacion
+        fields = [
+            'id', 'user', 'tipo', 'estado', 'titulo', 'mensaje',
+            'mensaje_intencion', 'metadata', 'ventana_programada',
+            'enviada_en', 'leida_en', 'respondida_en', 'creada',
+        ]
+        read_only_fields = ['user', 'creada']
+
+
+class DiagnosticoRuedaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DiagnosticoRueda
+        fields = '__all__'
+        read_only_fields = ['user', 'creado', 'actualizado']
+
+
+class AccionSugeridaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AccionSugerida
+        fields = ['id', 'area_foco', 'texto', 'enviada_kanban', 'creado']
+        read_only_fields = ['user', 'creado']
+
+
+class EnviarAccionKanbanSerializer(serializers.Serializer):
+    accion_id = serializers.IntegerField()
+
+
+class GenerarDiagnosticoInputSerializer(serializers.Serializer):
+    puntajes = serializers.DictField(child=serializers.IntegerField(min_value=1, max_value=10))
+    comentarios = serializers.DictField(child=serializers.CharField(allow_blank=True), required=False)
+
+
+class GenerarAccionesInputSerializer(serializers.Serializer):
+    area_foco = serializers.CharField(max_length=100)
+
+
+class KanbanActionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = KanbanAction
+        fields = ['id', 'title', 'source', 'classification_status', 'scheduled_date', 'pinned', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'source', 'classification_status', 'pinned', 'created_at', 'updated_at']
+
+
+class KanbanActionClassifySerializer(serializers.Serializer):
+    ACTION_MAP = {
+        'H': KanbanAction.ClassificationStatus.HACER,
+        'P': KanbanAction.ClassificationStatus.PLANIFICAR,
+        'D': KanbanAction.ClassificationStatus.DELEGAR,
+        'E': KanbanAction.ClassificationStatus.ELIMINAR,
+    }
+
+    decision = serializers.ChoiceField(choices=['H', 'P', 'D', 'E'])
+    scheduled_date = serializers.DateField(required=False, allow_null=True)
