@@ -765,34 +765,47 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     setTimeout(() => setSavingStatus(''), 1500);
   };
 
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const findBlock = (hora: number) =>
+    timeBlocks.find((t: TimeBlockData) => t.fecha === todayStr && t.hora === hora)
+    || timeBlocks.find((t: TimeBlockData) => t.hora === hora);
+
   const handleTimeBlockBlur = async (hora: number, value: string) => {
-    const block = timeBlocks.find((t: TimeBlockData) => t.hora === hora);
-    if (block && block.tarea === value) return; // Sin cambios
+    const block = findBlock(hora);
+    if (block && block.tarea === value) return;
     try {
       if (block) {
-        await timeBlockService.update(block.id, { tarea: value });
+        setTimeBlocks((prev: TimeBlockData[]) => prev.map((t: TimeBlockData) => t.id === block.id ? { ...t, tarea: value } : t));
+        await timeBlockService.update(block.id, { tarea: value, fecha: block.fecha || todayStr });
       } else {
-        const newBlock = await timeBlockService.create({ hora, tarea: value, estado: 'pending' });
+        const newBlock = await timeBlockService.create({ fecha: todayStr, hora, tarea: value, estado: 'pending' });
         setTimeBlocks(prev => [...prev, newBlock]);
       }
       showSaving();
     } catch (e) {
+      if (block) {
+        setTimeBlocks((prev: TimeBlockData[]) => prev.map((t: TimeBlockData) => t.id === block.id ? { ...t, tarea: block.tarea } : t));
+      }
       console.error("Error saving timeblock", e);
     }
   };
 
   const handleTimeBlockStatus = async (hora: number, estado: string) => {
-    const block = timeBlocks.find((t: TimeBlockData) => t.hora === hora);
+    const block = findBlock(hora);
     try {
       if (block) {
-        await timeBlockService.update(block.id, { estado });
         setTimeBlocks((prev: TimeBlockData[]) => prev.map((t: TimeBlockData) => t.id === block.id ? { ...t, estado } : t));
+        await timeBlockService.update(block.id, { estado, fecha: block.fecha || todayStr });
       } else {
-        const newBlock = await timeBlockService.create({ hora, tarea: '', estado });
+        const newBlock = await timeBlockService.create({ fecha: todayStr, hora, tarea: '', estado });
         setTimeBlocks((prev: TimeBlockData[]) => [...prev, newBlock]);
       }
       showSaving();
     } catch (e) {
+      if (block) {
+        setTimeBlocks((prev: TimeBlockData[]) => prev.map((t: TimeBlockData) => t.id === block.id ? { ...t, estado: block.estado } : t));
+      }
       console.error(e);
     }
   };
@@ -1289,9 +1302,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       {/* CUERPO DE HORARIOS (FILAS) */}
       <tbody>
   {defaultHours.map((h, i) => {
-    const block = timeBlocks.find((t: TimeBlockData) => t.hora === h);
-    const statusText = block?.estado === 'done' ? 'Done' : block?.estado === 'doing' ? 'Doing' : '';
-
+    const block = findBlock(h);
     return (
       <tr 
         key={h} 
@@ -1313,7 +1324,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             <input
               type="text"
               className={`w-full bg-transparent outline-none text-[11px] text-slate-700 placeholder:text-slate-400 placeholder:italic ${
-                statusText === 'Done' ? 'line-through text-slate-400 italic' : 'font-medium'
+                block?.estado === 'done' ? 'line-through text-slate-400 italic' : 'font-medium'
               }`}
               placeholder="Escriba aquí..."
               defaultValue={block?.tarea || ''}
@@ -1322,21 +1333,23 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           </div>
         </td>
 
-        {/* CELDA 3: ESTADOS DINÁMICOS */}
+        {/* CELDA 3: SELECTOR DE ESTADO */}
         <td className="w-24 py-1 px-2 text-center">
-          {statusText === 'Done' && (
-            <span className="block w-full rounded-md text-[9px] py-0.5 font-bold bg-slate-100 text-slate-500 border border-slate-200 shadow-3xs select-none">
-              Done
-            </span>
-          )}
-          {statusText === 'Doing' && (
-            <span className="block w-full rounded-md text-[9px] py-0.5 font-black bg-white text-slate-900 border border-slate-200/60 shadow-xs animate-pulse select-none">
-              Doing
-            </span>
-          )}
-          {statusText === '' && (
-            <span className="block w-full h-4 bg-transparent" />
-          )}
+          <select
+            value={block?.estado || 'pending'}
+            onChange={(e) => handleTimeBlockStatus(h, e.target.value)}
+            className={`w-full text-[9px] py-0.5 px-1 rounded-md border font-bold text-center cursor-pointer transition-all outline-none appearance-none ${
+              block?.estado === 'done'
+                ? 'bg-slate-100 text-slate-500 border-slate-200'
+                : block?.estado === 'doing'
+                ? 'bg-white text-slate-900 border-slate-200/60 animate-pulse'
+                : 'bg-white text-slate-400 border-slate-200'
+            }`}
+          >
+            <option value="pending">Pendiente</option>
+            <option value="doing">Haciendo</option>
+            <option value="done">Hecho</option>
+          </select>
         </td>
 
       </tr>

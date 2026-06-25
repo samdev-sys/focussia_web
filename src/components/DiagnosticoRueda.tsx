@@ -53,6 +53,18 @@ export default function DiagnosticoRueda({ avatarIndex = 0, onClose, onGoMetaAnu
     }).catch(() => setError('Error al cargar'));
   }, []);
 
+  useEffect(() => {
+    if (screen === 'acciones' && diagnostico) {
+      const focos = [diagnostico.foco_1, diagnostico.foco_2, diagnostico.foco_3].filter(Boolean);
+      if (focos.length > 0 && !focoActivo) setFocoActivo(focos[0]);
+      Promise.all(focos.map(f => ruedaService.listarAcciones(f).catch(() => [])))
+        .then(results => {
+          const all = results.flat();
+          setAcciones(all);
+        });
+    }
+  }, [screen, diagnostico]);
+
   const handleGuardarYDiagnosticar = useCallback(async () => {
     setError('');
     setScreen('procesando');
@@ -72,7 +84,10 @@ export default function DiagnosticoRueda({ avatarIndex = 0, onClose, onGoMetaAnu
     setFocoActivo(area);
     try {
       const res = await ruedaService.generarAcciones(area);
-      setAcciones(prev => [...prev, ...res.acciones]);
+      setAcciones(prev => {
+        const other = prev.filter(a => a.area_foco !== area);
+        return [...other, ...res.acciones];
+      });
     } catch (e: any) {
       if (e.response?.data?.code === 'limite_20') setError(e.response.data.error);
       else setError('Error al generar acciones');
