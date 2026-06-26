@@ -761,3 +761,92 @@ export const analizarContextoService = {
   },
 };
 
+export interface MonthlyPlanData {
+  id: number;
+  user: number;
+  cycle_start_year: number;
+  goals: MonthlyGoalData[];
+  created_at: string;
+}
+
+export interface MonthlyGoalData {
+  id: number;
+  plan: number;
+  month_order: number;
+  calendar_month: number;
+  calendar_year: number;
+  monthly_goal_text: string;
+  brief_explanation: string;
+  annual_goal_relation: string;
+  complexity_level: string;
+  status: string;
+  titulo: string;
+  descripcion: string;
+  meta: string;
+  indicador: string;
+  accion: string;
+  presupuesto: string;
+  fuente_verificacion: string;
+  responsable: string;
+  avance: number;
+}
+
+export const monthlyService = {
+  checkStatus: async (): Promise<{ has_plan: boolean; has_monthly_plan: boolean; plan_id: number | null }> => {
+    const response = await api.get('/api/monthly-plan/check/');
+    return response.data;
+  },
+  getPlan: async (planId: number): Promise<MonthlyPlanData> => {
+    const response = await api.get(`/api/monthly-plan/${planId}/`);
+    return response.data;
+  },
+  generateProposals: async (data: Record<string, unknown>): Promise<MonthlyPlanData> => {
+    const response = await api.post('/api/monthly-plan/generate/', data);
+    return response.data;
+  },
+  editGoal: async (goalId: number, data: Partial<MonthlyGoalData>): Promise<MonthlyGoalData> => {
+    const response = await api.patch(`/api/monthly-goal/${goalId}/`, data);
+    return response.data;
+  },
+  approvePlan: async (planId: number): Promise<void> => {
+    await api.post(`/api/monthly-plan/${planId}/approve/`);
+  },
+};
+
+export interface SmartGoalResult {
+  [key: string]: string;
+  texto_meta: string;
+  frase_resumen: string;
+  S: string;
+  M: string;
+  A: string;
+  R: string;
+  T: string;
+}
+
+export interface GranMetaBorrador {
+  id: number;
+  texto_meta: string;
+  frase_resumen: string;
+  desglose_smart: Record<string, string>;
+  respuestas: Record<string, string>;
+}
+
+export const granMetaAnualService = {
+  generarSmart: async (data: Record<string, unknown>): Promise<SmartGoalResult> => {
+    const response = await api.post('/api/gran-meta-anual/generar-smart/', data);
+    return response.data;
+  },
+  editarSmart: async (id: number, comment: string): Promise<SmartGoalResult> => {
+    const response = await api.patch(`/api/gran-meta-anual/${id}/editar-smart/`, { comment });
+    return response.data;
+  },
+  guardarBorrador: async (data: Record<string, unknown>): Promise<GranMetaBorrador> => {
+    const response = await api.post('/api/gran-meta-anual/borrador/', data);
+    return response.data;
+  },
+  aprobar: async (id: number): Promise<void> => {
+    await api.post(`/api/gran-meta-anual/${id}/aprobar/`);
+  },
+};
+

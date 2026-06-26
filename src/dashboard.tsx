@@ -1290,7 +1290,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
 
       {/* CUERPO DE HORARIOS (FILAS) */}
       <tbody>
-      {defaultHours.map((h, i) => {
+  {defaultHours.map((h, i) => {
     const block = findBlock(h);
     const estado = block?.estado || 'pending';
 
@@ -3360,7 +3360,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
         isOpen={showAiMissionModal}
         onClose={() => setShowAiMissionModal(false)}
         metaAnual={metaAnual}
-        metaMensual={metaMensual}
         metaSemanal={metaSemanal}
         metaDiaria={metaDiaria}
         onSelectMission={(mission: string) => {
