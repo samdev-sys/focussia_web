@@ -6,11 +6,7 @@ import {
   Sliders, Smartphone, EyeOff, Eye, Star, Check, SkipForward,
 } from 'lucide-react';
 import { authService, configuracionService } from '../services/api';
-
-const AVATAR_FILES: Record<number, string> = {
-  1: '/avartars/John.jpeg', 2: '/avartars/conrad.jpeg', 3: '/avartars/Ashley.jpeg',
-  4: '/avartars/Lia.jpeg', 5: '/avartars/Monroe.jpeg', 6: '/avartars/Sophya.jpeg',
-};
+import { AVATAR_FILES } from '../constants/avatars';
 
 const SECTIONS_DATA = [
   { id: 'planificacion', icon: Target, color: 'from-purple-400 to-indigo-500', label: 'Planificación', desc: 'Rueda de la vida, Matriz, Meta anual, Objetivos mensuales/semanales/diarios' },

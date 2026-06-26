@@ -1,14 +1,17 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { 
-  workspaceService, invitationService, delegationService, authService, notificationService, kanbanService, recordatorioService, ruedaService, timeBlockService, objetivoSemanaService, keepNotaService, misionHoyService, billService, matrixService, monthlyService,
+import {
+  workspaceService, invitationService, delegationService, authService, notificationService, kanbanService, recordatorioService, ruedaService, timeBlockService, objetivoSemanaService, keepNotaService, misionHoyService, billService, matrixService, configuracionService,
   InvitationData, DelegationData, NotificationData, WorkspaceData, WorkspaceMemberData, RuedaCategoria, ResumenRuedaDashboard, TimeBlockData, ObjetivoSemanaData, KeepNotaData, MisionHoyData, RecordatorioData, FacturaData, MatrixItemData, KanbanTaskData
 } from './services/api';
+import { AVATAR_FILES } from './constants/avatars';
 
 
 import { KanbanBoard } from './components/KanbanBoard';
+import { KanbanBacklog } from './components/KanbanBacklog';
 import { NotificationToast } from './components/NotificationToast';
 import { FormularioRueda } from './components/FormularioRueda';
 import DiagnosticoRueda from './components/DiagnosticoRueda';
+import MatrizEisenhower from './components/MatrizEisenhower';
 import { useReminderToasts } from './hooks/useReminderToasts';
 import { ActionButton } from './components/ActionButton';
 import { AiMissionAssistant } from './components/AiMissionAssistant';
@@ -17,9 +20,6 @@ import { BuzonPropuestas } from './components/BuzonPropuestas';
 import { MicroFlujoAjuste } from './components/MicroFlujoAjuste';
 import { ConfiguracionPanel } from './components/ConfiguracionPanel';
 import { PlanificarModal } from './components/PlanificarModal';
-import MonthlyWizard from './components/MonthlyWizard';
-import MonthlyCalendar from './components/MonthlyCalendar';
-import MatrizEisenhower from './components/MatrizEisenhower';
 import { X, Moon, Sun, LogOut, User, Plus, ArrowRight, Calendar, Edit3, Info, CheckCircle2, Play, ChevronRight, Target, TrendingUp, CalendarDays, CheckCircle, CreditCard, Landmark, Receipt, AlertCircle, CheckSquare, Pill, Clock, Edit, Check, Zap, Trophy, Star, Shield, Flame, Users, Settings, Mail, Copy, Crown, ShieldCheck, UserPlus, Trash2, Send, Briefcase, Bell, MessageSquare, Sparkles } from 'lucide-react';
 
 
@@ -101,7 +101,8 @@ const espaciosVacios = [''];
   const diasMes = Array.from({ length: 30 }, (_, i) => i + 1);
 
 
-const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
+const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
+  const kanbanRef = useRef<HTMLDivElement>(null);
   const [ruedaCompleta, setRuedaCompleta] = useState<RuedaCategoria[]>([]);
   const [showDelegarModal, setShowDelegarModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -110,17 +111,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [showRuedaVideoModal, setShowRuedaVideoModal] = useState(false);
   const [showDiagnosticoRueda, setShowDiagnosticoRueda] = useState(false);
   const [resumenRueda, setResumenRueda] = useState<ResumenRuedaDashboard | null>(null);
+  const [showMatrizEisenhower, setShowMatrizEisenhower] = useState(false);
   const [showMatrizVideoModal, setShowMatrizVideoModal] = useState(false);
   const [showMatrizFormModal, setShowMatrizFormModal] = useState(false);
+  const handleGoKanban = () => {
+    setShowMatrizEisenhower(false);
+    setTimeout(() => kanbanRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+  };
   const [showMetaAnualModal, setShowMetaAnualModal] = useState(false);
-  const [showMonthlyWizard, setShowMonthlyWizard] = useState(false);
-  const [showMonthlyCalendar, setShowMonthlyCalendar] = useState(false);
-  const [showMatrizEisenhower, setShowMatrizEisenhower] = useState(false);
-  const [monthlyStatus, setMonthlyStatus] = useState<{has_approved_annual: boolean; has_monthly_plan: boolean; plan_status: string | null}>({has_approved_annual: false, has_monthly_plan: false, plan_status: null});
+  const [showMetaMensualModal, setShowMetaMensualModal] = useState(false);
   const [showMetaSemanalModal, setShowMetaSemanalModal] = useState(false);
   const [showMetaDiariaModal, setShowMetaDiariaModal] = useState(false);
   const [showMetaAnualForm, setShowMetaAnualForm] = useState(false);
-  const [metaAnualHint, setMetaAnualHint] = useState<string | undefined>(undefined);
   const [showBuzonPropuestas, setShowBuzonPropuestas] = useState(false);
   const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [showMicroFlujo, setShowMicroFlujo] = useState(false);
@@ -175,7 +177,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [showAccionesDelegarModal, setShowAccionesDelegarModal] = useState(false);
   const [taskToPlanificar, setTaskToPlanificar] = useState<KanbanTaskData | null>(null);
 
-  const [userData, setUserData] = useState({ username: 'Brenda', email: '', avatar_url: '' });
+  const [userData, setUserData] = useState({ username: 'Brenda', email: '', avatar_url: '', avatar_index: 0 });
   const [newAvatarUrl, setNewAvatarUrl] = useState('');
   const [newUsername, setNewUsername] = useState('');
   const [medicamentos, setMedicamentos] = useState<Array<{
@@ -204,6 +206,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [misionHoy, setMisionHoy] = useState<MisionHoyData | null>(null);
   const [kanbanTasks, setKanbanTasks] = useState<KanbanTaskData[]>([]);
 
+  const todayStr = new Date().toISOString().split('T')[0];
+  const [tbError, setTbError] = useState<string | null>(null);
   const [savingStatus, setSavingStatus] = useState<string>('');
   const [clima, setClima] = useState<{
     temp: number;
@@ -308,6 +312,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     'Aumentar ingresos un 30%',
     'Finalizar proyecto de certificación'
   ]);
+  const [metaMensual, setMetaMensual] = useState<string[]>([
+    'Leer 4 libros de desarrollo personal',
+    'Ahorrar $500 USD',
+    'Mejorar hábitos de sueño'
+  ]);
   const [metaSemanal, setMetaSemanal] = useState<string[]>([
     'Ejercicio 4 veces',
     'Terminar módulo de curso online',
@@ -336,6 +345,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         } else {
           setMetaAnual(metaAnual.map((m: string, i: number) => i === editingMetaIndex ? newMetaText.trim() : m));
         }
+      } else if (editingMetaType === 'mensual') {
+        if (editingMetaIndex === -1) {
+          setMetaMensual([...metaMensual, newMetaText.trim()]);
+        } else {
+          setMetaMensual(metaMensual.map((m: string, i: number) => i === editingMetaIndex ? newMetaText.trim() : m));
+        }
       } else if (editingMetaType === 'semanal') {
         if (editingMetaIndex === -1) {
           setMetaSemanal([...metaSemanal, newMetaText.trim()]);
@@ -357,6 +372,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
   const handleDeleteMeta = (type: string, index: number) => {
     if (type === 'anual') setMetaAnual(metaAnual.filter((_: string, i: number) => i !== index));
+    else if (type === 'mensual') setMetaMensual(metaMensual.filter((_: string, i: number) => i !== index));
     else if (type === 'semanal') setMetaSemanal(metaSemanal.filter((_: string, i: number) => i !== index));
     else if (type === 'diaria') setMetaDiaria(metaDiaria.filter((_: string, i: number) => i !== index));
   };
@@ -656,13 +672,19 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     const fetchUserData = async () => {
       try {
         const data = await authService.getCurrentUser();
+        const config = await configuracionService.getMiConfig();
+        const avatarIdx = config.avatar_index || 0;
+        const resolvedAvatar = avatarIdx > 0 && AVATAR_FILES[avatarIdx]
+          ? AVATAR_FILES[avatarIdx]
+          : data.avatar_url || `https://ui-avatars.com/api/?name=${data.username}&background=f4d2d2&color=000`;
         setUserData({
           username: data.username,
           email: data.email,
-          avatar_url: data.avatar_url || `https://ui-avatars.com/api/?name=${data.username}&background=f4d2d2&color=000`
+          avatar_url: resolvedAvatar,
+          avatar_index: avatarIdx,
         });
         setNewUsername(data.username);
-        setNewAvatarUrl(data.avatar_url || '');
+        setNewAvatarUrl(resolvedAvatar);
       } catch (err) {
         console.error('Error fetching user data:', err);
       }
@@ -692,10 +714,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         username: newUsername,
         avatar_url: newAvatarUrl
       });
+      const avatarIdx = Object.entries(AVATAR_FILES).find(([_, path]) => path === newAvatarUrl)?.[0];
+      if (avatarIdx) {
+        await configuracionService.updateMiConfig({ avatar_index: parseInt(avatarIdx) } as any);
+      }
       setUserData({
         ...userData,
         username: updated.username,
-        avatar_url: updated.avatar_url || `//api/?name=${updated.username}&background=f4d2d2&color=000`
+        avatar_url: updated.avatar_url || `//api/?name=${updated.username}&background=f4d2d2&color=000`,
+        avatar_index: avatarIdx ? parseInt(avatarIdx) : userData.avatar_index,
       });
       setShowUserSettingsModal(false);
       addXP(50, 'Perfil actualizado');
@@ -740,9 +767,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         setMatrixItems(Array.isArray(matrixRes) ? matrixRes : []);
         setKanbanTasks(Array.isArray(kanbanRes) ? kanbanRes : []);
 
-        const monthlyStatusRes = await monthlyService.checkStatus().catch(() => ({has_approved_annual: false, has_monthly_plan: false, plan_status: null}));
-        setMonthlyStatus(monthlyStatusRes);
-
       } catch (error) {
         console.error("Error fetching initial data:", error);
       }
@@ -765,8 +789,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     setTimeout(() => setSavingStatus(''), 1500);
   };
 
-  const todayStr = new Date().toISOString().split('T')[0];
-
   const findBlock = (hora: number) =>
     timeBlocks.find((t: TimeBlockData) => t.fecha === todayStr && t.hora === hora)
     || timeBlocks.find((t: TimeBlockData) => t.hora === hora);
@@ -783,15 +805,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         setTimeBlocks(prev => [...prev, newBlock]);
       }
       showSaving();
+      setTbError(null);
     } catch (e) {
       if (block) {
         setTimeBlocks((prev: TimeBlockData[]) => prev.map((t: TimeBlockData) => t.id === block.id ? { ...t, tarea: block.tarea } : t));
       }
+      setTbError('Error al guardar bloque horario');
+      setTimeout(() => setTbError(null), 3000);
       console.error("Error saving timeblock", e);
     }
   };
 
-  const handleTimeBlockStatus = async (hora: number, estado: string) => {
+  const handleTimeBlockStatus = async (hora: number, estado: 'pending' | 'doing' | 'done') => {
     const block = findBlock(hora);
     try {
       if (block) {
@@ -802,10 +827,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         setTimeBlocks((prev: TimeBlockData[]) => [...prev, newBlock]);
       }
       showSaving();
+      setTbError(null);
     } catch (e) {
       if (block) {
         setTimeBlocks((prev: TimeBlockData[]) => prev.map((t: TimeBlockData) => t.id === block.id ? { ...t, estado: block.estado } : t));
       }
+      setTbError('Error al actualizar estado');
+      setTimeout(() => setTbError(null), 3000);
       console.error(e);
     }
   };
@@ -865,7 +893,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     return `conic-gradient(${gradientParts.join(', ')})`;
   };
 
-  const defaultHours = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 23];
+  const defaultHours = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
 
   return (
     <div className="min-h-screen bg-[#e8eef2] bg-cover bg-center bg-no-repeat bg-blend-soft-light text-[#2d2f33] font-sans flex flex-col items-center py-4 px-2 sm:py-6 sm:px-4 relative overflow-auto">
@@ -882,7 +910,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       <div className="fixed bottom-[10%] right-[10%] w-[35%] h-[35%] bg-yellow-100/30 rounded-full mix-blend-multiply filter blur-[100px] opacity-70 z-0 pointer-events-none"></div>
 
       {/* TOP HEADER */}
-      <header className="w-full max-w-[1240px] flex items-center justify-between mb-4 z-50 relative px-2 sm:px-4 text-gray-600 mx-auto">
+      <header className="w-full max-w-[1240px] flex items-center justify-between mb-4 z-50 relative px-4 text-gray-600 mx-auto">
 
         {/* LEFT SECTION: Modo Oscuro y Notificaciones */}
        
@@ -893,7 +921,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         
       </header>
       {/* MAIN CONTENT AREA */}
-      <main className="w-full  bg-white/25 backdrop-blur-3xl border border-white/50 shadow-[0_4px_30px_rgba(0,0,0,0.05)] p-4 sm:p-8 z-10 flex flex-col xl:flex-row gap-5">
+      <main className="w-full max-w-[1240px] bg-white/25 backdrop-blur-3xl border border-white/50 shadow-[0_4px_30px_rgba(0,0,0,0.05)] rounded-[3.5rem] p-8 z-10 flex flex-col xl:flex-row gap-5">
 
       <div className="absolute left-1/2 -top-1 -translate-x-1/2 pointer-events-none -ml-6 mt-7">
           <img
@@ -959,8 +987,23 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       {isDarkMode ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-white" />}
     </button>
 
+    {/* Meta Anual */}
+    <button
+      onClick={() => setShowMetaAnualForm(true)}
+      className="flex items-center justify-center w-8 h-8 rounded-full bg-black/20 hover:bg-black/30 transition-all border border-black/40 shadow-sm active:scale-95"
+      title="Gran Meta Anual"
+    >
+      <Target className="w-4 h-4 text-white" />
+    </button>
 
-    
+    {/* Buzón Propuestas IA */}
+    <button
+      onClick={() => setShowBuzonPropuestas(true)}
+      className="flex items-center justify-center w-8 h-8 rounded-full bg-black/20 hover:bg-black/30 transition-all border border-black/40 shadow-sm active:scale-95"
+      title="Buzón de Propuestas IA"
+    >
+      <Sparkles className="w-4 h-4 text-white" />
+    </button>
 
     {/* Configuración */}
     <button
@@ -1000,138 +1043,88 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         {/* LEFT COLUMN */}
         <div className="flex flex-col gap-4 w-full xl:w-[32%]">
           {/* Top of Left: Pills & Foco */}
-          <div className="flex flex-col sm:flex-row gap-4">
-             <div className="flex flex-col sm:flex-row gap-4">
-  <div className="bg-white/40 backdrop-blur-sm border border-white/20 rounded-md p-3 flex flex-row sm:flex-col gap-3 sm:gap-6 w-full sm:w-[140px] shadow-[0_4px_10px_rgba(0,0,0,0.02)] mt-10">
+          <div className="flex gap-4">
+             <div className="flex gap-4">
+  <div className="bg-white/40 backdrop-blur-sm border border-white/20 rounded-xl p-3 flex flex-col gap-6 w-[140px] shadow-[0_4px_10px_rgba(0,0,0,0.02)] mt-10">
     {/* 1. COACHING */}
     <ActionButton 
       label="COACHING" 
-      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
+      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
       
     />
     {/* 2. TRIBU (Movido a la segunda posición) */}
     <ActionButton 
       label="TRIBU" 
-      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
+      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
       
     />
     {/* 3. GRATITUD (Movido a la tercera posición) */}
     <ActionButton 
       label="GRATITUD" 
-      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
+      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
       
     />
     {/* 4. DELEGAR */}
    
   </div>
 </div>
-            <div className="bg-white rounded-md border border-gray-200 shadow-sm p-3 flex flex-col gap-2 w-full sm:w-[250px] sm:-ml-2">
-              <div className="flex gap-2">
+            <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-3 flex flex-col gap-3 w-[250px] shadow-[0_8px_32px_rgba(31,38,135,0.03)] -ml-2">
+              <div className="flex gap-1.5">
                 <button
                   onClick={() => setShowInicioModal(true)}
-                  className="bg-gradient-to-r from-[#000000] to-[#3533cd] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] flex-1"
+                  className="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"
                 >
                   INICIO
                 </button>
                 <button
                   onClick={() => setShowDiagnosticoRueda(true)}
-                  className="bg-gradient-to-r from-[#000000] to-[#3533cd] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] flex-1"
+                  className="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"
                   >
                    RUEDA
                 </button>
                 <button
-                  onClick={() => setShowMatrizVideoModal(true)}
-                  className="bg-gradient-to-r from-[#000000] to-[#3533cd] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] flex-1"
+                  onClick={() => setShowMatrizEisenhower(true)}
+                  className="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"
                 >
                   MATRIZ
                 </button>
               </div>
               <div
   onClick={() => setShowDiagnosticoRueda(true)}
-  className="bg-white rounded-md border border-black-200/60 shadow-sm overflow-hidden flex flex-col flex-1 cursor-pointer hover:shadow-md transition-shadow h-[120px] "
+  className="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden flex flex-col flex-1 cursor-pointer hover:shadow-md transition-shadow"
 >
-  <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 rounded-md text-[10px] sm:text-xs font-bold tracking-widest uppercase mt-2"> RUEDA DE LA VIDA
+  <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 rounded-md text-[10px] sm:text-xs font-bold tracking-widest uppercase"> RUEDA DE LA VIDA
   </div>
 
-  <div className="p-2 flex items-center justify-between gap-2 flex-1 bg-white">
+  <div className="p-3 sm:p-4 flex items-center justify-between gap-4 flex-1 bg-white">
     <div className="w-[90px] h-[90px] shrink-0 relative flex items-center justify-center">
       <svg viewBox="0 0 100 100" className="w-full h-full">
-        {/* Segmentos de colores - 8 segmentos */}
-        <path d="M 50 50 L 50 2 A 48 48 0 0 1 83.94 16.06 Z" fill="#c0392b" stroke="#fff" strokeWidth="1.5" />
-        <path d="M 50 50 L 83.94 16.06 A 48 48 0 0 1 98 50 Z" fill="#2c3e50" stroke="#fff" strokeWidth="1.5" />
-        <path d="M 50 50 L 98 50 A 48 48 0 0 1 83.94 83.94 Z" fill="#3498db" stroke="#fff" strokeWidth="1.5" />
-        <path d="M 50 50 L 83.94 83.94 A 48 48 0 0 1 50 98 Z" fill="#5dade2" stroke="#fff" strokeWidth="1.5" />
-        <path d="M 50 50 L 50 98 A 48 48 0 0 1 16.06 83.94 Z" fill="#1abc9c" stroke="#fff" strokeWidth="1.5" />
-        <path d="M 50 50 L 16.06 83.94 A 48 48 0 0 1 2 50 Z" fill="#f1c40f" stroke="#fff" strokeWidth="1.5" />
-        <path d="M 50 50 L 2 50 A 48 48 0 0 1 16.06 16.06 Z" fill="#e67e22" stroke="#fff" strokeWidth="1.5" />
-        <path d="M 50 50 L 16.06 16.06 A 48 48 0 0 1 50 2 Z" fill="#e74c3c" stroke="#fff" strokeWidth="1.5" />
-        
-        {/* Iconos centrados en cada segmento (centroide a 2/3 del radio) */}
-        
-        {/* Top-right 1 (rojo oscuro #c0392b) - Salud: Corazón + ECG - centro (62, 20) */}
-        <path d="M58 17 C58 14.5 60.5 13.5 62 15.5 C63.5 13.5 66 14.5 66 17 C66 20 62 23 62 23 C62 23 58 20 58 17Z" fill="white"/>
-        <polyline points="55,20 58,20 59.5,17 62,21 64,18 65.5,20 69,20" stroke="#c0392b" strokeWidth="0.8" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-        
-        {/* Top-right 2 (azul oscuro #2c3e50) - Familia: 3 personas - centro (80, 38) */}
-        <circle cx="76" cy="34" r="2.5" fill="white"/>
-        <path d="M72 40 Q76 44 80 40" fill="white"/>
-        <circle cx="84" cy="34" r="2.5" fill="white"/>
-        <path d="M80 40 Q84 44 88 40" fill="white"/>
-        <circle cx="80" cy="32" r="2" fill="white" opacity="0.7"/>
-        
-        {/* Right (azul #3498db) - Finanzas: Dollar - centro (80, 62) */}
-        <text x="80" y="65" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold" fontFamily="Arial">$</text>
-        
-        {/* Bottom-right (celeste #5dade2) - Vida social: Personas - centro (62, 80) */}
-        <circle cx="58" cy="77" r="2" fill="white"/>
-        <circle cx="66" cy="77" r="2" fill="white"/>
-        <circle cx="62" cy="75" r="1.8" fill="white"/>
-        <path d="M55 82 Q58 85 61 82" fill="white"/>
-        <path d="M63 82 Q66 85 69 82" fill="white"/>
-        
-        {/* Bottom (verde agua #1abc9c) - Loto - centro (38, 80) */}
-        <ellipse cx="35" cy="78" rx="2" ry="4" fill="white" transform="rotate(-15 35 78)"/>
-        <ellipse cx="38" cy="78" rx="2" ry="4" fill="white"/>
-        <ellipse cx="41" cy="78" rx="2" ry="4" fill="white" transform="rotate(15 41 78)"/>
-        <ellipse cx="36.5" cy="80" rx="1.5" ry="3" fill="white" opacity="0.7"/>
-        <ellipse cx="39.5" cy="80" rx="1.5" ry="3" fill="white" opacity="0.7"/>
-        
-        {/* Bottom-left (amarillo #f1c40f) - Amor: Corazón - centro (20, 62) */}
-        <path d="M17 59 C17 56.5 19.5 55.5 21 57.5 C22.5 55.5 25 56.5 25 59 C25 62 21 65 21 65 C21 65 17 62 17 59Z" fill="white"/>
-        
-        {/* Left (naranja #e67e22) - Bombilla - centro (20, 38) */}
-        <circle cx="20" cy="35" r="4" fill="white"/>
-        <rect x="18.5" y="39" width="3" height="1.5" rx="0.5" fill="white"/>
-        <rect x="18" y="41" width="4" height="1.5" rx="0.5" fill="white"/>
-        <line x1="20" y1="30" x2="20" y2="28" stroke="#e67e22" strokeWidth="0.8" strokeLinecap="round"/>
-        <line x1="24" y1="35" x2="26" y2="35" stroke="#e67e22" strokeWidth="0.8" strokeLinecap="round"/>
-        <line x1="23" y1="32" x2="25" y2="30" stroke="#e67e22" strokeWidth="0.8" strokeLinecap="round"/>
-        <line x1="17" y1="32" x2="15" y2="30" stroke="#e67e22" strokeWidth="0.8" strokeLinecap="round"/>
-        
-        {/* Top-left (rojo coral #e74c3c) - Gráfica: Barras + flecha - centro (38, 20) */}
-        <polyline points="34,26 37,22 40,24 43,18" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-        <polygon points="43,18 43,21 40,19" fill="white"/>
-        <line x1="34" y1="26" x2="34" y2="28" stroke="white" strokeWidth="1" strokeLinecap="round"/>
-        <line x1="37" y1="22" x2="37" y2="28" stroke="white" strokeWidth="1" strokeLinecap="round"/>
-        <line x1="40" y1="24" x2="40" y2="28" stroke="white" strokeWidth="1" strokeLinecap="round"/>
-        <line x1="43" y1="18" x2="43" y2="28" stroke="white" strokeWidth="1" strokeLinecap="round"/>
-        
-        {/* Centro */}
-        <circle cx="50" cy="50" r="16" fill="#1a1a2e"/>
-        <text x="50" y="47" textAnchor="middle" fill="white" fontSize="6" fontWeight="bold" fontFamily="sans-serif">Wheel</text>
-        <text x="50" y="55" textAnchor="middle" fill="white" fontSize="6" fontWeight="bold" fontFamily="sans-serif">of life</text>
+        <path d="M 50 50 L 50 2 A 48 48 0 0 1 83.94 16.06 Z" fill="#911d33" stroke="#fff" strokeWidth="1.5" />
+        <path d="M 50 50 L 83.94 16.06 A 48 48 0 0 1 98 50 Z" fill="#0c5a75" stroke="#fff" strokeWidth="1.5" />
+        <path d="M 50 50 L 98 50 A 48 48 0 0 1 83.94 83.94 Z" fill="#00a3e0" stroke="#fff" strokeWidth="1.5" />
+        <path d="M 50 50 L 83.94 83.94 A 48 48 0 0 1 50 98 Z" fill="#4cd2e4" stroke="#fff" strokeWidth="1.5" />
+        <path d="M 50 50 L 50 98 A 48 48 0 0 1 16.06 83.94 Z" fill="#4fd1a5" stroke="#fff" strokeWidth="1.5" />
+        <path d="M 50 50 L 16.06 83.94 A 48 48 0 0 1 2 50 Z" fill="#fcd34d" stroke="#fff" strokeWidth="1.5" />
+        <path d="M 50 50 L 2 50 A 48 48 0 0 1 16.06 16.06 Z" fill="#f97316" stroke="#fff" strokeWidth="1.5" />
+        <path d="M 50 50 L 16.06 16.06 A 48 48 0 0 1 50 2 Z" fill="#f43f5e" stroke="#fff" strokeWidth="1.5" />
       </svg>
     </div>
-    <div className="flex flex-col gap-1.5 flex-1 justify-center">
-      <div className="bg-gradient-to-r from-[#ffe29f] via-[#fec89a] to-[#f8a4a4] text-slate-800 text-[8px] sm:text-[9px] py-1.5 px-2 rounded font-black tracking-wider uppercase text-center shadow-sm border border-orange-200/30">
-        SALUD
-      </div>
-      <div className="bg-gradient-to-r from-[#ffe29f] via-[#fec89a] to-[#f8a4a4] text-slate-800 text-[8px] sm:text-[9px] py-1.5 px-2 rounded font-black tracking-wider uppercase text-center shadow-sm border border-orange-200/30">
-        AMISTAD
-      </div>
-      <div className="bg-gradient-to-r from-[#ffe29f] via-[#fec89a] to-[#f8a4a4] text-slate-800 text-[8px] sm:text-[9px] py-1.5 px-2 rounded font-black tracking-wider uppercase text-center shadow-sm border border-orange-200/30">
-        DINERO
-      </div>
+    <div className="flex flex-col gap-1 flex-1">
+      {resumenRueda && resumenRueda.tiene_diagnostico && resumenRueda.foco_1 ? (
+        [resumenRueda.foco_1, resumenRueda.foco_2, resumenRueda.foco_3].filter(Boolean).map((foco, i) => (
+          <div key={i} className={`text-[9px] sm:text-[10px] py-1 px-3 rounded-md text-center font-bold tracking-widest uppercase shadow-sm transition-transform hover:scale-[1.03] ${
+            i === 0 ? 'bg-gradient-to-r from-red-100 to-red-200 text-red-800' :
+            i === 1 ? 'bg-gradient-to-r from-amber-100 to-amber-200 text-amber-800' :
+            'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800'
+          }`}>
+            {foco}
+          </div>
+        ))
+      ) : (
+        <div className="text-[10px] text-gray-400 text-center py-4">
+          {resumenRueda === null ? 'Cargando...' : 'Completa tu diagnóstico para ver tus focos estratégicos'}
+        </div>
+      )}
     </div>
   </div>
             </div>
@@ -1140,16 +1133,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           <br></br>
 
           {/* Middle of Left */}
-          <div className="flex flex-col sm:flex-row gap-4 ">
-            <DynamicKanbanBacklog kanbanTasks={kanbanTasks} setKanbanTasks={setKanbanTasks} onPlanificar={(task) => setTaskToPlanificar(task)} />
+          <div className="flex gap-4 " ref={kanbanRef}>
+            <KanbanBacklog />
         
-  <div className="bg-white/60 backdrop-blur-sm  rounded-2xl  flex flex-col   w-full sm:w-[200px] h-[200px] shadow-[0_0_0px_rgb(255, 255, 255)] sm:-ml-2 sm:-mt-8">
+  <div className="bg-white/60 backdrop-blur-sm  rounded-2xl  flex flex-col   w-[200px] h-[200px] shadow-[0_0_0px_rgb(255, 255, 255)] -ml-2 -mt-8">
   
   {/* 🎯 TARJETA INTERNA BLANCA DE OBJETIVOS */}
   <div className="bg-white shadow-[0_2px_4px_rgb(247, 243, 243)] overflow-hidden flex flex-col min-h-[200px] w-full rounded-md ">
     
     {/* BARRA HEADER COMPLETA (Fusión perfecta en los bordes superiores) */}
-    <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-none w-full sm:w-[200px]">
+    <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-none w-[200px]">
       OBJETIVO SEMANAL
     </div>
     
@@ -1215,35 +1208,26 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
         {/* CENTER COLUMN */}
 <div className="flex flex-col gap-3 w-full xl:w-[32%] relative items-center">
-          <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-3 flex flex-col gap-3 w-full sm:w-[250px] shadow-[0_8px_32px_rgba(31,38,135,0.03)] mt-12">
+          <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-3 flex flex-col gap-3 w-[250px] shadow-[0_8px_32px_rgba(31,38,135,0.03)] mt-12">
             <p className="text-[14px] font-semibold text-[#1e293b] text-center leading-tight">
               {phrases[currentPhraseIndex]}
             </p>
           </div>
           {/* Tabs */}
-<div className="flex justify-between items-center gap-2 w-full max-w-[500px] mx-auto my-2 sm:ml-4">
+<div className="flex justify-between items-center gap-2 w-full max-w-[500px] mx-auto my-2 ml-4">
   
   {/* BOTÓN ANUAL → Gran Meta Anual */}
   <button 
     onClick={() => setShowMetaAnualForm(true)} 
-    className="flex-1 bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-md text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
+    className="flex-1 bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-lg text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
   >
     Anual
   </button>
 
   {/* BOTÓN MENSUAL */}
   <button 
-    onClick={() => {
-      if (monthlyStatus.plan_status === 'APROBADA') {
-        setShowMonthlyCalendar(true);
-      } else if (monthlyStatus.has_approved_annual) {
-        setShowMonthlyWizard(true);
-      } else {
-        setMetaAnualHint('Para usar Metas Mensuales primero debes crear y aprobar tu Gran Meta Anual.');
-        setShowMetaAnualForm(true);
-      }
-    }} 
-    className="flex-1 bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-md text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
+    onClick={() => setShowMetaMensualModal(true)} 
+    className="flex-1 bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-lg text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
   >
     Mensual
   </button>
@@ -1251,7 +1235,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   {/* BOTÓN SEMANAL */}
   <button 
     onClick={() => setShowMetaSemanalModal(true)} 
-    className="flex-1 bg-gradient-to-l from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-md text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
+    className="flex-1 bg-gradient-to-l from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-lg text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
   >
     Semanal
   </button>
@@ -1259,7 +1243,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   {/* BOTÓN DIARIA */}
   <button 
     onClick={() => setShowMetaDiariaModal(true)} 
-    className="flex-1 bg-gradient-to-l from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-md text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
+    className="flex-1 bg-gradient-to-l from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-lg text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
   >
     Diaria
   </button>
@@ -1275,6 +1259,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     <div className="bg-gradient-to-r from-[#0E12EE] via-[#A70EEE] to-[#193EC4] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-nonep-3.5 space-y-3 bg-white flex-1 flex flex-col justify-center mt-2">
       TIME BLOCKING
     </div>
+    {tbError && (
+      <div className="bg-red-100 border border-red-300 text-red-700 text-[10px] px-3 py-1.5 text-center font-medium">
+        {tbError}
+      </div>
+    )}
   {/* CONTENEDOR CON SCROLL DE LA TABLA */}
   <div className="overflow-y-auto max-h-[520px] bg-white/40 scrollbar-hide rounded-b-xl">
       <table className="w-full text-[11px] border-collapse table-fixed">
@@ -1282,17 +1271,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         <thead className="sticky top-0 z-20 bg-white/90 backdrop-blur-md shadow-2xs">
           <tr>
             <th className="w-20 p-2 border-b border-slate-100">
-              <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-black-200/40 text-center">
+              <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-orange-200/40 text-center">
                 TIME
               </div>
             </th>
             <th className="p-2 border-b border-slate-100">
-              <div className="w-full bg-gradient-to-r from-[#fecaca] to-[#ffa3a3] text-slate-800 text-[10px] py-1.5 px-2 rounded-lg font-black tracking-wider uppercase border border-black-200/40 text-center">
+              <div className="w-full bg-gradient-to-r from-[#fecaca] to-[#ffa3a3] text-slate-800 text-[10px] py-1.5 px-2 rounded-lg font-black tracking-wider uppercase border border-red-200/40 text-center">
                 WORK IN PROGRESS
               </div>
             </th>
             <th className="w-24 p-2 border-b border-slate-100">
-              <div className="w-full bg-gradient-to-r from-[#ffa3a3] to-[#fca5a5] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-black-300/40 text-center">
+              <div className="w-full bg-gradient-to-r from-[#ffa3a3] to-[#fca5a5] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-red-300/40 text-center">
                 STATUS
               </div>
             </th>
@@ -1303,10 +1292,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       <tbody>
   {defaultHours.map((h, i) => {
     const block = findBlock(h);
+    const estado = block?.estado || 'pending';
+
     return (
       <tr 
         key={h} 
-        /* 🌟 CAMBIO: Se aplica bg-slate-50/40 de forma base para simular el fondo gris tenue de la tabla */
         className="hover:bg-white/60 bg-slate-50/40 transition-colors h-[36px]"
       >
         
@@ -1319,12 +1309,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
         {/* CELDA 2: INPUT DENTRO DE RECUADRO BLANCO SOFT UI */}
         <td className="py-1 px-2.5">
-          {/* 🌟 SOLUCIÓN: Este div genera el recuadro blanco flotante con sombra y microborde gris */}
           <div className="w-full bg-white border border-slate-200/70 rounded-md px-2 py-0.5 shadow-3xs flex items-center transition-all focus-within:border-indigo-500/50">
             <input
               type="text"
               className={`w-full bg-transparent outline-none text-[11px] text-slate-700 placeholder:text-slate-400 placeholder:italic ${
-                block?.estado === 'done' ? 'line-through text-slate-400 italic' : 'font-medium'
+                estado === 'done' ? 'line-through text-slate-400 italic' : 'font-medium'
               }`}
               placeholder="Escriba aquí..."
               defaultValue={block?.tarea || ''}
@@ -1336,12 +1325,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         {/* CELDA 3: SELECTOR DE ESTADO */}
         <td className="w-24 py-1 px-2 text-center">
           <select
-            value={block?.estado || 'pending'}
-            onChange={(e) => handleTimeBlockStatus(h, e.target.value)}
+            value={estado}
+            onChange={(e) => handleTimeBlockStatus(h, e.target.value as 'pending' | 'doing' | 'done')}
             className={`w-full text-[9px] py-0.5 px-1 rounded-md border font-bold text-center cursor-pointer transition-all outline-none appearance-none ${
-              block?.estado === 'done'
+              estado === 'done'
                 ? 'bg-slate-100 text-slate-500 border-slate-200'
-                : block?.estado === 'doing'
+                : estado === 'doing'
                 ? 'bg-white text-slate-900 border-slate-200/60 animate-pulse'
                 : 'bg-white text-slate-400 border-slate-200'
             }`}
@@ -1370,22 +1359,22 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         <div className="flex flex-col gap-4 w-full xl:w-[36%] z-10">
           
           {/* Bloque Superior: Botones Cursos/RRSS y Notas */}
-          <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
-            <div className="flex flex-col w-full sm:w-[250px] pr-3">
-              <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-md p-3 flex flex-col gap-3 w-full sm:w-[250px] shadow-[0_8px_32px_rgba(31,38,135,0.03)] sm:ml-2 h-[230px]">
-                <div className="p-0 flex gap-1 flex justify-between items-center gap-1  max-w-md -ml-1 w-[80px]">
-                  <ActionButton label="CURSOS" color="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" />
-                  <ActionButton label="RRSS" color="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" />
-                  <ActionButton label="CUENTAS" color="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"  onClick={() => setShowBillModal(true)} />
+          <div className="flex justify-between items-start">
+            <div className="flex flex-col w-[250px] pr-3">
+              <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-3 flex flex-col gap-3 w-[250px] shadow-[0_8px_32px_rgba(31,38,135,0.03)] ml-2 h-[240px]">
+                <div className="p-1 flex gap-1 flex justify-between items-center gap-1  max-w-md -ml-1 w-[80px]">
+                  <ActionButton label="CURSOS" color="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" />
+                  <ActionButton label="RRSS" color="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" />
+                  <ActionButton label="CUENTAS" color="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"  onClick={() => setShowBillModal(true)} />
                 </div>
                 <BlockDeNotas />
               </div>
             </div>
 
-            <div className="bg-white/40 backdrop-blur-sm border border-white/20 rounded-md p-3 flex flex-row sm:flex-col gap-3 sm:gap-6 w-full sm:w-[140px] shadow-[0_4px_10px_rgba(0,0,0,0.02)] sm:mt-10 sm:ml-4">
-              <ActionButton label="SUPLEMENTOS" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern"  onClick={() => setShowMedicamentosModal(true)} />
-              <ActionButton label="CUMPLEAÑOS" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern" />
-              <ActionButton label="ENFOQUE PRO" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern" />
+            <div className="bg-white/40 backdrop-blur-sm border border-white/20 rounded-xl p-3 flex flex-col gap-6 w-[140px] shadow-[0_4px_10px_rgba(0,0,0,0.02)] mt-10 ml-4">
+              <ActionButton label="MEDICAMENTOS" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern"  onClick={() => setShowMedicamentosModal(true)} />
+              <ActionButton label="CUMPLEAÑOS" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern" />
+              <ActionButton label="FOCUS" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern" />
             </div>
           </div>
 
@@ -1400,7 +1389,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           </div>
 
           {/* Bloque Hora de Oro Familiar */}
-          <div className="flex flex-col items-start w-full sm:w-[230px] h-[600px] sm:-mt-127 sm:ml-45 rounded-md">
+          <div className="flex flex-col items-start w-[230px] h-[600px] -mt-127 ml-45 rounded-md">
             <HoraDeOroFamiliar />
           </div>
 
@@ -1819,29 +1808,76 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         </div>
       )}
 
-      {showMonthlyWizard && (
-        <MonthlyWizard
-          onClose={() => setShowMonthlyWizard(false)}
-          onApproved={() => {
-            setShowMonthlyWizard(false);
-            setMonthlyStatus(prev => ({...prev, has_monthly_plan: true, plan_status: 'APROBADA'}));
-          }}
-        />
-      )}
-
-      {showMonthlyCalendar && (
-        <MonthlyCalendar
-          onClose={() => setShowMonthlyCalendar(false)}
-          onOpenMatriz={() => { setShowMonthlyCalendar(false); setShowMatrizEisenhower(true); }}
-        />
-      )}
-
-      {showMatrizEisenhower && (
-        <MatrizEisenhower
-          isOpen={showMatrizEisenhower}
-          onClose={() => setShowMatrizEisenhower(false)}
-          onContinue={() => { setShowMatrizEisenhower(false); }}
-        />
+      {/* Modal: Meta Mensual */}
+      {showMetaMensualModal && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] flex items-center justify-center p-4"
+          onClick={() => setShowMetaMensualModal(false)}
+        >
+          <div
+            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#7c3aed] to-[#a855f7]">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-white" />
+                <h2 className="text-lg font-bold uppercase text-white">Metas Mensuales</h2>
+              </div>
+              <button onClick={() => setShowMetaMensualModal(false)} className="p-2 rounded-full hover:bg-white/30 transition-colors">
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+            <div className="p-6 max-h-[60vh] overflow-y-auto">
+              <div className="space-y-3">
+                {metaMensual.map((meta, index) => (
+                  <div key={index} className="flex items-center gap-3 bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-white/40">
+                    <button
+                      onClick={() => {
+                        setXpStats((prev: XPStats) => ({ ...prev, tasksCompleted: prev.tasksCompleted + 1 }));
+                        addXP(XP_CONFIG.MONTHLY_GOAL, 'Meta mensual completada');
+                        setMetaMensual(metaMensual.filter((_: string, i: number) => i !== index));
+                      }}
+                      className="w-6 h-6 rounded-full border-2 border-[#7c3aed] flex items-center justify-center hover:bg-[#7c3aed]/20 transition-colors flex-shrink-0"
+                    >
+                      <Check className="w-4 h-4 text-[#7c3aed]" />
+                    </button>
+                    <span className="flex-1 text-sm text-gray-700">{meta}</span>
+                    <span className="text-[10px] bg-[#7c3aed]/20 text-[#7c3aed] px-2 py-0.5 rounded-full font-medium">+{XP_CONFIG.MONTHLY_GOAL} XP</span>
+                    <button onClick={() => handleEditMeta('mensual', index, meta)} className="text-gray-400 hover:text-[#7c3aed] transition-colors">
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => handleDeleteMeta('mensual', index)} className="text-gray-400 hover:text-red-500 transition-colors">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+                {editingMetaType === 'mensual' && (
+                  <div className="flex items-center gap-2 bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-[#7c3aed]">
+                    <input
+                      type="text"
+                      value={newMetaText}
+                      onChange={(e) => setNewMetaText(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSaveMeta()}
+                      placeholder="Escribe tu meta..."
+                      className="flex-1 text-sm bg-transparent border-none outline-none"
+                      autoFocus
+                    />
+                    <button onClick={handleSaveMeta} className="text-[#7c3aed] font-bold text-sm">Guardar</button>
+                    <button onClick={() => { setEditingMetaType(null); setNewMetaText(''); }} className="text-gray-400 hover:text-red-500">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+                <button
+                  onClick={() => handleAddMeta('mensual')}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-gray-300 text-gray-500 hover:border-[#7c3aed] hover:text-[#7c3aed] transition-colors"
+                >
+                  <Plus className="w-4 h-4" /> Agregar meta
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Modal: Meta Semanal */}
@@ -1991,39 +2027,39 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       {/* Modal: Checklist de Facturas / Cuentas */}
       {showBillModal && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-end md:items-center justify-center p-0 md:p-4"
           onClick={() => setShowBillModal(false)}
         >
           <div
-            className="bg-white/95 backdrop-blur-2xl rounded-md shadow-2xl border border-white/50 w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
+            className="bg-white/95 backdrop-blur-2xl rounded-t-2xl md:rounded-md shadow-2xl border border-white/50 w-full md:max-w-2xl md:w-[90%] max-h-[92vh] md:max-h-[85vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-6 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] text-white">
-              <div className="flex items-center gap-3">
-                <div className="bg-white/20 p-2 rounded-xl">
-                  <Receipt className="w-6 h-6" />
+            <div className="flex items-center justify-between p-4 md:p-6 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] text-white">
+              <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                <div className="bg-white/20 p-1.5 md:p-2 rounded-xl shrink-0">
+                  <Receipt className="w-5 h-5 md:w-6 md:h-6" />
                 </div>
-                <div>
-                  <h2 className="text-xl font-black uppercase tracking-tight">Checklist de Cuentas</h2>
-                  <p className="text-xs opacity-80 font-medium">Control mensual de facturas y pagos</p>
+                <div className="min-w-0">
+                  <h2 className="text-lg md:text-xl font-black uppercase tracking-tight truncate">Checklist de Cuentas</h2>
+                  <p className="text-[10px] md:text-xs opacity-80 font-medium">Control mensual de facturas y pagos</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowBillModal(false)}
-                className="p-2 rounded-full hover:bg-white/20 transition-colors"
+                className="p-1.5 md:p-2 rounded-full hover:bg-white/20 transition-colors shrink-0"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5 md:w-6 md:h-6" />
               </button>
             </div>
 
             <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
               {/* Checklist Section */}
-              <div className="flex-1 p-6 overflow-y-auto border-r border-gray-100">
-                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Facturas Pendientes</h3>
+              <div className="flex-1 p-4 md:p-6 overflow-y-auto md:border-r border-gray-100">
+                <h3 className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest mb-3 md:mb-4">Facturas Pendientes</h3>
                 {facturas.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-40 text-gray-400">
-                    <CheckSquare className="w-8 h-8 mb-2 opacity-20" />
-                    <p className="text-sm">No hay facturas registradas</p>
+                  <div className="flex flex-col items-center justify-center h-32 md:h-40 text-gray-400">
+                    <CheckSquare className="w-6 h-6 md:w-8 md:h-8 mb-2 opacity-20" />
+                    <p className="text-xs md:text-sm">No hay facturas registradas</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -2086,8 +2122,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               </div>
 
               {/* Form Section */}
-              <div className="w-full md:w-72 bg-gray-50 p-6">
-                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Nueva Factura</h3>
+              <div className="w-full md:w-72 bg-gray-50 p-4 md:p-6 border-t md:border-t-0 md:border-l border-gray-100">
+                <h3 className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest mb-3 md:mb-4">Nueva Factura</h3>
                 <form
                   onSubmit={async (e) => {
                     e.preventDefault();
@@ -2106,31 +2142,31 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                       console.error(e);
                     }
                   }}
-                  className="space-y-4"
+                  className="space-y-3 md:space-y-4"
                 >
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Nombre</label>
+                    <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 uppercase mb-1">Nombre</label>
                     <input name="nombre" type="text" required placeholder="Luz, Arriendo, etc." className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1]" />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Monto ($)</label>
+                    <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 uppercase mb-1">Monto ($)</label>
                     <input name="monto" type="number" step="0.01" required placeholder="0.00" className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1]" />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Vencimiento</label>
+                    <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 uppercase mb-1">Vencimiento</label>
                     <input name="fecha" type="date" required className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1]" />
                   </div>
-                  <button type="submit" className="w-full bg-[#6366f1] text-white py-3 rounded-xl font-bold text-sm shadow-md hover:bg-[#4f46e5] transition-all active:scale-95">
+                  <button type="submit" className="w-full bg-[#6366f1] text-white py-2.5 md:py-3 rounded-xl font-bold text-xs md:text-sm shadow-md hover:bg-[#4f46e5] transition-all active:scale-95">
                     Registrar Cobro
                   </button>
                 </form>
 
-                <div className="mt-8 p-4 bg-[#6366f1]/10 rounded-2xl border border-[#6366f1]/20">
-                  <div className="flex items-center gap-2 mb-1 text-[#6366f1]">
-                    <AlertCircle className="w-4 h-4" />
-                    <span className="text-[10px] font-bold uppercase">Total Pendiente</span>
+                <div className="mt-5 md:mt-8 p-3 md:p-4 bg-[#6366f1]/10 rounded-xl md:rounded-2xl border border-[#6366f1]/20">
+                  <div className="flex items-center gap-1.5 md:gap-2 mb-1 text-[#6366f1]">
+                    <AlertCircle className="w-3 h-3 md:w-4 md:h-4" />
+                    <span className="text-[9px] md:text-[10px] font-bold uppercase">Total Pendiente</span>
                   </div>
-                  <p className="text-xl font-black text-[#6366f1]">
+                  <p className="text-lg md:text-xl font-black text-[#6366f1]">
                     ${facturas.filter(f => !f.pagado).reduce((sum, f) => sum + f.monto, 0).toLocaleString()}
                   </p>
                 </div>
@@ -2876,7 +2912,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           onClick={() => setShowUserSettingsModal(false)}
         >
           <div 
-            className="bg-white rounded-md shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col"
+            className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-6 bg-gradient-to-r from-gray-800 to-gray-900">
@@ -2894,7 +2930,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="p-6 space-y-6">
               <div className="flex flex-col items-center">
                 <div className="relative group">
                   <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-100 shadow-lg">
@@ -2959,58 +2995,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 >
                   Guardar Cambios
                 </button>
-              </div>
-
-              {/* Gamificación */}
-              <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100 space-y-3">
-                <h3 className="text-xs font-bold text-indigo-700 uppercase tracking-widest flex items-center gap-1">
-                  <Trophy className="w-3.5 h-3.5" /> Mi Progreso
-                </h3>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-2xl font-black text-indigo-700">Nivel {getLevelFromXP(xpStats.totalXP).level}</p>
-                    <p className="text-xs text-indigo-500">{xpStats.totalXP} XP total</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold text-gray-700">{xpStats.streak} día{xpStats.streak !== 1 ? 's' : ''}</p>
-                    <p className="text-[10px] text-gray-400">Racha</p>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-[10px] text-indigo-600 mb-1">
-                    <span>Nivel {getLevelFromXP(xpStats.totalXP).level}</span>
-                    <span>{getLevelFromXP(xpStats.totalXP).currentXP}/{getLevelFromXP(xpStats.totalXP).nextLevelXP} XP</span>
-                  </div>
-                  <div className="w-full bg-indigo-100 rounded-full h-2">
-                    <div className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all" style={{ width: `${getLevelFromXP(xpStats.totalXP).progress}%` }} />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="bg-white/60 rounded-lg p-2">
-                    <p className="text-sm font-bold text-gray-800">{xpStats.tasksCompleted}</p>
-                    <p className="text-[9px] text-gray-400">Tareas</p>
-                  </div>
-                  <div className="bg-white/60 rounded-lg p-2">
-                    <p className="text-sm font-bold text-gray-800">{xpStats.kanbanCompleted}</p>
-                    <p className="text-[9px] text-gray-400">Kanban</p>
-                  </div>
-                  <div className="bg-white/60 rounded-lg p-2">
-                    <p className="text-sm font-bold text-gray-800">{xpStats.medicationsTaken}</p>
-                    <p className="text-[9px] text-gray-400">Suplementos</p>
-                  </div>
-                </div>
-                {xpStats.unlockedBadges.length > 0 && (
-                  <div>
-                    <p className="text-[10px] text-indigo-600 font-bold mb-1">Insignias</p>
-                    <div className="flex flex-wrap gap-1">
-                      {BADGES.filter(b => xpStats.unlockedBadges.includes(b.id)).map(b => (
-                        <span key={b.id} className="bg-yellow-100 text-yellow-700 text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <b.icon className="w-2.5 h-2.5" /> {b.name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
 
               <div className="pt-6 border-t border-gray-100">
@@ -3336,8 +3320,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       {/* Meta Anual Form */}
       <MetaAnualForm
         isOpen={showMetaAnualForm}
-        onClose={() => { setShowMetaAnualForm(false); setMetaAnualHint(undefined); }}
-        hint={metaAnualHint}
+        onClose={() => setShowMetaAnualForm(false)}
       />
 
       {/* Planificar Modal */}
@@ -3345,15 +3328,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         <PlanificarModal
           task={taskToPlanificar}
           onClose={() => setTaskToPlanificar(null)}
-          onClassified={(type, titulo) => {
+          onClassified={() => {
             kanbanService.getAll().then(data => setKanbanTasks(Array.isArray(data) ? data : []));
-            if (type === 'anual') {
-              setMetaAnual(prev => [...prev, titulo]);
-            } else if (type === 'semanal') {
-              setMetaSemanal(prev => [...prev, titulo]);
-            } else if (type === 'diaria') {
-              setMetaDiaria(prev => [...prev, titulo]);
-            }
           }}
         />
       )}
@@ -3392,22 +3368,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         }}
       />
 
+      {showMatrizEisenhower && (
+        <MatrizEisenhower
+          onClose={() => setShowMatrizEisenhower(false)}
+          onGoKanban={handleGoKanban}
+        />
+      )}
       {showDiagnosticoRueda && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => { setShowDiagnosticoRueda(false); ruedaService.resumenDashboard().then(setResumenRueda).catch(() => {}); }}>
-          <div className="relative w-full h-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()}>
-            <button
-              onClick={() => { setShowDiagnosticoRueda(false); ruedaService.resumenDashboard().then(setResumenRueda).catch(() => {}); }}
-              className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center bg-white/80 hover:bg-white rounded-full shadow-md transition-colors"
-            >
-              <X className="w-4 h-4 text-gray-600" />
-            </button>
-            <DiagnosticoRueda
-              avatarIndex={1}
-              onClose={() => { setShowDiagnosticoRueda(false); ruedaService.resumenDashboard().then(setResumenRueda).catch(() => {}); }}
-              onGoMetaAnual={() => { setShowDiagnosticoRueda(false); setShowMetaAnualForm(true); }}
-            />
-          </div>
-        </div>
+        <DiagnosticoRueda
+          avatarIndex={userData.avatar_index}
+          onClose={() => { setShowDiagnosticoRueda(false); ruedaService.resumenDashboard().then(setResumenRueda).catch(() => {}); }}
+          onGoMetaAnual={() => { setShowDiagnosticoRueda(false); setShowMetaAnualForm(true); }}
+        />
       )}
     </div>
 
@@ -3615,34 +3587,40 @@ const AccionesPorDelegarInline: React.FC<AccionesPorDelegarInlineProps> = ({ kan
   );
 
   return (
-    <div className="bg-white rounded-md border border-gray-200 shadow-md overflow-hidden w-full sm:w-[300px] h-[200px] mx-auto sm:-ml-106 sm:mt-110 flex flex-col">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-[#1a1a2e] via-[#16213e] to-[#0f3460] text-white text-center py-2 text-[10px] sm:text-xs font-black tracking-widest uppercase select-none w-full shrink-0">
+    <div className="bg-white rounded-md border-2 border-gray-100 shadow-md overflow-hidden max-w-[300px] h-[200px] mx-auto -ml-106 mt-110">
+      <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-none w-[300px]">
         ACCIONES POR DELEGAR
       </div>
-      
-      {/* Column Headers */}
-      <div className="flex gap-1 p-1.5 pb-0 shrink-0">
-        <span className="flex-1 bg-gradient-to-r from-[#ffe29f] via-[#fec89a] to-[#fecaca] text-slate-800 text-[9px] py-1.5 rounded-md font-black tracking-wider uppercase text-center shadow-sm border border-black">
-          ACCIÓN
-        </span>
-        <span className="flex-1 bg-gradient-to-r from-[#ffe29f] via-[#fec89a] to-[#fecaca] text-slate-800 text-[9px] py-1.5 rounded-md font-black tracking-wider uppercase text-center shadow-sm border border-black">
-          RESPONSABLE
-        </span>
-      </div>
-      
-      {/* Task List */}
-      <div className="flex-1 overflow-y-auto px-1.5 py-1 space-y-0.5 custom-scrollbar">
-        {delegarTasks.map(task => (
-          <div key={task.id} className="flex items-center gap-1 h-6">
-            <span className="flex-1 text-[10px] text-gray-700 truncate bg-white/80 rounded px-1.5 h-5 border border-gray-100 leading-5" title={task.titulo}>{task.titulo}</span>
-            <span className="flex-1 text-[10px] text-gray-400 italic truncate bg-white/80 rounded px-1.5 h-5 border border-gray-100 leading-5">Nombre</span>
-          </div>
-        ))}
-        {delegarTasks.length === 0 && (
-          <p className="text-[10px] text-gray-400 text-center italic py-4">Sin tareas para delegar</p>
-        )}
-      </div>
+      <table className="w-full border-collapse">
+        <thead>
+          <tr>
+            <th className="w-2/3 p-2 border-b border-slate-100">
+              <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-orange-200/40 text-center">ACCIÓN</div>
+            </th>
+            <th className="w-1/3 p-2 border-b border-slate-100">
+              <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-orange-200/40 text-center">ACCIÓN</div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {delegarTasks.map(task => (
+            <tr key={task.id}>
+              <td className="p-1">
+                <span className="block text-[10px] text-gray-700 truncate border border-gray-200 rounded p-1 h-6 leading-4">{task.titulo}</span>
+              </td>
+              <td className="p-1 text-center">
+                <button onClick={() => onOpenDelegation(task)}
+                  className="text-[9px] bg-amber-500 text-white px-2 py-0.5 rounded hover:bg-amber-600 transition-colors font-bold">
+                  Enviar
+                </button>
+              </td>
+            </tr>
+          ))}
+          {delegarTasks.length === 0 && (
+            <tr><td colSpan={2} className="p-4 text-[10px] text-gray-400 text-center italic">Sin tareas para delegar</td></tr>
+          )}
+        </tbody>
+      </table>
     </div>
   );
 };
@@ -3749,51 +3727,46 @@ const DynamicKanbanBacklog: React.FC<DynamicKanbanBacklogProps> = ({ kanbanTasks
   };
 
   return (
-    <div className="w-full sm:w-[210px] h-[450px] bg-white/60 backdrop-blur-sm border border-white/30 rounded-md p-0 shadow-[0_8px_32px_rgba(31,38,135,0.03)] sm:-mt-8 sm:-ml-2 flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-[#1a1a2e] via-[#16213e] to-[#0f3460] text-white text-center py-2 text-[10px] sm:text-xs font-black tracking-widest uppercase select-none w-full">
+    <div className="w-[210px] h-[450px] bg-white/60 backdrop-blur-sm border border-white/30 rounded-md p-0 shadow-[0_8px_32px_rgba(31,38,135,0.03)] -mt-8 -ml-2 flex flex-col overflow-hidden">
+      <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-none w-full">
         KANBAN BACKLOG
       </div>
-      
-      {/* Add Task Input */}
-      <div className="px-1.5 pt-1 pb-0.5 shrink-0">
-        <div className="flex gap-1">
-          <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleAdd()}
-            placeholder="Escriba aquí..." className="flex-1 text-[10px] h-6 bg-white border border-gray-200 rounded px-2 outline-none focus:border-purple-300 italic text-gray-500 placeholder-gray-400/70" />
-          <button onClick={handleAdd} disabled={!newTitle.trim() || adding}
-            className="w-6 h-6 flex items-center justify-center bg-[#1a1a2e] hover:bg-[#2d3a5c] text-white rounded text-xs font-bold disabled:opacity-40 transition-colors">
-            +
-          </button>
+      <div className="p-2 pb-1 flex gap-1 shrink-0">
+        <span className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[9px] py-1 px-1 rounded-lg font-black tracking-wider uppercase shadow-xs border border-orange-200/40 select-none text-center">
+          Acción
+        </span>
+        <div className="flex gap-0.5 items-center">
+          {['H', 'P', 'D', 'B'].map(l => (
+            <span key={l} className="w-4 h-4 flex items-center justify-center bg-gray-800 text-white text-[7px] rounded-full shrink-0 font-bold">{l}</span>
+          ))}
         </div>
       </div>
-
-      {/* Column Headers */}
-      <div className="flex gap-1 px-1.5 pb-0">
-        <span className="flex-1 bg-gradient-to-r from-[#ffe29f] via-[#fec89a] to-[#fecaca] text-slate-800 text-[9px] py-1.5 rounded-md font-black tracking-wider uppercase text-center shadow-sm border border-black">
-          ACCIÓN
-        </span>
-        <span className="w-[72px] bg-gradient-to-r from-[#ffe29f] via-[#fec89a] to-[#fecaca] text-black text-[9px] py-1.5 rounded-md font-black tracking-wider uppercase text-center shadow-sm border border-black">
-          MATRIZ
-        </span>
-      </div>
-      
-      {/* Task List */}
-      <div className="flex-1 overflow-y-auto px-1.5 py-1 space-y-0.5 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-1 custom-scrollbar">
         {backlogTasks.map(task => (
           <div key={task.id} className="flex items-center gap-1 h-6 group">
-            <span className="flex-1 text-[10px] text-gray-700 truncate bg-white/80 rounded px-1.5 h-5 border border-gray-100" title={task.titulo}>{task.titulo}</span>
-            <div className="flex gap-0.5 shrink-0">
-              <button onClick={() => handleHacer(task)} title="Hacer hoy" className="w-[18px] h-[18px] flex items-center justify-center bg-[#1a1a2e] hover:bg-[#2d3a5c] text-white text-[7px] rounded-full font-bold transition-colors">H</button>
-              <button onClick={() => onPlanificar(task)} title="Planificar" className="w-[18px] h-[18px] flex items-center justify-center bg-[#1a1a2e] hover:bg-[#2d3a5c] text-white text-[7px] rounded-full font-bold transition-colors">P</button>
-              <button onClick={() => handleDelegar(task)} title="Delegar" className="w-[18px] h-[18px] flex items-center justify-center bg-[#1a1a2e] hover:bg-[#2d3a5c] text-white text-[7px] rounded-full font-bold transition-colors">D</button>
-              <button onClick={() => handleBasura(task)} title="Eliminar" className="w-[18px] h-[18px] flex items-center justify-center bg-[#1a1a2e] hover:bg-[#2d3a5c] text-white text-[7px] rounded-full font-bold transition-colors">B</button>
+            <span className="flex-1 text-[10px] text-gray-700 truncate" title={task.titulo}>{task.titulo}</span>
+            <div className="flex gap-0.5 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
+              <button onClick={() => handleHacer(task)} title="Hacer hoy" className="w-4 h-4 flex items-center justify-center bg-emerald-600 hover:bg-emerald-500 text-white text-[7px] rounded-full font-bold transition-colors">H</button>
+              <button onClick={() => onPlanificar(task)} title="Planificar" className="w-4 h-4 flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white text-[7px] rounded-full font-bold transition-colors">P</button>
+              <button onClick={() => handleDelegar(task)} title="Delegar" className="w-4 h-4 flex items-center justify-center bg-amber-600 hover:bg-amber-500 text-white text-[7px] rounded-full font-bold transition-colors">D</button>
+              <button onClick={() => handleBasura(task)} title="Eliminar" className="w-4 h-4 flex items-center justify-center bg-red-600 hover:bg-red-500 text-white text-[7px] rounded-full font-bold transition-colors">B</button>
             </div>
           </div>
         ))}
         {backlogTasks.length === 0 && (
           <p className="text-[10px] text-gray-400 text-center italic py-4">Sin tareas en backlog</p>
         )}
+      </div>
+      <div className="p-2 shrink-0">
+        <div className="flex gap-1">
+          <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleAdd()}
+            placeholder="Nueva tarea..." className="flex-1 text-[10px] h-6 bg-white border border-gray-200 rounded px-2 outline-none focus:border-purple-300" />
+          <button onClick={handleAdd} disabled={!newTitle.trim() || adding}
+            className="w-6 h-6 flex items-center justify-center bg-purple-600 hover:bg-purple-500 text-white rounded text-xs font-bold disabled:opacity-40 transition-colors">
+            +
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -3894,37 +3867,34 @@ const BlockDeNotas: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col gap-2 w-full h-[160px]">
-      {/* Card */}
-      <div className="bg-white rounded-md border border--200 shadow-sm overflow-hidden flex flex-col h-[160px]">
-        <div className="bg-gradient-to-r from-[#030616] via-[#0b1442] to-[#512bd4] text-white text-center py-1.5 font-bold text-[10px] sm:text-xs uppercase tracking-widest select-none shrink-0 rounded-md mt-2">
-          BLOCK DE NOTAS
-        </div>
-        <div
-          ref={containerRef}
-          className="flex-1 overflow-hidden px-2 pb-2 pt-1.5 space-y-1.5 relative"
-        >
-          {[...Array(rowCount)].map((_, index) => (
-            <div
-              key={index}
-              className="w-full bg-[#f4f5f8] rounded-md h-4 flex items-center border border-transparent focus-within:border-slate-200 transition-all shrink-0"
-            >
-              <input
-                type="text"
-                value={lineas[index] || ''}
-                onChange={(e) => handleLineChange(index, e.target.value)}
-                placeholder="Escriba aquí"
-                className="w-full bg-transparent border-none outline-none focus:ring-0 text-slate-700 italic text-[10px] font-normal placeholder-gray-400 px-2"
-              />
-            </div>
-          ))}
-          <div className="absolute bottom-0 right-0 w-[65px] h-[65px] pointer-events-none z-10 flex items-center justify-center">
-            <img
-              alt="Bulb"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdxe_ps6FSLi8QbnwjEBRbjdfat6rX39n0ca23r229_cQIAgkBI5LVy4DXIBKVM27BP8mg3hfIJBAMjusej41wZ-PcTILlGH_ScXB8H0UNTezYI49xjrf6_febZLKIkMHtX5GpoGjsV9TIK31S3HI2CiwlaJcEdqvqg87oMo8ozjbh_MsjLylh_Zh-cxx8iWUDLVU7sYu7dAoNxgAidG-okpCTa3mxMT2X1inV6wCU_SAJ7GhLKPfzDM7Z2XfJ61brhoviOhrgyQY"
-              className="w-full h-full object-contain select-none filter drop-shadow-sm"
+    <div className="bg-white flex flex-col flex-1 h-full min-h-[160px]">
+      <div className="bg-gradient-to-r from-[#030616] via-[#0b1442] to-[#512bd4] text-white text-center py-1.5 font-bold text-xs uppercase tracking-widest border-b border-black/20 rounded-md select-none shrink-0">
+        BLOCK DE NOTAS
+      </div>
+      <div
+        ref={containerRef}
+        className="flex-1 overflow-hidden px-2 pb-2 pt-1.5 space-y-1.5 relative"
+      >
+        {[...Array(rowCount)].map((_, index) => (
+          <div
+            key={index}
+            className="w-full bg-[#f4f5f8] rounded-md h-4 flex items-center border border-transparent focus-within:border-slate-200 transition-all shrink-0"
+          >
+            <input
+              type="text"
+              value={lineas[index] || ''}
+              onChange={(e) => handleLineChange(index, e.target.value)}
+              placeholder="Escriba aquí"
+              className="w-full bg-transparent border-none outline-none focus:ring-0 text-slate-700 italic text-[10px] font-normal placeholder-gray-400 px-2"
             />
           </div>
+        ))}
+        <div className="absolute bottom-0 right-0 w-[65px] h-[65px] pointer-events-none z-10 flex items-center justify-center">
+          <img
+            alt="Bulb"
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdxe_ps6FSLi8QbnwjEBRbjdfat6rX39n0ca23r229_cQIAgkBI5LVy4DXIBKVM27BP8mg3hfIJBAMjusej41wZ-PcTILlGH_ScXB8H0UNTezYI49xjrf6_febZLKIkMHtX5GpoGjsV9TIK31S3HI2CiwlaJcEdqvqg87oMo8ozjbh_MsjLylh_Zh-cxx8iWUDLVU7sYu7dAoNxgAidG-okpCTa3mxMT2X1inV6wCU_SAJ7GhLKPfzDM7Z2XfJ61brhoviOhrgyQY"
+            className="w-full h-full object-contain select-none filter drop-shadow-sm"
+          />
         </div>
       </div>
     </div>
@@ -3991,7 +3961,7 @@ function ClimaComuna({ temp, descripcion, lugar, loading, error, icono, humedad,
   humedad: number; sensacion: number;
 }): React.ReactElement {
   return (
-  <div className="bg-white rounded-md border-2 border-gray-100 shadow-md overflow-hidden max-w-[300px] h-[200px] mx-auto ml-20 -mt-38">
+  <div className="bg-white rounded-md border-2 border-gray-100 shadow-md overflow-hidden max-w-[300px] h-[200px] mx-auto ml-20 -mt-25">
     <div className="bg-white rounded-md border-2 border-gray-100 card-shadow overflow-hidden w-full max-w-sm select-none gap-2 flex flex-col"> 
       <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-none w-[300px]">
         CLIMA EN MI COMUNA

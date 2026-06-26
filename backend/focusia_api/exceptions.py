@@ -20,18 +20,13 @@ SAFE_MESSAGES = {
 
 def custom_exception_handler(exc, context):
     response = exception_handler(exc, context)
-    
 
     if response is not None:
-        detail = response.data.get('detail', '')
         exc_name = type(exc).__name__
-        safe_msg = SAFE_MESSAGES.get(exc_name, 'Error interno del servidor.')
 
         if isinstance(response.data, dict) and 'detail' in response.data:
-            if exc_name in SAFE_MESSAGES:
-                response.data['detail'] = safe_msg
-            elif response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR:
-                response.data['detail'] = 'Error interno del servidor.'
+            safe_msg = SAFE_MESSAGES.get(exc_name, 'Error interno del servidor.')
+            response.data['detail'] = safe_msg
 
         user = getattr(context.get('request'), 'user', None)
         user_id = user.id if user and user.is_authenticated else 'anon'

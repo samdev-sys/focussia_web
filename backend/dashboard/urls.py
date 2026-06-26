@@ -2,12 +2,12 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     UserViewSet, RuedaVidaViewSet, TimeBlockViewSet, KanbanTaskViewSet,
+    KanbanActionViewSet,
     RecordatorioViewSet, ObjetivoSemanaViewSet, KeepNotaViewSet, MisionHoyViewSet,
     CategoriaRuedaViewSet, RegistroRuedaViewSet, MatrixItemViewSet, FacturaViewSet,
     WorkspaceViewSet, InvitationViewSet, DelegationViewSet, NotificationViewSet,
     MetaAnualViewSet, ObjetivoMensualViewSet, PropuestaIAViewSet,
-    ConfiguracionViewSet, ActivacionViewSet, MonthlyPlanViewSet,
-    MatrizLearningProgressViewSet,
+    ConfiguracionViewSet, MatrizEisenhowerViewSet, ActivacionViewSet,
     rueda_vida_completa, my_workspaces, accept_invitation, decline_invitation,
     pending_invitations, ai_mission, delegation_by_token, ejecutar_motor_decision,
     analizar_contexto, registrar_interaccion, marcar_video_visto, registrar_ingreso_hub,
@@ -20,6 +20,7 @@ router.register(r'users', UserViewSet, basename='users')
 router.register(r'rueda-vida', RuedaVidaViewSet, basename='rueda-vida')
 router.register(r'time-blocks', TimeBlockViewSet, basename='time-blocks')
 router.register(r'kanban-tasks', KanbanTaskViewSet, basename='kanban-tasks')
+router.register(r'kanban-actions', KanbanActionViewSet, basename='kanban-actions')
 router.register(r'recordatorios', RecordatorioViewSet, basename='recordatorios')
 router.register(r'objetivo-semana', ObjetivoSemanaViewSet, basename='objetivo-semana')
 router.register(r'keep-nota', KeepNotaViewSet, basename='keep-nota')
@@ -35,10 +36,9 @@ router.register(r'notifications', NotificationViewSet, basename='notifications')
 router.register(r'metas-anuales', MetaAnualViewSet, basename='metas-anuales')
 router.register(r'objetivos-mensuales', ObjetivoMensualViewSet, basename='objetivos-mensuales')
 router.register(r'propuestas-ia', PropuestaIAViewSet, basename='propuestas-ia')
+router.register(r'matriz-eisenhower', MatrizEisenhowerViewSet, basename='matriz-eisenhower')
 router.register(r'configuracion', ConfiguracionViewSet, basename='configuracion')
 router.register(r'activaciones', ActivacionViewSet, basename='activaciones')
-router.register(r'monthly-plans', MonthlyPlanViewSet, basename='monthly-plans')
-router.register(r'matriz-progress', MatrizLearningProgressViewSet, basename='matriz-progress')
 
 urlpatterns = [
     path('rueda-vida-completa/', rueda_vida_completa, name='rueda-vida-completa'),

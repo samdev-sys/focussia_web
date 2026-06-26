@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
+import { Toaster } from 'sileo';
 import Dashboard from './dashboard';
 import AuthPanel from './Auth';
 import OnboardingWizard from './components/OnboardingWizard';
@@ -50,27 +51,24 @@ function App() {
     setIsAuthenticated(false);
   };
 
-  if (checking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#e8eef2]">
-        <div className="w-8 h-8 border-2 border-[#0d9488] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <AuthPanel onLogin={handleLogin} onRegister={handleRegister} />;
-  }
-
-  if (!onboardingComplete) {
-    return <OnboardingWizard onComplete={handleOnboardingComplete} />;
-  }
-
-  if (inHub) {
-    return <PostOnboardingHub onGoToDashboard={handleGoToDashboard} onComplete={handleGoToDashboard} />;
-  }
-
-  return <Dashboard onLogout={handleLogout} onBackToHub={handleBackToHub} />;
+  return (
+    <>
+      <Toaster position="top-right" />
+      {checking ? (
+        <div className="min-h-screen flex items-center justify-center bg-[#e8eef2]">
+          <div className="w-8 h-8 border-2 border-[#0d9488] border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : !isAuthenticated ? (
+        <AuthPanel onLogin={handleLogin} onRegister={handleRegister} />
+      ) : !onboardingComplete ? (
+        <OnboardingWizard onComplete={handleOnboardingComplete} />
+      ) : inHub ? (
+        <PostOnboardingHub onGoToDashboard={handleGoToDashboard} onComplete={handleGoToDashboard} />
+      ) : (
+        <Dashboard onLogout={handleLogout} onBackToHub={handleBackToHub} />
+      )}
+    </>
+  );
 }
 
 export default App;

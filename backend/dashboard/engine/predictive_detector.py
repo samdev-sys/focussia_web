@@ -13,13 +13,15 @@ def detectar_riesgo_incumplimiento(user):
     Returns: list of dicts with risk info
     """
     now = timezone.now()
+    hoy = now.date()
     ventana = now + timedelta(hours=2)
 
     bloques_en_riesgo = TimeBlock.objects.filter(
         user=user,
+        fecha=hoy,
         hora__gte=now.hour,
         hora__lte=ventana.hour,
-        estado=False,
+        estado__in=['pending', 'doing'],
     ).exclude(tarea='')
 
     resultados = []

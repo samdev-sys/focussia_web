@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { X, Target, CalendarDays, Calendar, Clock, CheckCircle } from 'lucide-react';
-import { metaAnualService, monthlyService, objetivoSemanaService, kanbanService, KanbanTaskData } from '../services/api';
+import { notify } from '../services/notify';
+import { metaAnualService, objetivoMensualService, objetivoSemanaService, kanbanService, KanbanTaskData } from '../services/api';
 
 interface PlanificarModalProps {
   task: KanbanTaskData;
   onClose: () => void;
-  onClassified: (type: MetaType, titulo: string) => void;
+  onClassified: () => void;
 }
 
 type MetaType = 'anual' | 'mensual' | 'semanal' | 'diaria';
@@ -47,37 +48,22 @@ export const PlanificarModal: React.FC<PlanificarModalProps> = ({ task, onClose,
           aprobada: false,
         });
       } else if (selected === 'mensual') {
-        const status = await monthlyService.checkStatus();
-        if (status.has_monthly_plan && status.plan_id) {
-          await monthlyService.createGoal({
-            plan_id: status.plan_id,
-            monthly_goal_text: task.titulo,
-            brief_explanation: 'Meta creada desde Kanban Backlog',
-          });
-        } else {
-          await metaAnualService.create({
-            titulo: task.titulo,
-            descripcion: 'Meta creada desde Kanban Backlog (requiere plan mensual)',
-            fecha_inicio: `${year}-01-01`,
-            fecha_fin: `${year}-12-31`,
-            aprobada: false,
-          });
-        }
+        const mesInicio = `${year}-${String(month).padStart(2, '0')}-01`;
+        const ultimoDia = new Date(year, month, 0).getDate();
+        const mesFin = `${year}-${String(month).padStart(2, '0')}-${ultimoDia}`;
+        await objetivoMensualService.create({
+          meta_anual: null,
+          mes: month,
+          titulo: task.titulo,
+          descripcion: 'Meta creada desde Kanban Backlog',
+          completado: false,
+        });
       } else if (selected === 'semanal') {
-        const existing = await objetivoSemanaService.get();
-        const current = existing.length > 0 ? existing[0] : null;
-        const campos = [current?.texto1 || '', current?.texto2 || '', current?.texto3 || ''];
-        const idxVacio = campos.findIndex(c => !c.trim());
-        const updateData: any = {};
-        if (idxVacio === 0) updateData.texto1 = task.titulo;
-        else if (idxVacio === 1) updateData.texto2 = task.titulo;
-        else if (idxVacio === 2) updateData.texto3 = task.titulo;
-        else updateData.texto1 = task.titulo;
-        if (current) {
-          await objetivoSemanaService.update(current.id, updateData);
-        } else {
-          await objetivoSemanaService.create({ texto1: task.titulo, texto2: '', texto3: '' });
-        }
+        await objetivoSemanaService.create({
+          texto1: task.titulo,
+          texto2: '',
+          texto3: '',
+        });
       } else {
         await kanbanService.update(task.id, { columna: 'Hoy' });
       }
@@ -85,11 +71,11 @@ export const PlanificarModal: React.FC<PlanificarModalProps> = ({ task, onClose,
       await kanbanService.delete(task.id);
       setDone(true);
       setTimeout(() => {
-        onClassified(selected, task.titulo);
+        onClassified();
         onClose();
       }, 1200);
     } catch (err) {
-      console.error('Error clasificando meta:', err);
+      notify.error('Error clasificando meta');
     } finally {
       setLoading(false);
     }

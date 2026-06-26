@@ -44,18 +44,25 @@ def clasificar_impacto(user):
 
     # CASO B: horas planificadas semana actual
     inicio_semana = hoy - timedelta(days=hoy.weekday())
-    time_blocks_semana = TimeBlock.objects.filter(user=user)
+    fin_semana = inicio_semana + timedelta(days=7)
+    time_blocks_semana = TimeBlock.objects.filter(
+        user=user,
+        fecha__gte=inicio_semana,
+        fecha__lt=fin_semana,
+    )
     horas_planificadas = time_blocks_semana.exclude(tarea='').count()
 
     horas_disponibles = max(1, (16 * 7) - horas_planificadas)
     tasa_sobrecarga = horas_planificadas / horas_disponibles if horas_disponibles > 0 else 0
 
-    ventana_48h = ahora - timedelta(hours=48)
-    time_blocks_48h = time_blocks_semana.filter(
-        hora__gte=ventana_48h.hour if ventana_48h.date() == hoy else 0,
+    hace_48h = hoy - timedelta(days=2)
+    time_blocks_48h = TimeBlock.objects.filter(
+        user=user,
+        fecha__gte=hace_48h,
+        fecha__lte=hoy,
     )
     total_bloques_48h = time_blocks_48h.exclude(tarea='').count()
-    completados_48h = time_blocks_48h.filter(estado=True).count()
+    completados_48h = time_blocks_48h.filter(estado='done').count()
     tasa_cumplimiento = completados_48h / total_bloques_48h if total_bloques_48h > 0 else 1.0
 
     # CASO C: tareas pendientes en backlog

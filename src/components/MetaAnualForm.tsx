@@ -5,7 +5,6 @@ import { metaAnualService, objetivoMensualService, MetaAnualData, ObjetivoMensua
 interface MetaAnualFormProps {
   isOpen: boolean;
   onClose: () => void;
-  hint?: string;
 }
 
 const MESES = [
@@ -13,7 +12,7 @@ const MESES = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ];
 
-export const MetaAnualForm: React.FC<MetaAnualFormProps> = ({ isOpen, onClose, hint }) => {
+export const MetaAnualForm: React.FC<MetaAnualFormProps> = ({ isOpen, onClose }) => {
   const [metas, setMetas] = useState<MetaAnualData[]>([]);
   const [objetivos, setObjetivos] = useState<ObjetivoMensualData[]>([]);
   const [titulo, setTitulo] = useState('');
@@ -177,16 +176,9 @@ export const MetaAnualForm: React.FC<MetaAnualFormProps> = ({ isOpen, onClose, h
           ) : (
             <div className="space-y-3">
               {metas.length === 0 && (
-                <div className="text-center py-4 space-y-2">
-                  {hint && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-3">
-                      <p className="text-xs text-amber-700 font-medium">{hint}</p>
-                    </div>
-                  )}
-                  <p className="text-center text-sm text-gray-400">
-                    Aún no tienes metas anuales. Crea tu primera meta para empezar.
-                  </p>
-                </div>
+                <p className="text-center text-sm text-gray-400 py-4">
+                  Aún no tienes metas anuales. Crea tu primera meta para empezar.
+                </p>
               )}
               {metas.map((meta) => (
                 <div

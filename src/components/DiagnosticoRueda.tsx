@@ -3,12 +3,9 @@ import {
   Heart, Target, CheckCircle2, Sparkles, ArrowRight, ChevronLeft, X, Brain,
   AlertCircle, Loader2, Send, Check, BookOpen, Sliders, MessageSquare, SkipForward,
 } from 'lucide-react';
+import { notify } from '../services/notify';
 import { ruedaService, RuedaCategoria, DiagnosticoRuedaData, AccionSugeridaData } from '../services/api';
-
-const AVATAR_FILES: Record<number, string> = {
-  1: '/avartars/John.jpeg', 2: '/avartars/conrad.jpeg', 3: '/avartars/Ashley.jpeg',
-  4: '/avartars/Lia.jpeg', 5: '/avartars/Monroe.jpeg', 6: '/avartars/Sophya.jpeg',
-};
+import { AVATAR_FILES } from '../constants/avatars';
 
 const NIVELES: { lo: number; hi: number; label: string; color: string }[] = [
   { lo: 1, hi: 2, label: 'Crítico', color: 'text-red-500' },
@@ -40,7 +37,6 @@ export default function DiagnosticoRueda({ avatarIndex = 0, onClose, onGoMetaAnu
   const [acciones, setAcciones] = useState<AccionSugeridaData[]>([]);
   const [focoActivo, setFocoActivo] = useState<string>('');
   const [enviando, setEnviando] = useState<Record<number, boolean>>({});
-  const [error, setError] = useState('');
 
   useEffect(() => {
     ruedaService.getCompleta().then(data => {
@@ -50,23 +46,29 @@ export default function DiagnosticoRueda({ avatarIndex = 0, onClose, onGoMetaAnu
       data.forEach(cat => { p[cat.id] = cat.puntaje; c[String(cat.id)] = cat.comentario || ''; });
       setPuntajes(p);
       setComentarios(c);
-    }).catch(() => setError('Error al cargar'));
+    }).catch(() => notify.error('Error al cargar'));
   }, []);
 
   useEffect(() => {
-    if (screen === 'acciones' && diagnostico) {
-      const focos = [diagnostico.foco_1, diagnostico.foco_2, diagnostico.foco_3].filter(Boolean);
-      if (focos.length > 0 && !focoActivo) setFocoActivo(focos[0]);
-      Promise.all(focos.map(f => ruedaService.listarAcciones(f).catch(() => [])))
-        .then(results => {
-          const all = results.flat();
-          setAcciones(all);
+    if (screen !== 'acciones' || !focoActivo) return;
+    ruedaService.listarAcciones(focoActivo).then(existing => {
+      if (existing.length > 0) {
+        setAcciones(prev => {
+          const otherFoci = prev.filter(a => a.area_foco !== focoActivo);
+          return [...otherFoci, ...existing];
         });
-    }
-  }, [screen, diagnostico]);
+      } else {
+        ruedaService.generarAcciones(focoActivo).then(res => {
+          setAcciones(prev => {
+            const otherFoci = prev.filter(a => a.area_foco !== focoActivo);
+            return [...otherFoci, ...res.acciones];
+          });
+        }).catch(() => notify.error('Error al generar acciones'));
+      }
+    }).catch(() => notify.error('Error al cargar acciones'));
+  }, [screen, focoActivo]);
 
   const handleGuardarYDiagnosticar = useCallback(async () => {
-    setError('');
     setScreen('procesando');
     try {
       await ruedaService.guardar(puntajes, comentarios);
@@ -75,7 +77,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, onClose, onGoMetaAnu
       await new Promise(r => setTimeout(r, 1200));
       setScreen('reporte');
     } catch {
-      setError('Error al generar diagnóstico');
+      notify.error('Error al generar diagnóstico');
       setScreen('evaluacion');
     }
   }, [puntajes, comentarios]);
@@ -89,8 +91,8 @@ export default function DiagnosticoRueda({ avatarIndex = 0, onClose, onGoMetaAnu
         return [...other, ...res.acciones];
       });
     } catch (e: any) {
-      if (e.response?.data?.code === 'limite_20') setError(e.response.data.error);
-      else setError('Error al generar acciones');
+      if (e.response?.data?.code === 'limite_20') notify.warning(e.response.data.error);
+      else notify.error('Error al generar acciones');
     }
   }, []);
 
@@ -100,7 +102,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, onClose, onGoMetaAnu
       await ruedaService.enviarAccionKanban(accionId);
       setAcciones(prev => prev.map(a => a.id === accionId ? { ...a, enviada_kanban: true } : a));
     } catch (e: any) {
-      if (e.response?.data?.code !== 'duplicado') setError('Error al enviar');
+      if (e.response?.data?.code !== 'duplicado') notify.error('Error al enviar');
     } finally {
       setEnviando(prev => ({ ...prev, [accionId]: false }));
     }
@@ -181,7 +183,6 @@ export default function DiagnosticoRueda({ avatarIndex = 0, onClose, onGoMetaAnu
             })}
           </div>
 
-          {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
           <button onClick={handleGuardarYDiagnosticar}
             className="w-full mt-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
             <Brain className="w-4 h-4" /> Generar diagnóstico
@@ -327,8 +328,6 @@ export default function DiagnosticoRueda({ avatarIndex = 0, onClose, onGoMetaAnu
               </div>
             ))}
           </div>
-
-          {error && <p className="text-xs text-red-500 mb-2">{error}</p>}
 
           <div className="flex gap-3">
             <button onClick={() => handleGenerarAcciones(focoActivo)}

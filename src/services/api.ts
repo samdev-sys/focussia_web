@@ -42,7 +42,7 @@ export interface TimeBlockData {
   fecha: string;
   hora: number;
   tarea: string;
-  estado: string;
+  estado: 'pending' | 'doing' | 'done';
 }
 
 export interface KanbanTaskData {
@@ -53,12 +53,30 @@ export interface KanbanTaskData {
   fecha_hora?: string;
 }
 
+export interface KanbanActionData {
+  id: string;
+  title: string;
+  source: 'USER_INPUT' | 'RUEDA_VIDA_SUGGESTION';
+  classification_status: 'PENDIENTE' | 'HACER' | 'PLANIFICAR' | 'DELEGAR' | 'ELIMINAR';
+  scheduled_date: string | null;
+  pinned: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 
 export interface MatrixItemData {
   id: number;
   task: string;
   quadrant: 'do' | 'schedule' | 'delegate' | 'eliminate';
   is_done: boolean;
+}
+
+export interface MatrizEisenhowerData {
+  id: number;
+  status: 'INCOMPLETO' | 'COMPLETADO';
+  video_watched: boolean;
+  completed_at: string | null;
 }
 
 export interface FacturaData {
@@ -124,6 +142,9 @@ export const timeBlockService = {
     const response = await api.post('/api/time-blocks/', data);
     return response.data;
   },
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/api/time-blocks/${id}/`);
+  },
 };
 
 export const kanbanService = {
@@ -143,6 +164,30 @@ export const kanbanService = {
   },
   delete: async (id: number): Promise<void> => {
     await api.delete(`/api/kanban-tasks/${id}/`);
+  },
+};
+
+export const kanbanActionService = {
+  getActive: async (): Promise<KanbanActionData[]> => {
+    const response = await api.get('/api/kanban-actions/active/');
+    return response.data;
+  },
+
+  add: async (title: string): Promise<KanbanActionData> => {
+    const response = await api.post('/api/kanban-actions/add/', { title });
+    return response.data;
+  },
+
+  classify: async (id: string, decision: 'H' | 'P' | 'D' | 'E', scheduledDate?: string): Promise<KanbanActionData> => {
+    const payload: Record<string, string> = { decision };
+    if (scheduledDate) payload.scheduled_date = scheduledDate;
+    const response = await api.patch(`/api/kanban-actions/classify/${id}/`, payload);
+    return response.data;
+  },
+
+  pin: async (id: string): Promise<KanbanActionData> => {
+    const response = await api.patch(`/api/kanban-actions/pin/${id}/`);
+    return response.data;
   },
 };
 
@@ -553,25 +598,6 @@ export const metaAnualService = {
   },
 };
 
-export const granMetaAnualService = {
-  generarSmart: async (data: any): Promise<any> => {
-    const response = await api.post('/api/gran-meta-anual/generar-smart/', data);
-    return response.data;
-  },
-  editarSmart: async (id: number, comentario: string): Promise<any> => {
-    const response = await api.post(`/api/gran-meta-anual/${id}/editar-smart/`, { comentario });
-    return response.data;
-  },
-  guardarBorrador: async (data: any): Promise<any> => {
-    const response = await api.post('/api/gran-meta-anual/guardar-borrador/', data);
-    return response.data;
-  },
-  aprobar: async (id: number): Promise<any> => {
-    const response = await api.post(`/api/gran-meta-anual/${id}/aprobar/`);
-    return response.data;
-  },
-};
-
 export const objetivoMensualService = {
   getAll: async (): Promise<ObjetivoMensualData[]> => {
     const response = await api.get('/api/objetivos-mensuales/');
@@ -717,12 +743,31 @@ export interface AnalisisContextoOutput {
   propuesta_id?: number;
 }
 
+export const matrizEisenhowerService = {
+  getProgress: async (): Promise<MatrizEisenhowerData> => {
+    const response = await api.get('/api/matriz-eisenhower/progress/');
+    return response.data;
+  },
+  updateProgress: async (data: Partial<MatrizEisenhowerData>): Promise<MatrizEisenhowerData> => {
+    const response = await api.patch('/api/matriz-eisenhower/progress/', data);
+    return response.data;
+  },
+};
+
 export const analizarContextoService = {
   ejecutar: async (input: ContextoAnalisisInput): Promise<AnalisisContextoOutput> => {
     const response = await api.post('/api/ai/analizar-contexto/', input);
     return response.data;
   },
 };
+
+export interface MonthlyPlanData {
+  id: number;
+  user: number;
+  cycle_start_year: number;
+  goals: MonthlyGoalData[];
+  created_at: string;
+}
 
 export interface MonthlyGoalData {
   id: number;
@@ -733,87 +778,75 @@ export interface MonthlyGoalData {
   monthly_goal_text: string;
   brief_explanation: string;
   annual_goal_relation: string;
-  complexity_level: 'BASE' | 'EJECUCION' | 'CONSOLIDACION' | 'CIERRE';
-  status: 'PROPUESTA' | 'EDITADA' | 'APROBADA' | 'PENDIENTE';
-  edited_by_user: boolean;
-  version: number;
-  creado: string;
-  actualizado: string;
-}
-
-export interface MonthlyPlanData {
-  id: number;
-  user: number;
-  annual_goal: number;
-  cycle_start_month: number;
-  cycle_start_year: number;
-  status: 'PROPUESTA' | 'APROBADA' | 'PENDIENTE_REVISION';
-  approved_at: string | null;
-  creado: string;
-  actualizado: string;
-  goals: MonthlyGoalData[];
-}
-
-export interface MonthlyCheckStatus {
-  has_approved_annual: boolean;
-  has_monthly_plan: boolean;
-  plan_status: string | null;
-  plan_id?: number;
-  annual_goal_id?: number;
-  annual_goal_title?: string;
+  complexity_level: string;
+  status: string;
+  titulo: string;
+  descripcion: string;
+  meta: string;
+  indicador: string;
+  accion: string;
+  presupuesto: string;
+  fuente_verificacion: string;
+  responsable: string;
+  avance: number;
 }
 
 export const monthlyService = {
-  checkStatus: async (): Promise<MonthlyCheckStatus> => {
-    const response = await api.get('/api/monthly-plans/check_status/');
+  checkStatus: async (): Promise<{ has_plan: boolean; has_monthly_plan: boolean; plan_id: number | null }> => {
+    const response = await api.get('/api/monthly-plan/check/');
     return response.data;
   },
-  generateProposals: async (data: { cycle_start_month: number; cycle_start_year: number }): Promise<MonthlyPlanData> => {
-    const response = await api.post('/api/monthly-plans/generate_proposals/', data);
+  getPlan: async (planId: number): Promise<MonthlyPlanData> => {
+    const response = await api.get(`/api/monthly-plan/${planId}/`);
     return response.data;
   },
-  getPlan: async (id: number): Promise<MonthlyPlanData> => {
-    const response = await api.get(`/api/monthly-plans/${id}/`);
+  generateProposals: async (data: Record<string, unknown>): Promise<MonthlyPlanData> => {
+    const response = await api.post('/api/monthly-plan/generate/', data);
     return response.data;
   },
-  editGoal: async (planId: number, monthOrder: number, instruction: string): Promise<MonthlyGoalData> => {
-    const response = await api.patch(`/api/monthly-plans/${planId}/edit-goal/${monthOrder}/`, {
-      user_instruction: instruction,
-    });
+  editGoal: async (goalId: number, data: Partial<MonthlyGoalData>): Promise<MonthlyGoalData> => {
+    const response = await api.patch(`/api/monthly-goal/${goalId}/`, data);
     return response.data;
   },
-  approvePlan: async (planId: number): Promise<MonthlyPlanData> => {
-    const response = await api.post(`/api/monthly-plans/${planId}/approve_plan/`);
-    return response.data;
-  },
-  getCurrentMonth: async (): Promise<{ plan_id: number | null; goal: MonthlyGoalData | null; cycle_start_month?: number; cycle_start_year?: number }> => {
-    const response = await api.get('/api/monthly-plans/current_month/');
-    return response.data;
-  },
-  createGoal: async (data: { plan_id: number; monthly_goal_text: string; brief_explanation?: string; annual_goal_relation?: string; calendar_month?: number; calendar_year?: number }): Promise<MonthlyGoalData> => {
-    const response = await api.post('/api/monthly-plans/create_goal/', data);
-    return response.data;
+  approvePlan: async (planId: number): Promise<void> => {
+    await api.post(`/api/monthly-plan/${planId}/approve/`);
   },
 };
 
-export interface MatrizLearningProgressData {
-  id: number;
-  status: 'INCOMPLETO' | 'COMPLETADO';
-  video_watched: boolean;
-  practice_score: number;
-  completed_at: string | null;
-  creado: string;
-  actualizado: string;
+export interface SmartGoalResult {
+  [key: string]: string;
+  texto_meta: string;
+  frase_resumen: string;
+  S: string;
+  M: string;
+  A: string;
+  R: string;
+  T: string;
 }
 
-export const matrizProgressService = {
-  getProgress: async (): Promise<MatrizLearningProgressData> => {
-    const response = await api.get('/api/matriz-progress/progress/');
+export interface GranMetaBorrador {
+  id: number;
+  texto_meta: string;
+  frase_resumen: string;
+  desglose_smart: Record<string, string>;
+  respuestas: Record<string, string>;
+}
+
+export const granMetaAnualService = {
+  generarSmart: async (data: Record<string, unknown>): Promise<SmartGoalResult> => {
+    const response = await api.post('/api/gran-meta-anual/generar-smart/', data);
     return response.data;
   },
-  updateProgress: async (data: Partial<MatrizLearningProgressData>): Promise<MatrizLearningProgressData> => {
-    const response = await api.patch('/api/matriz-progress/progress/', data);
+  editarSmart: async (id: number, comment: string): Promise<SmartGoalResult> => {
+    const response = await api.patch(`/api/gran-meta-anual/${id}/editar-smart/`, { comment });
     return response.data;
+  },
+  guardarBorrador: async (data: Record<string, unknown>): Promise<GranMetaBorrador> => {
+    const response = await api.post('/api/gran-meta-anual/borrador/', data);
+    return response.data;
+  },
+  aprobar: async (id: number): Promise<void> => {
+    await api.post(`/api/gran-meta-anual/${id}/aprobar/`);
   },
 };
 

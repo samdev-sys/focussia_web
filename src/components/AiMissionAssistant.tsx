@@ -82,7 +82,7 @@ Responde ÚNICAMENTE con 3 ideas numeradas (1., 2., 3.), una por línea. Sin sal
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
-      <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
+      <div className="bg-white/90 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#7c3aed] to-[#a855f7] shrink-0">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-white" />

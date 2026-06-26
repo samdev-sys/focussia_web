@@ -73,9 +73,8 @@ export default function MonthlyWizard({ onClose, onApproved }: MonthlyWizardProp
     setSaving(true);
     try {
       const updatedGoal = await monthlyService.editGoal(
-        plan.id,
-        editingGoal.month_order,
-        editInstruction.trim()
+        editingGoal.id,
+        { descripcion: editInstruction.trim() }
       );
       setPlan({
         ...plan,

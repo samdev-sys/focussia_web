@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Volume2, MessageSquare, Bell, Gauge, Clock, Wifi } from 'lucide-react';
 import { configuracionService, ConfiguracionData } from '../services/api';
+import { AVATARS } from '../constants/avatars';
 
 interface ConfiguracionPanelProps {
   isOpen: boolean;
@@ -124,6 +125,31 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({ isOpen, 
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <div className="bg-white/60 rounded-xl p-4 border border-white/50">
+                <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 flex items-center gap-1">
+                  <Volume2 className="w-3.5 h-3.5" /> Acompañante
+                </h3>
+                <div className="grid grid-cols-3 gap-2">
+                  {AVATARS.map(a => {
+                    const selected = config.avatar_index === a.index;
+                    return (
+                      <button key={a.index} onClick={() => setConfig(p => ({ ...p, avatar_index: a.index }))}
+                        className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all hover:scale-105 active:scale-95 ${selected ? 'border-purple-500 ring-2 ring-purple-300' : 'border-gray-100 hover:border-gray-300'}`}>
+                        <img src={a.file} alt={a.name} className="w-full h-full object-cover" />
+                        {selected && <div className="absolute inset-0 bg-purple-500/10" />}
+                        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 text-[9px] font-medium bg-white/80 px-1.5 py-0.5 rounded-full">{a.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {config.avatar_index > 0 && (
+                  <div className="flex items-center gap-3 mt-3 p-3 bg-white/60 rounded-xl">
+                    <img src={AVATARS.find(a => a.index === config.avatar_index)?.file} alt="preview" className="w-10 h-10 rounded-xl object-cover" />
+                    <p className="text-xs text-gray-500">Tu coach actual</p>
+                  </div>
+                )}
               </div>
 
               <div className="bg-white/60 rounded-xl p-4 border border-white/50">

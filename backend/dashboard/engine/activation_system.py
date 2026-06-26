@@ -3,7 +3,7 @@ from datetime import timedelta
 from django.utils import timezone
 from ..models import (
     Activacion, ConfiguracionUsuario, PropuestaIA,
-    MetaAnual, KanbanTask, TimeBlock,
+    MetaAnual, KanbanTask,
 )
 
 logger = logging.getLogger('focusia.security')

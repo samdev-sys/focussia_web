@@ -81,9 +81,11 @@ def phase2_deviation_evaluation(user: User) -> dict | None:
 def phase3_context_analysis(user: User, deviation: dict) -> dict:
     """FASE 3: Análisis de Contexto e Impacto"""
     now = timezone.now()
+    today = now.date()
     today_hours = list(range(6, 23))
     planned_blocks = TimeBlock.objects.filter(
         user=user,
+        fecha=today,
         hora__in=today_hours,
     ).exclude(tarea='').count()
 

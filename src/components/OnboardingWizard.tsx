@@ -5,15 +5,7 @@ import {
   SkipForward, Heart, ChevronRight,
 } from 'lucide-react';
 import { configuracionService } from '../services/api';
-
-const AVATARS = [
-  { index: 1, name: 'John', file: '/avartars/John.jpeg', genero: 'masculino' },
-  { index: 2, name: 'conrad', file: '/avartars/conrad.jpeg', genero: 'masculino' },
-  { index: 3, name: 'Ashley', file: '/avartars/Ashley.jpeg', genero: 'masculino' },
-  { index: 4, name: 'Lia', file: '/avartars/Lia.jpeg', genero: 'femenino' },
-  { index: 5, name: 'Monroe', file: '/avartars/Monroe.jpeg', genero: 'femenino' },
-  { index: 6, name: 'Sophya', file: '/avartars/Sophya.jpeg', genero: 'femenino' },
-];
+import { AVATARS } from '../constants/avatars';
 
 interface WizardData {
   avatarIndex: number;
@@ -116,7 +108,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
     return <ScreenVideoIntro next={() => goTo(2)} />;
   }
   if (screen === 9) {
-    return <ScreenVideoOutro onFinish={handleConfirm} />;
+    return <ScreenVideoOutro onFinish={() => goTo(10)} />;
   }
   if (screen === 10) {
     return <ScreenDispositivo onComplete={onComplete} />;

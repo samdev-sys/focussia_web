@@ -15,9 +15,8 @@ from .models import (
     User, RuedaVida, TimeBlock, KanbanTask, Recordatorio, ObjetivoSemana,
     KeepNota, MisionHoy, CategoriaRueda, RegistroRueda, MatrixItem, Factura,
     Workspace, WorkspaceMember, Invitation, Delegation, Notification,
-    MetaAnual, ObjetivoMensual, PropuestaIA, ConfiguracionUsuario, Activacion,
-    InteraccionUsuario, DiagnosticoRueda, AccionSugerida, MonthlyPlan, MonthlyGoal,
-    MatrizLearningProgress,
+    MetaAnual, ObjetivoMensual, PropuestaIA, ConfiguracionUsuario, MatrizEisenhower, Activacion,
+    InteraccionUsuario, DiagnosticoRueda, AccionSugerida, KanbanAction,
 )
 from .serializers import (
     UserSerializer, UserDetailSerializer, RuedaVidaSerializer, TimeBlockSerializer,
@@ -28,49 +27,16 @@ from .serializers import (
     WorkspaceMemberSerializer, InvitationSerializer, DelegationSerializer,
     NotificationSerializer, AiMissionSerializer,
     MetaAnualSerializer, ObjetivoMensualSerializer, PropuestaIASerializer,
-    ConfiguracionUsuarioSerializer, ActivacionSerializer, ContextoAnalisisInputSerializer,
+    ConfiguracionUsuarioSerializer, MatrizEisenhowerSerializer, ActivacionSerializer, ContextoAnalisisInputSerializer,
     InteraccionUsuarioSerializer, GenerarDiagnosticoInputSerializer,
     GenerarAccionesInputSerializer,
     DiagnosticoRuedaSerializer, AccionSugeridaSerializer,
-    MonthlyPlanSerializer, MonthlyPlanCreateSerializer, MonthlyGoalSerializer,
-    EditGoalInputSerializer, MatrizLearningProgressSerializer,
+    KanbanActionSerializer, KanbanActionClassifySerializer,
 )
 from .engine import DecisionEngine
 from .engine.phase4_generator import generar_payload_coach
 
 logger = logging.getLogger('focusia.security')
-
-
-def call_groq(prompt, system_prompt=None):
-    api_key = settings.GROQ_API_KEY
-    if not api_key:
-        return None
-    messages = []
-    if system_prompt:
-        messages.append({'role': 'system', 'content': system_prompt})
-    messages.append({'role': 'user', 'content': prompt})
-    try:
-        body = json.dumps({
-            'model': 'llama-3.3-70b-versatile',
-            'messages': messages,
-        }).encode()
-        req = urllib.request.Request(
-            'https://api.groq.com/openai/v1/chat/completions',
-            data=body,
-            headers={
-                'Content-Type': 'application/json',
-                'Authorization': f'Bearer {api_key}',
-                'User-Agent': 'Mozilla/5.0',
-            },
-            method='POST',
-        )
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            data = json.loads(resp.read())
-            return data['choices'][0]['message']['content'].strip()
-    except Exception as e:
-        logger.error(f'Groq API error: {e}')
-        return None
-
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -136,6 +102,75 @@ class KanbanTaskViewSet(BaseUserViewSet):
     queryset = KanbanTask.objects.all()
     serializer_class = KanbanTaskSerializer
 
+
+class KanbanActionViewSet(BaseUserViewSet):
+    queryset = KanbanAction.objects.all()
+    serializer_class = KanbanActionSerializer
+
+    @action(detail=False, methods=['get'], url_path='active')
+    def active(self, request):
+        qs = self.get_queryset().filter(
+            classification_status=KanbanAction.ClassificationStatus.PENDIENTE
+        )
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'], url_path='add')
+    def add_action(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        action = serializer.save(
+            user=request.user,
+            source=KanbanAction.Source.USER_INPUT,
+            classification_status=KanbanAction.ClassificationStatus.PENDIENTE,
+        )
+        return Response(
+            KanbanActionSerializer(action).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(detail=False, methods=['patch'], url_path=r'classify/(?P<action_id>[^/.]+)')
+    def classify(self, request, action_id=None):
+        try:
+            action = KanbanAction.objects.get(id=action_id, user=request.user)
+        except KanbanAction.DoesNotExist:
+            return Response(
+                {'detail': 'Acción no encontrada'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if action.classification_status != KanbanAction.ClassificationStatus.PENDIENTE:
+            return Response(
+                {'detail': 'Esta acción ya fue clasificada'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        classify_serializer = KanbanActionClassifySerializer(data=request.data)
+        classify_serializer.is_valid(raise_exception=True)
+
+        decision = classify_serializer.validated_data['decision']
+        new_status = KanbanActionClassifySerializer.ACTION_MAP[decision]
+
+        action.classification_status = new_status
+        if decision == 'P':
+            action.scheduled_date = classify_serializer.validated_data.get('scheduled_date')
+        action.save()
+
+        return Response(KanbanActionSerializer(action).data)
+
+    @action(detail=False, methods=['patch'], url_path=r'pin/(?P<action_id>[^/.]+)')
+    def pin(self, request, action_id=None):
+        try:
+            action = KanbanAction.objects.get(id=action_id, user=request.user)
+        except KanbanAction.DoesNotExist:
+            return Response(
+                {'detail': 'Acción no encontrada'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        action.pinned = not action.pinned
+        action.save()
+        return Response(KanbanActionSerializer(action).data)
+
 class RecordatorioViewSet(BaseUserViewSet):
     queryset = Recordatorio.objects.all()
     serializer_class = RecordatorioSerializer
@@ -169,17 +204,6 @@ class RecordatorioViewSet(BaseUserViewSet):
 class ObjetivoSemanaViewSet(BaseUserViewSet):
     queryset = ObjetivoSemana.objects.all()
     serializer_class = ObjetivoSemanaSerializer
-
-    def create(self, request, *args, **kwargs):
-        obj, created = ObjetivoSemana.objects.update_or_create(
-            user=request.user,
-            defaults={
-                'texto1': request.data.get('texto1', ''),
-                'texto2': request.data.get('texto2', ''),
-                'texto3': request.data.get('texto3', ''),
-            }
-        )
-        return Response(ObjetivoSemanaSerializer(obj).data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 
 class KeepNotaViewSet(BaseUserViewSet):
     queryset = KeepNota.objects.all()
@@ -799,29 +823,6 @@ class MetaAnualViewSet(BaseUserViewSet):
     queryset = MetaAnual.objects.all()
     serializer_class = MetaAnualSerializer
 
-    def update(self, request, *args, **kwargs):
-        response = super().update(request, *args, **kwargs)
-        if response.status_code == 200:
-            self._invalidate_monthly_plans(kwargs.get('pk'))
-        return response
-
-    def partial_update(self, request, *args, **kwargs):
-        response = super().partial_update(request, *args, **kwargs)
-        if response.status_code == 200:
-            self._invalidate_monthly_plans(kwargs.get('pk'))
-        return response
-
-    def _invalidate_monthly_plans(self, annual_goal_id):
-        try:
-            annual_goal = MetaAnual.objects.get(pk=annual_goal_id)
-            MonthlyPlan.objects.filter(
-                user=annual_goal.user,
-                annual_goal=annual_goal,
-                status=MonthlyPlan.Status.APROBADA,
-            ).update(status=MonthlyPlan.Status.PENDIENTE_REVISION)
-        except Exception:
-            pass
-
 
 class ObjetivoMensualViewSet(BaseUserViewSet):
     queryset = ObjetivoMensual.objects.all()
@@ -987,6 +988,29 @@ def analizar_contexto(request):
     })
 
 
+class MatrizEisenhowerViewSet(BaseUserViewSet):
+    queryset = MatrizEisenhower.objects.all()
+    serializer_class = MatrizEisenhowerSerializer
+
+    def get_queryset(self):
+        return MatrizEisenhower.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=['get', 'patch'])
+    def progress(self, request):
+        obj, created = MatrizEisenhower.objects.get_or_create(user=request.user)
+        if request.method == 'GET':
+            return Response(MatrizEisenhowerSerializer(obj).data)
+        serializer = MatrizEisenhowerSerializer(obj, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        if 'status' in request.data and request.data['status'] == 'COMPLETADO':
+            obj.completed_at = timezone.now()
+        serializer.save()
+        return Response(MatrizEisenhowerSerializer(obj).data)
+
+
 class ConfiguracionViewSet(BaseUserViewSet):
     queryset = ConfiguracionUsuario.objects.all()
     serializer_class = ConfiguracionUsuarioSerializer
@@ -1086,290 +1110,3 @@ def delegation_by_token(request, token):
         return Response({'error': 'Delegación expirada'}, status=status.HTTP_410_GONE)
     serializer = DelegationSerializer(delegation)
     return Response(serializer.data)
-
-
-class MonthlyPlanViewSet(BaseUserViewSet):
-    queryset = MonthlyPlan.objects.all()
-    serializer_class = MonthlyPlanSerializer
-
-    def get_queryset(self):
-        return MonthlyPlan.objects.filter(user=self.request.user)
-
-    @action(detail=False, methods=['get'])
-    def check_status(self, request):
-        approved_annual = MetaAnual.objects.filter(
-            user=request.user, aprobada=True
-        ).first()
-        if not approved_annual:
-            return Response({
-                'has_approved_annual': False,
-                'has_monthly_plan': False,
-                'plan_status': None,
-            })
-        plan = MonthlyPlan.objects.filter(
-            user=request.user, annual_goal=approved_annual
-        ).order_by('-creado').first()
-        if not plan:
-            return Response({
-                'has_approved_annual': True,
-                'has_monthly_plan': False,
-                'plan_status': None,
-                'annual_goal_id': approved_annual.id,
-                'annual_goal_title': approved_annual.titulo,
-            })
-        return Response({
-            'has_approved_annual': True,
-            'has_monthly_plan': True,
-            'plan_status': plan.status,
-            'plan_id': plan.id,
-            'annual_goal_id': approved_annual.id,
-            'annual_goal_title': approved_annual.titulo,
-        })
-
-    @action(detail=False, methods=['post'])
-    def generate_proposals(self, request):
-        serializer = MonthlyPlanCreateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        annual_goal = MetaAnual.objects.filter(
-            user=request.user, aprobada=True
-        ).first()
-        if not annual_goal:
-            return Response(
-                {'error': 'No existe una Meta Anual aprobada'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        cycle_start_month = serializer.validated_data['cycle_start_month']
-        cycle_start_year = serializer.validated_data['cycle_start_year']
-        complexity_map = {}
-        for i in range(1, 13):
-            if i <= 3:
-                complexity_map[i] = MonthlyGoal.ComplexityLevel.BASE
-            elif i <= 6:
-                complexity_map[i] = MonthlyGoal.ComplexityLevel.EJECUCION
-            elif i <= 9:
-                complexity_map[i] = MonthlyGoal.ComplexityLevel.CONSOLIDACION
-            else:
-                complexity_map[i] = MonthlyGoal.ComplexityLevel.CIERRE
-        month_names = [
-            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-        ]
-        rueda = RuedaVida.objects.filter(user=request.user).order_by('-creado').first()
-        rueda_context = ''
-        if rueda:
-            registros = RegistroRueda.objects.filter(rueda=rueda)
-            if registros.exists():
-                rueda_context = 'Puntajes Rueda de la Vida: '
-                for reg in registros:
-                    rueda_context += f'{reg.categoria.nombre if reg.categoria else "N/A"}={reg.puntaje}/10. '
-        system_prompt = (
-            'Eres un coach de productividad personal experto. '
-            'Genera exactamente 12 metas mensuales personalizadas para un usuario. '
-            'Cada meta debe ser una frase clara, concreta y accionable. '
-            'Devuelve SOLO un JSON array con 12 objetos, cada uno con: '
-            '"monthly_goal_text", "brief_explanation", "annual_goal_relation". '
-            'NO incluyas ningún otro texto, solo el JSON.'
-        )
-        prompt = (
-            f'Gran Meta Anual: {annual_goal.titulo}\n'
-            f'{rueda_context}\n'
-            f'Ciclo: {month_names[cycle_start_month - 1]} {cycle_start_year} a {month_names[(cycle_start_month - 1 + 11) % 12]} {cycle_start_year + (1 if cycle_start_month == 12 else 0)}\n'
-            f'Complejidad: meses 1-3 BASE, 4-6 EJECUCION, 7-9 CONSOLIDACION, 10-12 CIERRE\n\n'
-            f'Genera las 12 metas en formato JSON array.'
-        )
-        llm_response = call_groq(prompt, system_prompt)
-        goals_data = None
-        if llm_response:
-            try:
-                import re
-                json_match = re.search(r'\[.*\]', llm_response, re.DOTALL)
-                if json_match:
-                    goals_data = json.loads(json_match.group())
-            except (json.JSONDecodeError, Exception):
-                goals_data = None
-        plan = MonthlyPlan.objects.create(
-            user=request.user,
-            annual_goal=annual_goal,
-            cycle_start_month=cycle_start_month,
-            cycle_start_year=cycle_start_year,
-            status=MonthlyPlan.Status.PROPUESTA,
-        )
-        for order in range(1, 13):
-            cal_month = ((cycle_start_month - 1 + (order - 1)) % 12) + 1
-            cal_year = cycle_start_year + ((cycle_start_month - 1 + (order - 1)) // 12)
-            if goals_data and order <= len(goals_data):
-                g = goals_data[order - 1]
-                goal_text = g.get('monthly_goal_text', f'Meta del mes de {month_names[cal_month - 1]}')
-                brief = g.get('brief_explanation', f'Objetivo para el mes {order} del ciclo')
-                relation = g.get('annual_goal_relation', annual_goal.titulo)
-            else:
-                goal_text = f'Meta del mes de {month_names[cal_month - 1]}'
-                brief = f'Objetivo para el mes {order} del ciclo'
-                relation = annual_goal.titulo
-            MonthlyGoal.objects.create(
-                plan=plan,
-                month_order=order,
-                calendar_month=cal_month,
-                calendar_year=cal_year,
-                monthly_goal_text=goal_text,
-                brief_explanation=brief,
-                annual_goal_relation=relation,
-                complexity_level=complexity_map[order],
-                status=MonthlyGoal.GoalStatus.PROPUESTA,
-            )
-        return Response(MonthlyPlanSerializer(plan).data, status=status.HTTP_201_CREATED)
-
-    @action(detail=True, methods=['patch'], url_path='edit-goal/(?P<month_order>[0-9]+)')
-    def edit_goal(self, request, pk=None, month_order=None):
-        plan = self.get_object()
-        serializer = EditGoalInputSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user_instruction = serializer.validated_data['user_instruction']
-        try:
-            goal = MonthlyGoal.objects.get(plan=plan, month_order=int(month_order))
-        except MonthlyGoal.DoesNotExist:
-            return Response(
-                {'error': 'Meta no encontrada para ese mes'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        system_prompt = (
-            'Eres un coach de productividad personal experto. '
-            'El usuario quiere modificar una meta mensual. '
-            'Recibirás: la meta actual, la instrucción del usuario y la meta anual de referencia. '
-            'Devuelve SOLO un JSON con: "monthly_goal_text", "brief_explanation", "annual_goal_relation". '
-            'NO incluyas ningún otro texto, solo el JSON.'
-        )
-        prompt = (
-            f'Meta Anual: {plan.annual_goal.titulo}\n'
-            f'Meta actual: {goal.monthly_goal_text}\n'
-            f'Explicación actual: {goal.brief_explanation}\n'
-            f'Instrucción del usuario: {user_instruction}\n\n'
-            f'Genera la meta modificada en formato JSON.'
-        )
-        llm_response = call_groq(prompt, system_prompt)
-        if llm_response:
-            try:
-                import re
-                json_match = re.search(r'\{.*\}', llm_response, re.DOTALL)
-                if json_match:
-                    data = json.loads(json_match.group())
-                    goal.monthly_goal_text = data.get('monthly_goal_text', user_instruction)
-                    goal.brief_explanation = data.get('brief_explanation', goal.brief_explanation)
-                    goal.annual_goal_relation = data.get('annual_goal_relation', goal.annual_goal_relation)
-                else:
-                    goal.monthly_goal_text = user_instruction
-            except (json.JSONDecodeError, Exception):
-                goal.monthly_goal_text = user_instruction
-        else:
-            goal.monthly_goal_text = user_instruction
-        goal.status = MonthlyGoal.GoalStatus.EDITADA
-        goal.edited_by_user = True
-        goal.version += 1
-        goal.save()
-        return Response(MonthlyGoalSerializer(goal).data)
-
-    @action(detail=True, methods=['post'])
-    def approve_plan(self, request, pk=None):
-        plan = self.get_object()
-        now = timezone.now()
-        MonthlyGoal.objects.filter(plan=plan).update(
-            status=MonthlyGoal.GoalStatus.APROBADA
-        )
-        plan.status = MonthlyPlan.Status.APROBADA
-        plan.approved_at = now
-        plan.save()
-        return Response(MonthlyPlanSerializer(plan).data)
-
-    @action(detail=False, methods=['get'])
-    def current_month(self, request):
-        now = timezone.now()
-        current_cal_month = now.month
-        current_cal_year = now.year
-        plans = MonthlyPlan.objects.filter(
-            user=request.user,
-            status=MonthlyPlan.Status.APROBADA,
-        )
-        for plan in plans:
-            goal = MonthlyGoal.objects.filter(
-                plan=plan,
-                calendar_month=current_cal_month,
-                calendar_year=current_cal_year,
-            ).first()
-            if goal:
-                return Response({
-                    'plan_id': plan.id,
-                    'goal': MonthlyGoalSerializer(goal).data,
-                    'cycle_start_month': plan.cycle_start_month,
-                    'cycle_start_year': plan.cycle_start_year,
-                })
-        return Response({'plan_id': None, 'goal': None})
-
-    @action(detail=False, methods=['post'])
-    def create_goal(self, request):
-        plan_id = request.data.get('plan_id')
-        monthly_goal_text = request.data.get('monthly_goal_text', '')
-        brief_explanation = request.data.get('brief_explanation', '')
-        annual_goal_relation = request.data.get('annual_goal_relation', '')
-        calendar_month = request.data.get('calendar_month')
-        calendar_year = request.data.get('calendar_year')
-        if not plan_id or not monthly_goal_text:
-            return Response(
-                {'error': 'plan_id y monthly_goal_text son requeridos'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        try:
-            plan = MonthlyPlan.objects.get(pk=plan_id, user=request.user)
-        except MonthlyPlan.DoesNotExist:
-            return Response(
-                {'error': 'Plan no encontrado'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        last_goal = MonthlyGoal.objects.filter(plan=plan).order_by('-month_order').first()
-        next_order = (last_goal.month_order + 1) if last_goal else 1
-        if next_order > 12:
-            return Response(
-                {'error': 'El plan ya tiene 12 metas'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        if not calendar_month or not calendar_year:
-            cal_month = ((plan.cycle_start_month - 1 + (next_order - 1)) % 12) + 1
-            cal_year = plan.cycle_start_year + ((plan.cycle_start_month - 1 + (next_order - 1)) // 12)
-        else:
-            cal_month = int(calendar_month)
-            cal_year = int(calendar_year)
-        complexity_map = {
-            1: MonthlyGoal.ComplexityLevel.BASE, 2: MonthlyGoal.ComplexityLevel.BASE, 3: MonthlyGoal.ComplexityLevel.BASE,
-            4: MonthlyGoal.ComplexityLevel.EJECUCION, 5: MonthlyGoal.ComplexityLevel.EJECUCION, 6: MonthlyGoal.ComplexityLevel.EJECUCION,
-            7: MonthlyGoal.ComplexityLevel.CONSOLIDACION, 8: MonthlyGoal.ComplexityLevel.CONSOLIDACION, 9: MonthlyGoal.ComplexityLevel.CONSOLIDACION,
-            10: MonthlyGoal.ComplexityLevel.CIERRE, 11: MonthlyGoal.ComplexityLevel.CIERRE, 12: MonthlyGoal.ComplexityLevel.CIERRE,
-        }
-        goal = MonthlyGoal.objects.create(
-            plan=plan,
-            month_order=next_order,
-            calendar_month=cal_month,
-            calendar_year=cal_year,
-            monthly_goal_text=monthly_goal_text,
-            brief_explanation=brief_explanation or 'Meta creada desde Kanban Backlog',
-            annual_goal_relation=annual_goal_relation or plan.annual_goal.titulo,
-            complexity_level=complexity_map.get(next_order, MonthlyGoal.ComplexityLevel.BASE),
-            status=MonthlyGoal.GoalStatus.PROPUESTA,
-        )
-        return Response(MonthlyGoalSerializer(goal).data, status=status.HTTP_201_CREATED)
-
-
-class MatrizLearningProgressViewSet(BaseUserViewSet):
-    queryset = MatrizLearningProgress.objects.all()
-    serializer_class = MatrizLearningProgressSerializer
-
-    def get_queryset(self):
-        return MatrizLearningProgress.objects.filter(user=self.request.user)
-
-    @action(detail=False, methods=['get', 'patch'])
-    def progress(self, request):
-        obj, created = MatrizLearningProgress.objects.get_or_create(user=request.user)
-        if request.method == 'PATCH':
-            serializer = MatrizLearningProgressSerializer(obj, data=request.data, partial=True)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data)
-        return Response(MatrizLearningProgressSerializer(obj).data)

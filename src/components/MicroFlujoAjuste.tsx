@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import { X, Check, ArrowRight, Calendar, Target, ListTodo } from 'lucide-react';
-import { PropuestaIData } from '../services/api';
+import { PropuestaIData, timeBlockService } from '../services/api';
 
 interface MicroFlujoAjusteProps {
   isOpen: boolean;
   onClose: () => void;
   propuesta: PropuestaIData | null;
+  onAccionAplicada?: () => void;
 }
 
 type Paso = 'inicio' | 'accion' | 'completado';
 
-export const MicroFlujoAjuste: React.FC<MicroFlujoAjusteProps> = ({ isOpen, onClose, propuesta }) => {
+export const MicroFlujoAjuste: React.FC<MicroFlujoAjusteProps> = ({ isOpen, onClose, propuesta, onAccionAplicada }) => {
   const [paso, setPaso] = useState<Paso>('inicio');
   const [seleccion, setSeleccion] = useState<string>('');
+  const [loading, setLoading] = useState(false);
 
   if (!isOpen || !propuesta) return null;
 
@@ -33,8 +35,58 @@ export const MicroFlujoAjuste: React.FC<MicroFlujoAjusteProps> = ({ isOpen, onCl
 
   const opciones = ACCIONES[propuesta.tipo_impacto] || ACCIONES.de_prioridad;
 
-  const handleConfirmar = () => {
-    setPaso('completado');
+  const handleConfirmar = async () => {
+    setLoading(true);
+    try {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const todayStr = now.toISOString().split('T')[0];
+
+      const truncar = (texto: string, max: number) =>
+        texto.length > max ? texto.substring(0, max) + '...' : texto;
+
+      switch (seleccion) {
+        case 'replanificar': {
+          await timeBlockService.create({
+            fecha: todayStr,
+            hora: currentHour,
+            tarea: `Replanificar: ${truncar(propuesta?.propuesta_ajuste || 'Tarea pendiente', 200)}`,
+            estado: 'pending',
+          });
+          break;
+        }
+        case 'bloquear': {
+          await timeBlockService.create({
+            fecha: todayStr,
+            hora: Math.min(currentHour + 1, 23),
+            tarea: `Bloqueo estratégico: ${truncar(propuesta?.propuesta_ajuste || 'Tarea estratégica', 200)}`,
+            estado: 'pending',
+          });
+          break;
+        }
+        case 'redistribuir':
+        case 'repriorizar':
+        case 'limpiar':
+        case 'reorganizar': {
+          await timeBlockService.create({
+            fecha: todayStr,
+            hora: currentHour,
+            tarea: `Acción: ${opciones.find(o => o.id === seleccion)?.label || seleccion}`,
+            estado: 'pending',
+          });
+          break;
+        }
+      }
+
+      setPaso('completado');
+      onAccionAplicada?.();
+    } catch (error) {
+      console.error('Error al aplicar ajuste:', error);
+      // Aún así mostrar completado para no bloquear al usuario
+      setPaso('completado');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -100,9 +152,10 @@ export const MicroFlujoAjuste: React.FC<MicroFlujoAjusteProps> = ({ isOpen, onCl
                 </button>
                 <button
                   onClick={handleConfirmar}
-                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-sm hover:opacity-90 transition-opacity"
+                  disabled={loading}
+                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
-                  Confirmar
+                  {loading ? 'Aplicando...' : 'Confirmar'}
                 </button>
               </div>
             </div>

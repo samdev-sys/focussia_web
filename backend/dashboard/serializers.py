@@ -1,6 +1,6 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
-from .models import User, RuedaVida, TimeBlock, KanbanTask, Recordatorio, ObjetivoSemana, KeepNota, MisionHoy, CategoriaRueda, RegistroRueda, MatrixItem, Factura, Workspace, WorkspaceMember, Invitation, Delegation, Notification, MetaAnual, ObjetivoMensual, PropuestaIA, ConfiguracionUsuario, Activacion, InteraccionUsuario, DiagnosticoRueda, AccionSugerida, MonthlyPlan, MonthlyGoal, MatrizLearningProgress
+from .models import User, RuedaVida, TimeBlock, KanbanTask, Recordatorio, ObjetivoSemana, KeepNota, MisionHoy, CategoriaRueda, RegistroRueda, MatrixItem, Factura, Workspace, WorkspaceMember, Invitation, Delegation, Notification, MetaAnual, ObjetivoMensual, PropuestaIA, ConfiguracionUsuario, MatrizEisenhower, Activacion, InteraccionUsuario, DiagnosticoRueda, AccionSugerida, KanbanAction
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -30,7 +30,7 @@ class RuedaVidaSerializer(serializers.ModelSerializer):
 class TimeBlockSerializer(serializers.ModelSerializer):
     class Meta:
         model = TimeBlock
-        fields = ['id', 'user', 'hora', 'tarea', 'estado']
+        fields = ['id', 'user', 'fecha', 'hora', 'tarea', 'estado']
         read_only_fields = ['user']
 
 class KanbanTaskSerializer(serializers.ModelSerializer):
@@ -85,6 +85,13 @@ class MatrixItemSerializer(serializers.ModelSerializer):
         model = MatrixItem
         fields = ['id', 'user', 'task', 'quadrant', 'is_done', 'created_at', 'workspace']
         read_only_fields = ['user', 'created_at']
+
+class MatrizEisenhowerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MatrizEisenhower
+        fields = ['id', 'status', 'video_watched', 'completed_at', 'creado', 'actualizado']
+        read_only_fields = ['creado', 'actualizado']
+
 
 class FacturaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -247,42 +254,20 @@ class GenerarAccionesInputSerializer(serializers.Serializer):
     area_foco = serializers.CharField(max_length=100)
 
 
-class MonthlyGoalSerializer(serializers.ModelSerializer):
+class KanbanActionSerializer(serializers.ModelSerializer):
     class Meta:
-        model = MonthlyGoal
-        fields = [
-            'id', 'plan', 'month_order', 'calendar_month', 'calendar_year',
-            'monthly_goal_text', 'brief_explanation', 'annual_goal_relation',
-            'complexity_level', 'status', 'edited_by_user', 'version',
-            'creado', 'actualizado',
-        ]
-        read_only_fields = ['creado', 'actualizado']
+        model = KanbanAction
+        fields = ['id', 'title', 'source', 'classification_status', 'scheduled_date', 'pinned', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'source', 'classification_status', 'pinned', 'created_at', 'updated_at']
 
 
-class MonthlyPlanSerializer(serializers.ModelSerializer):
-    goals = MonthlyGoalSerializer(many=True, read_only=True)
+class KanbanActionClassifySerializer(serializers.Serializer):
+    ACTION_MAP = {
+        'H': KanbanAction.ClassificationStatus.HACER,
+        'P': KanbanAction.ClassificationStatus.PLANIFICAR,
+        'D': KanbanAction.ClassificationStatus.DELEGAR,
+        'E': KanbanAction.ClassificationStatus.ELIMINAR,
+    }
 
-    class Meta:
-        model = MonthlyPlan
-        fields = [
-            'id', 'user', 'annual_goal', 'cycle_start_month', 'cycle_start_year',
-            'status', 'approved_at', 'creado', 'actualizado', 'goals',
-        ]
-        read_only_fields = ['user', 'creado', 'actualizado']
-
-
-class MonthlyPlanCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MonthlyPlan
-        fields = ['annual_goal', 'cycle_start_month', 'cycle_start_year']
-
-
-class EditGoalInputSerializer(serializers.Serializer):
-    user_instruction = serializers.CharField(max_length=1000)
-
-
-class MatrizLearningProgressSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MatrizLearningProgress
-        fields = ['id', 'status', 'video_watched', 'practice_score', 'completed_at', 'creado', 'actualizado']
-        read_only_fields = ['creado', 'actualizado']
+    decision = serializers.ChoiceField(choices=['H', 'P', 'D', 'E'])
+    scheduled_date = serializers.DateField(required=False, allow_null=True)

@@ -1,4 +1,7 @@
+import uuid
+from datetime import date
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
@@ -24,12 +27,14 @@ class RuedaVida(models.Model):
 
 class TimeBlock(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='time_blocks')
-    hora = models.IntegerField()
+    fecha = models.DateField(default=date.today)
+    hora = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(23)])
     tarea = models.CharField(max_length=255, blank=True)
     estado = models.CharField(max_length=10, default='pending')
 
     class Meta:
-        ordering = ['hora']
+        ordering = ['fecha', 'hora']
+        unique_together = ['user', 'fecha', 'hora']
 
 class KanbanTask(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='kanban_tasks')
@@ -366,6 +371,26 @@ class InteraccionUsuario(models.Model):
         return f'{self.tipo} - {self.user.username}'
 
 
+class MatrizEisenhower(models.Model):
+    class EstadoChoices(models.TextChoices):
+        INCOMPLETO = 'INCOMPLETO', 'Incompleto'
+        COMPLETADO = 'COMPLETADO', 'Completado'
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='matriz_eisenhower')
+    status = models.CharField(max_length=20, choices=EstadoChoices.choices, default=EstadoChoices.INCOMPLETO)
+    video_watched = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    creado = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Matriz Eisenhower'
+        verbose_name_plural = 'Matriz Eisenhower'
+
+    def __str__(self):
+        return f'MatrizEisenhower {self.user.username} - {self.status}'
+
+
 class Activacion(models.Model):
     class TipoActivacion(models.TextChoices):
         TRADICIONAL = 'tradicional', 'Recordatorio Tradicional'
@@ -404,75 +429,32 @@ class Activacion(models.Model):
         return f'[{self.tipo}] {self.titulo} - {self.user.username}'
 
 
-class MonthlyPlan(models.Model):
-    class Status(models.TextChoices):
-        PROPUESTA = 'PROPUESTA', 'Propuesta'
-        APROBADA = 'APROBADA', 'Aprobada'
-        PENDIENTE_REVISION = 'PENDIENTE_REVISION', 'Pendiente de Revisión'
+class KanbanAction(models.Model):
+    class Source(models.TextChoices):
+        USER_INPUT = 'USER_INPUT', 'Usuario'
+        RUEDA_VIDA_SUGGESTION = 'RUEDA_VIDA_SUGGESTION', 'Sugerencia Rueda de Vida'
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='monthly_plans')
-    annual_goal = models.ForeignKey(MetaAnual, on_delete=models.CASCADE, related_name='monthly_plans')
-    cycle_start_month = models.IntegerField(help_text='Mes de inicio del ciclo (1-12)')
-    cycle_start_year = models.IntegerField(help_text='Año de inicio del ciclo')
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PROPUESTA)
-    approved_at = models.DateTimeField(null=True, blank=True)
-    creado = models.DateTimeField(auto_now_add=True)
-    actualizado = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ['-creado']
-
-    def __str__(self):
-        return f'Plan Mensual ({self.cycle_start_month}/{self.cycle_start_year}) - {self.user.username}'
-
-
-class MonthlyGoal(models.Model):
-    class ComplexityLevel(models.TextChoices):
-        BASE = 'BASE', 'Base'
-        EJECUCION = 'EJECUCION', 'Ejecución'
-        CONSOLIDACION = 'CONSOLIDACION', 'Consolidación'
-        CIERRE = 'CIERRE', 'Cierre'
-
-    class GoalStatus(models.TextChoices):
-        PROPUESTA = 'PROPUESTA', 'Propuesta'
-        EDITADA = 'EDITADA', 'Editada'
-        APROBADA = 'APROBADA', 'Aprobada'
+    class ClassificationStatus(models.TextChoices):
         PENDIENTE = 'PENDIENTE', 'Pendiente'
+        HACER = 'HACER', 'Hacer'
+        PLANIFICAR = 'PLANIFICAR', 'Planificar'
+        DELEGAR = 'DELEGAR', 'Delegar'
+        ELIMINAR = 'ELIMINAR', 'Eliminar'
 
-    plan = models.ForeignKey(MonthlyPlan, on_delete=models.CASCADE, related_name='goals')
-    month_order = models.IntegerField(help_text='Posición en el ciclo personalizado (1-12)')
-    calendar_month = models.IntegerField(help_text='Mes real del calendario gregoriano (1-12)')
-    calendar_year = models.IntegerField(help_text='Año real del calendario gregoriano')
-    monthly_goal_text = models.CharField(max_length=500, help_text='Frase de la meta mensual')
-    brief_explanation = models.TextField(blank=True, default='', help_text='Justificación de 1-2 líneas')
-    annual_goal_relation = models.TextField(blank=True, default='', help_text='Conexión con la meta anual')
-    complexity_level = models.CharField(max_length=15, choices=ComplexityLevel.choices, default=ComplexityLevel.BASE)
-    status = models.CharField(max_length=15, choices=GoalStatus.choices, default=GoalStatus.PROPUESTA)
-    edited_by_user = models.BooleanField(default=False, help_text='Flag de auditoría para métricas de IA')
-    version = models.IntegerField(default=1, help_text='Contador de control de cambios')
-    creado = models.DateTimeField(auto_now_add=True)
-    actualizado = models.DateTimeField(auto_now=True)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='kanban_actions')
+    title = models.CharField(max_length=500)
+    source = models.CharField(max_length=30, choices=Source.choices, default=Source.USER_INPUT)
+    classification_status = models.CharField(
+        max_length=20, choices=ClassificationStatus.choices, default=ClassificationStatus.PENDIENTE
+    )
+    scheduled_date = models.DateField(null=True, blank=True)
+    pinned = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['month_order']
-        unique_together = ['plan', 'month_order']
+        ordering = ['-pinned', '-created_at']
 
     def __str__(self):
-        return f'Mes {self.month_order}: {self.monthly_goal_text[:50]}'
-
-
-class MatrizLearningProgress(models.Model):
-    class Status(models.TextChoices):
-        INCOMPLETO = 'INCOMPLETO', 'Incompleto'
-        COMPLETADO = 'COMPLETADO', 'Completado'
-
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='matriz_progress')
-    status = models.CharField(max_length=15, choices=Status.choices, default=Status.INCOMPLETO)
-    video_watched = models.BooleanField(default=False)
-    practice_score = models.IntegerField(default=0, help_text='Número de aciertos en la trivia')
-    completed_at = models.DateTimeField(null=True, blank=True)
-    creado = models.DateTimeField(auto_now_add=True)
-    actualizado = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f'MatrizProgress - {self.user.username} - {self.status}'
+        return f'{self.title} [{self.classification_status}]'

@@ -31,7 +31,6 @@ def _require_env(key):
         raise ImproperlyConfigured(f'Variable de entorno {key} no definida.')
     return val
 
-
 SECRET_KEY = _require_env('SECRET_KEY')
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
@@ -107,7 +106,6 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -138,33 +136,22 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_COOKIE': 'access_token',
     'AUTH_COOKIE_REFRESH': 'refresh_token',
-    'AUTH_COOKIE_SECURE': not DEBUG,
+    'AUTH_COOKIE_SECURE': True,
     'AUTH_COOKIE_HTTP_ONLY': True,
-    'AUTH_COOKIE_SAMESITE':'Lax' if DEBUG else 'None',
-    
+    'AUTH_COOKIE_SAMESITE': 'None',
 }
+
 SESSION_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_SECURE = True
+
 CSRF_COOKIE_SAMESITE = 'None'
 CSRF_COOKIE_SECURE = True
 
 # CORS
-raw_cors = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000')
-CORS_ALLOWED_ORIGINS = [origin.strip() for origin in raw_cors.split(',') if origin.strip()]
-CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000,http://localhost:3001').split(',')
 CORS_ALLOW_CREDENTIALS = True
-# Netlify explícito en producción por seguridad
-if not DEBUG:
-    if "https://focussia.netlify.app" not in CORS_ALLOWED_ORIGINS:
-        CORS_ALLOWED_ORIGINS.append("https://focussia.netlify.app")
-# CSRF requiere obligatoriamente el formato https:// en Django >= 4.0
 
-
-# Cookies cross-site (necesario para Netlify -> Railway)
-SESSION_COOKIE_SAMESITE = 'None'
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SAMESITE = 'None'
-CSRF_COOKIE_SECURE = True
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 
 # Logging de seguridad
 LOGGING = {
