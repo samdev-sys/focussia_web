@@ -29,6 +29,7 @@ from .serializers import (
     MetaAnualSerializer, ObjetivoMensualSerializer, PropuestaIASerializer,
     ConfiguracionUsuarioSerializer, MatrizEisenhowerSerializer, ActivacionSerializer, ContextoAnalisisInputSerializer,
     InteraccionUsuarioSerializer, GenerarDiagnosticoInputSerializer,
+    GenerarAccionesInputSerializer,
     DiagnosticoRuedaSerializer, AccionSugeridaSerializer,
     KanbanActionSerializer, KanbanActionClassifySerializer,
 )
@@ -629,15 +630,14 @@ def generar_acciones_rueda(request):
             nuevas.append(AccionSugerida(user=request.user, area_foco=area_foco, texto=texto))
 
     if nuevas:
-        creadas = AccionSugerida.objects.bulk_create(nuevas)
-    else:
-        creadas = []
+        AccionSugerida.objects.bulk_create(nuevas)
 
-    total = existing_count + len(creadas)
+    todas = AccionSugerida.objects.filter(user=request.user, area_foco=area_foco)
+    total = todas.count()
     disponibles = max(0, 20 - total)
 
     return Response({
-        'acciones': AccionSugeridaSerializer(creadas, many=True).data,
+        'acciones': AccionSugeridaSerializer(todas, many=True).data,
         'total_area': total,
         'disponibles': disponibles,
     })

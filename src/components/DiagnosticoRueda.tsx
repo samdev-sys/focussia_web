@@ -86,7 +86,10 @@ export default function DiagnosticoRueda({ avatarIndex = 0, onClose, onGoMetaAnu
     setFocoActivo(area);
     try {
       const res = await ruedaService.generarAcciones(area);
-      setAcciones(prev => [...prev, ...res.acciones]);
+      setAcciones(prev => {
+        const other = prev.filter(a => a.area_foco !== area);
+        return [...other, ...res.acciones];
+      });
     } catch (e: any) {
       if (e.response?.data?.code === 'limite_20') notify.warning(e.response.data.error);
       else notify.error('Error al generar acciones');

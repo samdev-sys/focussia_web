@@ -40,22 +40,26 @@ export const MicroFlujoAjuste: React.FC<MicroFlujoAjusteProps> = ({ isOpen, onCl
     try {
       const now = new Date();
       const currentHour = now.getHours();
+      const todayStr = now.toISOString().split('T')[0];
+
+      const truncar = (texto: string, max: number) =>
+        texto.length > max ? texto.substring(0, max) + '...' : texto;
 
       switch (seleccion) {
         case 'replanificar': {
-          // Crear un bloque para la hora actual con la propuesta del sistema
           await timeBlockService.create({
+            fecha: todayStr,
             hora: currentHour,
-            tarea: `Replanificar: ${propuesta?.propuesta_ajuste?.substring(0, 100) || 'Tarea pendiente'}`,
+            tarea: `Replanificar: ${truncar(propuesta?.propuesta_ajuste || 'Tarea pendiente', 200)}`,
             estado: 'pending',
           });
           break;
         }
         case 'bloquear': {
-          // Crear un bloque para las próximas 2 horas
           await timeBlockService.create({
-            hora: currentHour + 1,
-            tarea: `Bloqueo estratégico: ${propuesta?.propuesta_ajuste?.substring(0, 100) || 'Tarea estratégica'}`,
+            fecha: todayStr,
+            hora: Math.min(currentHour + 1, 23),
+            tarea: `Bloqueo estratégico: ${truncar(propuesta?.propuesta_ajuste || 'Tarea estratégica', 200)}`,
             estado: 'pending',
           });
           break;
@@ -64,8 +68,8 @@ export const MicroFlujoAjuste: React.FC<MicroFlujoAjusteProps> = ({ isOpen, onCl
         case 'repriorizar':
         case 'limpiar':
         case 'reorganizar': {
-          // Para otras acciones, crear un bloque de registro
           await timeBlockService.create({
+            fecha: todayStr,
             hora: currentHour,
             tarea: `Acción: ${opciones.find(o => o.id === seleccion)?.label || seleccion}`,
             estado: 'pending',

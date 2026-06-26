@@ -1,5 +1,7 @@
 import uuid
+from datetime import date
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
@@ -25,12 +27,14 @@ class RuedaVida(models.Model):
 
 class TimeBlock(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='time_blocks')
-    hora = models.IntegerField()
+    fecha = models.DateField(default=date.today)
+    hora = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(23)])
     tarea = models.CharField(max_length=255, blank=True)
     estado = models.CharField(max_length=10, default='pending')
 
     class Meta:
-        ordering = ['hora']
+        ordering = ['fecha', 'hora']
+        unique_together = ['user', 'fecha', 'hora']
 
 class KanbanTask(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='kanban_tasks')

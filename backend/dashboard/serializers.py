@@ -30,7 +30,7 @@ class RuedaVidaSerializer(serializers.ModelSerializer):
 class TimeBlockSerializer(serializers.ModelSerializer):
     class Meta:
         model = TimeBlock
-        fields = ['id', 'user', 'hora', 'tarea', 'estado']
+        fields = ['id', 'user', 'fecha', 'hora', 'tarea', 'estado']
         read_only_fields = ['user']
 
 class KanbanTaskSerializer(serializers.ModelSerializer):

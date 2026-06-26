@@ -1,5 +1,6 @@
 import logging
 from django.conf import settings
+from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.db import DatabaseError
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
@@ -85,3 +86,18 @@ def logout_view(request):
     response.delete_cookie('access_token')
     response.delete_cookie('refresh_token')
     return response
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def session_status(request):
+    user = request.user
+    now = timezone.now()
+    is_locked = user.locked_until and user.locked_until > now
+    return Response({
+        'user_id': user.id,
+        'username': user.username,
+        'last_activity': user.last_activity.isoformat() if user.last_activity else None,
+        'is_locked': is_locked,
+        'locked_until': user.locked_until.isoformat() if user.locked_until else None,
+    })

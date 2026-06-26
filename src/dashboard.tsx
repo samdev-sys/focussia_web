@@ -206,6 +206,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
   const [misionHoy, setMisionHoy] = useState<MisionHoyData | null>(null);
   const [kanbanTasks, setKanbanTasks] = useState<KanbanTaskData[]>([]);
 
+  const todayStr = new Date().toISOString().split('T')[0];
+  const [tbError, setTbError] = useState<string | null>(null);
   const [savingStatus, setSavingStatus] = useState<string>('');
   const [clima, setClima] = useState<{
     temp: number;
@@ -787,40 +789,51 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
     setTimeout(() => setSavingStatus(''), 1500);
   };
 
+  const findBlock = (hora: number) =>
+    timeBlocks.find((t: TimeBlockData) => t.fecha === todayStr && t.hora === hora)
+    || timeBlocks.find((t: TimeBlockData) => t.hora === hora);
+
   const handleTimeBlockBlur = async (hora: number, value: string) => {
-    const block = timeBlocks.find((t: TimeBlockData) => t.hora === hora);
-    if (block && block.tarea === value) return; // Sin cambios
+    const block = findBlock(hora);
+    if (block && block.tarea === value) return;
     try {
       if (block) {
-        // Optimistic update
         setTimeBlocks((prev: TimeBlockData[]) => prev.map((t: TimeBlockData) => t.id === block.id ? { ...t, tarea: value } : t));
-        await timeBlockService.update(block.id, { tarea: value });
+        await timeBlockService.update(block.id, { tarea: value, fecha: block.fecha || todayStr });
       } else {
-        const newBlock = await timeBlockService.create({ hora, tarea: value, estado: 'pending' });
+        const newBlock = await timeBlockService.create({ fecha: todayStr, hora, tarea: value, estado: 'pending' });
         setTimeBlocks(prev => [...prev, newBlock]);
       }
       showSaving();
+      setTbError(null);
     } catch (e) {
-      // Rollback on error
       if (block) {
         setTimeBlocks((prev: TimeBlockData[]) => prev.map((t: TimeBlockData) => t.id === block.id ? { ...t, tarea: block.tarea } : t));
       }
+      setTbError('Error al guardar bloque horario');
+      setTimeout(() => setTbError(null), 3000);
       console.error("Error saving timeblock", e);
     }
   };
 
   const handleTimeBlockStatus = async (hora: number, estado: 'pending' | 'doing' | 'done') => {
-    const block = timeBlocks.find((t: TimeBlockData) => t.hora === hora);
+    const block = findBlock(hora);
     try {
       if (block) {
-        await timeBlockService.update(block.id, { estado });
         setTimeBlocks((prev: TimeBlockData[]) => prev.map((t: TimeBlockData) => t.id === block.id ? { ...t, estado } : t));
+        await timeBlockService.update(block.id, { estado, fecha: block.fecha || todayStr });
       } else {
-        const newBlock = await timeBlockService.create({ hora, tarea: '', estado });
+        const newBlock = await timeBlockService.create({ fecha: todayStr, hora, tarea: '', estado });
         setTimeBlocks((prev: TimeBlockData[]) => [...prev, newBlock]);
       }
       showSaving();
+      setTbError(null);
     } catch (e) {
+      if (block) {
+        setTimeBlocks((prev: TimeBlockData[]) => prev.map((t: TimeBlockData) => t.id === block.id ? { ...t, estado: block.estado } : t));
+      }
+      setTbError('Error al actualizar estado');
+      setTimeout(() => setTbError(null), 3000);
       console.error(e);
     }
   };
@@ -1246,6 +1259,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
     <div className="bg-gradient-to-r from-[#0E12EE] via-[#A70EEE] to-[#193EC4] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-nonep-3.5 space-y-3 bg-white flex-1 flex flex-col justify-center mt-2">
       TIME BLOCKING
     </div>
+    {tbError && (
+      <div className="bg-red-100 border border-red-300 text-red-700 text-[10px] px-3 py-1.5 text-center font-medium">
+        {tbError}
+      </div>
+    )}
   {/* CONTENEDOR CON SCROLL DE LA TABLA */}
   <div className="overflow-y-auto max-h-[520px] bg-white/40 scrollbar-hide rounded-b-xl">
       <table className="w-full text-[11px] border-collapse table-fixed">
@@ -1273,7 +1291,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
       {/* CUERPO DE HORARIOS (FILAS) */}
       <tbody>
       {defaultHours.map((h, i) => {
-    const block = timeBlocks.find((t: TimeBlockData) => t.hora === h);
+    const block = findBlock(h);
     const estado = block?.estado || 'pending';
 
     return (
@@ -1317,9 +1335,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
                 : 'bg-white text-slate-400 border-slate-200'
             }`}
           >
-            <option value="pending">Pending</option>
-            <option value="doing">Doing</option>
-            <option value="done">Done</option>
+            <option value="pending">Pendiente</option>
+            <option value="doing">Haciendo</option>
+            <option value="done">Hecho</option>
           </select>
         </td>
 

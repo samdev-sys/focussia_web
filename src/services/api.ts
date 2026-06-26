@@ -39,6 +39,7 @@ export interface RuedaVidaData {
 
 export interface TimeBlockData {
   id: number;
+  fecha: string;
   hora: number;
   tarea: string;
   estado: 'pending' | 'doing' | 'done';
