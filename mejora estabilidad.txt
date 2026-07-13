@@ -1,0 +1,115 @@
+Plan de mejoras de estabilidad y escalabilidad (Focussia Web)
+
+## Contexto del proyecto
+
+Trabajas sobre **Focussia Web**, una aplicación full-stack de productividad ("Life Dashboard": Rueda de la Vida, Kanban, Time Blocking, Metas, Recordatorios, Gamificación).
+
+**Stack:**
+- Frontend: React 19 + TypeScript + Vite 6 + Tailwind CSS 4 (Netlify)
+- Backend: Django 4.2 + Django REST Framework 3.15 + PostgreSQL (Railway)
+- Auth: JWT en cookies HttpOnly (SimpleJWT)
+- IA: Groq API (llama-3.3-70b-versatile) y Gemini API, motor de 6 fases (phase1-check a phase5-tracker)
+
+**Estado actual (informe del 26/06/2026):**
+- `src/dashboard.tsx`: 4077 líneas, monolítico
+- Sin tests unitarios (frontend ni backend)
+- Sin `.env` en el repo (solo `.env.example`)
+- Typo consistente: `avartars/` en vez de `avatars/`
+- `requirement.txt` y `requirements.txt` en raíz parecen binarios corruptos
+- Submódulo git `focussia_web/` vacío localmente
+- Sin caché, sin cola de tareas asíncronas (Celery/Redis), sin autoscaling, sin monitoreo/observabilidad
+- Rate limiting actual: 5/min login, 30/min anónimo (calibrado para tráfico bajo)
+
+**Escenario de crecimiento a soportar:**
+- Mes 1: ~1.200 usuarios (60-100 concurrentes pico)
+- Mes 3-4: 10.000-12.000 usuarios (500-960 concurrentes pico)
+
+**Riesgo principal identificado:** las llamadas a Groq/Gemini se ejecutan de forma síncrona dentro del ciclo request-response de Django, bloqueando workers durante 2-8 segundos por petición. Esto es tolerable a 1.200 usuarios y crítico a 12.000.
+
+---
+
+## Objetivo de esta sesión de trabajo
+
+Implementar, en orden de prioridad, las mejoras necesarias para que el backend y frontend soporten el crecimiento proyectado sin degradar la experiencia ni comprometer la seguridad ya implementada (JWT HttpOnly, CORS whitelist, CSP/HSTS, protección IDOR — **no rompas nada de esto**).
+
+Trabaja de forma incremental: cada tarea debe terminar en un estado funcional y commiteable antes de pasar a la siguiente. No mezcles varias tareas grandes en un solo commit.
+
+---
+
+## FASE 0 — Higiene y saneamiento (bajo riesgo, hazlo primero)
+
+1. Investiga por qué `requirement.txt` y `requirements.txt` en la raíz aparecen como binarios corruptos. Si son artefactos accidentales (ej. archivos cacheados o generados con encoding incorrecto), elimínalos y regenera un único `requirements.txt` limpio con `pip freeze` (o `pip-compile` si hay `.in`), verificando que las versiones coincidan con las declaradas en el informe (Django 4.2.11, DRF 3.15).
+2. Corrige el typo `avartars/` → `avatars/` en todo el proyecto (directorios, constantes, referencias en frontend y backend). Verifica que no rompa rutas ya usadas en producción; si hay datos existentes con la ruta vieja, incluye un plan de migración o alias temporal.
+3. Revisa el submódulo git `focussia_web/` que aparece vacío localmente. Determina si es necesario; si sí, corrige el `.gitmodules` y documenta el comando de inicialización (`git submodule update --init --recursive`) en el README. Si no es necesario, elimínalo.
+4. Verifica que exista un `.env.example` completo y actualizado con todas las variables usadas en el código (haz un grep de `os.environ` / `import.meta.env` y compáralo contra el archivo). No commitees el `.env` real.
+5. Confirma con un `git clone` limpio en un directorio temporal que el proyecto se instala y levanta sin pasos manuales no documentados.
+
+**Criterio de aceptación de la Fase 0:** `git clone` limpio + `pip install -r requirements.txt` + `npm install` funcionan sin intervención manual, y no queda ningún `avartars` en el código.
+
+---
+
+## FASE 1 — Desacoplar las llamadas a IA (crítico para escalabilidad)
+
+1. Introduce **Celery + Redis** en el backend Django:
+   - Configura Celery con Redis como broker y backend de resultados.
+   - Mueve las llamadas a Groq y Gemini del motor de 6 fases (phase1-check a phase5-tracker) a tasks asíncronas de Celery.
+   - Los endpoints REST que disparan estas fases deben devolver inmediatamente un `task_id` (202 Accepted) en lugar de bloquear esperando la respuesta de la IA.
+2. Implementa un mecanismo de notificación al frontend cuando la tarea termine: evalúa entre polling simple (endpoint `GET /tasks/<task_id>/status`) o WebSockets (Django Channels) si la latencia de polling no es aceptable para la UX actual. Si no hay un requisito fuerte de tiempo real, prioriza polling por simplicidad y menor superficie de fallo.
+3. Actualiza el cliente API del frontend (`src/services/api.ts`) para manejar el nuevo flujo asíncrono (mostrar estado "procesando" en la UI mientras se espera el resultado).
+4. Agrega manejo de errores y reintentos con backoff en las tasks de Celery para las llamadas a Groq/Gemini (timeouts, rate limits de las APIs externas, respuestas malformadas).
+5. Documenta en el README cómo levantar Redis y el worker de Celery en desarrollo local y en Railway (Procfile con proceso `worker` separado).
+
+**Criterio de aceptación de la Fase 1:** ninguna llamada a Groq/Gemini bloquea un worker HTTP de Django; se puede verificar con una prueba de carga simple que los endpoints de IA responden en <200ms independientemente de la latencia real de la IA.
+
+---
+
+## FASE 2 — Base de datos y conexiones
+
+1. Configura `CONN_MAX_AGE` en Django settings para reutilizar conexiones a PostgreSQL en lugar de abrir una nueva por request.
+2. Evalúa introducir **PgBouncer** delante de PostgreSQL si Railway lo soporta o si se detectan límites bajos de conexiones concurrentes en el plan actual.
+3. Revisa los 25+ modelos (User, KanbanTask, TimeBlock, MetaAnual, RuedaVida, Workspace, etc.) y agrega índices en los campos usados frecuentemente en filtros (especialmente `user_id`/`workspace_id` en KanbanTask y TimeBlock). Usa `django-silk` o `EXPLAIN ANALYZE` para detectar queries N+1 antes de indexar a ciegas.
+4. Verifica que las vistas usen `select_related`/`prefetch_related` donde corresponda para evitar N+1 queries.
+
+**Criterio de aceptación de la Fase 2:** las queries más frecuentes (dashboard, kanban, rueda de vida) tienen plan de ejecución con uso de índice, no de full scan.
+
+---
+
+## FASE 3 — Observabilidad (hazlo en paralelo a las fases anteriores, no al final)
+
+1. Integra **Sentry** (o alternativa open-source como GlitchTip si se prefiere evitar costos) tanto en el backend Django como en el frontend React, para captura de errores en producción.
+2. Agrega logging estructurado (JSON) en el backend para las tasks de Celery y los endpoints críticos (auth, IA).
+3. Configura un healthcheck endpoint (`/health/`) que verifique conexión a PostgreSQL y a Redis, para uso en Railway y en monitoreo externo.
+
+**Criterio de aceptación de la Fase 3:** un error no capturado en producción genera una alerta visible, no un silencio total.
+
+---
+
+## FASE 4 — Tests mínimos sobre flujos críticos
+
+1. Backend: escribe tests de integración (pytest-django o Django TestCase) para: autenticación (login/refresh/logout), permisos IDOR (`IsMineOrReadOnly`), CRUD de KanbanTask y TimeBlock, y el nuevo flujo asíncrono de IA (mockeando Groq/Gemini).
+2. Frontend: agrega tests (Vitest + Testing Library) para los componentes críticos del dashboard, priorizando los que se van a tocar en la Fase 5 (refactor).
+3. No busques cobertura total; prioriza los flujos que romperían la experiencia de usuario si fallan.
+
+**Criterio de aceptación de la Fase 4:** existe al menos un test por endpoint crítico y por componente crítico, y corren en CI (si no hay CI configurado, propón un GitHub Actions workflow mínimo).
+
+---
+
+## FASE 5 — Refactor y escalado horizontal (con margen, antes del mes 3)
+
+1. Divide `src/dashboard.tsx` (4077 líneas) en componentes independientes por dominio (Kanban, TimeBlock, RuedaVida, Gamificación, etc.), preservando el comportamiento actual. Hazlo incremental y verifica con los tests de la Fase 4 que no se rompe nada.
+2. Introduce caché con Redis (ya disponible desde la Fase 1) para endpoints de lectura frecuente (dashboard agregado, estado de gamificación).
+3. Prepara el backend para múltiples instancias (autoscaling en Railway o migración a un servicio que lo soporte): confirma que no hay estado en memoria local (sesiones, caché) que rompa con más de una instancia — todo debe vivir en Redis/PostgreSQL.
+4. Recalibra el rate limiting (actualmente 5/min login, 30/min anónimo) basándote en datos reales de uso si ya hay tráfico del mes 1, o en estimaciones conservadoras si aún no hay datos.
+
+**Criterio de aceptación de la Fase 5:** el backend puede correr en 2+ instancias simultáneas sin pérdida de sesión ni inconsistencia de datos.
+
+---
+
+## Reglas de trabajo para todas las fases
+
+- No toques la configuración de seguridad existente (JWT HttpOnly, CORS whitelist, CSP/HSTS, IsMineOrReadOnly) salvo que sea estrictamente necesario para una mejora, y en ese caso explica el motivo antes de aplicarlo.
+- Cada fase termina con commits atómicos y mensajes descriptivos en español o inglés (mantén el idioma consistente con el resto del historial del repo).
+- Si una tarea requiere una decisión de arquitectura con trade-offs relevantes (ej. polling vs WebSockets, PgBouncer vs solo `CONN_MAX_AGE`), preséntame las opciones con pros/contras antes de implementar, no decidas unilateralmente en temas de esa magnitud.
+- Al finalizar cada fase, genera un resumen breve de qué se hizo, qué se probó, y qué queda pendiente.
+
+Empieza por la **Fase 0** y avisa cuando esté lista para revisión antes de continuar con la Fase 1.
