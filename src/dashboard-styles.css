@@ -1,0 +1,110 @@
+/* Dashboard Styling - Integration from Design Prototype */
+
+/* Button Base Styles */
+.action-button {
+  @apply border-2 border-black px-4 py-1 text-xs font-bold uppercase;
+  @apply shadow-[2px_2px_0px_0px_rgba(0,0,0,1)];
+  @apply hover:translate-y-0.5 active:shadow-none transition-all;
+}
+
+.action-button.pink {
+  @apply bg-pink-100;
+}
+
+.action-button.blue {
+  @apply bg-blue-200;
+}
+
+.action-button.orange {
+  @apply bg-orange-50;
+}
+
+/* Card Styles */
+.dashboard-card {
+  @apply border-2 border-black p-2;
+  @apply bg-orange-50;
+}
+
+.dashboard-card-header {
+  @apply bg-black text-white text-[10px] p-1 text-center font-bold uppercase;
+}
+
+/* Grid Layout */
+.dashboard-grid {
+  @apply grid grid-cols-12 gap-4 h-[80vh];
+}
+
+.dashboard-column {
+  @apply flex flex-col gap-4;
+}
+
+/* Color Variants */
+.card-orange {
+  @apply bg-orange-50 border-2 border-black;
+}
+
+.card-orange-light {
+  @apply bg-orange-100 border-2 border-black;
+}
+
+.card-blue {
+  @apply bg-blue-50 border-2 border-black;
+}
+
+.card-pink {
+  @apply bg-pink-100 border-2 border-black;
+}
+
+/* Gradient Circle */
+.gradient-circle {
+  @apply rounded-full border-2 border-black bg-gradient-to-tr from-orange-400 via-pink-400 to-blue-400;
+}
+
+/* Table Styles */
+.dashboard-table {
+  @apply w-full text-[10px];
+}
+
+.dashboard-table thead {
+  @apply bg-blue-300 border-b-2 border-black;
+}
+
+.dashboard-table th,
+.dashboard-table td {
+  @apply border-black p-1;
+}
+
+/* Footer Navigation */
+.footer-button {
+  @apply bg-orange-50 border-2 border-black px-4 py-1 text-[10px] font-bold uppercase;
+  @apply cursor-pointer hover:bg-white transition-colors;
+  @apply shadow-[2px_2px_0px_0px_rgba(0,0,0,1)];
+}
+
+.footer-block {
+  @apply bg-blue-200 border-2 border-black p-2;
+  @apply shadow-[2px_2px_0px_0px_rgba(0,0,0,1)];
+}
+
+/* Text Styles */
+.text-tiny {
+  @apply text-[9px];
+}
+
+.text-small {
+  @apply text-[10px];
+}
+
+/* Animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.float {
+  animation: float 3s ease-in-out infinite;
+}
