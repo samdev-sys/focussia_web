@@ -1,0 +1,19 @@
+# Proxy TLS para producción (backend API).
+# El dominio se define con la variable de entorno API_DOMAIN al levantar el stack:
+#   docker compose -p focusia -f docker-compose.prod.yml -f docker-compose.proxy.yml up -d
+# Comentarios en {$VAR} los resuelve Caddy al arrancar. Caddy emite y renueva
+# los certificados por sí solo (Let's Encrypt), sin humansintheloop.
+
+{$API_DOMAIN} {
+	encode zstd gzip
+
+	# Reenvío al contenedor web de docker-compose.prod.yml (gunicorn)
+	reverse_proxy web:8000
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}

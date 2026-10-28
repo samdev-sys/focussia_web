@@ -1,0 +1,35 @@
+# Overlay VOLUNTARIO para el servidor de producción: agrega el proxy TLS.
+# No altera el stack local (localhost:8000 sigue respondiendo directo).
+#
+# Uso en el servidor:
+#   export API_DOMAIN=api.tu-dominio.com
+#   docker compose -p focusia \
+#     -f docker-compose.prod.yml -f docker-compose.proxy.yml up -d
+#
+# Solo luego de que el DNS del dominio apunte a este servidor: Caddy necesita
+# resolverse el dominio para emitir el certificado.
+
+services:
+  proxy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?Defina API_DOMAIN en el entorno}
+    depends_on:
+      web:
+        condition: service_healthy
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+volumes:
+  caddy_data:
+  caddy_config:
