@@ -1,8 +1,19 @@
-Django==4.2.11
-djangorestframework==3.15.1
-djangorestframework-simplejwt==5.3.1
+# Django 5.2 LTS: la rama 4.2 dejó de recibir parches de seguridad (última 4.2.30, abril 2026)
+# y tanto DRF 3.18.3 como django-q2 1.11.1 exigen Django>=5.2.
+Django==5.2.18
+djangorestframework==3.18.3
+djangorestframework-simplejwt==5.5.1
+# Parches de seguridad (pip-audit, oct-2026):
+#   PyJWT >=2.15.0 corrige PYSEC-2026-4140/4141/4147/4148/4183 y GHSA-pxh4-856f-4h89.
+#   sqlparse >=0.6.0 corrige PYSEC-2026-3696/3697/3698/3699/3923.
+PyJWT==2.15.0
+sqlparse==0.6.0
 django-cors-headers==4.3.1
-django-q2==1.10.0
-psycopg2-binary==2.9.9
+django-q2==1.11.1
+croniter==6.2.4
+psycopg[binary]
 gunicorn==22.0.0
 dj-database-url==3.1.2
+groq==1.5.0
+pywebpush>=2.4.0
+Pillow>=13.0.0

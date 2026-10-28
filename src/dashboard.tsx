@@ -1,31 +1,74 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
-  workspaceService, invitationService, delegationService, authService, notificationService, kanbanService, recordatorioService, ruedaService, timeBlockService, objetivoSemanaService, keepNotaService, misionHoyService, billService, matrixService, configuracionService,
-  InvitationData, DelegationData, NotificationData, WorkspaceData, WorkspaceMemberData, RuedaCategoria, ResumenRuedaDashboard, TimeBlockData, ObjetivoSemanaData, KeepNotaData, MisionHoyData, RecordatorioData, FacturaData, MatrixItemData, KanbanTaskData
+  workspaceService, invitationService, delegationService, authService, notificationService, kanbanService, recordatorioService, ruedaService, timeBlockService, objetivoSemanaService, keepNotaService, misionHoyService, matrixService, configuracionService, agentService, motivationalService,
+  InvitationData, DelegationData, NotificationData, WorkspaceData, WorkspaceMemberData, RuedaCategoria, ResumenRuedaDashboard, TimeBlockData, ObjetivoSemanaData, KeepNotaData, MisionHoyData, RecordatorioData, MatrixItemData, KanbanTaskData, api, monthlyService, progresoService, ProgresoData, granMetaAnualService, FocusiaReportData, DailyPhraseData, reportService,
+  horaOroService, HoraOroDia
 } from './services/api';
 import { AVATAR_FILES } from './constants/avatars';
 
 
 import { KanbanBoard } from './components/KanbanBoard';
 import { KanbanBacklog } from './components/KanbanBacklog';
+import FocusiaTourLauncher from './components/FocusiaTour';
 import { NotificationToast } from './components/NotificationToast';
 import { FormularioRueda } from './components/FormularioRueda';
 import DiagnosticoRueda from './components/DiagnosticoRueda';
 import MatrizEisenhower from './components/MatrizEisenhower';
 import { useReminderToasts } from './hooks/useReminderToasts';
 import { ActionButton } from './components/ActionButton';
-import { AiMissionAssistant } from './components/AiMissionAssistant';
+import CyberButton from './components/CyberButton';
+import CyberToggle from './components/CyberToggle';
+import CyberProgressBar from './components/CyberProgressBar';
+import AvatarGreeting from './components/AvatarGreeting';
+import WeeklyMissionWidget from './components/WeeklyMissionWidget';
+import FocusIAFeedback from './components/FocusIAFeedback';
+
+
 import { MetaAnualForm } from './components/MetaAnualForm';
-import { BuzonPropuestas } from './components/BuzonPropuestas';
+import { GranMetaAnualModal } from './components/GranMetaAnualModal';
+import MonthlyWizard from './components/MonthlyWizard';
+import AgendaDiaria from './components/AgendaDiaria';
+import MonthlyCalendar from './components/MonthlyCalendar';
+import KanbanModule, { KanbanVistaInicial } from './components/kanban/KanbanModule';
+import DelegarModule from './components/DelegarModule';
+import FloatingAssistant from './components/FloatingAssistant';
+import WeeklyPlanner from './components/WeeklyPlanner';
+import { PlanificarModal } from './components/PlanificarModal';
+
 import { MicroFlujoAjuste } from './components/MicroFlujoAjuste';
 import { ConfiguracionPanel } from './components/ConfiguracionPanel';
-import { PlanificarModal } from './components/PlanificarModal';
-import { X, Moon, Sun, LogOut, User, Plus, ArrowRight, Calendar, Edit3, Info, CheckCircle2, Play, ChevronRight, Target, TrendingUp, CalendarDays, CheckCircle, CreditCard, Landmark, Receipt, AlertCircle, CheckSquare, Pill, Clock, Edit, Check, Zap, Trophy, Star, Shield, Flame, Users, Settings, Mail, Copy, Crown, ShieldCheck, UserPlus, Trash2, Send, Briefcase, Bell, MessageSquare, Sparkles } from 'lucide-react';
+import ConfiguracionModule from './components/ConfiguracionModule';
+import type { Screen as ConfigScreen } from './components/ConfiguracionModule';
+import RedesSocialesScreen from './components/RedesSocialesScreen';
+import CuentasScreen from './components/CuentasScreen';
+import HoraDeOroScreen from './components/HoraDeOroScreen';
+import SuplementosScreen from './components/SuplementosScreen';
+import GratitudScreen from './components/GratitudScreen';
+import EditGoalWarningModal from './components/EditGoalWarningModal';
+import { ReportsListScreen } from './components/ReportsListScreen';
+import { ReportDetailScreen } from './components/ReportDetailScreen';
+import { ReportNotificationBanner } from './components/ReportNotificationBanner';
+import CoachingScreen from './components/CoachingScreen';
+import TribuScreen from './components/TribuScreen';
+import CursosScreen from './components/CursosScreen';
+import AnnualModuleView from './components/AnnualModuleView';
+
+import AgentSettings from './components/AgentSettings';
+import FocusModeScreen, { type FocusConfig, type FocusHerramienta } from './components/FocusModeScreen';
+import FocusWidget, {
+  type FocusSesionLocal, type FocusFinData, type FocusHerramientaSesion,
+  guardarSesionLocal, leerSesionLocal, guardarMinimizadoLocal, leerMinimizadoLocal,
+} from './components/FocusWidget';
+import { FocusModales } from './components/FocusWidget';
+import { focusService } from './services/api';
+
+import {   X, LogOut, User, Plus, ArrowRight, Calendar, Edit3, CheckCircle2, Play, ChevronRight, Target, TrendingUp, CalendarDays, CheckCircle, CreditCard, Landmark, Receipt, AlertCircle, CheckSquare, Pill, Clock, Edit, Check, Zap, Trophy, Star, Shield, Flame, Users, Settings, Mail, Copy, Crown, ShieldCheck, UserPlus, Trash2, Send, Briefcase, Bell, MessageSquare, Sparkles, RefreshCw, Lightbulb, RotateCcw, LayoutGrid, Upload, BarChart3, Bot, Loader2 } from 'lucide-react';
 
 
 interface DashboardProps {
   onLogout: () => void;
   onBackToHub?: () => void;
+  onShowOnboarding?: () => void;
 }
 interface FechasImportantesProps {
   dayActive?: number;
@@ -100,8 +143,23 @@ const getLevelFromXP = (xp: number): { level: number; currentXP: number; nextLev
 const espaciosVacios = [''];
   const diasMes = Array.from({ length: 30 }, (_, i) => i + 1);
 
+/** «hace 5 min», «ayer», «12 oct»… para la lista de notificaciones. */
+const fechaNotificacion = (iso: string): string => {
+  const fecha = new Date(iso);
+  if (Number.isNaN(fecha.getTime())) return '';
+  const minutos = Math.floor((Date.now() - fecha.getTime()) / 60000);
+  if (minutos < 1) return 'ahora';
+  if (minutos < 60) return `hace ${minutos} min`;
+  const horas = Math.floor(minutos / 60);
+  if (horas < 24) return `hace ${horas} h`;
+  const dias = Math.floor(horas / 24);
+  if (dias === 1) return 'ayer';
+  if (dias < 7) return `hace ${dias} días`;
+  return fecha.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+};
 
-const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
+
+const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnboarding }) => {
   const kanbanRef = useRef<HTMLDivElement>(null);
   const [ruedaCompleta, setRuedaCompleta] = useState<RuedaCategoria[]>([]);
   const [showDelegarModal, setShowDelegarModal] = useState(false);
@@ -111,25 +169,412 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
   const [showRuedaVideoModal, setShowRuedaVideoModal] = useState(false);
   const [showDiagnosticoRueda, setShowDiagnosticoRueda] = useState(false);
   const [resumenRueda, setResumenRueda] = useState<ResumenRuedaDashboard | null>(null);
+  const [selectedFocusArea, setSelectedFocusArea] = useState<string | null>(null);
   const [showMatrizEisenhower, setShowMatrizEisenhower] = useState(false);
   const [showMatrizVideoModal, setShowMatrizVideoModal] = useState(false);
   const [showMatrizFormModal, setShowMatrizFormModal] = useState(false);
   const handleGoKanban = () => {
     setShowMatrizEisenhower(false);
-    setTimeout(() => kanbanRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+    setShowKanbanModule(true);
+  };
+  // Sidebar del Coaching: cierra coaching y abre el destino directo.
+  const handleCoachingNavigate = async (section: string) => {
+    setShowCoaching(false);
+    switch (section) {
+      case 'inicio':
+      case 'coaching':
+      case 'mas':
+      case 'mision':
+      case 'gratitud':
+      case 'focus':
+      case 'cumple':
+        break;
+      case 'rueda':
+        setShowDiagnosticoRueda(true);
+        break;
+      case 'matriz':
+        setShowMatrizEisenhower(true);
+        break;
+      case 'anual':
+        setShowAnnualView(true);
+        break;
+      case 'mensual': {
+        try {
+          const status = await monthlyService.checkStatus();
+          if (status.status === 'APROBADA') setShowMonthlyCalendar(true);
+          else setShowMonthlyWizard(true);
+        } catch {
+          setShowMonthlyWizard(true);
+        }
+        break;
+      }
+      case 'kanban':
+        openKanban();
+        break;
+      case 'semanal':
+        openKanban('semanal');
+        break;
+      case 'diaria':
+        openKanban('diaria');
+        break;
+      case 'delegar':
+        setShowDelegarModule(true);
+        break;
+      case 'fechas':
+        setShowRecordatorioModal(true);
+        break;
+      case 'suplementos':
+        setShowSuplementosScreen(true);
+        break;
+      case 'hora-oro':
+        setShowHoraDeOro(true);
+        break;
+      case 'gratitud':
+        setShowGratitud(true);
+        break;
+      case 'tribu':
+        setShowTribu(true);
+        break;
+      case 'cursos':
+        setShowCursos(true);
+        break;
+      case 'redes':
+      case 'rrss':
+        handleOpenRrss();
+        break;
+      default:
+        break;
+    }
+  };
+  // Sidebar del módulo de Suplementos: cierra la pantalla y abre el destino.
+  const handleSuplementosNavigate = (section: string) => {
+    setShowSuplementosScreen(false);
+    if (section === 'coaching') { setShowCoaching(true); return; }
+    if (section === 'redes' || section === 'rrss') { handleOpenRrss(); return; }
+    if (['inicio', 'suplementos', 'mas', 'mision', 'focus', 'cumple'].includes(section)) return;
+    goSection(section);
+  };
+  // Sidebar del módulo Hora de Oro Familiar: cierra la pantalla y abre el destino.
+  const handleHoraOroNavigate = (section: string) => {
+    setShowHoraDeOro(false);
+    setHoraOroSlot(null);
+    setHoraOroKey(k => k + 1);
+    if (section === 'coaching') { setShowCoaching(true); return; }
+    if (section === 'redes' || section === 'rrss') { handleOpenRrss(); return; }
+    if (['inicio', 'hora-oro', 'mas', 'mision', 'focus', 'cumple'].includes(section)) return;
+    goSection(section);
+  };
+  // Sidebar del módulo Gratitud: cierra la pantalla y abre el destino.
+  const handleGratitudNavigate = (section: string) => {
+    setShowGratitud(false);
+    if (section === 'coaching') { setShowCoaching(true); return; }
+    if (section === 'redes' || section === 'rrss') { handleOpenRrss(); return; }
+    if (['inicio', 'gratitud', 'mas', 'mision', 'focus', 'cumple'].includes(section)) return;
+    goSection(section);
+  };
+  // ── Doc 23 · Modo Focus ────────────────────────────────────────────────
+  // Ciclo único para todas las herramientas: iniciar → widget flotante →
+  // finalización → registro automático. Solo una herramienta activa a la vez.
+  const iniciarFocusSesion = async (
+    herramienta: FocusHerramienta | FocusHerramientaSesion,
+    config: FocusConfig,
+    forzar = false,
+  ) => {
+    setFocusOcupado(true);
+    try {
+      const sesion = await focusService.iniciar({ herramienta, config, origin: 'dashboard', forzar });
+      const local: FocusSesionLocal = {
+        id: sesion.id,
+        herramienta,
+        config,
+        startedAtMs: new Date(sesion.started_at).getTime(),
+        planoMin: sesion.planned_minutes,
+        pausedAt: null,
+        pausedAccum: 0,
+      };
+      setFocusSesion(local);
+      guardarSesionLocal(local);
+      guardarMinimizadoLocal(false);
+      setFocusMinimizado(false);
+      setFocusGuardNueva(null);
+      setFocusFin(null);
+      setFocusConfirmCerrar(false);
+      setShowFocusScreen(false);
+    } catch (e) {
+      const status = (e as { response?: { status?: number } }).response?.status;
+      if (status === 409) {
+        // Ya existe una sesión de enfoque en ejecución (Doc 23 §III).
+        setShowFocusScreen(false);
+        setFocusGuardNueva({ herramienta, config });
+      } else {
+        console.error('No se pudo iniciar la sesión de Focus', e);
+      }
+    } finally {
+      setFocusOcupado(false);
+    }
+  };
+
+  const cerrarSesionFocus = async (completada: boolean, minutosEnfocado?: number) => {
+    const actual = focusSesion;
+    if (!actual) return;
+    setFocusOcupado(true);
+    try {
+      if (actual.id) {
+        await focusService.finalizar(actual.id, {
+          completada,
+          ...(minutosEnfocado !== undefined ? { minutos_enfocado: minutosEnfocado } : {}),
+        });
+      }
+    } catch (e) {
+      console.error('No se pudo registrar el cierre de la sesión de Focus', e);
+    } finally {
+      setFocusOcupado(false);
+    }
+    setFocusSesion(null);
+    setFocusConfirmCerrar(false);
+    guardarSesionLocal(null);
+  };
+
+  // Fin natural (cuenta en cero / alarma / fin de ciclos): registrar y celebrar.
+  const finalizoFocusNatural = async (minutosEnfocado: number) => {
+    const actual = focusSesion;
+    if (!actual) return;
+    setFocusSesion(null);
+    guardarSesionLocal(null);
+    setFocusFin({ herramienta: actual.herramienta, minutos: minutosEnfocado, hora: actual.config.hora });
+    if (actual.id) {
+      try { await focusService.finalizar(actual.id, { completada: true, minutos_enfocado: minutosEnfocado }); }
+      catch (e) { console.error('No se pudo registrar la sesión de Focus', e); }
+    }
+  };
+
+  // Restaurar la sesión en curso tras recargar la página (mismo dispositivo).
+  useEffect(() => {
+    let vivo = true;
+    focusService.activa().then(({ activa, sesion }) => {
+      if (!vivo) return;
+      const local = leerSesionLocal();
+      if (activa && sesion) {
+        const restaurada: FocusSesionLocal = {
+          id: sesion.id,
+          herramienta: sesion.herramienta,
+          config: sesion.config || {},
+          startedAtMs: new Date(sesion.started_at).getTime(),
+          planoMin: sesion.planned_minutes,
+          pausedAt: local?.pausedAt ?? null,
+          pausedAccum: local?.pausedAccum || 0,
+        };
+        setFocusSesion(restaurada);
+        guardarSesionLocal(restaurada);
+        setFocusMinimizado(leerMinimizadoLocal());
+      } else if (local) {
+        setFocusSesion(local);
+        setFocusMinimizado(leerMinimizadoLocal());
+      }
+    }).catch(() => {
+      const local = leerSesionLocal();
+      if (local) { setFocusSesion(local); setFocusMinimizado(leerMinimizadoLocal()); }
+    });
+    return () => { vivo = false; };
+  }, []);
+
+  const handleFocusNavigate = (section: string) => {
+    setShowFocusScreen(false);
+    if (section === 'coaching') { setShowCoaching(true); return; }
+    if (section === 'redes' || section === 'rrss') { handleOpenRrss(); return; }
+    if (['inicio', 'focus', 'mas', 'mision', 'cumple'].includes(section)) return;
+    goSection(section);
+  };
+
+  // El widget actualiza la sesión (pausa/reinicio) y se persiste en el dispositivo.
+  const actualizarFocusSesion = (s: FocusSesionLocal) => {
+    setFocusSesion(s);
+    guardarSesionLocal(s);
+  };
+  // Destino único para sidebars de módulos: abre la pantalla pedida.
+  const goSection = async (section: string) => {
+    switch (section) {
+      case 'rueda':
+        setShowDiagnosticoRueda(true);
+        break;
+      case 'matriz':
+        setShowMatrizEisenhower(true);
+        break;
+      case 'anual':
+        setShowAnnualView(true);
+        break;
+      case 'mensual': {
+        try {
+          const status = await monthlyService.checkStatus();
+          if (status.status === 'APROBADA') setShowMonthlyCalendar(true);
+          else setShowMonthlyWizard(true);
+        } catch {
+          setShowMonthlyWizard(true);
+        }
+        break;
+      }
+      case 'kanban':
+        openKanban();
+        break;
+      case 'semanal':
+        openKanban('semanal');
+        break;
+      case 'diaria':
+        openKanban('diaria');
+        break;
+      case 'delegar':
+        setShowDelegarModule(true);
+        break;
+      case 'fechas':
+        setShowRecordatorioModal(true);
+        break;
+      case 'suplementos':
+        setShowSuplementosScreen(true);
+        break;
+      case 'focus':
+        setShowFocusScreen(true);
+        break;
+      case 'hora-oro':
+        setShowHoraDeOro(true);
+        break;
+      case 'tribu':
+        setShowTribu(true);
+        break;
+      case 'cursos':
+        setShowCursos(true);
+        break;
+      case 'coaching':
+        setShowCoaching(true);
+        break;
+      case 'redes':
+      case 'rrss':
+        handleOpenRrss();
+        break;
+      default:
+        break;
+    }
+  };
+  // Sidebar del módulo mensual: cierra el mensual y abre el destino.
+  const handleMonthlyNavigate = (key: string) => {
+    setShowMonthlyWizard(false);
+    setShowMonthlyCalendar(false);
+    switch (key) {
+      case 'inicio':
+      case 'mensual':
+        break;
+      case 'rueda':
+        setShowDiagnosticoRueda(true);
+        break;
+      case 'matriz':
+        setShowMatrizEisenhower(true);
+        break;
+      case 'anual':
+        setShowAnnualView(true);
+        break;
+      case 'kanban':
+        openKanban();
+        break;
+      case 'semanal':
+        openKanban('semanal');
+        break;
+      case 'diaria':
+        openKanban('diaria');
+        break;
+      case 'delegar':
+        setShowDelegarModule(true);
+        break;
+      case 'fechas':
+        setShowRecordatorioModal(true);
+        break;
+      case 'suplementos':
+        setShowSuplementosScreen(true);
+        break;
+      case 'hora-oro':
+        setShowHoraDeOro(true);
+        break;
+      case 'tribu':
+        setShowTribu(true);
+        break;
+      case 'cuentas':
+        setShowBillModal(true);
+        break;
+      case 'cursos':
+        setShowCursos(true);
+        break;
+      case 'coaching':
+        setShowCoaching(true);
+        break;
+      case 'redes':
+      case 'rrss':
+        handleOpenRrss();
+        break;
+      default:
+        break;
+    }
+  };
+  // Módulo Redes Sociales (doc 16 + pantalla digitalizada): abre la pantalla
+  // completa; si no hay redes configuradas, baja directo a la configuración.
+  const handleOpenRrss = async () => {
+    try {
+      const config = await configuracionService.getMiConfig().catch(() => null);
+      const links = (config?.redes_sociales || {}) as Record<string, string>;
+      setRedesLinks(links);
+      const hay = Object.values(links).some(v => (v || '').trim() !== '');
+      setRedesIrAConfig(!hay);
+      setShowRedes(true);
+    } catch {
+      setRedesIrAConfig(true);
+      setShowRedes(true);
+    }
   };
   const [showMetaAnualModal, setShowMetaAnualModal] = useState(false);
   const [showMetaMensualModal, setShowMetaMensualModal] = useState(false);
+  const [showMonthlyWizard, setShowMonthlyWizard] = useState(false);
+  const [showMonthlyCalendar, setShowMonthlyCalendar] = useState(false);
+  const [showKanbanModule, setShowKanbanModule] = useState(false);
+  const [kanbanVistaInicial, setKanbanVistaInicial] = useState<KanbanVistaInicial | undefined>(undefined);
+  const openKanban = (vista?: KanbanVistaInicial) => {
+    setKanbanVistaInicial(vista);
+    setShowKanbanModule(true);
+  };
+  const [showDelegarModule, setShowDelegarModule] = useState(false);
   const [showMetaSemanalModal, setShowMetaSemanalModal] = useState(false);
+  const [showWeeklyPlanner, setShowWeeklyPlanner] = useState(false);
+  const [showPlanRapido, setShowPlanRapido] = useState(false);
   const [showMetaDiariaModal, setShowMetaDiariaModal] = useState(false);
   const [showMetaAnualForm, setShowMetaAnualForm] = useState(false);
+  const [showGranMetaAnual, setShowGranMetaAnual] = useState(false);
+  const [editGranMetaMode, setEditGranMetaMode] = useState(false);
+  const [existingGranMeta, setExistingGranMeta] = useState<any>(null);
+  const [showEditGoalWarning, setShowEditGoalWarning] = useState(false);
+  const [showAnnualView, setShowAnnualView] = useState(false);
   const [showBuzonPropuestas, setShowBuzonPropuestas] = useState(false);
   const [showConfigPanel, setShowConfigPanel] = useState(false);
+  const [configPantalla, setConfigPantalla] = useState<ConfigScreen>('menu');
+  const [showRedes, setShowRedes] = useState(false);
+  const [redesIrAConfig, setRedesIrAConfig] = useState(false);
+  const [redesLinks, setRedesLinks] = useState<Record<string, string>>({});
+  const [showReportsList, setShowReportsList] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<FocusiaReportData | null>(null);
+  const [showCoaching, setShowCoaching] = useState(false);
+  const [showTribu, setShowTribu] = useState(false);
+  const [showCursos, setShowCursos] = useState(false);
   const [showMicroFlujo, setShowMicroFlujo] = useState(false);
   const [microFlujoPropuesta, setMicroFlujoPropuesta] = useState<any>(null);
-  const [showMedicamentosModal, setShowMedicamentosModal] = useState(false);
-  const [showInicioModal, setShowInicioModal] = useState(false);
+  const [showSuplementosScreen, setShowSuplementosScreen] = useState(false);
+  const [showHoraDeOro, setShowHoraDeOro] = useState(false);
+  const [showGratitud, setShowGratitud] = useState(false);
+  const [horaOroSlot, setHoraOroSlot] = useState<{ dia: string; posicion: number } | null>(null);
+  const [horaOroKey, setHoraOroKey] = useState(0);
   const [showBillModal, setShowBillModal] = useState(false);
+  // Doc 23 · Modo Focus: pantalla, sesión activa (widget flotante) y modales.
+  const [showFocusScreen, setShowFocusScreen] = useState(false);
+  const [focusSesion, setFocusSesion] = useState<FocusSesionLocal | null>(null);
+  const [focusMinimizado, setFocusMinimizado] = useState(false);
+  const [focusConfirmCerrar, setFocusConfirmCerrar] = useState(false);
+  const [focusGuardNueva, setFocusGuardNueva] = useState<{ herramienta: FocusHerramientaSesion; config: FocusConfig } | null>(null);
+  const [focusFin, setFocusFin] = useState<FocusFinData | null>(null);
+  const [focusOcupado, setFocusOcupado] = useState(false);
   const [showWorkspaceSelector, setShowWorkspaceSelector] = useState(false);
   const [showCreateWorkspaceModal, setShowCreateWorkspaceModal] = useState(false);
   const [showWorkspaceSettingsModal, setShowWorkspaceSettingsModal] = useState(false);
@@ -145,26 +590,115 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
   const [inviteLink, setInviteLink] = useState('');
   const [showInviteLink, setShowInviteLink] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
-
-  const phrases = useMemo(
-    () => [
-      'Empieza el día con foco y energía.',
-      'Prioriza lo importante y avanza con calma.',
-      'Tus metas de hoy construyen tu éxito de mañana.',
-      'Organiza, ejecuta y celebra cada pequeño logro.',
-      'Haz de tu jornada una cadena de acciones significativas.'
-    ],
-    []
-  );
+  // Doc 25.1 §11: la frase bajo el logo sale de la Tabla Maestra según el
+  // ciclo personal (Mes/Día del programa). Si la consulta falla se muestra este
+  // respaldo fijo: una frase que cambia cada pocos segundos no puede ser «la
+  // frase del día» y confunde.
+  const fraseRespaldo = 'Empieza el día con foco y energía.';
+  const [dailyPhrase, setDailyPhrase] = useState<DailyPhraseData | null>(null);
 
   useEffect(() => {
-    const intervalId = setInterval(() => {
-      setCurrentPhraseIndex((prevIndex) => (prevIndex + 1) % phrases.length);
-    }, 8000);
+    motivationalService.getToday()
+      .then(setDailyPhrase)
+      .catch(() => setDailyPhrase(null));
+  }, []);
 
-    return () => clearInterval(intervalId);
-  }, [phrases.length]);
+  const objetivoAnimRef = useRef<number>(0);
+
+  useEffect(() => {
+    const canvas = objetivoCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const resizeCanvas = () => {
+      const parent = canvas.parentElement;
+      if (parent) {
+        canvas.width = parent.clientWidth;
+        canvas.height = parent.clientHeight;
+      }
+    };
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    const COLORS = ['#4285F4', '#EA4335', '#FBBC05', '#3c4043'];
+    const PARTICLE_COUNT = 25;
+    const particles: {
+      x: number; y: number; vx: number; vy: number;
+      radius: number; color: string; phase: number;
+    }[] = [];
+
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3,
+        radius: 1.5 + Math.random() * 2.5,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        phase: Math.random() * Math.PI * 2,
+      });
+    }
+
+    let mouseTarget = { x: canvas.width / 2, y: canvas.height / 2 };
+    let mouseSmooth = { x: canvas.width / 2, y: canvas.height / 2 };
+
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (objetivoMouseRef.current) {
+        mouseTarget.x = objetivoMouseRef.current.x;
+        mouseTarget.y = objetivoMouseRef.current.y;
+      }
+      mouseSmooth.x += (mouseTarget.x - mouseSmooth.x) * 0.08;
+      mouseSmooth.y += (mouseTarget.y - mouseSmooth.y) * 0.08;
+
+      const time = Date.now() * 0.001;
+
+      for (const p of particles) {
+        const dx = p.x - mouseSmooth.x;
+        const dy = p.y - mouseSmooth.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const maxDist = 120;
+
+        if (dist < maxDist && dist > 0.1) {
+          const force = (1 - dist / maxDist) * 0.6;
+          p.vx += (dx / dist) * force;
+          p.vy += (dy / dist) * force;
+        }
+
+        p.vx += Math.sin(time * 0.5 + p.phase) * 0.02;
+        p.vy += Math.cos(time * 0.7 + p.phase) * 0.02;
+
+        p.vx *= 0.98;
+        p.vy *= 0.98;
+
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < -p.radius) p.x = canvas.width + p.radius;
+        if (p.x > canvas.width + p.radius) p.x = -p.radius;
+        if (p.y < -p.radius) p.y = canvas.height + p.radius;
+        if (p.y > canvas.height + p.radius) p.y = -p.radius;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = 0.7 + Math.sin(time + p.phase) * 0.2;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+
+      objetivoAnimRef.current = requestAnimationFrame(animate);
+    };
+    objetivoAnimRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      cancelAnimationFrame(objetivoAnimRef.current);
+      window.removeEventListener('resize', resizeCanvas);
+    };
+  }, []);
+
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const [showUserSettingsModal, setShowUserSettingsModal] = useState(false);
   const [showDelegationModal, setShowDelegationModal] = useState(false);
@@ -175,36 +709,30 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
   const [delegations, setDelegations] = useState<{ sent: DelegationData[]; received: DelegationData[] }>({ sent: [], received: [] });
   const [delegationTab, setDelegationTab] = useState<'create' | 'received'>('create');
   const [showAccionesDelegarModal, setShowAccionesDelegarModal] = useState(false);
-  const [taskToPlanificar, setTaskToPlanificar] = useState<KanbanTaskData | null>(null);
+  const [editingDelegarId, setEditingDelegarId] = useState<number | null>(null);
+  const [editDelegarText, setEditDelegarText] = useState('');
 
-  const [userData, setUserData] = useState({ username: 'Brenda', email: '', avatar_url: '', avatar_index: 0 });
+  const [userData, setUserData] = useState({ username: 'Brenda', email: '', avatar_url: '', avatar_index: 0, voz_genero: '' as string });
   const [newAvatarUrl, setNewAvatarUrl] = useState('');
   const [newUsername, setNewUsername] = useState('');
-  const [medicamentos, setMedicamentos] = useState<Array<{
-
-    id: number;
-    nombre: string;
-    hora: string;
-    dosis: number;
-    completado: boolean;
-  }>>([
-    { id: 1, nombre: 'Vitamina D', hora: '08:00', dosis: 1, completado: false },
-    { id: 2, nombre: 'Omeprazol', hora: '20:00', dosis: 1, completado: false },
-  ]);
-  const [nuevoMedicamento, setNuevoMedicamento] = useState({ nombre: '', hora: '08:00', dosis: 1 });
-  const [editandoMedicamento, setEditandoMedicamento] = useState<number | null>(null);
-  const [facturas, setFacturas] = useState<FacturaData[]>([]);
+  const objetivoCardRef = useRef<HTMLDivElement>(null);
+  const objetivoCanvasRef = useRef<HTMLCanvasElement>(null);
+  const objetivoMouseRef = useRef<{ x: number; y: number } | null>(null);
+  const [objetivoGradientPos, setObjetivoGradientPos] = useState({ x: 50, y: 50, show: false });
   const [matrixItems, setMatrixItems] = useState<MatrixItemData[]>([]);
   const [savedRecordatorios, setSavedRecordatorios] = useState<RecordatorioData[]>([]);
   const [editingRecordatorio, setEditingRecordatorio] = useState<RecordatorioData | null>(null);
   const [fechasDayActive, setFechasDayActive] = useState<number>(16);
-  const [showAiMissionModal, setShowAiMissionModal] = useState(false);
-  const [selectedMissionText, setSelectedMissionText] = useState<string | null>(null);
+
+  const [showAgentSettings, setShowAgentSettings] = useState(false);
+  const [showFocusIAFeedback, setShowFocusIAFeedback] = useState(true);
   const [timeBlocks, setTimeBlocks] = useState<TimeBlockData[]>([]);
   const [objetivo, setObjetivo] = useState<ObjetivoSemanaData | null>(null);
   const [keepNota, setKeepNota] = useState<KeepNotaData | null>(null);
+  const [missionPhotoUrl, setMissionPhotoUrl] = useState<string>('');
   const [misionHoy, setMisionHoy] = useState<MisionHoyData | null>(null);
   const [kanbanTasks, setKanbanTasks] = useState<KanbanTaskData[]>([]);
+  const [progreso, setProgreso] = useState<ProgresoData | null>(null);
 
   const todayStr = new Date().toISOString().split('T')[0];
   const [tbError, setTbError] = useState<string | null>(null);
@@ -266,6 +794,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [levelUpData, setLevelUpData] = useState({ level: 0, newBadge: null as typeof BADGES[0] | null });
   const [xpPopUp, setXpPopUp] = useState<{ amount: number; message: string } | null>(null);
+  const [showGreeting, setShowGreeting] = useState(true);
 
   const addXP = (amount: number, reason: string, badgeCondition?: (stats: any, level: number) => boolean) => {
     const newXP = xpStats.totalXP + amount;
@@ -327,6 +856,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
     'Beber 2 litros de agua',
     'Revisar pendientes del día'
   ]);
+  const [accionesClasificadas, setAccionesClasificadas] = useState<any[]>([]);
+  const [hasGranMetaActiva, setHasGranMetaActiva] = useState(false);
   const [editingMetaIndex, setEditingMetaIndex] = useState<number | null>(null);
   const [editingMetaType, setEditingMetaType] = useState<string | null>(null);
   const [newMetaText, setNewMetaText] = useState('');
@@ -415,11 +946,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
 
 
   useEffect(() => {
+    // Sin internet no se intenta geocodificar (evita el error en consola).
+    if (typeof navigator !== 'undefined' && 'onLine' in navigator && !navigator.onLine) {
+      setClima((prev: typeof clima) => ({ ...prev, loading: false, error: 'Sin conexión' }));
+      return;
+    }
+    const controller = new AbortController();
     const fetchClima = async (lat: number, lon: number) => {
       try {
         // Reverse geocoding con Nominatim
         const geoRes = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=es`
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=es`,
+          { signal: controller.signal }
         );
         const geoData = await geoRes.json();
         const lugar =
@@ -432,7 +970,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
 
         // Clima con Open-Meteo (sin API key)
         const weatherRes = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code&timezone=auto`
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code&timezone=auto`,
+          { signal: controller.signal }
         );
         const weatherData = await weatherRes.json();
         const c = weatherData.current;
@@ -461,6 +1000,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
     } else {
       setClima((prev: typeof clima) => ({ ...prev, loading: false, error: 'No disponible' }));
     }
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
@@ -650,23 +1190,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
     fetchSavedRecordatorios();
   }, [fetchSavedRecordatorios]);
 
-  const medicamentosFromBackend = useMemo(() =>
-    savedRecordatorios.filter(r => r.categoria === 'Medicamento'),
-    [savedRecordatorios]
-  );
-
+  // Lo creado por voz (recordatorios, planificación, backlog) aparece sin recargar.
   useEffect(() => {
-    const fromBackend = medicamentosFromBackend.map(r => ({
-      id: r.id,
-      nombre: r.titulo,
-      hora: new Date(r.fecha_hora).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false }),
-      dosis: 1,
-      completado: r.tomado,
-    }));
-    if (fromBackend.length > 0) {
-      setMedicamentos(fromBackend);
-    }
-  }, [medicamentosFromBackend]);
+    const alActualizar = () => {
+      fetchSavedRecordatorios();
+      refreshTimeBlocks();
+      refreshAccionesClasificadas();
+      refreshKanbanTasks();
+    };
+    window.addEventListener('focusia:datos-actualizados', alActualizar);
+    return () => window.removeEventListener('focusia:datos-actualizados', alActualizar);
+  }, [fetchSavedRecordatorios]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -682,9 +1216,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
           email: data.email,
           avatar_url: resolvedAvatar,
           avatar_index: avatarIdx,
+          voz_genero: config.voz_genero || '',
         });
         setNewUsername(data.username);
         setNewAvatarUrl(resolvedAvatar);
+        if (config.mission_photo_url) setMissionPhotoUrl(config.mission_photo_url);
       } catch (err) {
         console.error('Error fetching user data:', err);
       }
@@ -701,11 +1237,42 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
     }
   };
 
+  const noLeidas = notifications.filter((n) => !n.is_read).length;
+
+  const abrirNotificaciones = async () => {
+    const abrir = !showNotifications;
+    setShowNotifications(abrir);
+    if (!abrir) return;
+    // Al abrir el panel se marcan como leídas: el contador de la campana es de
+    // no leídas y si no, nunca bajaría.
+    await fetchNotifications();
+    try {
+      await notificationService.marcarTodasLeidas();
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    } catch {
+      /* si falla, se reintenta en la próxima apertura */
+    }
+  };
+
   useEffect(() => {
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 60000); // 1 min
     return () => clearInterval(interval);
   }, []);
+
+  // Doc 27 §3.5: la notificación del reporte abre ese reporte específico.
+  const abrirNotificacion = async (n: NotificationData) => {
+    const reportId = n.data?.report_id;
+    if (n.type !== 'report' || !reportId) return;
+    try {
+      const report = await reportService.getDetail(Number(reportId));
+      setSelectedReport(report);
+      setShowReportsList(false);
+      setShowNotifications(false);
+    } catch {
+      /* el reporte puede haberse eliminado; se mantiene la campana */
+    }
+  };
 
   const handleUpdateProfile = async () => {
 
@@ -717,12 +1284,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
       const avatarIdx = Object.entries(AVATAR_FILES).find(([_, path]) => path === newAvatarUrl)?.[0];
       if (avatarIdx) {
         await configuracionService.updateMiConfig({ avatar_index: parseInt(avatarIdx) } as any);
+      } else {
+        await configuracionService.updateMiConfig({ avatar_index: 0 } as any);
       }
       setUserData({
         ...userData,
         username: updated.username,
         avatar_url: updated.avatar_url || `//api/?name=${updated.username}&background=f4d2d2&color=000`,
-        avatar_index: avatarIdx ? parseInt(avatarIdx) : userData.avatar_index,
+        avatar_index: avatarIdx ? parseInt(avatarIdx) : 0,
       });
       setShowUserSettingsModal(false);
       addXP(50, 'Perfil actualizado');
@@ -745,16 +1314,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [ruedaCompletaRes, tbRes, objRes, keepRes, misRes, factRes, matrixRes, kanbanRes, resumenRuedaRes] = await Promise.all([
+        const [ruedaCompletaRes, tbRes, objRes, keepRes, misRes, matrixRes, kanbanRes, resumenRuedaRes, classifiedRes] = await Promise.all([
           ruedaService.getCompleta().catch(() => []),
           timeBlockService.getAll().catch(() => []),
           objetivoSemanaService.get().catch(() => null),
           keepNotaService.get().catch(() => null),
           misionHoyService.get().catch(() => null),
-          billService.getAll().catch(() => []),
           matrixService.getAll().catch(() => []),
           kanbanService.getAll().catch(() => []),
-          ruedaService.resumenDashboard().catch(() => null)
+          ruedaService.resumenDashboard().catch(() => null),
+          api.get('/api/acciones-kanban/clasificadas/').catch(() => ({ data: [] }))
         ]);
 
         setRuedaCompleta(ruedaCompletaRes);
@@ -763,9 +1332,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
         setObjetivo(Array.isArray(objRes) ? objRes[0] : objRes);
         setKeepNota(Array.isArray(keepRes) ? keepRes[0] : keepRes);
         setMisionHoy(Array.isArray(misRes) ? misRes[0] : misRes);
-        setFacturas(Array.isArray(factRes) ? factRes : []);
         setMatrixItems(Array.isArray(matrixRes) ? matrixRes : []);
         setKanbanTasks(Array.isArray(kanbanRes) ? kanbanRes : []);
+        setAccionesClasificadas(Array.isArray(classifiedRes?.data) ? classifiedRes.data : []);
+
+        const progRes = await progresoService.get().catch(() => null);
+        setProgreso(progRes);
+
+        const granMetaRes = await api.get('/api/gran-meta-anual/').catch(() => ({ data: [] }));
+        const granMetaActiva = Array.isArray(granMetaRes.data)
+          ? granMetaRes.data.some((m: any) => m.is_active && m.status === 'APROBADA')
+          : false;
+        setHasGranMetaActiva(granMetaActiva);
 
       } catch (error) {
         console.error("Error fetching initial data:", error);
@@ -774,12 +1352,36 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
     fetchData();
   }, []);
 
+  const refreshProgreso = async () => {
+    const res = await progresoService.get().catch(() => null);
+    setProgreso(res);
+  };
+
+  const refreshTimeBlocks = async () => {
+    try {
+      const data = await timeBlockService.getAll().catch(() => []);
+      setTimeBlocks(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error refreshing time blocks:', err);
+    }
+  };
+
   const refreshKanbanTasks = async () => {
     try {
       const data = await kanbanService.getAll();
       setKanbanTasks(Array.isArray(data) ? data : []);
+      await refreshProgreso();
     } catch (err) {
       console.error('Error refreshing kanban tasks:', err);
+    }
+  };
+
+  const refreshAccionesClasificadas = async () => {
+    try {
+      const res = await api.get('/api/acciones-kanban/clasificadas/');
+      setAccionesClasificadas(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error('Error refreshing classified actions:', err);
     }
   };
 
@@ -853,6 +1455,35 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
     }
   };
 
+  const handleObjetivoMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setObjetivoGradientPos(prev => ({ ...prev, x, y }));
+    if (objetivoCardRef.current) {
+      const rotX = ((y - 50) / 50) * -10;
+      const rotY = ((x - 50) / 50) * 10;
+      objetivoCardRef.current.style.transform = `perspective(500px) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+      objetivoCardRef.current.style.transition = 'transform 0.05s ease-out';
+    }
+    if (objetivoCanvasRef.current) {
+      const canvasRect = objetivoCanvasRef.current.getBoundingClientRect();
+      objetivoMouseRef.current = {
+        x: e.clientX - canvasRect.left,
+        y: e.clientY - canvasRect.top,
+      };
+    }
+  };
+
+  const handleObjetivoMouseLeave = () => {
+    setObjetivoGradientPos(prev => ({ ...prev, show: false }));
+    objetivoMouseRef.current = null;
+    if (objetivoCardRef.current) {
+      objetivoCardRef.current.style.transform = 'perspective(500px) rotateX(0deg) rotateY(0deg)';
+      objetivoCardRef.current.style.transition = 'transform 0.4s ease-out';
+    }
+  };
+
   const handleKeepNotaBlur = async (e: React.FocusEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
     if (keepNota && keepNota.contenido === val) return;
@@ -896,10 +1527,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
   const defaultHours = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
 
   return (
-    <div className="min-h-screen bg-[#e8eef2] bg-cover bg-center bg-no-repeat bg-blend-soft-light text-[#2d2f33] font-sans flex flex-col items-center py-4 px-2 sm:py-6 sm:px-4 relative overflow-auto">
+    <div className="min-h-screen bg-[#eef1f6] bg-cover bg-center bg-no-repeat bg-blend-soft-light text-[#2d2f33] font-montserrat flex flex-col items-center pt-1 pb-4 px-2 sm:pt-1 sm:pb-6 sm:px-4 relative overflow-auto">
       {/* Indicador de Auto-guardado global */}
       {savingStatus && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-black/70 text-white px-4 py-1.5 rounded-full shadow-lg text-xs font-bold z-50 animate-bounce">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-black/70 text-white px-4 py-1.5 rounded-full shadow-lg text-xs  z-50 animate-bounce">
           {savingStatus}
         </div>
       )}
@@ -910,45 +1541,32 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
       <div className="fixed bottom-[10%] right-[10%] w-[35%] h-[35%] bg-yellow-100/30 rounded-full mix-blend-multiply filter blur-[100px] opacity-70 z-0 pointer-events-none"></div>
 
       {/* TOP HEADER */}
-      <header className="w-full max-w-[1240px] flex items-center justify-between mb-4 z-50 relative px-4 text-gray-600 mx-auto">
+      <header className="w-full max-w-[1240px] flex items-center justify-between mb-1 z-50 relative px-4 text-gray-600 mx-auto">
 
-        {/* LEFT SECTION: Modo Oscuro y Notificaciones */}
        
-        {/* CENTER SECTION: Logo Ancla Visual */}
-       
-
-        {/* RIGHT SECTION: Workspace y Usuario */}
-        
       </header>
       {/* MAIN CONTENT AREA */}
-      <main className="w-full max-w-[1240px] bg-white/25 backdrop-blur-3xl border border-white/50 shadow-[0_4px_30px_rgba(0,0,0,0.05)] rounded-[3.5rem] p-8 z-10 flex flex-col xl:flex-row gap-5">
+      <div className="w-full max-w-[1500px] z-10 grid grid-cols-1 xl:grid-cols-[230px_minmax(0,260px)_minmax(0,1fr)_minmax(0,260px)_200px] gap-4 items-start [&>*]:min-w-0">
 
-      <div className="absolute left-1/2 -top-1 -translate-x-1/2 pointer-events-none -ml-6 mt-7">
-          <img
-            src="/focusia-logo.png"
-            alt="Focusia"
-            className="h-10 md:h-12 object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.1)] pointer-events-auto hover:scale-110 transition-transform duration-300"
-          />
-        </div> 
+      <div className="xl:col-start-2 xl:col-end-5 xl:row-start-1 flex justify-center items-center py-1 mt-10">
+          <img src="./focusia-logo.png" alt="Focusia Logo" className="h-[64px] w-[64px]" />
+      </div>
 
-
-
-
-      <div className="absolute top-6 right-8 flex items-center gap-2 sm:gap-4 z-20">
+      <div className="xl:col-start-5 xl:row-start-1 flex items-center justify-end gap-2 sm:gap-4 z-20 mt-12">
     
    
 
     {/* User Menu */}
     <div className="relative">
-      <button
+      <CyberButton
         onClick={() => setShowUserMenu(!showUserMenu)}
-        className="flex items-center gap-1.5 bg-white/40 backdrop-blur-md rounded-full px-3 py-1.5 hover:bg-white/60 transition-colors shadow-sm active:scale-95"
+        className="flex items-center gap-1.5 bg-[#0a0a0f] bg-opacity-80 backdrop-blur-md rounded-full px-3 py-1.5 hover:bg-[#0a0a0f] hover:bg-opacity-60 transition-colors shadow-sm active:scale-95 border border-white/5"
       >
-        <div className="w-7 h-7 rounded-full overflow-hidden shadow-sm border-2 border-white">
-          <img src={userData.avatar_url} alt="profile" className="w-full h-full object-cover" />
+        <div className="w-7 h-7 rounded-full overflow-hidden shadow-sm border-2 border-white/30">
+          <img src={userData.avatar_url || undefined} alt="profile" className="w-full h-full object-cover" />
         </div>
-        <span className="font-bold text-xs text-gray-800 hidden sm:block">{userData.username}</span>
-      </button>
+        <span className="font-bold text-xs text-white/80 hidden sm:block">{userData.username}</span>
+      </CyberButton>
 
       {/* Dropdown Usuario */}
       {showUserMenu && (
@@ -965,6 +1583,27 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
               <span className="text-sm">Perfil</span>
             </button>
             <button
+              onClick={onBackToHub}
+              className="w-full text-left p-2 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2"
+            >
+              <LayoutGrid className="w-4 h-4" />
+              <span className="text-sm">Centro de Inicio</span>
+            </button>
+            <button
+              onClick={() => { setShowReportsList(true); setShowUserMenu(false); }}
+              className="w-full text-left p-2 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2"
+            >
+              <BarChart3 className="w-4 h-4" />
+              <span className="text-sm">Reportes</span>
+            </button>
+            <button
+              onClick={onShowOnboarding}
+              className="w-full text-left p-2 rounded-xl hover:bg-gray-50 transition-colors flex items-center gap-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span className="text-sm">Tutorial / Onboarding</span>
+            </button>
+            <button
               onClick={onLogout}
               className="w-full text-left p-2 rounded-xl hover:bg-red-50 transition-colors flex items-center gap-2 text-red-600"
             >
@@ -977,34 +1616,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
     </div>
   </div>
       
-        <div className="absolute top-6 left-8 flex items-center gap-3 z-20">
+        <div className="xl:col-start-1 xl:row-start-1 flex items-center gap-3 z-20">
     {/* Botón Modo Oscuro */}
-    <button
-      onClick={() => setIsDarkMode(!isDarkMode)}
-      className="flex items-center justify-center w-8 h-8 rounded-full bg-[#292e34]/90 shadow-sm border border-gray-600 hover:bg-[#3a3f47] transition-all active:scale-95"
-      title={isDarkMode ? 'Modo claro' : 'Modo oscuro'}
-    >
-      {isDarkMode ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-white" />}
-    </button>
+    <CyberToggle checked={isDarkMode} onChange={setIsDarkMode} />
 
-    {/* Meta Anual */}
-    <button
-      onClick={() => setShowMetaAnualForm(true)}
-      className="flex items-center justify-center w-8 h-8 rounded-full bg-black/20 hover:bg-black/30 transition-all border border-black/40 shadow-sm active:scale-95"
-      title="Gran Meta Anual"
-    >
-      <Target className="w-4 h-4 text-white" />
-    </button>
-
-    {/* Buzón Propuestas IA */}
-    <button
-      onClick={() => setShowBuzonPropuestas(true)}
-      className="flex items-center justify-center w-8 h-8 rounded-full bg-black/20 hover:bg-black/30 transition-all border border-black/40 shadow-sm active:scale-95"
-      title="Buzón de Propuestas IA"
-    >
-      <Sparkles className="w-4 h-4 text-white" />
-    </button>
-
+  
     {/* Configuración */}
     <button
       onClick={() => setShowConfigPanel(true)}
@@ -1015,16 +1631,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
     </button>
 
     {/* Centro de Notificaciones */}
-    <div className="relative">
+    <div className="relative ml-2">
       <button
-        onClick={() => setShowNotifications(!showNotifications)}
+        onClick={abrirNotificaciones}
         className="flex items-center justify-center w-8 h-8 rounded-full bg-black/20 hover:bg-black/30 transition-all border border-black/40 shadow-sm relative group active:scale-95"
         title="Notificaciones"
       >
         <Bell className="w-4 h-4 text-white" />
-        {notifications.length > 0 && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border border-white">
-            {notifications.length}
+        {noLeidas > 0 && (
+          <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border border-white">
+            {noLeidas}
           </span>
         )}
       </button>
@@ -1032,93 +1648,131 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
       {/* Dropdown de notificaciones */}
       {showNotifications && (
         <div className="absolute top-full mt-2 left-0 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 p-4 w-80 z-50 animate-in fade-in slide-in-from-top-2">
+          <div className="mb-3">
+            <ReportNotificationBanner onOpen={(r) => { setSelectedReport(r); setShowNotifications(false); }} />
+          </div>
           <h3 className="text-sm font-bold text-gray-800 mb-3">Notificaciones</h3>
           <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
-            {/* ... Contenido de notificaciones ... */}
+            {notifications.length === 0 && (
+              <p className="text-[11px] text-gray-500 text-center py-4">No tenés notificaciones.</p>
+            )}
+            {notifications.map((n) => {
+              const Icono = n.type === 'invitation' ? Mail
+                : n.type === 'delegation' ? Briefcase
+                : n.type === 'report' ? BarChart3
+                : Clock;
+              return (
+                <button
+                  key={n.id}
+                  type="button"
+                  onClick={() => abrirNotificacion(n)}
+                  className={`flex w-full items-start gap-2 rounded-xl border p-2.5 text-left ${n.type === 'report' && n.data?.report_id ? 'cursor-pointer hover:brightness-95' : 'cursor-default'} ${n.is_read ? 'bg-white border-gray-100' : 'bg-indigo-50/70 border-indigo-100'}`}
+                >
+                  <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${n.is_read ? 'bg-gray-100 text-gray-500' : 'bg-[#6236FF]/10 text-[#6236FF]'}`}>
+                    <Icono className="h-3.5 w-3.5" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-semibold leading-tight text-gray-800">{n.title}</p>
+                    {n.message && (
+                      <p className="mt-0.5 text-[11px] leading-snug text-gray-600">{n.message}</p>
+                    )}
+                    <p className="mt-1 text-[10px] text-gray-400">{fechaNotificacion(n.created_at)}</p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
     </div>
+    {/* Visita guiada Focusia (driver.js) */}
+    <FocusiaTourLauncher autoStart />
   </div>
         {/* LEFT COLUMN */}
-        <div className="flex flex-col gap-4 w-full xl:w-[32%]">
+        <div className="contents">
           {/* Top of Left: Pills & Foco */}
-          <div className="flex gap-4">
-             <div className="flex gap-4">
-  <div className="bg-white/40 backdrop-blur-sm border border-white/20 rounded-xl p-3 flex flex-col gap-6 w-[140px] shadow-[0_4px_10px_rgba(0,0,0,0.02)] mt-10">
+          <div className="contents">
+<div className="contents">
+  <div className="xl:col-start-1 xl:row-start-2 bg-white backdrop-blur-md border border-white/20 rounded-md p-1 flex flex-col gap-5 w-[150px] shadow-[0_4px_10px_rgba(0,0,0,0.02)] flex flex-justify-between items-center">
     {/* 1. COACHING */}
+    <span id="tour-coaching-btn" className="contents">
     <ActionButton 
       label="COACHING" 
-      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
-      
+      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
+      onClick={() => setShowCoaching(true)}
     />
+    </span>
     {/* 2. TRIBU (Movido a la segunda posición) */}
+    <span id="tour-tribu-btn" className="contents">
     <ActionButton 
       label="TRIBU" 
-      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
-      
+      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
+      onClick={() => setShowTribu(true)}
     />
+    </span>
     {/* 3. GRATITUD (Movido a la tercera posición) */}
+    <span id="tour-gratitud-btn" className="contents">
     <ActionButton 
       label="GRATITUD" 
-      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
-      
+      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
+      onClick={() => setShowGratitud(true)}
     />
-    {/* 4. DELEGAR */}
+    </span>
+    
    
   </div>
 </div>
-            <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-3 flex flex-col gap-3 w-[250px] shadow-[0_8px_32px_rgba(31,38,135,0.03)] -ml-2">
+            <div className="xl:col-start-2 xl:row-start-2 bg-white/60 backdrop-blur-sm border border-white/30 rounded-md p-2 flex flex-col gap-3 w-full shadow-[0_8px_32px_rgba(31,38,135,0.03)] -mt-10 -ml-14">
               <div className="flex gap-1.5">
                 <button
-                  onClick={() => setShowInicioModal(true)}
-                  className="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"
+                  id="tour-inicio-btn"
+                  onClick={onBackToHub}
+                  className="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-1 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"
                 >
                   INICIO
                 </button>
                 <button
+                  id="tour-rueda-btn"
                   onClick={() => setShowDiagnosticoRueda(true)}
-                  className="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"
+                  className="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-1 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"
                   >
                    RUEDA
                 </button>
                 <button
                   onClick={() => setShowMatrizEisenhower(true)}
-                  className="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"
+                  className="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-1 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"
                 >
                   MATRIZ
                 </button>
               </div>
               <div
   onClick={() => setShowDiagnosticoRueda(true)}
-  className="bg-white rounded-xl border border-slate-200/60 shadow-sm overflow-hidden flex flex-col flex-1 cursor-pointer hover:shadow-md transition-shadow"
+  className="bg-white rounded-md border border-black-200 shadow-sm overflow-hidden  cursor-pointer hover:shadow-md transition-shadow "
 >
-  <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 rounded-md text-[10px] sm:text-xs font-bold tracking-widest uppercase"> RUEDA DE LA VIDA
+  <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 rounded-md text-[10px] sm:text-xs font-bold tracking-widest uppercase mt-2 mx-2"> RUEDA DE LA VIDA
   </div>
 
-  <div className="p-3 sm:p-4 flex items-center justify-between gap-4 flex-1 bg-white">
-    <div className="w-[90px] h-[90px] shrink-0 relative flex items-center justify-center">
-      <svg viewBox="0 0 100 100" className="w-full h-full">
-        <path d="M 50 50 L 50 2 A 48 48 0 0 1 83.94 16.06 Z" fill="#911d33" stroke="#fff" strokeWidth="1.5" />
-        <path d="M 50 50 L 83.94 16.06 A 48 48 0 0 1 98 50 Z" fill="#0c5a75" stroke="#fff" strokeWidth="1.5" />
-        <path d="M 50 50 L 98 50 A 48 48 0 0 1 83.94 83.94 Z" fill="#00a3e0" stroke="#fff" strokeWidth="1.5" />
-        <path d="M 50 50 L 83.94 83.94 A 48 48 0 0 1 50 98 Z" fill="#4cd2e4" stroke="#fff" strokeWidth="1.5" />
-        <path d="M 50 50 L 50 98 A 48 48 0 0 1 16.06 83.94 Z" fill="#4fd1a5" stroke="#fff" strokeWidth="1.5" />
-        <path d="M 50 50 L 16.06 83.94 A 48 48 0 0 1 2 50 Z" fill="#fcd34d" stroke="#fff" strokeWidth="1.5" />
-        <path d="M 50 50 L 2 50 A 48 48 0 0 1 16.06 16.06 Z" fill="#f97316" stroke="#fff" strokeWidth="1.5" />
-        <path d="M 50 50 L 16.06 16.06 A 48 48 0 0 1 50 2 Z" fill="#f43f5e" stroke="#fff" strokeWidth="1.5" />
-      </svg>
-    </div>
+  <div className="p-3 sm:p-4 flex items-center justify-between gap-4 flex-1 bg-white ml-13">
+    <div className="w-[100px] h-[100px] shrink-0 relative flex items-center justify-center">
+      
+        <img src="/rueda.png" alt="Rueda de la Vida" className="w-full h-full object-contain" />
+      
+    
     <div className="flex flex-col gap-1 flex-1">
+      <p className="text-[8px] text-gray-400 uppercase tracking-widest font-bold mb-1 -ml-4"></p>
       {resumenRueda && resumenRueda.tiene_diagnostico && resumenRueda.foco_1 ? (
         [resumenRueda.foco_1, resumenRueda.foco_2, resumenRueda.foco_3].filter(Boolean).map((foco, i) => (
-          <div key={i} className={`text-[9px] sm:text-[10px] py-1 px-3 rounded-md text-center font-bold tracking-widest uppercase shadow-sm transition-transform hover:scale-[1.03] ${
-            i === 0 ? 'bg-gradient-to-r from-red-100 to-red-200 text-red-800' :
-            i === 1 ? 'bg-gradient-to-r from-amber-100 to-amber-200 text-amber-800' :
-            'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800'
-          }`}>
+          <button
+            key={i}
+            onClick={() => setSelectedFocusArea(foco ?? null)}
+            className={`text-[9px] sm:text-[10px] py-1 px-3  rounded-md text-center font-bold tracking-widest uppercase shadow-sm transition-all hover:scale-[1.03] hover:shadow-md active:scale-[0.98] w-full cursor-pointer ${
+              i === 0 ? 'bg-gradient-to-r from-[#ff7c90] to-[#ffe1a4] text-black-800 border border-black/80' :
+              i === 1 ? 'bg-gradient-to-r from-[#ff7c90] to-[#ffe1a4]  text-black-800 border border-black/80' :
+              'bg-gradient-to-r from-[#ff7c90] to-[#ffe1a4]  text-black-800 border border-black/80'
+            }`}
+          >
             {foco}
-          </div>
+          </button>
         ))
       ) : (
         <div className="text-[10px] text-gray-400 text-center py-4">
@@ -1130,53 +1784,41 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
             </div>
           </div>
         </div>
-          <br></br>
-
           {/* Middle of Left */}
-          <div className="flex gap-4 " ref={kanbanRef}>
-            <KanbanBacklog />
+          <div className="contents" ref={kanbanRef}>
+        <div id="tour-kanban" className="xl:col-start-1 xl:row-start-3"><KanbanBacklog onExpand={() => openKanban()} onClassified={async (clasificacion, texto) => {
+          await refreshAccionesClasificadas();
+        }} /></div>
+       
         
-  <div className="bg-white/60 backdrop-blur-sm  rounded-2xl  flex flex-col   w-[200px] h-[200px] shadow-[0_0_0px_rgb(255, 255, 255)] -ml-2 -mt-8">
-  
-  {/* 🎯 TARJETA INTERNA BLANCA DE OBJETIVOS */}
-  <div className="bg-white shadow-[0_2px_4px_rgb(247, 243, 243)] overflow-hidden flex flex-col min-h-[200px] w-full rounded-md ">
-    
-    {/* BARRA HEADER COMPLETA (Fusión perfecta en los bordes superiores) */}
-    <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-none w-[200px]">
-      OBJETIVO SEMANAL
-    </div>
-    
-
-    {/* CUERPO INTERNO CON INPUTS COMPLETAMENTE INTEGRADOS */}
-    <div className="bg-gradient-to-r from-[#A70EEE] via-[#7028E2] to-[#193EC4] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-nonep-3.5 space-y-3 bg-white flex-1 flex flex-col justify-center mt-2">
+  <div
+    className="xl:col-start-2 xl:row-start-3  backdrop-blur-sm rounded-md flex flex-col w-[200px] shadow-[0_0_0px_rgb(255,255,255)] relative overflow-hidden -mt-16"
+  >
+    <div className="bg-white shadow-[0_2px_4px_rgb(247,243,243)] rounded-md overflow-hidden flex flex-col mt-2">
       
-      {/* Input Objetivo Primario */}
-      <div className="w-full">
-        <textarea
-        className="w-full flex-1 bg-transparent text-[11px] font-medium text-slate-700 italic placeholder:text-slate-400 focus:outline-none resize-none leading-relaxed scrollbar-hide"
-          placeholder="Escriba aquí el objetivo primario..."
-          rows={6}
-          defaultValue={objetivo?.texto1 || ''} 
-          onBlur={(e) => handleObjetivoBlur('texto1', e.target.value)} 
-        />
+      <div className="bg-[linear-gradient(90deg,#000000,#3533cd)] text-white text-center py-3 rounded-md text-[10px] sm:text-xs font-bold tracking-widest uppercase mx-2 mt-2 select-none shrink-0 h-[35px]">
+        OBJETIVO MENSUAL
+      </div>
+      
+      <div className="bg-[linear-gradient(135deg,#200013,#814B8D,#143CCC)] text-white text-center p-3 text-[11px] font-medium italic rounded-md mx-2 mt-2 mb-2 flex-1 flex flex-col justify-center relative overflow-hidden min-h-0">
+        <div className="w-full relative z-10 rounded-md">
+          <textarea
+          className="w-full flex-1 bg-transparent text-[11px] font-medium text-white italic placeholder:text-slate-400 focus:outline-none resize-none leading-relaxed scrollbar-hide"
+            placeholder="Escriba aquí el objetivo primario..."
+            rows={6}
+            defaultValue={objetivo?.texto1 || ''} 
+            onBlur={(e) => handleObjetivoBlur('texto1', e.target.value)} 
+          />
+        </div>
       </div>
 
-     
-      
-
     </div>
-
   </div>
-            </div>
 
-          <div className="bg-white/60 backdrop-blur-sm rounded-2xl flex flex-col h-[250px] shadow-[0_0_0px_rgb(255,255,255)] mt-44 -ml-54 ">
+        <div id="tour-fechas" className="xl:col-start-2 xl:row-start-4 rounded-md w-full">
             <FechasImportantesCard
               dayActive={fechasDayActive}
               recordatorios={savedRecordatorios}
-              onDayClick={(dia) => {
-                setFechasDayActive(dia);
-                setShowRecordatorioModal(true);
-              }}
               onAddRecordatorio={(dia) => {
                 setFechasDayActive(dia);
                 setShowRecordatorioModal(true);
@@ -1200,63 +1842,108 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
           </div>
 
           {/* Bottom Left - Acciones por Delegar */}
-          <AccionesPorDelegarInline kanbanTasks={kanbanTasks} onOpenDelegation={(task) => { openDelegationModal(task); }} />
+          <div id="tour-delegar" className="xl:col-start-1 xl:row-start-4">
+          <AccionesPorDelegarInline kanbanTasks={kanbanTasks} onOpenDelegation={(task) => { openDelegationModal(task); }} onRefresh={refreshKanbanTasks} onOpenModule={() => setShowDelegarModule(true)} />
+          </div>
          
         </div>
-        
+
+        </div>
         </div>
 
         {/* CENTER COLUMN */}
-<div className="flex flex-col gap-3 w-full xl:w-[32%] relative items-center">
-          <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-3 flex flex-col gap-3 w-[250px] shadow-[0_8px_32px_rgba(31,38,135,0.03)] mt-12">
+<div className="xl:col-start-3 xl:row-start-2 xl:row-span-2 flex flex-col gap-3 w-full relative items-center">
+          <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-md p-3 flex flex-col gap-3 w-full shadow-[0_8px_32px_rgba(31,38,135,0.03)]">
             <p className="text-[14px] font-semibold text-[#1e293b] text-center leading-tight">
-              {phrases[currentPhraseIndex]}
+              {dailyPhrase?.phrase || fraseRespaldo}
             </p>
+            {dailyPhrase && (
+              <p className="text-[10px] text-gray-400 text-center -mt-2">
+                {dailyPhrase.month_theme} · Día {dailyPhrase.day_number}
+              </p>
+            )}
           </div>
           {/* Tabs */}
-<div className="flex justify-between items-center gap-2 w-full max-w-[500px] mx-auto my-2 ml-4">
+<div className="flex justify-between items-center gap-4 w-full mt-2 -ml-20">
   
   {/* BOTÓN ANUAL → Gran Meta Anual */}
   <button 
-    onClick={() => setShowMetaAnualForm(true)} 
-    className="flex-1 bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-lg text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
+    id="tour-anual-btn"
+    onClick={async () => {
+      try {
+        const current = await granMetaAnualService.current();
+        if (current && current.is_active) {
+          setShowAnnualView(true);
+          return;
+        }
+      } catch { /* sin meta vigente: verificar elegibilidad abajo */ }
+      // Spec §3/§22: sin diagnóstico completado, el flujo lleva a la Rueda
+      try {
+        const elig = await granMetaAnualService.eligibility();
+        if (elig.eligible) {
+          setShowGranMetaAnual(true);
+        } else {
+          setSavingStatus(elig.message || 'Completa el diagnóstico de la Rueda de la Vida primero.');
+          setTimeout(() => setSavingStatus(''), 6000);
+          setShowDiagnosticoRueda(true);
+        }
+      } catch {
+        setShowGranMetaAnual(true);
+      }
+    }} 
+    className="flex-1 bg-[#171e3b] text-white py-1.5 px-5 rounded-md text-[10px] sm:text-xs font-bold tracking-wider  shadow-md transition hover:brightness-110 active:scale-[0.98] w-[100px] "
   >
     Anual
   </button>
 
   {/* BOTÓN MENSUAL */}
   <button 
-    onClick={() => setShowMetaMensualModal(true)} 
-    className="flex-1 bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-lg text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
+    id="tour-mensual-btn"
+    onClick={async () => {
+      try {
+        const status = await monthlyService.checkStatus();
+        if (status.status === 'APROBADA') {
+          setShowMonthlyCalendar(true);
+        } else {
+          setShowMonthlyWizard(true);
+        }
+      } catch {
+        setShowMonthlyWizard(true);
+      }
+    }}
+    className="flex-1 bg-gradient-to-r from-[#000000] to-[#3533cd]  text-white py-1.5 px-3 rounded-md text-[10px] sm:text-xs font-bold tracking-wider  shadow-md transition hover:brightness-110 active:scale-[0.98]"
   >
     Mensual
   </button>
 
   {/* BOTÓN SEMANAL */}
   <button 
-    onClick={() => setShowMetaSemanalModal(true)} 
-    className="flex-1 bg-gradient-to-l from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-lg text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
+    id="tour-semanal-btn"
+    onClick={() => openKanban('semanal')} 
+    className="flex-1 bg-gradient-to-l from-[#000000] via-[#3533cd] to-[#040817] text-white py-1.5 px-3 rounded-md text-[10px] sm:text-xs font-bold tracking-wider shadow-md transition hover:brightness-110 active:scale-[0.98]"
   >
     Semanal
   </button>
 
   {/* BOTÓN DIARIA */}
   <button 
-    onClick={() => setShowMetaDiariaModal(true)} 
-    className="flex-1 bg-gradient-to-l from-[#2b44ff] via-[#0b153a] to-[#040817] text-white py-1.5 px-3 rounded-lg text-[10px] sm:text-xs font-black tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]"
+    id="tour-diaria-btn"
+    onClick={() => openKanban('diaria')} 
+    className="flex-1 bg-gradient-to-l from-[#000000] to-[#3533cd] text-white py-1.5 px-5 rounded-md text-[10px] sm:text-xs font-bold  tracking-wider  shadow-md transition hover:brightness-110 active:scale-[0.98]"
   >
     Diaria
   </button>
 
+
         </div>
           {/* Time Blocking Table */}
-        <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-3 flex flex-col w-full h-[530px] shadow-[0_8px_32px_rgba(31,38,135,0.03)] overflow-hidden ml-10">
+        <div id="tour-timeblocking" className=" p-3 flex flex-col w-[400px] shadow-[0_8px_32px_rgba(31,38,135,0.03)] overflow-hidden" >
   
   {/* 👇 SOLUCIÓN: Agrupamos estos dos elementos en un bloque compacto sin GAP */}
-  <div className="w-full  flex flex-col overflow-hidden rounded-xl border border-slate-200/60 shadow-xs">
+  <div className="w-[380px]  flex flex-col overflow-hidden rounded-md border border-gray-200/60 shadow-xs -ml-2">
     
     {/* BARRA HEADER DEL TIME BLOCKING */}
-    <div className="bg-gradient-to-r from-[#0E12EE] via-[#A70EEE] to-[#193EC4] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-nonep-3.5 space-y-3 bg-white flex-1 flex flex-col justify-center mt-2">
+    <div className="bg-gradient-to-r from-[#200013] via-[#814B8D] to-[#143CCC] text-white text-center py-1.5 text-[15px] font-bold tracking-widest uppercase rounded-md select-nonep-3.5 space-y-3 bg-white flex-1 flex flex-col justify-center -mt-1 font-montserrat">
       TIME BLOCKING
     </div>
     {tbError && (
@@ -1268,20 +1955,20 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
   <div className="overflow-y-auto max-h-[520px] bg-white/40 scrollbar-hide rounded-b-xl">
       <table className="w-full text-[11px] border-collapse table-fixed">
         
-        <thead className="sticky top-0 z-20 bg-white/90 backdrop-blur-md shadow-2xs">
+        <thead id="tour-wip-status" className="sticky top-0 z-20 bg-white/90 backdrop-blur-md shadow-2xs">
           <tr>
-            <th className="w-20 p-2 border-b border-slate-100">
-              <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-orange-200/40 text-center">
+            <th className="w-16 p-2 border-b border-slate-100">
+              <div className="w-full bg-[linear-gradient(90deg,#ff7c90,#ffe1a4)] text-slate-800 text-[10px] py-1.5 px-1 rounded-md font-black tracking-wider uppercase border border-black-200/40 text-center">
                 TIME
               </div>
             </th>
             <th className="p-2 border-b border-slate-100">
-              <div className="w-full bg-gradient-to-r from-[#fecaca] to-[#ffa3a3] text-slate-800 text-[10px] py-1.5 px-2 rounded-lg font-black tracking-wider uppercase border border-red-200/40 text-center">
+              <div className="w-full bg-[linear-gradient(90deg,#ff7c90,#ffe1a4)]  text-slate-800 text-[10px] py-1.5 px-2 rounded-md font-black tracking-wider uppercase border border-black-200/40 text-center">
                 WORK IN PROGRESS
               </div>
             </th>
-            <th className="w-24 p-2 border-b border-slate-100">
-              <div className="w-full bg-gradient-to-r from-[#ffa3a3] to-[#fca5a5] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-red-300/40 text-center">
+            <th className="w-20 p-2 border-b border-slate-100">
+              <div className="w-full bg-[linear-gradient(90deg,#ff7c90,#ffe1a4)] text-slate-800 text-[10px] py-1.5 px-1 rounded-md font-black tracking-wider uppercase border border-black-300/40 text-center">
                 STATUS
               </div>
             </th>
@@ -1301,7 +1988,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
       >
         
         {/* CELDA 1: INDICADOR HORARIO */}
-        <td className="py-1 text-center font-bold text-slate-700 w-20">
+        <td className="py-1 text-center font-bold text-slate-700 w-16">
           <span className="inline-block px-2 py-0.5 border border-slate-200 rounded-md text-[10px] bg-white shadow-3xs select-none">
             {h < 10 ? `0${h}:00` : `${h}:00`}
           </span>
@@ -1323,7 +2010,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
         </td>
 
         {/* CELDA 3: SELECTOR DE ESTADO */}
-        <td className="w-24 py-1 px-2 text-center">
+        <td className="w-20 py-1 px-2 text-center">
           <select
             value={estado}
             onChange={(e) => handleTimeBlockStatus(h, e.target.value as 'pending' | 'doing' | 'done')}
@@ -1351,50 +2038,76 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
         </div>
           </div>
 
-          <CategoriasMenu />
-          <CardAyudaIA onSubmit={() => setShowAiMissionModal(true)} />
         </div>
+          <div className="xl:col-start-3 xl:row-start-4 w-full">
+         {/* Una altura reservada mantiene el alto de la fila con el chat
+             cerrado; al abrirse, el panel crece hacia arriba y no empuja las
+             filas de abajo (clima, hora de oro, misión). */}
+         <div className="relative">
+          <div className="h-[67px]" aria-hidden />
+          <div className="absolute bottom-0 left-0 z-40">
+           <CardAyudaIA
+              onOpenSettings={() => setShowAgentSettings(true)}
+            />
+          </div>
+         </div>
+          {/* La fila de categorías vive en la misma celda que el chat para
+              quedar justo debajo; en otra fila del grid el hueco dependía de la
+              altura del calendario y la misión. */}
+          <div id="tour-humor" className="w-[600px] -ml-35 mt-2"><span id="tour-inspiracion" className="contents"><CategoriasMenu /></span></div>
+          </div>
 
         {/* RIGHT COLUMN */}
-        <div className="flex flex-col gap-4 w-full xl:w-[36%] z-10">
-          
-          {/* Bloque Superior: Botones Cursos/RRSS y Notas */}
-          <div className="flex justify-between items-start">
-            <div className="flex flex-col w-[250px] pr-3">
-              <div className="bg-white/60 backdrop-blur-sm border border-white/30 rounded-2xl p-3 flex flex-col gap-3 w-[250px] shadow-[0_8px_32px_rgba(31,38,135,0.03)] ml-2 h-[240px]">
-                <div className="p-1 flex gap-1 flex justify-between items-center gap-1  max-w-md -ml-1 w-[80px]">
-                  <ActionButton label="CURSOS" color="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" />
-                  <ActionButton label="RRSS" color="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" />
-                  <ActionButton label="CUENTAS" color="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"  onClick={() => setShowBillModal(true)} />
+        <div className="contents">
+          <div className="xl:col-start-5 xl:row-start-2 w-[150px] ml-15 -mt-12">
+          <CyberProgressBar
+            level={getLevelFromXP(xpStats.totalXP).level}
+            currentXP={getLevelFromXP(xpStats.totalXP).currentXP}
+            nextLevelXP={getLevelFromXP(xpStats.totalXP).nextLevelXP}
+            progress={getLevelFromXP(xpStats.totalXP).progress}
+          />
+          </div>
+          {/* Bloque Superior: Botonesmd/RRSS y Notas */}
+          <div className="contents">
+            <div className="contents">
+              <div id="tour-notas" className="xl:col-start-4 xl:row-start-2 bg-white/60 backdrop-blur-sm border border-white/30 rounded-md p-2 flex flex-col gap-3 w-full h-[240px] shadow-[0_8px_32px_rgba(31,38,135,0.03)] -mt-12 ml-12">
+                <div className="p-1 flex gap-1 flex justify-between items-center w-full">
+                  <span id="tour-cursos-btn" className="contents"><ActionButton label="CURSOS" color="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-1 rounded-md text-[9px] sm:text-xs font-semibold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-[80px]" onClick={() => setShowCursos(true)} /></span>
+                  <span id="tour-rrss-btn" className="contents"><ActionButton label="RRSS" color="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-1 rounded-md text-[10px] sm:text-xs font-semibold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" onClick={handleOpenRrss} /></span>
+                  <span id="tour-cuentas-btn" className="contents"><ActionButton label="CUENTAS" color="bg-gradient-to-r from-[#000000]  to-[#3533cd] text-white py-1 rounded-md text-[10px] sm:text-xs font-semibold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-[80px]"  onClick={() => setShowBillModal(true)} /></span>
                 </div>
                 <BlockDeNotas />
               </div>
             </div>
 
-            <div className="bg-white/40 backdrop-blur-sm border border-white/20 rounded-xl p-3 flex flex-col gap-6 w-[140px] shadow-[0_4px_10px_rgba(0,0,0,0.02)] mt-10 ml-4">
-              <ActionButton label="MEDICAMENTOS" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern"  onClick={() => setShowMedicamentosModal(true)} />
-              <ActionButton label="CUMPLEAÑOS" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern" />
-              <ActionButton label="FOCUS" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-xl text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern" />
+            <div className="xl:col-start-5 xl:row-start-3 bg-white backdrop-blur-sm border border-white/20 rounded-md p-1 flex flex-col gap-5 w-[150px] shadow-[0_4px_10px_rgba(0,0,0,0.02)] flex flex-justify-between items-center -mt-70 ml-15">
+              <span id="tour-suplementos-btn" className="contents"><ActionButton label="SUPLEMENTOS" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern"  onClick={() => setShowSuplementosScreen(true)} /></span>
+              <span id="tour-cumpleanos-btn" className="contents"><ActionButton label="CUMPLEAÑOS" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"  variant="modern" /></span>
+              <span id="tour-focus-btn" className="contents"><ActionButton label="FOCUS" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"  variant="modern" onClick={() => setShowFocusScreen(true)} /></span>
             </div>
           </div>
 
           {/* Bloque Calendario */}
-          <div className="flex flex-col items-start w-full mb-4 ml-2">
+          <div className="xl:col-start-4 xl:row-start-3 flex flex-col items-start w-full">
             <CalendarWidget />
           </div>
 
           {/* Bloque Medio: Misión */}
-          <div className="flex flex-col items-start w-full mb-8 ml-2">
-            <MiMisionHoy mision={selectedMissionText} avatarUrl={userData.avatar_url} />
+          <div id="tour-mision-semanal" className="xl:col-start-4 xl:row-start-4 flex flex-col items-start w-full">
+            <WeeklyMissionWidget missionPhotoUrl={missionPhotoUrl} onPhotoChange={setMissionPhotoUrl} />
           </div>
 
           {/* Bloque Hora de Oro Familiar */}
-          <div className="flex flex-col items-start w-[230px] h-[600px] -mt-127 ml-45 rounded-md">
-            <HoraDeOroFamiliar />
+          <div className="xl:col-start-5 xl:row-start-4 xl:row-span-2 flex flex-col item-start w-full rounded-md">
+            <HoraDeOroFamiliar
+              refreshKey={horaOroKey}
+              onOpenModule={() => { setHoraOroSlot(null); setShowHoraDeOro(true); }}
+              onOpenSlot={(dia, posicion) => { setHoraOroSlot({ dia, posicion }); setShowHoraDeOro(true); }}
+            />
           </div>
 
           {/* Bloque Clima */}
-          <div className="flex flex-col items-start w-full h-[250px] mb-4">
+          <div id="tour-clima" className="xl:col-start-4 xl:row-start-5 flex flex-col items-start w-full mb-4">
             <ClimaComuna
               temp={clima.temp}
               descripcion={clima.descripcion}
@@ -1407,7 +2120,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
             />
           </div>
    </div>
-      </main>
+      </div>
 
       {/* Modal: Acciones por Delegar */}
       {showDelegarModal && (
@@ -1416,10 +2129,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
           onClick={() => setShowDelegarModal(false)}
         >
           <div
-            className="bg-white/90 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-2xl max-h-[80vh] overflow-hidden"
+            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#1e3a5f] to-[#3a5f8a]">
+            <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#1e3a5f] to-[#3a5f8a] shrink-0">
               <h2 className="text-lg font-bold uppercase text-white">Mi Agenda & Matriz de Tareas</h2>
 
               <button
@@ -1429,7 +2142,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
                 <X className="w-5 h-5 text-white" />
               </button>
             </div>
-            <div className="p-6 overflow-y-auto max-h-[calc(80vh-80px)]">
+            <div className="flex-1 overflow-y-auto p-6">
               <KanbanBoard onTaskChange={refreshKanbanTasks} />
             </div>
 
@@ -1447,10 +2160,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
           }}
         >
           <div
-            className="bg-white/90 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
+            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#0d9488] to-[#14b8a6]">
+            <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#0d9488] to-[#14b8a6] shrink-0">
               <h2 className="text-lg font-bold uppercase text-white">{editingRecordatorio ? 'Editar Recordatorio' : 'Nuevo Recordatorio'}</h2>
               <button
                 onClick={() => {
@@ -1544,110 +2257,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
         </div>
       )}
 
-      {/* Modal: Inicio / Cómo funciona */}
-      {showInicioModal && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-center justify-center p-4"
-          onClick={() => setShowInicioModal(false)}
-        >
-          <div
-            className="bg-white/95 backdrop-blur-2xl rounded-md shadow-2xl border border-white/50 w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between p-6 bg-gradient-to-r from-[#1e3a5f] to-[#2d4a6f] text-white">
-              <div className="flex items-center gap-3">
-                <div className="bg-white/20 p-2 rounded-xl">
-                  <Info className="w-6 h-6" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-black uppercase tracking-tight">Bienvenida a Focusia</h2>
-                  <p className="text-xs opacity-80 font-medium">Tu tablero personal de alto rendimiento</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowInicioModal(false)}
-                className="p-2 rounded-full hover:bg-white/20 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="p-8 overflow-y-auto space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-[#0d9488]">
-                    <CheckCircle2 className="w-5 h-5" />
-                    <h3 className="font-bold uppercase text-sm">Vida</h3>
-                  </div>
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    Visualiza el equilibrio de tu vida en tiempo real. Haz clic en el gráfico central para actualizar tus puntajes y ajustar tu foco mensual.
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-[#3b82f6]">
-                    <CheckCircle2 className="w-5 h-5" />
-                    <h3 className="font-bold uppercase text-sm">Time Blocking</h3>
-                  </div>
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    Organiza tu día hora por hora. Define tus "Work in Progress" y marca el estado de cumplimiento para mantener la disciplina.
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-[#d97706]">
-                    <CheckCircle2 className="w-5 h-5" />
-                    <h3 className="font-bold uppercase text-sm">Delegación Kanban</h3>
-                  </div>
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    Gestiona tareas que no requieren tu atención directa. Usa el tablero Kanban para arrastrar y soltar prioridades.
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-[#ef4444]">
-                    <CheckCircle2 className="w-5 h-5" />
-                    <h3 className="font-bold uppercase text-sm">Salud y Medicación</h3>
-                  </div>
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    Configura recordatorios críticos. El sistema te notificará visualmente cuando sea momento de tomar tus medicamentos.
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl p-6 border border-gray-200">
-                <h4 className="font-black uppercase text-xs text-gray-400 mb-4 tracking-widest text-center">Fórmula del éxito</h4>
-                <div className="flex justify-around items-center gap-4 text-center">
-                  <div className="flex-1">
-                    <div className="text-2xl font-bold text-gray-800">100%</div>
-                    <div className="text-[10px] font-bold text-gray-500 uppercase">Enfoque</div>
-                  </div>
-                  <div className="w-[1px] h-8 bg-gray-300"></div>
-                  <div className="flex-1">
-                    <div className="text-2xl font-bold text-gray-800">Auto</div>
-                    <div className="text-[10px] font-bold text-gray-500 uppercase">Guardado</div>
-                  </div>
-                  <div className="w-[1px] h-8 bg-gray-300"></div>
-                  <div className="flex-1">
-                    <div className="text-2xl font-bold text-gray-800">Cloud</div>
-                    <div className="text-[10px] font-bold text-gray-500 uppercase">Sincronizado</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-100 flex justify-center">
-              <button
-                onClick={() => setShowInicioModal(false)}
-                className="bg-[#1e3a5f] text-white px-12 py-3 rounded-2xl font-bold uppercase tracking-widest hover:bg-[#2d4a6f] transition-all hover:scale-105 shadow-lg"
-              >
-                Comenzar ahora
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Modal: Rueda de la Vida */}
       {showRuedaModal && (
         <div
@@ -1655,10 +2264,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
           onClick={() => setShowRuedaModal(false)}
         >
           <div
-            className="bg-white/90 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-2xl max-h-[85vh] overflow-hidden"
+            className="bg-white/95 backdrop-blur-md rounded-md shadow-2xl border border-white/50 w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#059669] to-[#0d9488]">
+            <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#059669] to-[#0d9488] shrink-0">
               <h2 className="text-lg font-bold uppercase text-white">Mi Rueda de la Vida</h2>
               <button
                 onClick={() => setShowRuedaModal(false)}
@@ -1684,14 +2293,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
       {/* Modal: Video instructivo de la Rueda de la Vida */}
       {showRuedaVideoModal && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] flex items-center justify-center p-4"
           onClick={() => setShowRuedaVideoModal(false)}
         >
           <div
-            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
+            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#059669] to-[#0d9488]">
+            <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#059669] to-[#0d9488] shrink-0">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                   <Play className="w-4 h-4 text-white" />
@@ -1743,10 +2352,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
           onClick={() => setShowMetaAnualModal(false)}
         >
           <div
-            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
+            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#0d9488] to-[#14b8a6]">
+            <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#0d9488] to-[#14b8a6] shrink-0">
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-white" />
                 <h2 className="text-lg font-bold uppercase text-white">Metas Anuales</h2>
@@ -1757,6 +2366,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
             </div>
             <div className="p-6 max-h-[60vh] overflow-y-auto">
               <div className="space-y-3">
+                {accionesClasificadas.filter(a => a.destino_asignado === 'PLAN_ANUAL').map((accion) => (
+                  <div key={accion.id} className="flex items-center gap-3 bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-white/40">
+                    <div className="w-6 h-6 rounded-full border-2 border-[#0d9488] flex items-center justify-center flex-shrink-0">
+                      <Target className="w-3 h-3 text-[#0d9488]" />
+                    </div>
+                    <span className="flex-1 text-sm text-gray-700">{accion.texto_accion}</span>
+                    <span className="text-[10px] bg-[#0d9488]/20 text-[#0d9488] px-2 py-0.5 rounded-full font-medium">Kanban</span>
+                  </div>
+                ))}
                 {metaAnual.map((meta, index) => (
                   <div key={index} className="flex items-center gap-3 bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-white/40">
                     <button
@@ -1815,10 +2433,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
           onClick={() => setShowMetaMensualModal(false)}
         >
           <div
-            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
+            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#7c3aed] to-[#a855f7]">
+            <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#7c3aed] to-[#a855f7] shrink-0">
               <div className="flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-white" />
                 <h2 className="text-lg font-bold uppercase text-white">Metas Mensuales</h2>
@@ -1829,6 +2447,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
             </div>
             <div className="p-6 max-h-[60vh] overflow-y-auto">
               <div className="space-y-3">
+                {accionesClasificadas.filter(a => a.destino_asignado === 'PLAN_MENSUAL').map((accion) => (
+                  <div key={accion.id} className="flex items-center gap-3 bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-white/40">
+                    <div className="w-6 h-6 rounded-full border-2 border-[#7c3aed] flex items-center justify-center flex-shrink-0">
+                      <Calendar className="w-3 h-3 text-[#7c3aed]" />
+                    </div>
+                    <span className="flex-1 text-sm text-gray-700">{accion.texto_accion}</span>
+                    <span className="text-[10px] bg-[#7c3aed]/20 text-[#7c3aed] px-2 py-0.5 rounded-full font-medium">Kanban</span>
+                  </div>
+                ))}
                 {metaMensual.map((meta, index) => (
                   <div key={index} className="flex items-center gap-3 bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-white/40">
                     <button
@@ -1887,10 +2514,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
           onClick={() => setShowMetaSemanalModal(false)}
         >
           <div
-            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
+            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#d97706] to-[#f59e0b]">
+            <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#d97706] to-[#f59e0b] shrink-0">
               <div className="flex items-center gap-2">
                 <CalendarDays className="w-5 h-5 text-white" />
                 <h2 className="text-lg font-bold uppercase text-white">Metas Semanales</h2>
@@ -1901,6 +2528,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
             </div>
             <div className="p-6 max-h-[60vh] overflow-y-auto">
               <div className="space-y-3">
+                {accionesClasificadas.filter(a => a.destino_asignado === 'PLAN_SEMANAL').map((accion) => (
+                  <div key={accion.id} className="flex items-center gap-3 bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-white/40">
+                    <div className="w-6 h-6 rounded-full border-2 border-[#d97706] flex items-center justify-center flex-shrink-0">
+                      <CalendarDays className="w-3 h-3 text-[#d97706]" />
+                    </div>
+                    <span className="flex-1 text-sm text-gray-700">{accion.texto_accion}</span>
+                    <span className="text-[10px] bg-[#d97706]/20 text-[#d97706] px-2 py-0.5 rounded-full font-medium">Kanban</span>
+                  </div>
+                ))}
                 {metaSemanal.map((meta, index) => (
                   <div key={index} className="flex items-center gap-3 bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-white/40">
                     <button
@@ -1952,227 +2588,107 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
         </div>
       )}
 
-      {/* Modal: Meta Diaria */}
+      {/* Modal: Planificación Semanal (Full Weekly Planner) */}
+      {showWeeklyPlanner && <WeeklyPlanner onClose={() => setShowWeeklyPlanner(false)} />}
+
+      {/* Agenda Diaria full-page (foto) */}
       {showMetaDiariaModal && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] flex items-center justify-center p-4"
-          onClick={() => setShowMetaDiariaModal(false)}
-        >
-          <div
-            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-md overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#059669] to-[#10b981]">
-              <div className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-white" />
-                <h2 className="text-lg font-bold uppercase text-white">Metas Diarias</h2>
-              </div>
-              <button onClick={() => setShowMetaDiariaModal(false)} className="p-2 rounded-full hover:bg-white/30 transition-colors">
-                <X className="w-5 h-5 text-white" />
-              </button>
-            </div>
-            <div className="p-6 max-h-[60vh] overflow-y-auto">
-              <div className="space-y-3">
-                {metaDiaria.map((meta, index) => (
-                  <div key={index} className="flex items-center gap-3 bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-white/40">
-                    <button
-                      onClick={() => {
-                        setXpStats((prev: XPStats) => ({ ...prev, tasksCompleted: prev.tasksCompleted + 1 }));
-                        addXP(XP_CONFIG.DAILY_GOAL, 'Meta diaria completada', BADGES[0].condition);
-                        setMetaDiaria(metaDiaria.filter((_: string, i: number) => i !== index));
-                      }}
-                      className="w-6 h-6 rounded-full border-2 border-[#059669] flex items-center justify-center hover:bg-[#059669]/20 transition-colors flex-shrink-0"
-                    >
-                      <Check className="w-4 h-4 text-[#059669]" />
-                    </button>
-                    <span className="flex-1 text-sm text-gray-700">{meta}</span>
-                    <span className="text-[10px] bg-[#059669]/20 text-[#059669] px-2 py-0.5 rounded-full font-medium">+{XP_CONFIG.DAILY_GOAL} XP</span>
-                    <button onClick={() => handleEditMeta('diaria', index, meta)} className="text-gray-400 hover:text-[#059669] transition-colors">
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => handleDeleteMeta('diaria', index)} className="text-gray-400 hover:text-red-500 transition-colors">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-                {editingMetaType === 'diaria' && (
-                  <div className="flex items-center gap-2 bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-[#059669]">
-                    <input
-                      type="text"
-                      value={newMetaText}
-                      onChange={(e) => setNewMetaText(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSaveMeta()}
-                      placeholder="Escribe tu meta..."
-                      className="flex-1 text-sm bg-transparent border-none outline-none"
-                      autoFocus
-                    />
-                    <button onClick={handleSaveMeta} className="text-[#059669] font-bold text-sm">Guardar</button>
-                    <button onClick={() => { setEditingMetaType(null); setNewMetaText(''); }} className="text-gray-400 hover:text-red-500">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-                <button
-                  onClick={() => handleAddMeta('diaria')}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-gray-300 text-gray-500 hover:border-[#059669] hover:text-[#059669] transition-colors"
-                >
-                  <Plus className="w-4 h-4" /> Agregar meta
-                </button>
-              </div>
-            </div>
-          </div>
+        <AgendaDiaria
+          timeBlocks={timeBlocks}
+          todayStr={todayStr}
+          username={userData.username}
+          avatarUrl={userData.avatar_url}
+          onNavigate={(key) => { setShowMetaDiariaModal(false); handleMonthlyNavigate(key); }}
+          onSaveBlock={(hora, tarea) => handleTimeBlockBlur(hora, tarea)}
+          onClose={() => setShowMetaDiariaModal(false)}
+          onBackToKanban={() => { setShowMetaDiariaModal(false); setShowKanbanModule(true); }}
+        />
+      )}
+
+      {/* Pantalla: Suplementos y Medicamentos (Doc 21) */}
+      {showSuplementosScreen && (
+        <div className="fixed inset-0 z-50">
+          <SuplementosScreen
+            userName={userData.username}
+            onBack={() => setShowSuplementosScreen(false)}
+            onNavigate={handleSuplementosNavigate}
+          />
         </div>
       )}
 
-      {/* Modal: Checklist de Facturas / Cuentas */}
+      {/* Pantalla: Modo Focus (Doc 23 · BOTÓN FOCUS) */}
+      {showFocusScreen && (
+        <div className="fixed inset-0 z-50">
+          <FocusModeScreen
+            userName={userData.username}
+            sesionActiva={focusSesion?.herramienta ?? null}
+            onIniciar={(h, c) => iniciarFocusSesion(h, c)}
+            onBack={() => setShowFocusScreen(false)}
+            onNavigate={handleFocusNavigate}
+          />
+        </div>
+      )}
+
+      {/* Doc 23 · Widget flotante del Modo Focus (flota sobre cualquier módulo) */}
+      <FocusWidget
+        sesion={focusSesion}
+        minimizado={focusMinimizado}
+        onMinimizar={() => { setFocusMinimizado(v => { guardarMinimizadoLocal(!v); return !v; }); }}
+        onCerrarSolicitado={() => setFocusConfirmCerrar(true)}
+        onFinalizoNatural={finalizoFocusNatural}
+        onUpdateSesion={actualizarFocusSesion}
+      />
+
+      {/* Doc 23 · Modales: sesión en ejecución, cierre del widget y finalización */}
+      <FocusModales
+        guardNueva={focusGuardNueva}
+        sesionActual={focusSesion}
+        confirmCerrar={focusConfirmCerrar}
+        fin={focusFin}
+        ocupado={focusOcupado}
+        onGuardarCancelar={() => setFocusGuardNueva(null)}
+        onGuardarFinalizarNueva={() => {
+          if (focusGuardNueva) iniciarFocusSesion(focusGuardNueva.herramienta, focusGuardNueva.config, true);
+        }}
+        onCerrarConfirm={() => setFocusConfirmCerrar(false)}
+        onSegundoPlano={() => { setFocusConfirmCerrar(false); setFocusMinimizado(true); guardarMinimizadoLocal(true); }}
+        onFinalizarConfirm={() => cerrarSesionFocus(false)}
+        onFinCerrar={() => setFocusFin(null)}
+        onFinOtraSesion={() => { setFocusFin(null); setShowFocusScreen(true); }}
+        onFinDescanso={() => { setFocusFin(null); iniciarFocusSesion('descanso', { duracion_min: 5 }); }}
+      />
+
+      {/* Pantalla: Hora de Oro Familiar (Doc 24) */}
+      {showHoraDeOro && (
+        <div className="fixed inset-0 z-50">
+          <HoraDeOroScreen
+            userName={userData.username}
+            slotInicial={horaOroSlot}
+            onBack={() => { setShowHoraDeOro(false); setHoraOroSlot(null); setHoraOroKey(k => k + 1); }}
+            onNavigate={handleHoraOroNavigate}
+          />
+        </div>
+      )}
+
+      {/* Pantalla: Gratitud (Doc 19) */}
+      {showGratitud && (
+        <div className="fixed inset-0 z-50">
+          <GratitudScreen
+            userName={userData.username}
+            onBack={() => setShowGratitud(false)}
+            onNavigate={handleGratitudNavigate}
+          />
+        </div>
+      )}
+
+      {/* Pantalla: Cuentas (digitalización foto) */}
       {showBillModal && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-end md:items-center justify-center p-0 md:p-4"
-          onClick={() => setShowBillModal(false)}
-        >
-          <div
-            className="bg-white/95 backdrop-blur-2xl rounded-t-2xl md:rounded-md shadow-2xl border border-white/50 w-full md:max-w-2xl md:w-[90%] max-h-[92vh] md:max-h-[85vh] overflow-hidden flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between p-4 md:p-6 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] text-white">
-              <div className="flex items-center gap-2 md:gap-3 min-w-0">
-                <div className="bg-white/20 p-1.5 md:p-2 rounded-xl shrink-0">
-                  <Receipt className="w-5 h-5 md:w-6 md:h-6" />
-                </div>
-                <div className="min-w-0">
-                  <h2 className="text-lg md:text-xl font-black uppercase tracking-tight truncate">Checklist de Cuentas</h2>
-                  <p className="text-[10px] md:text-xs opacity-80 font-medium">Control mensual de facturas y pagos</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowBillModal(false)}
-                className="p-1.5 md:p-2 rounded-full hover:bg-white/20 transition-colors shrink-0"
-              >
-                <X className="w-5 h-5 md:w-6 md:h-6" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
-              {/* Checklist Section */}
-              <div className="flex-1 p-4 md:p-6 overflow-y-auto md:border-r border-gray-100">
-                <h3 className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest mb-3 md:mb-4">Facturas Pendientes</h3>
-                {facturas.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-32 md:h-40 text-gray-400">
-                    <CheckSquare className="w-6 h-6 md:w-8 md:h-8 mb-2 opacity-20" />
-                    <p className="text-xs md:text-sm">No hay facturas registradas</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {facturas.map((fact) => (
-                      <div
-                        key={fact.id}
-                        className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${fact.pagado
-                            ? 'bg-green-50 border-green-100 opacity-60'
-                            : 'bg-white border-gray-100 shadow-sm'
-                          }`}
-                      >
-                        <button
-                          onClick={async () => {
-                            try {
-                              const updated = await billService.update(fact.id, { pagado: !fact.pagado });
-                              setFacturas(prev => prev.map(f => f.id === fact.id ? updated : f));
-                            } catch (e) {
-                              console.error(e);
-                            }
-                          }}
-                          className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-colors ${fact.pagado
-                              ? 'bg-green-500 border-green-500 text-white'
-                              : 'border-gray-200 hover:border-[#6366f1]'
-                            }`}
-                        >
-                          {fact.pagado && <CheckCircle2 className="w-4 h-4" />}
-                        </button>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-bold truncate ${fact.pagado ? 'line-through text-gray-500' : 'text-gray-800'}`}>
-                            {fact.nombre}
-                          </p>
-                          <p className="text-[10px] text-gray-500">
-                            Vence: {new Date(fact.fecha_vencimiento).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className={`text-sm font-black ${fact.pagado ? 'text-green-600' : 'text-[#6366f1]'}`}>
-                            ${fact.monto.toLocaleString()}
-                          </p>
-                          <button
-                            onClick={async () => {
-                              if (confirm('¿Eliminar esta factura?')) {
-                                try {
-                                  await billService.delete(fact.id);
-                                  setFacturas(prev => prev.filter(f => f.id !== fact.id));
-                                } catch (e) {
-                                  console.error(e);
-                                }
-                              }
-                            }}
-                            className="text-[9px] text-red-300 hover:text-red-500 uppercase font-bold"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Form Section */}
-              <div className="w-full md:w-72 bg-gray-50 p-4 md:p-6 border-t md:border-t-0 md:border-l border-gray-100">
-                <h3 className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest mb-3 md:mb-4">Nueva Factura</h3>
-                <form
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    const formData = new FormData(e.currentTarget);
-                    const data = {
-                      nombre: formData.get('nombre') as string,
-                      monto: parseFloat(formData.get('monto') as string),
-                      fecha_vencimiento: formData.get('fecha') as string,
-                      pagado: false
-                    };
-                    try {
-                      const res = await billService.create(data);
-                      setFacturas(prev => [...prev, res].sort((a, b) => new Date(a.fecha_vencimiento).getTime() - new Date(b.fecha_vencimiento).getTime()));
-                      (e.target as HTMLFormElement).reset();
-                    } catch (e) {
-                      console.error(e);
-                    }
-                  }}
-                  className="space-y-3 md:space-y-4"
-                >
-                  <div>
-                    <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 uppercase mb-1">Nombre</label>
-                    <input name="nombre" type="text" required placeholder="Luz, Arriendo, etc." className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1]" />
-                  </div>
-                  <div>
-                    <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 uppercase mb-1">Monto ($)</label>
-                    <input name="monto" type="number" step="0.01" required placeholder="0.00" className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1]" />
-                  </div>
-                  <div>
-                    <label className="block text-[9px] md:text-[10px] font-bold text-gray-500 uppercase mb-1">Vencimiento</label>
-                    <input name="fecha" type="date" required className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1]" />
-                  </div>
-                  <button type="submit" className="w-full bg-[#6366f1] text-white py-2.5 md:py-3 rounded-xl font-bold text-xs md:text-sm shadow-md hover:bg-[#4f46e5] transition-all active:scale-95">
-                    Registrar Cobro
-                  </button>
-                </form>
-
-                <div className="mt-5 md:mt-8 p-3 md:p-4 bg-[#6366f1]/10 rounded-xl md:rounded-2xl border border-[#6366f1]/20">
-                  <div className="flex items-center gap-1.5 md:gap-2 mb-1 text-[#6366f1]">
-                    <AlertCircle className="w-3 h-3 md:w-4 md:h-4" />
-                    <span className="text-[9px] md:text-[10px] font-bold uppercase">Total Pendiente</span>
-                  </div>
-                  <p className="text-lg md:text-xl font-black text-[#6366f1]">
-                    ${facturas.filter(f => !f.pagado).reduce((sum, f) => sum + f.monto, 0).toLocaleString()}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="fixed inset-0 z-50">
+          <CuentasScreen
+            userName={userData.username}
+            onBack={() => setShowBillModal(false)}
+            onNavigate={(s) => { setShowBillModal(false); goSection(s); }}
+          />
         </div>
       )}
 
@@ -2438,179 +2954,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
         />
       )}
 
-      {/* Modal: Medicamentos */}
-      {showMedicamentosModal && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] flex items-center justify-center p-4"
-          onClick={() => setShowMedicamentosModal(false)}
-        >
-          <div
-            className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#ef4444] to-[#dc2626]">
-              <div className="flex items-center gap-2">
-                <Pill className="w-5 h-5 text-white" />
-                <h2 className="text-lg font-bold uppercase text-white">Mis Medicamentos</h2>
-              </div>
-              <button onClick={() => setShowMedicamentosModal(false)} className="p-2 rounded-full hover:bg-white/30 transition-colors">
-                <X className="w-5 h-5 text-white" />
-              </button>
-            </div>
-
-            <div className="p-4 flex-1 overflow-y-auto">
-              {/* Formulario para agregar medicamento */}
-              <div className="bg-gray-50 rounded-2xl p-4 mb-4">
-                <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
-                  <Plus className="w-4 h-4" /> Agregar medicamento
-                </h3>
-                <div className="space-y-3">
-                  <input
-                    type="text"
-                    value={nuevoMedicamento.nombre}
-                    onChange={(e) => setNuevoMedicamento({ ...nuevoMedicamento, nombre: e.target.value })}
-                    placeholder="Nombre del medicamento"
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#ef4444] text-sm"
-                  />
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <label className="text-xs text-gray-500 mb-1 block">Hora</label>
-                      <input
-                        type="time"
-                        value={nuevoMedicamento.hora}
-                        onChange={(e) => setNuevoMedicamento({ ...nuevoMedicamento, hora: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#ef4444] text-sm"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-xs text-gray-500 mb-1 block">Dosis por día</label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="10"
-                        value={nuevoMedicamento.dosis}
-                        onChange={(e) => setNuevoMedicamento({ ...nuevoMedicamento, dosis: parseInt(e.target.value) || 1 })}
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#ef4444] text-sm"
-                      />
-                    </div>
-                  </div>
-                  <button
-                    onClick={async () => {
-                      if (nuevoMedicamento.nombre.trim()) {
-                        const now = new Date();
-                        const [h, m] = nuevoMedicamento.hora.split(':');
-                        const fecha = new Date(now.getFullYear(), now.getMonth(), now.getDate(), +h, +m);
-                        try {
-                          const saved = await recordatorioService.create({
-                            titulo: nuevoMedicamento.nombre,
-                            fecha_hora: fecha.toISOString(),
-                            categoria: 'Medicamento',
-                            activo: true,
-                            tomado: false,
-                          });
-                          setMedicamentos([...medicamentos, {
-                            id: saved.id,
-                            nombre: saved.titulo,
-                            hora: nuevoMedicamento.hora,
-                            dosis: nuevoMedicamento.dosis,
-                            completado: false,
-                          }]);
-                          setNuevoMedicamento({ nombre: '', hora: '08:00', dosis: 1 });
-                          fetchSavedRecordatorios();
-                        } catch (err) {
-                          console.error('Error saving medication:', err);
-                        }
-                      }
-                    }}
-                    className="w-full py-2 bg-[#ef4444] text-white rounded-xl font-bold text-sm hover:bg-[#dc2626] transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Plus className="w-4 h-4" /> Agregar
-                  </button>
-                </div>
-              </div>
-
-              {/* Lista de medicamentos */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-bold text-gray-700">Medicamentos ({medicamentos.length})</h3>
-                {medicamentos.length === 0 ? (
-                  <p className="text-center text-gray-400 py-4 text-sm">No hay medicamentos agregados</p>
-                ) : (
-                  medicamentos.map((med) => (
-                    <div key={med.id} className={`bg-white rounded-xl p-3 border ${med.completado ? 'border-green-300 bg-green-50' : 'border-gray-200'}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={async () => {
-                              const wasCompleted = med.completado;
-                              setMedicamentos(medicamentos.map(m =>
-                                m.id === med.id ? { ...m, completado: !m.completado } : m
-                              ));
-                              try {
-                                if (!wasCompleted) {
-                                  await recordatorioService.marcarTomado(med.id);
-                                  setXpStats((prev: XPStats) => ({ ...prev, medicationsTaken: prev.medicationsTaken + 1 }));
-                                  addXP(XP_CONFIG.MEDICATION_TAKEN, 'Medicamento tomado');
-                                  fetchSavedRecordatorios();
-                                }
-                              } catch (err) {
-                                console.error('Error updating medication:', err);
-                              }
-                            }}
-                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${med.completado ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-[#ef4444]'
-                            }`}
-                          >
-                            {med.completado && <Check className="w-4 h-4 text-white" />}
-                          </button>
-                          <div>
-                            <p className={`font-semibold text-sm ${med.completado ? 'line-through text-gray-400' : 'text-gray-800'}`}>
-                              {med.nombre}
-                            </p>
-                            <div className="flex items-center gap-3 text-xs text-gray-500">
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3" /> {med.hora}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Pill className="w-3 h-3" /> {med.dosis}x/día
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <button
-                          onClick={async () => {
-                            setMedicamentos(medicamentos.filter(m => m.id !== med.id));
-                            try {
-                              await recordatorioService.delete(med.id);
-                              fetchSavedRecordatorios();
-                            } catch (err) {
-                              console.error('Error deleting medication:', err);
-                            }
-                          }}
-                          className="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div className="p-4 border-t border-gray-100 bg-gray-50">
-              <button
-                onClick={() => setShowMedicamentosModal(false)}
-                className="w-full py-2 bg-gray-200 text-gray-700 rounded-xl font-bold text-sm hover:bg-gray-300 transition-colors"
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {xpPopUp && (
         <div className="fixed bottom-24 right-6 z-[100] animate-[slideInRight_0.3s_ease-out]">
-          <div className="bg-gradient-to-r from-[#7c3aed] to-[#059669] text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3">
+          <div className="bg-gradient-to-r from-[#7c3aed] to-[#059669] text-white px-5 py-3 rounded-md shadow-2xl flex items-center gap-3">
             <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
               <Zap className="w-6 h-6" />
             </div>
@@ -2623,8 +2969,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
       )}
 
       {showLevelUp && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-[fadeIn_0.3s_ease-out]">
-          <div className="bg-white rounded-3xl p-8 max-w-sm mx-4 text-center shadow-2xl animate-[scaleIn_0.5s_ease-out]">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-[fadeIn_0.3s_ease-out]" onClick={() => setShowLevelUp(false)}>
+          <div className="bg-white rounded-3xl p-8 max-w-sm mx-4 text-center shadow-2xl animate-[scaleIn_0.5s_ease-out]" onClick={(e) => e.stopPropagation()}>
             <div className="w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg animate-[pulse_1s_infinite]">
               <Trophy className="w-12 h-12 text-white" />
             </div>
@@ -2649,6 +2995,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
             </button>
           </div>
         </div>
+      )}
+
+      {showGreeting && userData.avatar_url && userData.avatar_index > 0 && (
+        <AvatarGreeting
+          avatarUrl={userData.avatar_url}
+          avatarIndex={userData.avatar_index}
+          userName={userData.username}
+          vozGenero={userData.voz_genero as 'masculino' | 'femenino' | undefined}
+          onDismiss={() => setShowGreeting(false)}
+        />
       )}
 
       {/* Create Workspace Modal */}
@@ -2869,7 +3225,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
       {/* Pending Invitations Toast */}
       {pendingInvitations.length > 0 && (
         <div className="fixed bottom-6 left-6 z-[100]">
-          <div className="bg-white rounded-2xl shadow-2xl border border-white/50 p-4 max-w-sm">
+          <div className="bg-white rounded-md shadow-2xl border border-white/50 p-4 max-w-sm">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-gradient-to-br from-[#7c3aed] to-[#059669] rounded-xl flex items-center justify-center">
                 <Mail className="w-5 h-5 text-white" />
@@ -2908,32 +3264,32 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
       {/* User Settings Modal */}
       {showUserSettingsModal && (
         <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-md z-[110] flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-md z-[110] flex items-center justify-center p-2 sm:p-4"
           onClick={() => setShowUserSettingsModal(false)}
         >
           <div 
-            className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden flex flex-col"
+            className="bg-white rounded-md shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[90vh]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-6 bg-gradient-to-r from-gray-800 to-gray-900">
-              <div className="flex items-center gap-3">
-                <div className="bg-white/10 p-2 rounded-xl">
-                  <User className="w-6 h-6 text-white" />
+            <div className="flex items-center justify-between p-4 sm:p-6 bg-gradient-to-r from-gray-800 to-gray-900 shrink-0">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <div className="bg-white/10 p-1.5 sm:p-2 rounded-xl shrink-0">
+                  <User className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold text-white">Ajustes de Perfil</h2>
-                  <p className="text-xs text-white/60">Gestiona tu identidad en Focusia</p>
+                <div className="min-w-0">
+                  <h2 className="text-lg sm:text-xl font-bold text-white truncate">Ajustes de Perfil</h2>
+                  <p className="text-xs text-white/60 truncate">Gestiona tu identidad en Focusia</p>
                 </div>
               </div>
-              <button onClick={() => setShowUserSettingsModal(false)} className="p-2 rounded-full hover:bg-white/10 transition-colors">
-                <X className="w-6 h-6 text-white" />
+              <button onClick={() => setShowUserSettingsModal(false)} className="p-2 rounded-full hover:bg-white/10 transition-colors shrink-0">
+                <X className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </button>
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto">
               <div className="flex flex-col items-center">
                 <div className="relative group">
-                  <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-100 shadow-lg">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-4 border-gray-100 shadow-lg">
                     <img 
                       src={newAvatarUrl || `https://ui-avatars.com/api/?name=${newUsername}&background=f4d2d2&color=000`} 
                       alt="Avatar Preview" 
@@ -2941,22 +3297,22 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
                     />
                   </div>
                   <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Plus className="w-6 h-6 text-white" />
+                    <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-2 font-medium">Vista previa del avatar</p>
+                <p className="text-xs text-gray-500 mt-2 font-medium text-center">Vista previa del avatar</p>
               </div>
 
               <div>
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">Elige un avatar</label>
-                <div className="grid grid-cols-6 gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                   {['Ashley','conrad','John','Lia','Monroe','Sophya'].map((name) => {
                     const avatarPath = `/avartars/${name}.jpeg`;
                     return (
                       <button
                         key={name}
                         onClick={() => setNewAvatarUrl(avatarPath)}
-                        className={`w-full aspect-square rounded-xl overflow-hidden border-2 transition-all hover:scale-105 active:scale-95 ${
+                        className={`w-full aspect-square rounded-lg sm:rounded-xl overflow-hidden border-2 transition-all hover:scale-105 active:scale-95 ${
                           newAvatarUrl === avatarPath ? 'border-gray-900 ring-2 ring-gray-900/20' : 'border-gray-100 hover:border-gray-300'
                         }`}
                       >
@@ -2965,16 +3321,49 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
                     );
                   })}
                 </div>
+                <div className="mt-3">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">O sube tu propia foto</label>
+                  <label className="flex items-center justify-center gap-2 w-full py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl border-2 border-dashed border-gray-200 hover:border-gray-400 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-all text-xs sm:text-sm text-gray-500 hover:text-gray-700">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const compressImage = (img: HTMLImageElement): string => {
+                            const MAX_SIZE = 200;
+                            let { width, height } = img;
+                            if (width > MAX_SIZE || height > MAX_SIZE) {
+                              if (width > height) { height = Math.round(height * MAX_SIZE / width); width = MAX_SIZE; }
+                              else { width = Math.round(width * MAX_SIZE / height); height = MAX_SIZE; }
+                            }
+                            const canvas = document.createElement('canvas');
+                            canvas.width = width;
+                            canvas.height = height;
+                            canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+                            return canvas.toDataURL('image/jpeg', 0.7);
+                          };
+                          const img = new Image();
+                          img.onload = () => setNewAvatarUrl(compressImage(img));
+                          img.src = URL.createObjectURL(file);
+                        }
+                      }}
+                    />
+                    <Upload className="w-4 h-4 shrink-0" />
+                    <span className="truncate">{newAvatarUrl?.startsWith('data:') ? 'Foto seleccionada' : 'Subir foto'}</span>
+                  </label>
+                </div>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div>
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 block">Nombre de usuario</label>
                   <input
                     type="text"
                     value={newUsername}
                     onChange={(e) => setNewUsername(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400 text-sm"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400 text-sm"
                     placeholder="Tu nombre"
                   />
                 </div>
@@ -2984,33 +3373,33 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
                     type="text"
                     value={newAvatarUrl}
                     onChange={(e) => setNewAvatarUrl(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400 text-sm"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400 text-sm"
                     placeholder="https://ejemplo.com/mifoto.jpg"
                   />
                 </div>
                 
                 <button
                   onClick={handleUpdateProfile}
-                  className="w-full py-3.5 bg-gray-900 text-white font-bold rounded-2xl hover:bg-black transition-all shadow-lg active:scale-95"
+                  className="w-full py-3 sm:py-3.5 bg-gray-900 text-white font-bold rounded-2xl hover:bg-black transition-all shadow-lg active:scale-95 text-sm sm:text-base"
                 >
                   Guardar Cambios
                 </button>
               </div>
 
-              <div className="pt-6 border-t border-gray-100">
+              <div className="pt-4 sm:pt-6 border-t border-gray-100">
                 <h3 className="text-xs font-bold text-red-500 uppercase tracking-widest mb-3">Zona de Peligro</h3>
                 <button
                   onClick={handleDeleteAccount}
-                  className="w-full py-3 border-2 border-red-100 text-red-500 font-bold rounded-2xl hover:bg-red-50 transition-colors flex items-center justify-center gap-2 text-sm"
+                  className="w-full py-3 border-2 border-red-100 text-red-500 font-bold rounded-2xl hover:bg-red-50 transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-4 h-4 shrink-0" />
                   Darme de baja / Eliminar cuenta
                 </button>
               </div>
             </div>
 
-            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-center">
-              <p className="text-[10px] text-gray-400 font-medium italic">Correo electrónico: {userData.email}</p>
+            <div className="p-3 sm:p-4 bg-gray-50 border-t border-gray-100 flex justify-center shrink-0">
+              <p className="text-[10px] text-gray-400 font-medium italic truncate">Correo electrónico: {userData.email}</p>
             </div>
           </div>
         </div>
@@ -3041,17 +3430,64 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
                   .filter(t => t.columna === 'Delegar')
                   .map(task => (
                     <div key={task.id} className="bg-white/60 p-3 rounded-xl border border-white/40 flex items-center justify-between gap-3 hover:bg-white/80 transition-colors">
-                      <span className="font-bold text-gray-700 flex-1">{task.titulo}</span>
-                      <button
-                        onClick={() => {
-                          setShowAccionesDelegarModal(false);
-                          openDelegationModal(task);
-                        }}
-                        className="shrink-0 p-2 bg-[#d97706] text-white rounded-lg hover:bg-[#b45309] transition-colors"
-                        title="Delegar por email"
-                      >
-                        <Send className="w-4 h-4" />
-                      </button>
+                      {editingDelegarId === task.id ? (
+                        <div className="flex items-center gap-2 flex-1">
+                          <input
+                            type="text"
+                            value={editDelegarText}
+                            onChange={(e) => setEditDelegarText(e.target.value)}
+                            className="flex-1 text-sm border border-gray-300 rounded-lg p-1.5"
+                            autoFocus
+                            onKeyDown={async (e) => {
+                              if (e.key === 'Enter' && editDelegarText.trim()) {
+                                await kanbanService.update(task.id, { titulo: editDelegarText.trim() });
+                                refreshKanbanTasks();
+                                setEditingDelegarId(null);
+                              }
+                              if (e.key === 'Escape') setEditingDelegarId(null);
+                            }}
+                          />
+                          <button onClick={async () => {
+                            if (!editDelegarText.trim()) return;
+                            await kanbanService.update(task.id, { titulo: editDelegarText.trim() });
+                            refreshKanbanTasks();
+                            setEditingDelegarId(null);
+                          }} className="text-green-600 hover:text-green-800" title="Guardar"><Check className="w-4 h-4" /></button>
+                          <button onClick={() => setEditingDelegarId(null)} className="text-red-600 hover:text-red-800" title="Cancelar"><X className="w-4 h-4" /></button>
+                        </div>
+                      ) : (
+                        <span className="font-bold text-gray-700 flex-1 truncate">{task.titulo}</span>
+                      )}
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => { setEditingDelegarId(task.id); setEditDelegarText(task.titulo); }}
+                          className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Editar"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!window.confirm('¿Eliminar esta tarea delegada?')) return;
+                            await kanbanService.delete(task.id);
+                            refreshKanbanTasks();
+                          }}
+                          className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowAccionesDelegarModal(false);
+                            openDelegationModal(task);
+                          }}
+                          className="p-2 bg-[#d97706] text-white rounded-lg hover:bg-[#b45309] transition-colors"
+                          title="Delegar por email"
+                        >
+                          <Send className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 {kanbanTasks.filter(t => t.columna === 'Delegar').length === 0 && (
@@ -3294,7 +3730,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
       {/* Delegation Notifications Toast */}
       {delegations.received.filter(d => d.status === 'pending').length > 0 && !showDelegationModal && (
         <div className="fixed bottom-6 right-6 z-[100]">
-          <div className="bg-white rounded-2xl shadow-2xl border border-white/50 p-4 max-w-sm">
+          <div className="bg-white rounded-md shadow-2xl border border-white/50 p-4 max-w-sm">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-gradient-to-br from-[#d97706] to-[#f59e0b] rounded-xl flex items-center justify-center">
                 <Send className="w-5 h-5 text-white" />
@@ -3323,22 +3759,122 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
         onClose={() => setShowMetaAnualForm(false)}
       />
 
-      {/* Planificar Modal */}
-      {taskToPlanificar && (
-        <PlanificarModal
-          task={taskToPlanificar}
-          onClose={() => setTaskToPlanificar(null)}
-          onClassified={() => {
-            kanbanService.getAll().then(data => setKanbanTasks(Array.isArray(data) ? data : []));
+      {/* Gran Meta Anual Modal */}
+      <GranMetaAnualModal
+        isOpen={showGranMetaAnual}
+        onClose={() => {
+          setShowGranMetaAnual(false);
+          setEditGranMetaMode(false);
+          setExistingGranMeta(null);
+        }}
+        username={userData.username}
+        avatarUrl={userData.avatar_url}
+        ruedaData={ruedaCompleta}
+        editMode={editGranMetaMode}
+        existingMeta={existingGranMeta}
+        onApproved={() => {
+          setShowGranMetaAnual(false);
+          setEditGranMetaMode(false);
+          setExistingGranMeta(null);
+          setSavingStatus('Tu Gran Meta Anual ya fue creada y guardada. Podrás verla cada vez que ingreses al botón ANUAL.');
+          setTimeout(() => setSavingStatus(''), 6000);
+          refreshAccionesClasificadas();
+        }}
+      />
+
+      {/* Monthly Wizard */}
+      {showMonthlyWizard && (
+        <MonthlyWizard
+          onClose={() => setShowMonthlyWizard(false)}
+          onApproved={() => {
+            setShowMonthlyWizard(false);
+            setShowMatrizEisenhower(true);
           }}
+          username={userData.username}
+          avatarUrl={userData.avatar_url}
+          onNavigate={handleMonthlyNavigate}
         />
       )}
 
-      {/* Buzón de Propuestas IA */}
-      <BuzonPropuestas
-        isOpen={showBuzonPropuestas}
-        onClose={() => setShowBuzonPropuestas(false)}
+      {/* Monthly Calendar */}
+      {showMonthlyCalendar && (
+        <MonthlyCalendar
+          onClose={() => setShowMonthlyCalendar(false)}
+          onReview={() => { setShowMonthlyCalendar(false); setShowMonthlyWizard(true); }}
+          username={userData.username}
+          avatarUrl={userData.avatar_url}
+          onNavigate={handleMonthlyNavigate}
+        />
+      )}
+
+      {/* Asistente flotante (Fase 1: chat + voz + mic; no reemplaza CardAyudaIA) */}
+      <FloatingAssistant
+        username={userData.username}
+        avatarUrl={userData.avatar_url}
+        avatarIndex={userData.avatar_index}
       />
+
+      {/* Kanban Backlog full page */}
+      {showKanbanModule && (
+        <KanbanModule
+          username={userData.username}
+          avatarUrl={userData.avatar_url}
+          vistaInicial={kanbanVistaInicial}
+          onNavigate={(key) => { setShowKanbanModule(false); handleMonthlyNavigate(key); }}
+          onClose={() => setShowKanbanModule(false)}
+        />
+      )}
+
+      {/* Acciones por Delegar full page */}
+      {showDelegarModule && (
+        <DelegarModule
+          username={userData.username}
+          avatarUrl={userData.avatar_url}
+          onNavigate={(key) => { setShowDelegarModule(false); handleMonthlyNavigate(key); }}
+          onClose={() => setShowDelegarModule(false)}
+        />
+      )}
+
+      {/* Annual View: meta vigente + calendario anual (spec §15) */}
+      {showAnnualView && (
+        <AnnualModuleView
+          userName={userData.username}
+          avatarImg={userData.avatar_url}
+          onClose={() => setShowAnnualView(false)}
+          onEdit={() => setShowEditGoalWarning(true)}
+          onNavigate={(s) => { setShowAnnualView(false); goSection(s); }}
+        />
+      )}
+
+      {/* Edit Goal Warning Modal */}
+      <EditGoalWarningModal
+        isOpen={showEditGoalWarning}
+        onClose={() => setShowEditGoalWarning(false)}
+        onConfirm={async () => {
+          setShowEditGoalWarning(false);
+          setShowAnnualView(false);
+          const current = await granMetaAnualService.current().catch(() => null);
+          if (current) {
+            setExistingGranMeta(current);
+            setEditGranMetaMode(true);
+          }
+          setShowGranMetaAnual(true);
+        }}
+      />
+
+
+    
+
+      {/* Plan Rápido */}
+      {showPlanRapido && (
+        <PlanificarModal
+          onClose={() => setShowPlanRapido(false)}
+          onClassified={() => {
+            refreshKanbanTasks();
+            refreshAccionesClasificadas();
+          }}
+        />
+      )}
 
       {/* Microflujo de Ajuste */}
       {microFlujoPropuesta && (
@@ -3349,67 +3885,150 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub }) => {
         />
       )}
 
-      {/* Configuración del Sistema */}
-      <ConfiguracionPanel
-        isOpen={showConfigPanel}
-        onClose={() => setShowConfigPanel(false)}
-      />
+      {/* Configuración del Sistema (módulo botón Inicio) */}
+      {showConfigPanel && (
+        <ConfiguracionModule
+          key={configPantalla}
+          username={userData.username}
+          onClose={() => { setShowConfigPanel(false); setConfigPantalla('menu'); }}
+          onLogout={onLogout}
+          pantallaInicial={configPantalla}
+          avatarIndex={userData.avatar_index}
+          avatarUrl={userData.avatar_url}
+        />
+      )}
 
-      {/* AiMissionAssistant */}
-      <AiMissionAssistant
-        isOpen={showAiMissionModal}
-        onClose={() => setShowAiMissionModal(false)}
-        metaAnual={metaAnual}
-        metaSemanal={metaSemanal}
-        metaDiaria={metaDiaria}
-        onSelectMission={(mission: string) => {
-          setSelectedMissionText(mission);
-          setShowAiMissionModal(false);
-        }}
-      />
+      {/* Pantalla: Redes Sociales (digitalización foto) */}
+      {showRedes && (
+        <div className="fixed inset-0 z-50">
+          <RedesSocialesScreen
+            userName={userData.username}
+            links={redesLinks}
+            irAConfig={redesIrAConfig}
+            onLinksChange={setRedesLinks}
+            onBack={() => setShowRedes(false)}
+            onNavigate={(s) => { setShowRedes(false); goSection(s); }}
+          />
+        </div>
+      )}
 
       {showMatrizEisenhower && (
         <MatrizEisenhower
           onClose={() => setShowMatrizEisenhower(false)}
           onGoKanban={handleGoKanban}
+          userName={userData.username}
+          avatarIndex={userData.avatar_index}
+          avatarUrl={userData.avatar_url}
         />
       )}
       {showDiagnosticoRueda && (
-        <DiagnosticoRueda
-          avatarIndex={userData.avatar_index}
-          onClose={() => { setShowDiagnosticoRueda(false); ruedaService.resumenDashboard().then(setResumenRueda).catch(() => {}); }}
-          onGoMetaAnual={() => { setShowDiagnosticoRueda(false); setShowMetaAnualForm(true); }}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowDiagnosticoRueda(false)} />
+          <div className="relative w-full h-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-md shadow-2xl z-10">
+            <DiagnosticoRueda
+              avatarIndex={userData.avatar_index}
+              userName={userData.username}
+              onClose={() => { setShowDiagnosticoRueda(false); ruedaService.resumenDashboard().then(setResumenRueda).catch(() => {}); }}
+              onGoMetaAnual={() => { setShowDiagnosticoRueda(false); setShowGranMetaAnual(true); }}
+              onNavigate={(s) => { if (s === 'rueda') return; setShowDiagnosticoRueda(false); goSection(s); }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Coaching */}
+      {showCoaching && (
+        <div className="fixed inset-0 z-50">
+          <CoachingScreen onBack={() => setShowCoaching(false)} userName={userData.username} onNavigate={handleCoachingNavigate} />
+        </div>
+      )}
+
+      {/* Tribu */}
+      {showTribu && (
+        <div className="fixed inset-0 z-50">
+          <TribuScreen onBack={() => setShowTribu(false)} userName={userData.username} onNavigate={(s) => { setShowTribu(false); goSection(s); }} />
+        </div>
+      )}
+
+      {/* Cursos */}
+      {showCursos && (
+        <div className="fixed inset-0 z-50">
+          <CursosScreen onBack={() => setShowCursos(false)} userName={userData.username} onNavigate={(s) => { setShowCursos(false); goSection(s); }} />
+        </div>
+      )}
+
+      {/* Reportes */}
+      {selectedReport && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <ReportDetailScreen
+            report={selectedReport}
+            onBack={() => setSelectedReport(null)}
+            onNavigate={(s) => { setSelectedReport(null); setShowReportsList(false); goSection(s); }}
+          />
+        </div>
+      )}
+      {showReportsList && !selectedReport && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <ReportsListScreen
+            onSelect={(r) => { setSelectedReport(r); }}
+            onBack={() => setShowReportsList(false)}
+          />
+        </div>
+      )}
+
+      {/* Focus Area Detail Modal → pantalla ÁREA FOCO (diseño de fotos) */}
+      {selectedFocusArea && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setSelectedFocusArea(null)} />
+          <div className="relative w-full h-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-md shadow-2xl z-10">
+            <DiagnosticoRueda
+              key={selectedFocusArea}
+              avatarIndex={userData.avatar_index}
+              userName={userData.username}
+              onClose={() => { setSelectedFocusArea(null); ruedaService.resumenDashboard().then(setResumenRueda).catch(() => {}); }}
+              onGoMetaAnual={() => { setSelectedFocusArea(null); setShowGranMetaAnual(true); }}
+              pantallaInicial="acciones"
+              focoInicial={selectedFocusArea}
+              onNavigate={(s) => { if (s === 'rueda') return; setSelectedFocusArea(null); goSection(s); }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Agent Settings Modal */}
+      {showAgentSettings && (
+        <AgentSettings onClose={() => setShowAgentSettings(false)} />
+      )}
+
+      {/* FocusIA Feedback Popup */}
+      {showFocusIAFeedback && (
+        <FocusIAFeedback
+          userName={userData.username}
+          onOpenChat={() => setShowAgentSettings(true)}
+          onDismiss={() => setShowFocusIAFeedback(false)}
         />
       )}
+
+      {/* AgentChat removed - now integrated into CardAyudaIA */}
     </div>
 
   );
 };
 
 export default Dashboard;
-export const FechasImportantesCard: React.FC<FechasImportantesProps> = ({ dayActive = new Date().getDate(), recordatorios, onDayClick, onAddRecordatorio, onEditRecordatorio, onDeleteRecordatorio }) => {
+export const FechasImportantesCard: React.FC<FechasImportantesProps> = ({ dayActive = new Date().getDate(), recordatorios, onAddRecordatorio, onEditRecordatorio, onDeleteRecordatorio }) => {
   const ahora = new Date();
   const añoActual = ahora.getFullYear();
   const mesActual = ahora.getMonth();
 
   const nombreMeses = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
-
-  const diasSemana = [
-    { label: 'SUN', isSunday: true, isSaturday: false },
-    { label: 'MON', isSunday: false, isSaturday: false },
-    { label: 'TUE', isSunday: false, isSaturday: false },
-    { label: 'WED', isSunday: false, isSaturday: false },
-    { label: 'THU', isSunday: false, isSaturday: false },
-    { label: 'FRI', isSunday: false, isSaturday: false },
-    { label: 'SAT', isSunday: false, isSaturday: true },
-  ];
+  const diasSemana = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
   const primerDia = new Date(añoActual, mesActual, 1);
   const diasEnMes = new Date(añoActual, mesActual + 1, 0).getDate();
   const diaSemanaInicio = primerDia.getDay();
 
-  const paddingInicial = Array.from({ length: diaSemanaInicio }, (_, i) => i);
-  const diasDelMes = Array.from({ length: diasEnMes }, (_, index) => index + 1);
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
   const recordatoriosPorDia = useMemo(() => {
     const map: Record<number, RecordatorioData[]> = {};
@@ -3426,201 +4045,209 @@ export const FechasImportantesCard: React.FC<FechasImportantesProps> = ({ dayAct
     return map;
   }, [recordatorios, mesActual, añoActual]);
 
-  const recordatoriosHoy = recordatoriosPorDia[dayActive] || [];
+  const handleDayClick = (dia: number) => {
+    setSelectedDay(prev => prev === dia ? null : dia);
+  };
+
+  const selectedRecordatorios = selectedDay ? recordatoriosPorDia[selectedDay] || [] : [];
 
   return (
-   
-    <div className="bg-white shadow-[0_2px_4px_rgb(247,243,243)] flex flex-col h-full w-[200px] p-1.5 overflow-hidden">
-  {/* TÍTULO PRINCIPAL */}
-  <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-none w-full">
-    FECHAS IMPORTANTES
-  </div>
-  
-  {/* 1️⃣ RECUADRO EXTERIOR (Señalado por la flecha inferior en la imagen) */}
-  <div className="p-1.5 flex-1 flex flex-col overflow-hidden border border-slate-300/80 rounded-xl bg-slate-50/30 w-full">
-    
-    {/* 2️⃣ RECUADRO INTERIOR MARCADO (Señalado por la flecha superior en la imagen) */}
-    <div className="border border-slate-800 rounded-lg p-2 flex-1 flex flex-col bg-white w-full overflow-hidden">
-      
-      {/* CONTENEDOR DEL ENCABEZADO (AÑO, MES Y BOTÓN +) */}
-      <div className="flex justify-between items-center text-slate-800 font-black text-[10px] mb-2 tracking-wider select-none w-full">
-        
-        {/* 🗓️ BADGE DEL AÑO */}
-        <div className="bg-gradient-to-r from-[#fecaca] to-[#ffa3a3] border border-slate-200/80 rounded-md px-1.5 py-0.5 shadow-3xs font-black text-slate-700 shrink-0">
-          {añoActual}
-        </div>
-
-        {/* 🔄 CONTENEDOR DEL MES Y EL BOTÓN (+) */}
-        <div className="flex items-center gap-1 font-black text-slate-800 shrink-0">
-          <span className="tracking-widest text-[11px]">{nombreMeses[mesActual]}</span>
-          
-          {/* BOTÓN MÁS (+) */}
-          <button
-            type="button"
-            onClick={() => onAddRecordatorio?.(dayActive)}
-            className="w-3.5 h-3.5 rounded-md bg-white border border-slate-200 shadow-3xs text-slate-700 flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all"
-            title="Añadir recordatorio"
-          >
-            <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </button>
-        </div>
+  <div className="flex flex-col  h-[240px] rounded-md items-center  overflow-hidden -mt-78 -ml-15">
+      <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1 text-[11px] font-bold tracking-[0.2em] uppercase mt-1.5 mx-2 w-[186px] rounded-sm select-none shrink-0">
+        FECHAS IMPORTANTES
       </div>
-
-      {/* CUERPO DEL CALENDARIO */}
-      <div className="w-full bg-white flex-1 flex flex-col justify-between overflow-hidden">
+       <div className="bg-[#fff2ef] p-1 flex flex-col mt-1.5 mb-1.5 rounded-sm border border-[linear-gradient(90deg,#224aa8,#b56fdc)] w-[186px] h-[200px] flex-1 min-h-0">
         
-        {/* CABECERA DE DÍAS (GRID DE 7 COLUMNAS) */}
-        <div className="w-full border-t border-slate-100 pt-1.5">
-          <div className="grid grid-cols-7 text-[8px] font-black text-center mb-1 select-none w-full">
-            {diasSemana.map((dia) => (
-              <span 
-                key={dia.label} 
-                className={`tracking-wider ${
-                  dia.isSunday 
-                    ? 'text-rose-400 font-black' 
-                    : dia.isSaturday 
-                    ? 'text-indigo-400 font-black' 
-                    : 'text-slate-400'
-                }`}
-              >
-                {dia.label}
-              </span>
-            ))}
-          </div>
-
-          {/* MATRIZ DE NÚMEROS DEL MES */}
-          <div className="grid grid-cols-7 text-[10px] font-bold text-center gap-y-0.05 text-slate-700 w-full overflow-hidden">
-            {paddingInicial.map((_, idx) => (
-              <span key={`blank-${idx}`} className="block h-4" />
-            ))}
-
-            {diasDelMes.map((dia) => {
-              const celdaIndex = (dia + paddingInicial.length) % 7;
-              const esDomingo = celdaIndex === 1;
-              const esSabado = celdaIndex === 0;
-              const esDiaSeleccionado = dia === dayActive;
-              const tieneRecordatorio = !!recordatoriosPorDia[dia];
-
-              return (
-                <div 
-                  key={dia} 
-                  className="h-4 flex items-center justify-center relative cursor-pointer w-full" 
-                  onClick={() => onDayClick?.(dia)}
-                >
-                  {esDiaSeleccionado ? (
-                    <span className="w-4 h-4 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-black text-[9px] shadow-3xs select-none">
-                      {dia}
-                    </span>
-                  ) : (
-                    <span className={`text-[9px] 
-                      ${esDomingo ? 'text-rose-500 font-black' : ''} 
-                      ${esSabado ? 'text-slate-900 font-black' : ''} 
-                      ${!esDomingo && !esSabado ? 'font-medium hover:text-slate-900 transition-colors' : ''}
-                    `}>
-                      {dia}
-                    </span>
-                  )}
-
-                  {tieneRecordatorio && (
-                    <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2">
-                      <div className="w-1 h-1 rounded-full bg-rose-400" />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+        <div className="flex items-center justify-between w-full mb-1 shrink-0">
+          <span className="bg-[#f7a5a5] text-[#1a2a4f] text-[10px] font-bold px-1.5 py-0.5 rounded-md  w-[45px] h-[20px]">{añoActual}</span>
+          <span className="text-[#1a2a4f] text-[12px] font-bold tracking-wide uppercase">{nombreMeses[mesActual]}</span>
         </div>
 
-        {/* SECCIÓN INFERIOR DE RECORDATORIOS */}
-        {recordatorios && recordatorios.length > 0 && (
-          <div className="pt-1 border-t border-slate-100 space-y-0.5 mt-1 shrink-0 overflow-y-auto max-h-[50px] scrollbar-hide">
-            {recordatorios.map(r => {
-              const fecha = new Date(r.fecha_hora);
-              const dia = fecha.getDate();
-              return (
-                <div key={r.id} className="flex items-center gap-1 px-1 group">
-                  <span className="text-[8px] font-bold text-indigo-500 shrink-0 w-3 text-right">{dia}</span>
-                  <span className="text-[8px] font-medium text-slate-700 truncate flex-1">{r.titulo}</span>
-                  <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onEditRecordatorio?.(r); }}
-                      className="w-3 h-3 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors"
-                      title="Editar"
-                    >
-                      <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+        <div className="grid grid-cols-7 grid-rows-[auto_repeat(6,1fr)] w-full h-[180px] rounded-sm">
+          {diasSemana.map((d) => (
+            <div key={d} className="bg-[#f7a5a5] text-[#1a2a4f] text-[8px] font-bold text-center py-0.5 uppercase flex items-center justify-center">{d}</div>
+          ))}
+          {Array.from({ length: diaSemanaInicio }).map((_, i) => (
+            <div key={`pad-${i}`} className="p-[1px]"><div className="bg-[#f5e8e4] w-[2px] h-[2px] rounded-sm" /></div>
+          ))}
+          {Array.from({ length: diasEnMes }, (_, i) => i + 1).map((dia) => (
+            <div
+              key={dia}
+              onClick={() => handleDayClick(dia)}
+              className={`p-[1px] cursor-pointer ${dia === selectedDay ? '' : ''}`}
+            >
+              <div className={`relative text-center text-[10px] py-1 h-full flex items-center justify-center rounded-sm transition-colors ${
+                dia === selectedDay
+                  ? 'bg-[#1a2a4f] text-white font-bold'
+                  : recordatoriosPorDia[dia]?.length
+                    ? 'bg-[#e8a8a0] text-[#1a2a4f] font-bold'
+                    : 'bg-[#f5e8e4] text-[#1a2a4f] hover:bg-[#e0c8c0]'
+              }`}>
+                {dia}
+                {recordatoriosPorDia[dia]?.length ? (
+                  <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-0.5 rounded-full ${dia === selectedDay ? 'bg-white' : 'bg-[#e05050]'}`} />
+                ) : null}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {selectedDay && (
+          <div className="mt-1 pt-1 border-t border-[#c8a0c0] w-full shrink-0">
+            {selectedRecordatorios.length === 0 ? (
+              <div className="text-[7px] text-[#8a6a8a] text-center py-0.5 italic">Sin recordatorios</div>
+            ) : (
+              <div className="flex flex-col gap-0.5">
+                {selectedRecordatorios.map((r) => (
+                  <div key={r.id} className="flex items-center gap-0.5 bg-white/70 rounded px-1 py-0.5 border border-[#e8d0e8]/50">
+                    <div className={`w-1 h-1 rounded-full shrink-0 ${r.categoria === 'Medicamento' ? 'bg-green-400' : r.categoria === 'Cumpleaños' ? 'bg-pink-400' : r.categoria === 'HoraOro' ? 'bg-yellow-400' : r.categoria === 'Equipo' ? 'bg-blue-400' : 'bg-purple-400'}`} />
+                    <span className="text-[#3a1555] font-semibold truncate flex-1 leading-tight text-[8px]">{r.titulo}</span>
+                    <button onClick={() => onEditRecordatorio?.(r)} className="text-[#2b44ff] hover:text-[#1a2a6c] shrink-0">
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                     </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onDeleteRecordatorio?.(r.id); }}
-                      className="w-3 h-3 flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors"
-                      title="Eliminar"
-                    >
-                      <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                    <button onClick={() => onDeleteRecordatorio?.(r.id)} className="text-red-400 hover:text-red-600 shrink-0">
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                     </button>
                   </div>
-                </div>
-              );
-            })}
+                ))}
+              </div>
+            )}
+            <button
+              onClick={() => onAddRecordatorio?.(selectedDay)}
+              className="mt-0.5 flex items-center justify-center gap-0.5 text-[#2b44ff] hover:text-[#1a2a6c] text-[8px] font-bold transition-colors w-full"
+            >
+              <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Agregar
+            </button>
           </div>
         )}
       </div>
-
-    </div> {/* FIN DEL RECUADRO INTERIOR */}
-  </div> {/* FIN DEL RECUADRO EXTERIOR */}
-</div>
-     
+    </div>
   );
 };
 
 interface AccionesPorDelegarInlineProps {
   kanbanTasks: KanbanTaskData[];
   onOpenDelegation: (task: KanbanTaskData) => void;
+  onRefresh: () => void;
+  onOpenModule?: () => void;
 }
 
-const AccionesPorDelegarInline: React.FC<AccionesPorDelegarInlineProps> = ({ kanbanTasks, onOpenDelegation }) => {
+const AccionesPorDelegarInline: React.FC<AccionesPorDelegarInlineProps> = ({ kanbanTasks, onOpenDelegation, onRefresh, onOpenModule }) => {
   const delegarTasks = useMemo(
     () => kanbanTasks.filter(t => t.columna === 'Delegar'),
     [kanbanTasks]
   );
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editText, setEditText] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [rowCount, setRowCount] = useState(0);
+  const [lineas, setLineas] = useState<Record<number, string>>({});
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const calculateRows = () => {
+      const containerHeight = containerRef.current!.clientHeight;
+      const rowHeightWithGap = 22;
+      const calculatedRows = Math.floor(containerHeight / rowHeightWithGap);
+      setRowCount(Math.max(1, calculatedRows));
+    };
+    const resizeObserver = new ResizeObserver(() => calculateRows());
+    resizeObserver.observe(containerRef.current);
+    calculateRows();
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  const handleLineChange = (index: number, value: string) => {
+    setLineas(prev => ({ ...prev, [index]: value }));
+  };
+
+  const handleEdit = (task: KanbanTaskData) => {
+    setEditingId(task.id);
+    setEditText(task.titulo);
+  };
+
+  const handleSave = async (task: KanbanTaskData) => {
+    if (!editText.trim()) return;
+    try {
+      await kanbanService.update(task.id, { titulo: editText.trim() });
+      onRefresh();
+    } catch (err) {
+      console.error('Error editing task:', err);
+    }
+    setEditingId(null);
+  };
+
+  const handleDelete = async (task: KanbanTaskData) => {
+    if (!window.confirm('¿Eliminar esta tarea delegada?')) return;
+    try {
+      await kanbanService.delete(task.id);
+      onRefresh();
+    } catch (err) {
+      console.error('Error deleting task:', err);
+    }
+  };
 
   return (
-    <div className="bg-white rounded-md border-2 border-gray-100 shadow-md overflow-hidden max-w-[300px] h-[200px] mx-auto -ml-106 mt-110">
-      <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-none w-[300px]">
+    <div className="bg-white rounded-md border border-gray-100 shadow-md overflow-hidden w-[300px] flex flex-col">
+      <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-bold
+       tracking-widest uppercase rounded-lg mt-2 mx-2 select-none shrink-0">
         ACCIONES POR DELEGAR
       </div>
-      <table className="w-full border-collapse">
-        <thead>
-          <tr>
-            <th className="w-2/3 p-2 border-b border-slate-100">
-              <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-orange-200/40 text-center">ACCIÓN</div>
-            </th>
-            <th className="w-1/3 p-2 border-b border-slate-100">
-              <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-orange-200/40 text-center">ACCIÓN</div>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {delegarTasks.map(task => (
-            <tr key={task.id}>
-              <td className="p-1">
-                <span className="block text-[10px] text-gray-700 truncate border border-gray-200 rounded p-1 h-6 leading-4">{task.titulo}</span>
-              </td>
-              <td className="p-1 text-center">
-                <button onClick={() => onOpenDelegation(task)}
-                  className="text-[9px] bg-amber-500 text-white px-2 py-0.5 rounded hover:bg-amber-600 transition-colors font-bold">
-                  Enviar
-                </button>
-              </td>
+      <div className="mx-2 mt-2 mb-2 rounded-mdflex-1 flex flex-col overflow-hidden">
+        <table className="w-full border-collapse shrink-0">
+          <thead>
+            <tr>
+              <th className="w-2/3 p-1.5">
+                <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1 px-1 rounded-md font-bold tracking-wider uppercase text-center">ACCIÓN</div>
+              </th>
+              <th className="w-1/3 p-1.5">
+                <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1 px-1 rounded-md font-bold tracking-wider uppercase text-center">RESPONSABLE</div>
+              </th>
             </tr>
-          ))}
-          {delegarTasks.length === 0 && (
-            <tr><td colSpan={2} className="p-4 text-[10px] text-gray-400 text-center italic">Sin tareas para delegar</td></tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+        </table>
+        <div ref={containerRef} className="overflow-hidden px-2 pb-2 pt-1 flex gap-2 flex-1">
+          <div className="flex-1 space-y-1.5">
+            {[...Array(rowCount)].map((_, index) => (
+              <div
+                key={index}
+                className="w-full bg-[#f4f5f8] rounded-md h-4 flex items-center border border-transparent focus-within:border-slate-200 transition-all shrink-0"
+              >
+                <input
+                  type="text"
+                  value={lineas[index] || ''}
+                  onChange={(e) => handleLineChange(index, e.target.value)}
+                  placeholder="Escriba aquí"
+                  className="w-full bg-transparent border-none outline-none focus:ring-0 text-slate-700 italic text-[10px] font-normal placeholder-gray-400 px-2"
+                />
+              </div>
+            ))}
+          </div>
+          <div className="flex-1 space-y-1.5">
+            {[...Array(rowCount)].map((_, index) => (
+              <div
+                key={index}
+                className="w-full bg-[#f4f5f8] rounded-md h-4 flex items-center border border-transparent focus-within:border-slate-200 transition-all shrink-0"
+              >
+                <input
+                  type="text"
+                  placeholder="Nombre"
+                  className="w-full bg-transparent border-none outline-none focus:ring-0 text-slate-700 italic text-[10px] font-normal placeholder-gray-400 px-2"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+        {onOpenModule && (
+          <button
+            onClick={onOpenModule}
+            className="mx-2 mb-2 py-1.5 rounded-md bg-[#eef3ff] text-[#1d4ed8] text-[10px] font-bold tracking-widest uppercase hover:bg-[#e0ebff] transition-colors"
+          >
+            Abrir módulo →
+          </button>
+        )}
+      </div>
     </div>
   );
 };
@@ -3638,35 +4265,35 @@ const CategoriasMenu: React.FC = () => {
   ];
 
   return (
-    <div className=" flex justify-between items-center gap-1  max-w-2xl mx-auto w-full mt-40 -ml-14">
+    <div className="flex justify-between items-center gap-2 w-full">
       {categorias.slice(0, 3).map((cat) => (
         <button
           key={cat.id}
           onClick={() => setActiveTab(cat.label)}
-          className={`text-[9px] px-4 py-2 rounded-lg font-black uppercase flex-1 transition-colors duration-200 ${
+          className={`text-[9px] px-4 py-2 rounded-md font-bold uppercase flex-1 transition-colors duration-200 ${
             cat.esPrimario
-              ? 'bg-gradient-to-r from-[#040817] via-[#0b153a] to-[#2b44ff] text-white'
+              ? 'bg-[linear-gradient(90deg,#000000,#3533cd)] text-white'
               : 'bg-gradient-to-r from-[#040817] via-[#0b153a] to-[#2b44ff] text-white'
           }`}
         >
           {cat.label}
         </button>
       ))}
-      <div className="flex-shrink-0 p-1.5 mx-1 flex items-center justify-center">
+      <div className="flex-shrink-0 flex items-center justify-center">
         <img
-          src='public/focusia-logo.png'
-          alt="F"
-          className="w-12 h-12 "
+          src='public/focusia-logo2.png'
+          alt="Focus"
+          className="w-10 h-10 "
         />
       </div>
       {categorias.slice(3).map((cat) => (
         <button
           key={cat.id}
           onClick={() => setActiveTab(cat.label)}
-          className={`text-[9px] px-4 py-2 rounded-lg font-black uppercase flex-1 transition-colors duration-200 ${
+          className={`text-[9px] px-4 py-2 rounded-md font-bold uppercase flex-1 transition-colors duration-200 ${
             cat.esPrimario
-              ? 'bg-gradient-to-r from-[#040817] via-[#0b153a] to-[#2b44ff] text-white'
-              : 'bg-gradient-to-r from-[#040817] via-[#0b153a] to-[#2b44ff] text-white'
+              ? 'bg-[linear-gradient(90deg,#000000,#3533cd)] text-white'
+              : 'bg-[linear-gradient(90deg,#000000,#3533cd)] text-white'
           }`}
         >
           {cat.label}
@@ -3676,133 +4303,156 @@ const CategoriasMenu: React.FC = () => {
   );
 };
 
-interface DynamicKanbanBacklogProps {
-  kanbanTasks: KanbanTaskData[];
-  setKanbanTasks: React.Dispatch<React.SetStateAction<KanbanTaskData[]>>;
-  onPlanificar: (task: KanbanTaskData) => void;
-}
+const CardAyudaIA: React.FC<{ onOpenSettings?: () => void }> = ({ onOpenSettings }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState<Array<{ id: string; rol: string; mensaje: string; created_at: string }>>([]);
+  const [input, setInput] = useState('');
+  const [sessionId, setSessionId] = useState<string | undefined>(undefined);
+  const [loading, setLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-const DynamicKanbanBacklog: React.FC<DynamicKanbanBacklogProps> = ({ kanbanTasks, setKanbanTasks, onPlanificar }) => {
-  const [newTitle, setNewTitle] = useState('');
-  const [adding, setAdding] = useState(false);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-  const backlogTasks = useMemo(
-    () => kanbanTasks.filter(t => t.columna === 'Backlog' || t.columna === 'Agenda'),
-    [kanbanTasks]
-  );
-
-  const handleAdd = async () => {
-    if (!newTitle.trim() || adding) return;
-    setAdding(true);
+  const loadHistory = async () => {
     try {
-      const created = await kanbanService.create({ titulo: newTitle.trim(), descripcion: '', columna: 'Backlog' });
-      setKanbanTasks(prev => [...prev, created]);
-      setNewTitle('');
-    } catch (err) {
-      console.error('Error adding task:', err);
+      const msgs = await agentService.getConversations(sessionId);
+      if (msgs.length > 0) {
+        setMessages(msgs.slice(-20));
+        setSessionId(msgs[0].session_id);
+      } else {
+        setMessages([{
+          id: 'welcome',
+          rol: 'ASSISTANT',
+          mensaje: '¡Hola! Soy FocusIA, tu asistente de productividad personal. ¿En qué puedo ayudarte hoy? Puedo revisar tus tareas, darte recomendaciones o simplemente charlar sobre tu progreso.',
+          created_at: new Date().toISOString(),
+        }]);
+      }
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (isOpen && messages.length === 0) {
+      loadHistory();
+      setTimeout(() => inputRef.current?.focus(), 300);
+    }
+  }, [isOpen]);
+
+  const sendMessage = useCallback(async () => {
+    const text = input.trim();
+    if (!text || loading) return;
+    setInput('');
+    setLoading(true);
+
+    const userMsg = { id: `user-${Date.now()}`, rol: 'USER', mensaje: text, created_at: new Date().toISOString() };
+    setMessages(prev => [...prev, userMsg]);
+
+    try {
+      const res = await agentService.chat(text, sessionId);
+      setSessionId(res.session_id);
+      const botMsg = { id: `bot-${Date.now()}`, rol: 'ASSISTANT', mensaje: res.respuesta, created_at: new Date().toISOString() };
+      setMessages(prev => [...prev, botMsg]);
+    } catch {
+      setMessages(prev => [...prev, { id: `err-${Date.now()}`, rol: 'ASSISTANT', mensaje: 'Lo siento, tuve un problema al procesar tu mensaje. ¿Puedes intentarlo de nuevo?', created_at: new Date().toISOString() }]);
     } finally {
-      setAdding(false);
+      setLoading(false);
     }
-  };
+  }, [input, loading, sessionId]);
 
-  const handleHacer = async (task: KanbanTaskData) => {
-    try {
-      await kanbanService.update(task.id, { columna: 'Hoy' });
-      setKanbanTasks(prev => prev.map(t => t.id === task.id ? { ...t, columna: 'Hoy' } : t));
-    } catch (err) { console.error(err); }
-  };
-
-  const handleDelegar = async (task: KanbanTaskData) => {
-    try {
-      await kanbanService.update(task.id, { columna: 'Delegar' });
-      setKanbanTasks(prev => prev.map(t => t.id === task.id ? { ...t, columna: 'Delegar' } : t));
-    } catch (err) { console.error(err); }
-  };
-
-  const handleBasura = async (task: KanbanTaskData) => {
-    try {
-      await kanbanService.delete(task.id);
-      setKanbanTasks(prev => prev.filter(t => t.id !== task.id));
-    } catch (err) { console.error(err); }
-  };
-
-  return (
-    <div className="w-[210px] h-[450px] bg-white/60 backdrop-blur-sm border border-white/30 rounded-md p-0 shadow-[0_8px_32px_rgba(31,38,135,0.03)] -mt-8 -ml-2 flex flex-col overflow-hidden">
-      <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-none w-full">
-        KANBAN BACKLOG
-      </div>
-      <div className="p-2 pb-1 flex gap-1 shrink-0">
-        <span className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[9px] py-1 px-1 rounded-lg font-black tracking-wider uppercase shadow-xs border border-orange-200/40 select-none text-center">
-          Acción
-        </span>
-        <div className="flex gap-0.5 items-center">
-          {['H', 'P', 'D', 'B'].map(l => (
-            <span key={l} className="w-4 h-4 flex items-center justify-center bg-gray-800 text-white text-[7px] rounded-full shrink-0 font-bold">{l}</span>
-          ))}
-        </div>
-      </div>
-      <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-1 custom-scrollbar">
-        {backlogTasks.map(task => (
-          <div key={task.id} className="flex items-center gap-1 h-6 group">
-            <span className="flex-1 text-[10px] text-gray-700 truncate" title={task.titulo}>{task.titulo}</span>
-            <div className="flex gap-0.5 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
-              <button onClick={() => handleHacer(task)} title="Hacer hoy" className="w-4 h-4 flex items-center justify-center bg-emerald-600 hover:bg-emerald-500 text-white text-[7px] rounded-full font-bold transition-colors">H</button>
-              <button onClick={() => onPlanificar(task)} title="Planificar" className="w-4 h-4 flex items-center justify-center bg-blue-600 hover:bg-blue-500 text-white text-[7px] rounded-full font-bold transition-colors">P</button>
-              <button onClick={() => handleDelegar(task)} title="Delegar" className="w-4 h-4 flex items-center justify-center bg-amber-600 hover:bg-amber-500 text-white text-[7px] rounded-full font-bold transition-colors">D</button>
-              <button onClick={() => handleBasura(task)} title="Eliminar" className="w-4 h-4 flex items-center justify-center bg-red-600 hover:bg-red-500 text-white text-[7px] rounded-full font-bold transition-colors">B</button>
-            </div>
-          </div>
-        ))}
-        {backlogTasks.length === 0 && (
-          <p className="text-[10px] text-gray-400 text-center italic py-4">Sin tareas en backlog</p>
-        )}
-      </div>
-      <div className="p-2 shrink-0">
-        <div className="flex gap-1">
-          <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleAdd()}
-            placeholder="Nueva tarea..." className="flex-1 text-[10px] h-6 bg-white border border-gray-200 rounded px-2 outline-none focus:border-purple-300" />
-          <button onClick={handleAdd} disabled={!newTitle.trim() || adding}
-            className="w-6 h-6 flex items-center justify-center bg-purple-600 hover:bg-purple-500 text-white rounded text-xs font-bold disabled:opacity-40 transition-colors">
-            +
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const CardAyudaIA: React.FC<{ onSubmit?: () => void }> = ({ onSubmit }) => {
-  const [pregunta, setPregunta] = useState('');
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && pregunta.trim() !== '') {
-      setPregunta('');
-      onSubmit?.();
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
     }
   };
 
   return (
-    <div className="bg-white p-5 rounded-md border border-indigo-200 shadow-sm flex flex-col items-center -mt-40 w-[500px]  ml-10">
-      <div className="text-[11px] font-black uppercase text-gray-800 mb-2 select-none">
+    <div className="p-2 rounded-md border border-gradient-to-r from-[#200013] via-[#814B8D] to-[#143CCC] bg-white shadow-[0_18px_40px_rgba(27,20,64,0.18)] flex flex-col w-[600px] -ml-35">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 text-[11px] font-black uppercase text-gray-800 select-none mb-2"
+      >
+        <Bot className="w-4 h-4 text-[#3533cd]" />
         ¿Necesitas Ayuda?
-      </div>
-      <input
-        type="text"
-        value={pregunta}
-        onChange={(e) => setPregunta(e.target.value)}
-        onKeyDown={handleKeyDown}
-        className="w-full border-none border-b border-dotted border-gray-400 text-center text-xs focus:ring-0 italic text-gray-500 py-1 bg-transparent placeholder-gray-400/70 outline-none"
-        placeholder="Pregúntale a la IA ..................................................................................................."
-      />
+        <ChevronRight className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+      </button>
+
+      {!isOpen && (
+        <input
+          type="text"
+          onClick={() => setIsOpen(true)}
+          readOnly
+          className="w-full border-none border-b border-dotted border-gray-400 text-center text-xs italic text-gray-500 py-1 bg-transparent placeholder-gray-400/70 outline-none cursor-pointer"
+          placeholder="Pregúntale a la IA..."
+        />
+      )}
+
+      {isOpen && (
+        <>
+          <div className="flex-1 overflow-y-auto p-2 space-y-2 max-h-[250px] scrollbar-hide bg-gray-50/50 rounded-md mb-2">
+            {messages.map((msg) => (
+              <div key={msg.id} className={`flex gap-2 ${msg.rol === 'USER' ? 'justify-end' : 'justify-start'}`}>
+                {msg.rol !== 'USER' && (
+                  <div className="w-5 h-5 rounded-full bg-[#3533cd]/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <Bot className="w-3 h-3 text-[#3533cd]" />
+                  </div>
+                )}
+                <div className={`max-w-[80%] px-2.5 py-1.5 rounded-md text-[11px] leading-relaxed whitespace-pre-wrap ${
+                  msg.rol === 'USER'
+                    ? 'bg-[#3533cd] text-white rounded-br-sm'
+                    : 'bg-white text-gray-800 rounded-bl-sm border border-gray-200'
+                }`}>
+                  {msg.mensaje}
+                </div>
+                {msg.rol === 'USER' && (
+                  <div className="w-5 h-5 rounded-full bg-[#3533cd] flex items-center justify-center shrink-0 mt-0.5">
+                    <User className="w-3 h-3 text-white" />
+                  </div>
+                )}
+              </div>
+            ))}
+            {loading && (
+              <div className="flex gap-2 justify-start">
+                <div className="w-5 h-5 rounded-full bg-[#3533cd]/10 flex items-center justify-center shrink-0">
+                  <Bot className="w-3 h-3 text-[#3533cd]" />
+                </div>
+                <div className="bg-white rounded-md px-2.5 py-1.5 border border-gray-200">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#3533cd]" />
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          <div className="flex items-center gap-2 bg-white rounded-md border border-gray-200 px-2.5 py-1.5 focus-within:border-[#3533cd]/50 transition-colors">
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Escribe tu mensaje..."
+              className="flex-1 bg-transparent outline-none text-[11px] placeholder:text-gray-400"
+              disabled={loading}
+            />
+            <button
+              onClick={sendMessage}
+              disabled={!input.trim() || loading}
+              className="p-1 rounded-md bg-[#3533cd] text-white hover:bg-[#2a28b0] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <Send className="w-3 h-3" />
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 };
 
 const BlockDeNotas: React.FC = () => {
   const [lineas, setLineas] = useState<Record<number, string>>({});
-  const [rowCount, setRowCount] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
   const notaIdRef = useRef<number | null>(null);
   const cargadoRef = useRef(false);
 
@@ -3838,27 +4488,6 @@ const BlockDeNotas: React.FC = () => {
     return () => clearTimeout(timer);
   }, [lineas]);
 
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const calculateRows = () => {
-      const containerHeight = containerRef.current!.clientHeight;
-      const rowHeightWithGap = 22;
-      const paddingCompensation = 8;
-      const calculatedRows = Math.floor((containerHeight - paddingCompensation) / rowHeightWithGap);
-      setRowCount(Math.max(1, calculatedRows));
-    };
-
-    const resizeObserver = new ResizeObserver(() => {
-      calculateRows();
-    });
-
-    resizeObserver.observe(containerRef.current);
-    calculateRows();
-
-    return () => resizeObserver.disconnect();
-  }, []);
-
   const handleLineChange = (index: number, value: string) => {
     setLineas((prev) => ({
       ...prev,
@@ -3867,15 +4496,12 @@ const BlockDeNotas: React.FC = () => {
   };
 
   return (
-    <div className="bg-white flex flex-col flex-1 h-full min-h-[160px]">
-      <div className="bg-gradient-to-r from-[#030616] via-[#0b1442] to-[#512bd4] text-white text-center py-1.5 font-bold text-xs uppercase tracking-widest border-b border-black/20 rounded-md select-none shrink-0">
+    <div className="bg-white rounded-md border border-black-200 shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-shadow w-full">
+      <div className="bg-gradient-to-r from-[#000000] to-[#3533cd] text-white text-center py-1.5 rounded-lg text-[10px] sm:text-xs font-bold tracking-widest uppercase mt-2 mx-2 select-none shrink-0">
         BLOCK DE NOTAS
       </div>
-      <div
-        ref={containerRef}
-        className="flex-1 overflow-hidden px-2 pb-2 pt-1.5 space-y-1.5 relative"
-      >
-        {[...Array(rowCount)].map((_, index) => (
+      <div className="px-2 pb-2 pt-1.5 space-y-1 relative">
+        {[0, 1, 2, 3, 4,5].map((index) => (
           <div
             key={index}
             className="w-full bg-[#f4f5f8] rounded-md h-4 flex items-center border border-transparent focus-within:border-slate-200 transition-all shrink-0"
@@ -3889,11 +4515,11 @@ const BlockDeNotas: React.FC = () => {
             />
           </div>
         ))}
-        <div className="absolute bottom-0 right-0 w-[65px] h-[65px] pointer-events-none z-10 flex items-center justify-center">
+        <div className="absolute bottom-0 right-0 w-[55px] h-[55px] pointer-events-none z-10 flex items-center justify-center">
           <img
             alt="Bulb"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdxe_ps6FSLi8QbnwjEBRbjdfat6rX39n0ca23r229_cQIAgkBI5LVy4DXIBKVM27BP8mg3hfIJBAMjusej41wZ-PcTILlGH_ScXB8H0UNTezYI49xjrf6_febZLKIkMHtX5GpoGjsV9TIK31S3HI2CiwlaJcEdqvqg87oMo8ozjbh_MsjLylh_Zh-cxx8iWUDLVU7sYu7dAoNxgAidG-okpCTa3mxMT2X1inV6wCU_SAJ7GhLKPfzDM7Z2XfJ61brhoviOhrgyQY"
-            className="w-full h-full object-contain select-none filter drop-shadow-sm"
+            src="public/foco.png"
+            className="w-[200px] h-[200px] object-contain select-none filter drop-shadow-sm"
           />
         </div>
       </div>
@@ -3901,55 +4527,80 @@ const BlockDeNotas: React.FC = () => {
   );
 };
 
-function HoraDeOroFamiliar(): React.ReactElement {
-  const goldHours = [
-    "LUNES", "LUNES", "MARTES", "MARTES", "MIERCOLES", "MIERCOLES",
-    "JUEVES", "JUEVES", "VIERNES", "VIERNES", "SÁBADO", "SÁBADO",
-    "DOMINGO", "DOMINGO"
+function HoraDeOroFamiliar({ refreshKey, onOpenSlot, onOpenModule }: {
+  refreshKey: number;
+  onOpenSlot: (dia: string, posicion: number) => void;
+  onOpenModule: () => void;
+}): React.ReactElement {
+  // Doc 24 §II.3 — los siete días con dos espacios visibles cada uno.
+  const goldHours: { label: string; dia: string }[] = [
+    { label: 'LUNES', dia: 'Lunes' }, { label: 'LUNES', dia: 'Lunes' },
+    { label: 'MARTES', dia: 'Martes' }, { label: 'MARTES', dia: 'Martes' },
+    { label: 'MIERCOLES', dia: 'Miércoles' }, { label: 'MIERCOLES', dia: 'Miércoles' },
+    { label: 'JUEVES', dia: 'Jueves' }, { label: 'JUEVES', dia: 'Jueves' },
+    { label: 'VIERNES', dia: 'Viernes' }, { label: 'VIERNES', dia: 'Viernes' },
+    { label: 'SÁBADO', dia: 'Sábado' }, { label: 'SÁBADO', dia: 'Sábado' },
+    { label: 'DOMINGO', dia: 'Domingo' }, { label: 'DOMINGO', dia: 'Domingo' },
   ];
 
-  const [acciones, setAcciones] = useState<Record<number, string>>({});
+  const [dias, setDias] = useState<HoraOroDia[]>([]);
 
-  const handleInputChange = (index: number, value: string) => {
-    setAcciones((prev) => ({
-      ...prev,
-      [index]: value,
-    }));
-  };
+  useEffect(() => {
+    let activo = true;
+    horaOroService.planificador()
+      .then(data => { if (activo) setDias(data.dias); })
+      .catch(() => { /* el módulo reporta el error */ });
+    return () => { activo = false; };
+  }, [refreshKey]);
+
+  const experienciaDe = (dia: string, posicion: number) =>
+    dias.find(d => d.dia === dia)?.experiencias[posicion];
 
   return (
-    <div className="bg-white  border-2 border-gray-100 card-shadow overflow-hidden w-full max-w-md select-none rounded-md">
-      <div className="bg-[#0b153a] text-white text-center py-2.5 font-black text-xs uppercase tracking-widest w-full rounded-md">
+    <div className="bg-white border-2 border-gray-100 card-shadow overflow-hidden w-[250px] select-none rounded-md -mt-135 -ml-12">
+      <button
+        type="button"
+        onClick={onOpenModule}
+        title="Abrir el planificador semanal"
+        className="bg-[#0b153a] text-white text-center py-2.5 font-bold text-xs uppercase tracking-widest w-full rounded-md hover:brightness-125 transition-all"
+      >
         HORA DE ORO FAMILIAR
-      </div>
-      <div className="grid grid-cols-[1fr_60px] gap-1.5 text-[10px] font-black text-center text-slate-800 px-2 py-1 bg-transparent select-none">
+      </button>
+      <div className="grid grid-cols-[1fr_60px] gap-1 text-[10px] font-bold text-center text-slate-800 px-3.5 py-1 bg-transparent select-none -ml-1">
   
-  {/* 🏷️ BOTÓN: ACCIÓN */}
   <div className="bg-gradient-to-r from-[#ffe4a0] via-[#ff9b9b] to-[#ff7a7a] py-1 uppercase tracking-wider rounded-md border border-black/80 shadow-sm flex items-center justify-center">
     ACCIÓN
   </div>
   
-  {/* 🏷️ BOTÓN: DÍAS */}
   <div className="bg-gradient-to-r from-[#ffe4a0] to-[#ff7a7a] py-1 uppercase tracking-wider rounded-md border border-black/80 shadow-sm flex items-center justify-center">
     DÍAS
   </div>
 
 </div>
-      <div className="p-1.5 space-y-1 max-h-[380px] overflow-y-auto">
-        {goldHours.map((day, index) => (
-          <div key={index} className="flex gap-1 items-center">
-            <input
-              type="text"
-              value={acciones[index] || ''}
-              onChange={(e) => handleInputChange(index, e.target.value)}
-              placeholder="Escriba aquí"
-              className="flex-1 border border-gray-200 rounded-md text-[10px] px-2 h-6 focus:ring-0 focus:border-indigo-300 outline-none placeholder:text-gray-400 font-medium text-slate-700"
-            />
-            <span className="text-[8px] font-black border border-gray-300 bg-slate-50 text-slate-600 rounded-md py-1 w-14 text-center uppercase shrink-0 tracking-tighter">
-              {day}
-            </span>
-          </div>
-        ))}
+      <div className="px-2 pb-2 pt-1 space-y-2 h-[334px] flex flex-col justify-between overflow-y-auto">
+        {goldHours.map((day, index) => {
+          const posicion = index % 2;
+          const experiencia = experienciaDe(day.dia, posicion);
+          return (
+            <div key={index} className="flex gap-1.5 items-center">
+              <button
+                type="button"
+                onClick={() => onOpenSlot(day.dia, posicion)}
+                title={experiencia ? `Cambiar «${experiencia.actividad}»` : 'Elegir una experiencia'}
+                className={`flex-1 min-w-0 border rounded-md text-[9px] px-2 h-6 text-left truncate focus:ring-0 outline-none font-medium transition-colors ${
+                  experiencia
+                    ? 'border-[#c7bcff] bg-[#f4f1ff] text-slate-700 hover:border-[#8b7bff]'
+                    : 'border-gray-200 text-gray-400 hover:border-indigo-300'
+                }`}
+              >
+                {experiencia ? experiencia.actividad : 'Elegir experiencia'}
+              </button>
+              <span className="text-[7px] font-bold border border-gray-300 bg-slate-50 text-slate-600 rounded-md h-6 px-1 w-[60px] flex items-center justify-center uppercase shrink-0 tracking-tighter leading-none">
+                {day.label}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -3961,9 +4612,9 @@ function ClimaComuna({ temp, descripcion, lugar, loading, error, icono, humedad,
   humedad: number; sensacion: number;
 }): React.ReactElement {
   return (
-  <div className="bg-white rounded-md border-2 border-gray-100 shadow-md overflow-hidden max-w-[300px] h-[200px] mx-auto ml-20 -mt-25">
+  <div className="bg-white rounded-md border-2 border-gray-100 shadow-md overflow-hidden w-70 h-30 mx-0 -mt-43 ml-50 ">
     <div className="bg-white rounded-md border-2 border-gray-100 card-shadow overflow-hidden w-full max-w-sm select-none gap-2 flex flex-col"> 
-      <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-black tracking-widest uppercase rounded-md select-none w-[300px]">
+      <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white text-center py-1.5 text-[10px] sm:text-xs font-bold tracking-widest uppercase rounded-md select-none w-full">
         CLIMA EN MI COMUNA
       </div>
       
@@ -3978,21 +4629,21 @@ function ClimaComuna({ temp, descripcion, lugar, loading, error, icono, humedad,
             <span className="text-[9px] text-red-400 font-medium">{error}</span>
           </div>
         ) : (
-          <table className="w-full border-collapse">
+          <table className="w-full border-collapse -mt-4">
             <thead>
               <tr>
                 <th className="w-1/2 p-1 border-b border-slate-100">
-                  <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-orange-200/40 text-center">TIEMPO</div>
+                  <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1 px-1 rounded-md font-bold tracking-wider uppercase border border-orange-200/40 text-center">TIEMPO</div>
                 </th>
                 <th className="w-1/2 p-1 border-b border-slate-100">
-                  <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1.5 px-1 rounded-lg font-black tracking-wider uppercase border border-orange-200/40 text-center">DETALLE</div>
+                  <div className="w-full bg-gradient-to-r from-[#ffe29f] to-[#fecaca] text-slate-800 text-[10px] py-1 px-1 rounded-md font-bold tracking-wider uppercase border border-orange-200/40 text-center">DETALLE</div>
                 </th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td className="p-1">
-                  <span className="font-black text-slate-900">{icono}</span> {descripcion}
+                  <span className="font-bold text-slate-900">{icono}</span> {descripcion}
                 </td>
                 <td className="p-1 text-gray-400 italic">Ahora</td>
               </tr>
@@ -4017,61 +4668,64 @@ function ClimaComuna({ temp, descripcion, lugar, loading, error, icono, humedad,
   );
 }
 
-function MiMisionHoy({ mision, avatarUrl }: { mision: string | null; avatarUrl: string | undefined }): React.ReactElement {
-  const misionText = mision || 'Terminar carpeta Wireframe del proyecto';
-  const avatarSrc = avatarUrl || "https://lh3.googleusercontent.com/aida-public/AB6AXuD_9bAoe76XpMkvgcAUyoqOsMCBddvrJ_uiX4k2mz8_CRRQiM9Md4m5eUA3lT-XhkFdJFFaduIIKsqjINp3-VbYi88LAsvyYzyd7zxO0NNBFX5yFOd5gvVkk5UrelYNZYJrCQZOE9x0bxRawElR3OKkIZg7Z6DeXMUQeuO4WG7F5ONIflSQUQBqNpJSAy8Jjo0YJT_k7YR2OEnQa2OkgxtYtWC5HzpiynKxW4YrQ8_YobAlpdwXp6pGTfYcvewsgX1B43G5LpnOuis";
-
-  return (
-    <div className="bg-white gap-1 rounded-md border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.05)] overflow-hidden w-[170px] flex flex-col select-none">
-      <div className="bg-[#1e2540] text-white text-center py-2 font-black text-[10px] uppercase tracking-wider w-full shrink-0 rounded-md">
-        MI MISIÓN DE HOY
-      </div>
-      <div className="bg-gradient-to-br from-[#ffa1a1] via-[#ffccd5] to-[#ffe3a8] flex-1 flex flex-col justify-between items-center relative min-h-[175px] pt-4 overflow-hidden">
-        <p className="text-center font-bold text-slate-800 text-[12px] leading-snug italic px-3 z-10 tracking-tight">
-          &ldquo;{misionText}&rdquo;
-        </p>
-        <div className="w-full h-[110px] mt-auto flex items-end justify-center z-0 relative">
-          <img
-            alt="Profile"
-            className="w-[90%] h-full object-contain object-bottom select-none pointer-events-none filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.15)]"
-            src={avatarSrc}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function CalendarWidget(): React.ReactElement {
   const ahora = new Date();
-  const año = ahora.getFullYear();
+  const [hora, setHora] = useState(ahora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }));
   const nombreMeses = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const mes = nombreMeses[ahora.getMonth()];
   const dia = ahora.getDate();
+  const año = ahora.getFullYear();
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHora(new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []); 
 
   return (
-    <div className="bg-white rounded-md gap-1  border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.05)] overflow-hidden w-[170px] select-none flex flex-col">
-      <div className="bg-[#0b0f19] px-3 py-1.5 flex items-center justify-center gap-1.5 border-b border-white/5 shrink-0 rounded-md">
-        <div className="w-4 h-4 bg-white/10 rounded flex items-center justify-center text-[10px]">📅</div>
-        <span className="text-white font-black text-[13px] tracking-wide">{año}</span>
+  <div className="bg-white rounded-md border-2 border-gray-100 shadow-md overflow-hidden w-[175px] h-[180px] ml-10 -mt-13">
+    <div className="bg-white rounded-md border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.05)] overflow-hidden w-[170px]  h-[170px] select-none flex flex-col ">
+      <div className="bg-gradient-to-r from-[#000000] to-[#3533cd] px-3 py-2 flex items-center justify-center gap-6 border-b border-white/5 shrink-0 rounded-md">
+                 <img
+            alt="calendar2"
+            src="public/calendar2.png"
+            className="w-[20px] h-full object-contain select-none filter drop-shadow-sm"
+          /><span className="text-white font-bold text-[15px] tracking-wide">{hora}</span>
+               
       </div>
       
-      <div className="bg-gradient-to-br from-[#3b0717] via-[#1e0b36] to-[#0f172a] p-3 flex flex-col items-center justify-center flex-1 min-h-[175px]">
-        <div className="w-[115px] bg-white rounded-2xl shadow-[0_10px_25px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col items-center relative pt-1.5">
-          <div className="absolute top-0 flex gap-2 justify-center w-full -mt-0.5 z-10">
-            <span className="w-[3px] h-[7px] bg-slate-300 rounded-full block opacity-80"></span>
-            <span className="w-[3px] h-[7px] bg-slate-300 rounded-full block opacity-80"></span>
-            <span className="w-[3px] h-[7px] bg-slate-300 rounded-full block opacity-80"></span>
-            <span className="w-[3px] h-[7px] bg-slate-300 rounded-full block opacity-80"></span>
-          </div>
-          <div className="w-full bg-[#3b82f6] text-center py-0.5">
-            <span className="text-white font-extrabold text-[11px] tracking-wide block">{mes}</span>
-          </div>
-          <div className="bg-white w-full py-2 flex items-center justify-center">
-            <span className="text-[#111827] text-[42px] font-black tracking-tighter block leading-none py-1">{dia}</span>
-          </div>
+      <div className="bg-[linear-gradient(135deg,#200013,#814B8D,#143CCC)] p-3 flex flex-col items-center justify-center flex-1 h-[175px] mt-2 rounded-md">
+        <div className="relative flex flex-col items-center justify-center -mt-3">
+          <svg viewBox="0 0 90 100" className="w-[80px] h-[90px]" xmlns="http://www.w3.org/2000/svg">
+            {/* Hooks */}
+            <rect x="22" y="0" width="6" height="14" rx="3" fill="#b0b8c4" stroke="#8a92a0" strokeWidth="0.5"/>
+            <rect x="62" y="0" width="6" height="14" rx="3" fill="#b0b8c4" stroke="#8a92a0" strokeWidth="0.5"/>
+            <rect x="20" y="8" width="10" height="5" rx="2.5" fill="#9aa3b1" stroke="#7a8290" strokeWidth="0.5"/>
+            <rect x="60" y="8" width="10" height="5" rx="2.5" fill="#9aa3b1" stroke="#7a8290" strokeWidth="0.5"/>
+            {/* Calendar body */}
+            <rect x="4" y="12" width="82" height="84" rx="6" fill="white" stroke="#d1d5db" strokeWidth="1"/>
+            {/* Blue header */}
+            <rect x="4" y="12" width="82" height="24" rx="6" fill="#3b82f6"/>
+            <rect x="4" y="30" width="82" height="6" fill="#3b82f6"/>
+            {/* Month text */}
+            <text x="45" y="28" textAnchor="middle" fill="white" fontSize="11" fontWeight="bold" fontFamily="sans-serif">{mes}</text>
+            {/* Grid lines */}
+            <line x1="4" y1="42" x2="86" y2="42" stroke="#e5e7eb" strokeWidth="0.5"/>
+            <line x1="4" y1="54" x2="86" y2="54" stroke="#e5e7eb" strokeWidth="0.5"/>
+            <line x1="4" y1="66" x2="86" y2="66" stroke="#e5e7eb" strokeWidth="0.5"/>
+            <line x1="4" y1="78" x2="86" y2="78" stroke="#e5e7eb" strokeWidth="0.5"/>
+            <line x1="25" y1="36" x2="25" y2="96" stroke="#e5e7eb" strokeWidth="0.5"/>
+            <line x1="45" y1="36" x2="45" y2="96" stroke="#e5e7eb" strokeWidth="0.5"/>
+            <line x1="65" y1="36" x2="65" y2="96" stroke="#e5e7eb" strokeWidth="0.5"/>
+            {/* Day number */}
+            <text x="45" y="74" textAnchor="middle" fill="#1e293b" fontSize="28" fontWeight="bold" fontFamily="sans-serif">{dia}</text>
+          </svg>
         </div>
+        <span className="text-white font-bold text-[16px] tracking-wide -mt-1">{año}</span>
       </div>
     </div>
+  </div>
   );
 };
+

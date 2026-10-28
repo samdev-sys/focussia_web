@@ -90,8 +90,8 @@ export const MicroFlujoAjuste: React.FC<MicroFlujoAjusteProps> = ({ isOpen, onCl
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
-      <div className="bg-white/90 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-md overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
+      <div className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-[650px] max-h-[85vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-indigo-600 to-purple-600 shrink-0">
           <div className="flex items-center gap-2">
             <ArrowRight className="w-5 h-5 text-white" />
@@ -181,3 +181,4 @@ export const MicroFlujoAjuste: React.FC<MicroFlujoAjusteProps> = ({ isOpen, onCl
     </div>
   );
 };
+

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Loader2, MoreVertical, Calendar, Zap, Plus, X, Check, Clock, GripVertical
 } from 'lucide-react';
-import { kanbanService, KanbanTaskData } from '../services/api';
+import { api } from '../services/api';
 import {
   DndContext, DragOverlay, useSensor, useSensors, PointerSensor,
   useDroppable, closestCorners, DragEndEvent, DragStartEvent
@@ -11,6 +11,20 @@ import {
   SortableContext, useSortable, verticalListSortingStrategy
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+
+interface AccionBoard {
+  id: string;
+  texto_accion: string;
+  origen: string;
+  clasificacion: string | null;
+  estado_actual: string;
+  destino_asignado: string;
+  fecha_seleccionada: string | null;
+  hora_seleccionada: string | null;
+  es_fijo: boolean;
+  creado_en: string;
+  actualizado_en: string;
+}
 
 interface KanbanBoardProps {
   refreshTrigger?: number;
@@ -29,7 +43,6 @@ function SortableTaskCard({
   task,
   onDelete,
   onDelegate,
-  onPlan,
   activeDropdownId,
   setActiveDropdownId,
   planningId,
@@ -38,17 +51,16 @@ function SortableTaskCard({
   setPlanDate,
   handlePlanificar,
 }: {
-  task: KanbanTaskData;
-  onDelete: (id: number) => void;
-  onDelegate: (id: number) => void;
-  onPlan: (id: number) => void;
-  activeDropdownId: number | null;
-  setActiveDropdownId: (id: number | null) => void;
-  planningId: number | null;
-  setPlanningId: (id: number | null) => void;
+  task: AccionBoard;
+  onDelete: (id: string) => void;
+  onDelegate: (id: string) => void;
+  activeDropdownId: string | null;
+  setActiveDropdownId: (id: string | null) => void;
+  planningId: string | null;
+  setPlanningId: (id: string | null) => void;
   planDate: string;
   setPlanDate: (d: string) => void;
-  handlePlanificar: (id: number) => void;
+  handlePlanificar: (id: string) => void;
 }) {
   const {
     attributes,
@@ -57,7 +69,7 @@ function SortableTaskCard({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: task.id, data: { column: task.columna } });
+  } = useSortable({ id: task.id, data: { column: task.estado_actual === 'POR_DELEGAR' ? COLUMN_DELEGAR : COLUMN_BACKLOG } });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -81,18 +93,16 @@ function SortableTaskCard({
             >
               <GripVertical className="w-4 h-4" />
             </button>
-            <h4 className="text-sm font-bold text-gray-800 break-words">{task.titulo}</h4>
+            <h4 className="text-sm font-bold text-gray-800 break-words">{task.texto_accion}</h4>
           </div>
-          {task.descripcion && (
-            <p className="text-xs text-gray-500 mt-1 line-clamp-2 ml-7">{task.descripcion}</p>
-          )}
-          {task.fecha_hora && (
+          {task.fecha_seleccionada && (
             <div className="flex items-center gap-1.5 mt-2 bg-indigo-50 text-indigo-700 w-fit px-2 py-0.5 rounded-full border border-indigo-100 ml-7">
               <Clock className="w-3 h-3" />
               <span className="text-[10px] font-bold">
-                {new Date(task.fecha_hora).toLocaleString('es-ES', { 
-                  day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' 
+                {new Date(task.fecha_seleccionada).toLocaleDateString('es-ES', { 
+                  day: '2-digit', month: 'short'
                 })}
+                {task.hora_seleccionada && ` ${task.hora_seleccionada}`}
               </span>
             </div>
           )}
@@ -112,10 +122,13 @@ function SortableTaskCard({
                 className="fixed inset-0 z-10" 
                 onClick={() => setActiveDropdownId(null)}
               />
-              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-20 animate-in fade-in zoom-in-95 duration-150">
-                {task.columna !== 'Delegar' && (
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-2xl border border-gray-100 overflow-hidden z-20 animate-in fade-in zoom-in-95 duration-150">
+                {task.estado_actual !== 'POR_DELEGAR' && (
                   <button 
-                    onClick={() => onDelegate(task.id)}
+                    onClick={() => {
+                      setActiveDropdownId(null);
+                      onDelegate(task.id);
+                    }}
                     className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-all border-b border-gray-50"
                   >
                     Delegar
@@ -136,7 +149,7 @@ function SortableTaskCard({
                   className="w-full flex items-center gap-3 px-4 py-3 text-xs font-bold text-red-600 hover:bg-red-50 transition-all"
                 >
                   <Zap className="w-4 h-4" />
-                  ¡Hazlo ya!
+                  Eliminar
                 </button>
               </div>
             </>
@@ -181,13 +194,13 @@ function ColumnDroppable({
   id,
   title,
   gradient,
-  tasks,
+  count,
   children,
 }: {
   id: string;
   title: string;
   gradient: string;
-  tasks: KanbanTaskData[];
+  count: number;
   children: React.ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id, data: { column: id } });
@@ -199,7 +212,7 @@ function ColumnDroppable({
     >
       <div className="flex items-center justify-between mb-4">
         <h4 className="text-xs font-black uppercase text-gray-600 tracking-[0.15em]">{title}</h4>
-        <span className="text-[10px] font-bold text-gray-400 bg-white/50 px-2 py-0.5 rounded-full">{tasks.length}</span>
+        <span className="text-[10px] font-bold text-gray-400 bg-white/50 px-2 py-0.5 rounded-full">{count}</span>
       </div>
       <div className="space-y-3 min-h-[120px]">
         {children}
@@ -210,15 +223,15 @@ function ColumnDroppable({
 
 export const KanbanBoard: React.FC<KanbanBoardProps> = ({ refreshTrigger, onTaskChange }) => {
 
-  const [tasks, setTasks] = useState<KanbanTaskData[]>([]);
+  const [tasks, setTasks] = useState<AccionBoard[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
-  const [planningId, setPlanningId] = useState<number | null>(null);
+  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
+  const [planningId, setPlanningId] = useState<string | null>(null);
   const [planDate, setPlanDate] = useState('');
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [showAddInput, setShowAddInput] = useState(false);
-  const [activeTask, setActiveTask] = useState<KanbanTaskData | null>(null);
+  const [activeTask, setActiveTask] = useState<AccionBoard | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -229,12 +242,12 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ refreshTrigger, onTask
   );
 
   const backlogTasks = useMemo(
-    () => tasks.filter(t => t.columna === 'Agenda' || t.columna === 'Backlog'),
+    () => tasks.filter(t => t.estado_actual === 'KANBAN_ACTIVO'),
     [tasks]
   );
 
   const delegarTasks = useMemo(
-    () => tasks.filter(t => t.columna === 'Delegar'),
+    () => tasks.filter(t => t.estado_actual === 'POR_DELEGAR'),
     [tasks]
   );
 
@@ -244,8 +257,8 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ refreshTrigger, onTask
   const fetchTasks = async () => {
     setLoading(true);
     try {
-      const data = await kanbanService.getAll();
-      setTasks(data);
+      const response = await api.get('/api/acciones-kanban/board/');
+      setTasks(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error('Error fetching tasks:', err);
     } finally {
@@ -261,12 +274,10 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ refreshTrigger, onTask
     if (!newTaskTitle.trim()) return;
     setSaving(true);
     try {
-      const newTask = await kanbanService.create({
-        titulo: newTaskTitle,
-        descripcion: '',
-        columna: 'Backlog'
+      const response = await api.post('/api/acciones-kanban/', {
+        texto_accion: newTaskTitle.trim(),
       });
-      setTasks(prev => [...prev, newTask]);
+      setTasks(prev => [response.data, ...prev]);
       setNewTaskTitle('');
       setShowAddInput(false);
       onTaskChange?.();
@@ -277,12 +288,12 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ refreshTrigger, onTask
     }
   };
 
-  const handleMoveToDelegar = async (id: number) => {
+  const handleMoveToDelegar = async (id: string) => {
     setSaving(true);
     setActiveDropdownId(null);
     try {
-      await kanbanService.update(id, { columna: 'Delegar' });
-      setTasks(prev => prev.map(t => t.id === id ? { ...t, columna: 'Delegar' } : t));
+      await api.patch(`/api/acciones-kanban/${id}/`, { estado_actual: 'POR_DELEGAR' });
+      setTasks(prev => prev.map(t => t.id === id ? { ...t, estado_actual: 'POR_DELEGAR' } : t));
       onTaskChange?.();
     } catch (err) {
       console.error('Error delegating task:', err);
@@ -291,12 +302,25 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ refreshTrigger, onTask
     }
   };
 
-  const handlePlanificar = async (id: number) => {
+  const handleMoveToBacklog = async (id: string) => {
+    setSaving(true);
+    try {
+      await api.patch(`/api/acciones-kanban/${id}/`, { estado_actual: 'KANBAN_ACTIVO' });
+      setTasks(prev => prev.map(t => t.id === id ? { ...t, estado_actual: 'KANBAN_ACTIVO' } : t));
+      onTaskChange?.();
+    } catch (err) {
+      console.error('Error moving task to backlog:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePlanificar = async (id: string) => {
     if (!planDate) return;
     setSaving(true);
     try {
-      await kanbanService.update(id, { fecha_hora: planDate });
-      setTasks(prev => prev.map(t => t.id === id ? { ...t, fecha_hora: planDate } : t));
+      await api.patch(`/api/acciones-kanban/${id}/`, { fecha_seleccionada: planDate.split('T')[0] });
+      setTasks(prev => prev.map(t => t.id === id ? { ...t, fecha_seleccionada: planDate.split('T')[0] } : t));
       setPlanningId(null);
       setPlanDate('');
       onTaskChange?.();
@@ -307,11 +331,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ refreshTrigger, onTask
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     setSaving(true);
     setActiveDropdownId(null);
     try {
-      await kanbanService.delete(id);
+      await api.delete(`/api/acciones-kanban/${id}/`);
       setTasks(prev => prev.filter(t => t.id !== id));
       onTaskChange?.();
     } catch (err) {
@@ -322,7 +346,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ refreshTrigger, onTask
   };
 
   const handleDragStart = (event: DragStartEvent) => {
-    const taskId = Number(event.active.id);
+    const taskId = String(event.active.id);
     const task = tasks.find(t => t.id === taskId);
     if (task) setActiveTask(task);
   };
@@ -332,30 +356,29 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ refreshTrigger, onTask
     const { active, over } = event;
     if (!over) return;
 
-    const taskId = Number(active.id);
+    const taskId = String(active.id);
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
 
     let targetColumn: string;
     if (over.id === COLUMN_BACKLOG) {
-      targetColumn = 'Backlog';
+      targetColumn = COLUMN_BACKLOG;
     } else if (over.id === COLUMN_DELEGAR) {
-      targetColumn = 'Delegar';
+      targetColumn = COLUMN_DELEGAR;
     } else {
-      const overTask = tasks.find(t => t.id === Number(over.id));
+      const overTask = tasks.find(t => t.id === String(over.id));
       if (!overTask) return;
-      targetColumn = overTask.columna === 'Delegar' ? 'Delegar' : 'Backlog';
+      targetColumn = overTask.estado_actual === 'POR_DELEGAR' ? COLUMN_DELEGAR : COLUMN_BACKLOG;
     }
 
-    const sourceCol = task.columna === 'Delegar' ? 'Delegar' : 'Backlog';
-    const destCol = targetColumn === 'Delegar' ? 'Delegar' : 'Backlog';
-
-    if (sourceCol === destCol) return;
+    const sourceCol = task.estado_actual === 'POR_DELEGAR' ? COLUMN_DELEGAR : COLUMN_BACKLOG;
+    if (sourceCol === targetColumn) return;
 
     setSaving(true);
     try {
-      await kanbanService.update(taskId, { columna: destCol });
-      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, columna: destCol } : t));
+      const newEstado = targetColumn === COLUMN_DELEGAR ? 'POR_DELEGAR' : 'KANBAN_ACTIVO';
+      await api.patch(`/api/acciones-kanban/${taskId}/`, { estado_actual: newEstado });
+      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, estado_actual: newEstado } : t));
       onTaskChange?.();
     } catch (err) {
       console.error('Error moving task:', err);
@@ -417,7 +440,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ refreshTrigger, onTask
             id={COLUMN_BACKLOG}
             title="Backlog"
             gradient={columnConfig[COLUMN_BACKLOG].color}
-            tasks={backlogTasks}
+            count={backlogTasks.length}
           >
             <SortableContext items={backlogIds} strategy={verticalListSortingStrategy}>
               {backlogTasks.length === 0 ? (
@@ -432,7 +455,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ refreshTrigger, onTask
                     task={task}
                     onDelete={handleDelete}
                     onDelegate={handleMoveToDelegar}
-                    onPlan={handlePlanificar}
                     activeDropdownId={activeDropdownId}
                     setActiveDropdownId={setActiveDropdownId}
                     planningId={planningId}
@@ -450,7 +472,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ refreshTrigger, onTask
             id={COLUMN_DELEGAR}
             title="Delegar"
             gradient={columnConfig[COLUMN_DELEGAR].color}
-            tasks={delegarTasks}
+            count={delegarTasks.length}
           >
             <SortableContext items={delegarIds} strategy={verticalListSortingStrategy}>
               {delegarTasks.length === 0 ? (
@@ -465,7 +487,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ refreshTrigger, onTask
                     task={task}
                     onDelete={handleDelete}
                     onDelegate={handleMoveToDelegar}
-                    onPlan={handlePlanificar}
                     activeDropdownId={activeDropdownId}
                     setActiveDropdownId={setActiveDropdownId}
                     planningId={planningId}
@@ -485,7 +506,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ refreshTrigger, onTask
             <div className="bg-white/90 backdrop-blur-md rounded-2xl p-4 shadow-2xl border border-[#1e3a5f]/30 rotate-2 scale-105">
               <div className="flex items-center gap-2">
                 <GripVertical className="w-4 h-4 text-[#1e3a5f]/40" />
-                <h4 className="text-sm font-bold text-gray-800">{activeTask.titulo}</h4>
+                <h4 className="text-sm font-bold text-gray-800">{activeTask.texto_accion}</h4>
               </div>
             </div>
           ) : null}
@@ -493,7 +514,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ refreshTrigger, onTask
       </DndContext>
 
       {saving && (
-        <div className="fixed bottom-8 right-8 bg-[#1e3a5f] text-white px-4 py-2 rounded-2xl shadow-2xl flex items-center gap-2 animate-bounce z-50">
+        <div className="fixed bottom-8 right-8 bg-[#1e3a5f] text-white px-4 py-2 rounded-md shadow-2xl flex items-center gap-2 animate-bounce z-50">
           <Loader2 className="w-4 h-4 animate-spin" />
           <span className="text-[10px] font-bold uppercase tracking-widest">Sincronizando...</span>
         </div>

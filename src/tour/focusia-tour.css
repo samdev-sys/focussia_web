@@ -1,0 +1,169 @@
+/* ===== Visita guiada Focusia — estilo réplica de fotos ===== */
+
+/* Overlay semitransparente oscuro (driver.js lo pinta, aquí reforzamos tono) */
+.driver-overlay path {
+  fill: rgba(18, 24, 52, 0.62) !important;
+}
+
+/* Highlight zone: borde blanco grueso + glow, como en las fotos */
+.driver-active-element {
+  border: 4px solid #ffffff !important;
+  border-radius: 14px !important;
+  box-shadow:
+    0 0 0 4px rgba(255, 255, 255, 0.95),
+    0 0 34px rgba(255, 255, 255, 0.65),
+    0 10px 40px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Popover tarjeta blanca */
+.driver-popover {
+  background: #ffffff !important;
+  border: 2px solid #dfe4f5 !important;
+  border-radius: 20px !important;
+  box-shadow: 0 24px 70px rgba(10, 16, 45, 0.35) !important;
+  padding: 20px 22px 16px !important;
+  max-width: min(680px, calc(100vw - 48px)) !important;
+  color: #232a3d !important;
+}
+
+.driver-popover-title {
+  font-size: 26px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.02em !important;
+  color: #101c4e !important;
+  margin-bottom: 8px !important;
+}
+
+.driver-popover-description {
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+  color: #2b334d !important;
+}
+
+/* Card interna con avatar (inyectada vía HTML en title/description) */
+.focusia-tour-card {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+.focusia-tour-card img {
+  width: 96px;
+  height: 96px;
+  border-radius: 9999px;
+  object-fit: cover;
+  border: 3px solid #5ee7ff;
+  box-shadow: 0 0 0 3px #4f46e5 inset;
+  flex-shrink: 0;
+}
+.focusia-tour-card h3 {
+  font-size: 24px;
+  font-weight: 900;
+  color: #101c4e;
+  margin: 0 0 8px;
+  letter-spacing: 0.02em;
+}
+.focusia-tour-card p {
+  font-size: 16px;
+  line-height: 1.5;
+  color: #2b334d;
+  margin: 0;
+}
+.focusia-tour-count {
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7390;
+  letter-spacing: 0.08em;
+}
+
+/* Popover desacoplado y centrado arriba, como en las fotos
+   (driver.js lo posiciona junto al highlight; lo fijamos al centro) */
+.focusia-tour-popover {
+  position: fixed !important;
+  top: 84px !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: translateX(-50%) !important;
+}
+.driver-popover-arrow {
+  display: none !important;
+}
+
+/* Botones < > dentro del popover: píldoras navy (driver.js 1.8) */
+.driver-popover-footer {
+  margin-top: 14px !important;
+}
+.driver-popover-navigation-btns {
+  gap: 8px !important;
+}
+.driver-popover-navigation-btns button {
+  border-radius: 10px !important;
+  font-weight: 800 !important;
+  padding: 8px 18px !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+  text-shadow: none !important;
+  background: #0b153a !important;
+  color: #fff !important;
+  border: 1px solid #0b153a !important;
+  min-width: 52px;
+}
+.driver-popover-close-btn {
+  background: transparent !important;
+  color: #6b7390 !important;
+  border: none !important;
+  font-size: 13px !important;
+}
+
+/* Flechas laterales fijas < > como en las fotos */
+.focusia-tour-edge {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100000;
+  width: 52px;
+  height: 52px;
+  border-radius: 9999px;
+  background: #0b153a;
+  color: #fff;
+  border: 2px solid #ffffff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.focusia-tour-edge:hover { transform: translateY(-50%) scale(1.06); }
+.focusia-tour-edge:disabled { opacity: 0.35; cursor: default; }
+.focusia-tour-edge.left { left: 14px; }
+.focusia-tour-edge.right { right: 14px; }
+
+/* Botón flotante para lanzar la visita */
+.focusia-tour-launch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(to right, #000000, #3533cd);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  border: 1px solid rgba(255,255,255,0.25);
+  cursor: pointer;
+}
+.focusia-tour-launch:hover { filter: brightness(1.15); }
+
+@media (max-width: 640px) {
+  .focusia-tour-card { flex-direction: column; }
+  .focusia-tour-card img { width: 72px; height: 72px; }
+  .focusia-tour-edge { width: 44px; height: 44px; font-size: 24px; }
+}

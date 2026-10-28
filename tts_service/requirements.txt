@@ -1,0 +1,6 @@
+# FastAPI 0.115.0 fijaba starlette<0.39, lo que hacía inalcanzable el parche de
+# CVE-2025-54121 (starlette>=0.47.2).
+fastapi==0.162.0
+uvicorn==0.54.0
+TTS==0.21.3
+soundfile==0.12.1

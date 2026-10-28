@@ -70,7 +70,7 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
 
   return (
     <div className="fixed bottom-4 right-4 z-[100] animate-slide-in">
-      <div className={`bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 overflow-hidden w-80 transition-all duration-500 ${taken ? 'scale-95 opacity-60' : ''}`}>
+      <div className={`bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 overflow-hidden w-80 transition-all duration-500 ${taken ? 'scale-95 opacity-60' : ''}`}>
         <div className={`bg-gradient-to-r ${taken ? 'from-emerald-500 to-green-600' : getCategoryColor(recordatorio.categoria)} p-3 flex items-center justify-between`}>
           <div className="flex items-center gap-2">
             {taken ? <CheckCheck className="w-6 h-6 text-white" /> : getIcon(recordatorio.categoria)}
@@ -116,3 +116,4 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
 };
 
 export default NotificationToast;
+

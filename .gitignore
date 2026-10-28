@@ -8,6 +8,8 @@ coverage/
 .env
 .env.local
 .env.*.local
+backend/.env.production
+backend/.env.staging
 
 # IDE & Editor
 .vscode/
@@ -26,6 +28,9 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Local tooling (capturas y artefactos de verificación local)
+.openchamber/
+
 # Backend Python
 venv/
 .venv/
@@ -43,6 +48,9 @@ dist/
 backend/staticfiles/
 backend/cookies.txt
 backend/security.log
+
+# Celery: estado local de Beat (se recrea al arrancar)
+celerybeat-schedule*
 
 # Database
 db.sqlite3

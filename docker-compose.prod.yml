@@ -1,0 +1,105 @@
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: focusia_production
+      POSTGRES_USER: focusia
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD en el entorno}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U focusia -d focusia_production"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 1G
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - backend/.env.production
+    environment:
+      DATABASE_URL: postgres://focusia:${DB_PASSWORD}@db:5432/focusia_production
+    command: gunicorn focusia_api.wsgi:application --bind 0.0.0.0:8000 --workers 12 --worker-class sync --max-requests 1000 --max-requests-jitter 100
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/api/health/',timeout=5).status==200 else 1)\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - backend/.env.production
+    environment:
+      DATABASE_URL: postgres://focusia:${DB_PASSWORD}@db:5432/focusia_production
+    command: python manage.py start_reminder_worker
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+
+  schedule:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file:
+      - backend/.env.production
+    environment:
+      DATABASE_URL: postgres://focusia:${DB_PASSWORD}@db:5432/focusia_production
+    command: python manage.py setup_reminder_schedule
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: on-failure
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+
+volumes:
+  postgres_data:

@@ -9,6 +9,12 @@ class CookieJWTAuthentication(JWTAuthentication):
             return super().authenticate(request)
         raw_token = request.COOKIES.get(settings.SIMPLE_JWT.get('AUTH_COOKIE', 'access_token'))
         if raw_token is not None:
-            validated_token = self.get_validated_token(raw_token)
-            return self.get_user(validated_token), validated_token
+            try:
+                validated_token = self.get_validated_token(raw_token)
+                return self.get_user(validated_token), validated_token
+            except Exception:
+                # Cookie inválida, expirada o de un usuario que ya no existe:
+                # tratar como anónimo. Los endpoints protegidos responden
+                # 401 vía IsAuthenticated.
+                return None
         return None

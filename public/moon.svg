@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" fill="none">
+  <!-- círculo exterior - idéntico a foto: fondo muy oscuro, borde fino teal -->
+  <circle cx="60" cy="60" r="54.2" fill="#080E1C" stroke="#134B4F" stroke-width="1.55"/>
+  <!-- borde sutil interior como foto -->
+  <circle cx="60" cy="60" r="54.2" fill="none" stroke="#2EC4B6" stroke-width="0.45" opacity="0.18"/>
+  <!-- luna creciente - foto: celeste pálido con leve degradado -->
+  <defs>
+    <linearGradient id="mg" x1="28" y1="32" x2="58" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#EAF6FB"/>
+      <stop offset="38%" stop-color="#CDECF7"/>
+      <stop offset="100%" stop-color="#9CCFE6"/>
+    </linearGradient>
+  </defs>
+  <!-- forma exacta foto: luna a la izquierda, curva pronunciada -->
+  <path d="M 32.2 31.8 A 27.2 27.2 0 0 0 32.2 88.2 A 19.4 19.4 0 0 1 55.4 60 A 19.4 19.4 0 0 1 32.2 31.8 Z" fill="url(#mg)"/>
+  <!-- estrellas 4 puntas - foto: 2 estrellas blancas pequeñas arriba-derecha -->
+  <g fill="#E6F7FE">
+    <path d="M 71.2 26.2 L 72.5 29.6 L 75.9 30.9 L 72.5 32.2 L 71.2 35.6 L 69.9 32.2 L 66.5 30.9 L 69.9 29.6 Z"/>
+    <path d="M 85.6 39.4 L 87.4 44.1 L 92.1 45.9 L 87.4 47.7 L 85.6 52.4 L 83.8 47.7 L 79.1 45.9 L 83.8 44.1 Z"/>
+  </g>
+</svg>

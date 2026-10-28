@@ -1,10 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { X, Calendar, ChevronLeft, ChevronRight, Check, Target, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Calendar, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import { monthlyService, MonthlyPlanData, MonthlyGoalData } from '../services/api';
+import MonthlyShell, { MonthlyNavKey } from './MonthlyShell';
 
 interface MonthlyCalendarProps {
   onClose: () => void;
   onOpenMatriz?: () => void;
+  headerContent?: React.ReactNode;
+  onNeedAnnualGoal?: () => void;
+  onReview?: () => void;
+  username?: string;
+  avatarUrl?: string;
+  onNavigate?: (key: MonthlyNavKey) => void;
 }
 
 const MONTH_NAMES = [
@@ -12,18 +19,26 @@ const MONTH_NAMES = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ];
 
-const COMPLEXITY_LABELS: Record<string, string> = {
-  BASE: 'Base',
-  EJECUCION: 'Ejecución',
-  CONSOLIDACION: 'Consolidación',
-  CIERRE: 'Cierre',
-};
+const WEEK_DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
-export default function MonthlyCalendar({ onClose, onOpenMatriz }: MonthlyCalendarProps) {
+function cap(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function daysInMonth(year: number, month: number): number {
+  return new Date(year, month, 0).getDate();
+}
+
+function firstWeekdayMonday(year: number, month: number): number {
+  return (new Date(year, month - 1, 1).getDay() + 6) % 7;
+}
+
+export default function MonthlyCalendar({ onClose, onNeedAnnualGoal, onReview, username, avatarUrl, onNavigate }: MonthlyCalendarProps) {
   const [plan, setPlan] = useState<MonthlyPlanData | null>(null);
-  const [selectedGoal, setSelectedGoal] = useState<MonthlyGoalData | null>(null);
-  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
+  const [viewMonth, setViewMonth] = useState(new Date().getMonth() + 1);
+  const [viewYear, setViewYear] = useState(new Date().getFullYear());
   const [loading, setLoading] = useState(true);
+  const [blockedNoAnnual, setBlockedNoAnnual] = useState(false);
 
   useEffect(() => {
     loadPlan();
@@ -32,11 +47,16 @@ export default function MonthlyCalendar({ onClose, onOpenMatriz }: MonthlyCalend
   const loadPlan = async () => {
     try {
       const status = await monthlyService.checkStatus();
+      if ((status as any).has_annual_goal === false && !status.plan_id) {
+        setBlockedNoAnnual(true);
+        return;
+      }
       if (status.plan_id) {
         const loadedPlan = await monthlyService.getPlan(status.plan_id);
         setPlan(loadedPlan);
         const now = new Date();
-        setCurrentMonth(now.getMonth() + 1);
+        setViewMonth(now.getMonth() + 1);
+        setViewYear(now.getFullYear());
       }
     } catch (err) {
       console.error('Error loading plan:', err);
@@ -45,147 +65,180 @@ export default function MonthlyCalendar({ onClose, onOpenMatriz }: MonthlyCalend
     }
   };
 
-  const currentGoal = plan?.goals.find(g => g.month_order === currentMonth);
-  const months = Array.from({ length: 12 }, (_, i) => i + 1);
+  const currentGoal: MonthlyGoalData | undefined = useMemo(
+    () => plan?.goals.find(g => g.calendar_month === viewMonth && g.calendar_year === viewYear),
+    [plan, viewMonth, viewYear]
+  );
 
-  if (loading) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 text-center" onClick={e => e.stopPropagation()}>
-          <div className="animate-spin w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-gray-500">Cargando plan mensual...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!plan) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 text-center" onClick={e => e.stopPropagation()}>
-          <button onClick={onClose} className="absolute top-3 right-3 p-2 rounded-full hover:bg-gray-100 transition-colors">
-            <X className="w-5 h-5 text-gray-500" />
-          </button>
-          <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500">No hay un plan mensual aprobado.</p>
-        </div>
-      </div>
-    );
-  }
+  const stepMonth = (delta: number) => {
+    let m = viewMonth + delta;
+    let y = viewYear;
+    while (m < 1) { m += 12; y -= 1; }
+    while (m > 12) { m -= 12; y += 1; }
+    setViewMonth(m);
+    setViewYear(y);
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
-        <button onClick={onClose} className="absolute top-3 right-3 z-10 p-2 rounded-full hover:bg-white/30 transition-colors">
-          <X className="w-5 h-5 text-white" />
-        </button>
-
-        <div className="bg-gradient-to-r from-[#7c3aed] to-[#a855f7] p-4 text-white">
-          <div className="flex items-center gap-2 mb-2">
-            <Calendar className="w-5 h-5" />
-            <h2 className="text-lg font-bold uppercase">Metas Mensuales</h2>
-          </div>
-          <div className="marquee-container overflow-hidden">
-            <div className="marquee whitespace-nowrap">
-              <span className="inline-block px-4">
-                🎯 <strong>{currentGoal?.monthly_goal_text || 'Sin meta este mes'}</strong>
-              </span>
-              <span className="inline-block px-4">
-                🎯 <strong>{currentGoal?.monthly_goal_text || 'Sin meta este mes'}</strong>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-4 gap-2 p-4">
-          {months.map(m => {
-            const goal = plan.goals.find(g => g.month_order === m);
-            const isActive = m === currentMonth;
-            const isPast = m < currentMonth;
-            return (
-              <button
-                key={m}
-                onClick={() => { setCurrentMonth(m); setSelectedGoal(null); }}
-                className={`relative p-3 rounded-xl text-center transition-all ${
-                  isActive
-                    ? 'bg-purple-600 text-white shadow-lg scale-105'
-                    : isPast
-                    ? 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                    : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
-                }`}
-              >
-                <div className="text-[10px] font-bold uppercase mb-1">
-                  {MONTH_NAMES[m - 1].slice(0, 3)}
-                </div>
-                {goal && (
-                  <div className={`w-2 h-2 rounded-full mx-auto ${
-                    isActive ? 'bg-white' : goal.status === 'APROBADA' ? 'bg-green-500' : 'bg-gray-400'
-                  }`} />
-                )}
-                {isActive && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-400 rounded-full flex items-center justify-center">
-                    <Target className="w-2.5 h-2.5 text-amber-800" />
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {currentGoal && (
-          <div className="flex-1 overflow-y-auto p-4 border-t border-gray-100">
-            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-4 border border-purple-200">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">
-                  Meta Mes {currentMonth}
-                </span>
-                <span className="text-xs text-gray-500">
-                  Complejidad: {COMPLEXITY_LABELS[currentGoal.complexity_level]}
-                </span>
+    <MonthlyShell username={username} avatarUrl={avatarUrl} onNavigate={onNavigate} onClose={onClose}>
+      <div className="rounded-3xl bg-gradient-to-br from-[#0a1233] via-[#141b4d] to-[#2b0f54] shadow-2xl overflow-hidden">
+            {loading && (
+              <div className="py-16 text-center">
+                <div className="animate-spin w-8 h-8 border-4 border-white/60 border-t-transparent rounded-full mx-auto mb-4" />
+                <p className="text-white/70 text-sm">Cargando plan mensual...</p>
               </div>
-              <p className="text-sm font-semibold text-gray-800 mb-2">{currentGoal.monthly_goal_text}</p>
-              {currentGoal.brief_explanation && (
-                <p className="text-xs text-gray-600 mb-2">{currentGoal.brief_explanation}</p>
-              )}
-              {currentGoal.annual_goal_relation && (
-                <p className="text-xs text-purple-600 italic">↗ {currentGoal.annual_goal_relation}</p>
-              )}
-              <div className="mt-3 flex items-center gap-2">
-                <Check className="w-4 h-4 text-green-500" />
-                <span className="text-xs text-green-600 font-medium">Meta aprobada</span>
-              </div>
-            </div>
-            {onOpenMatriz && (
-              <button
-                onClick={onOpenMatriz}
-                className="w-full mt-3 py-3 bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] text-white font-semibold rounded-xl hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm"
-              >
-                Entender cómo priorizar mis tareas <ArrowRight className="w-4 h-4" />
-              </button>
             )}
-          </div>
-        )}
 
-        <div className="border-t border-gray-200 p-4 flex items-center justify-between">
-          <button
-            onClick={() => setCurrentMonth(Math.max(1, currentMonth - 1))}
-            disabled={currentMonth === 1}
-            className="flex items-center gap-1 px-4 py-2 text-sm font-bold text-gray-600 hover:text-gray-800 disabled:opacity-30 transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" /> Anterior
-          </button>
-          <span className="text-xs text-gray-400">
-            {MONTH_NAMES[currentMonth - 1]} {plan.cycle_start_year}
-          </span>
-          <button
-            onClick={() => setCurrentMonth(Math.min(12, currentMonth + 1))}
-            disabled={currentMonth === 12}
-            className="flex items-center gap-1 px-4 py-2 text-sm font-bold text-gray-600 hover:text-gray-800 disabled:opacity-30 transition-colors"
-          >
-            Siguiente <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+            {!loading && (blockedNoAnnual || !plan) && (
+              <div className="text-center py-12 max-w-md mx-auto px-6">
+                <Calendar className="w-12 h-12 text-white/40 mx-auto mb-4" />
+                <p className="text-white/80 text-sm mb-6">
+                  {blockedNoAnnual
+                    ? 'Para crear tus Metas Mensuales, primero debes aprobar tu Gran Meta Anual.'
+                    : 'No hay un plan mensual aprobado.'}
+                </p>
+                {blockedNoAnnual && (
+                  <button
+                    onClick={() => { onNeedAnnualGoal?.(); onClose(); }}
+                    className="w-full py-3 rounded-2xl bg-gradient-to-r from-[#1f6feb] via-[#4f46e5] to-[#b01ac9] text-white font-bold hover:brightness-110 transition-all"
+                  >
+                    Crear mi Gran Meta Anual
+                  </button>
+                )}
+              </div>
+            )}
+
+            {!loading && plan && (
+              <>
+                <div className="px-5 sm:px-8 pt-5 flex items-center gap-3">
+                  <span className="text-[11px] font-bold tracking-widest text-white/80 border border-white/25 rounded-full px-3 py-1">
+                    VISTA MENSUAL
+                  </span>
+                  <h3 className="text-white text-xl sm:text-2xl font-bold">
+                    {cap(MONTH_NAMES[viewMonth - 1])} {viewYear}
+                  </h3>
+                  <span className="ml-auto flex items-center gap-2">
+                    {onReview && (
+                      <button
+                        onClick={onReview}
+                        title="Revisar metas por bloques"
+                        className="h-9 px-3 rounded-xl border border-white/40 text-white text-xs font-bold flex items-center gap-1.5 hover:bg-white/10 transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Revisar metas</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => stepMonth(-1)}
+                      className="w-9 h-9 rounded-xl border border-white/40 text-white flex items-center justify-center hover:bg-white/10 transition-colors"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => stepMonth(1)}
+                      className="w-9 h-9 rounded-xl border border-white/40 text-white flex items-center justify-center hover:bg-white/10 transition-colors"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </span>
+                </div>
+
+                <div className="p-5 sm:p-8">
+                  <div className="bg-white rounded-3xl shadow-lg overflow-hidden">
+                    <div className="h-1 bg-gradient-to-r from-[#2b9df4] to-[#a21caf]" />
+                    {currentGoal ? (
+                      <div className="grid grid-cols-1 md:grid-cols-3">
+                        <div className="p-5 sm:p-6">
+                          <div className="flex items-center gap-2 mb-3">
+                            <Calendar className="w-5 h-5 text-[#5b5bd6]" />
+                            <p className="text-[11px] font-bold tracking-widest text-[#5b5bd6]">
+                              META MENSUAL VIGENTE
+                            </p>
+                          </div>
+                          <p className="text-[#1b2350] text-[15px] font-bold leading-relaxed">
+                            {currentGoal.monthly_goal_text}
+                          </p>
+                        </div>
+                        <div className="p-5 sm:p-6 md:border-l border-gray-200">
+                          <p className="text-[11px] font-bold tracking-widest text-[#5b5bd6] mb-2">
+                            POR QUÉ IMPORTA
+                          </p>
+                          <p className="text-[#1b2350] text-[15px] leading-relaxed">
+                            {currentGoal.brief_explanation}
+                          </p>
+                        </div>
+                        <div className="p-5 sm:p-6 md:border-l border-gray-200">
+                          <p className="text-[11px] font-bold tracking-widest text-[#5b5bd6] mb-2">
+                            RELACIÓN CON MI META ANUAL
+                          </p>
+                          <p className="text-[#1b2350] text-[15px] leading-relaxed">
+                            {currentGoal.annual_goal_relation}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="p-6 text-[#1b2350] text-sm">
+                        Este mes aún no tiene meta aprobada. Revisa tus Metas Mensuales.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="px-5 sm:px-8 pb-8">
+                  <div className="bg-white rounded-3xl shadow-lg overflow-hidden">
+                    <div className="h-1 bg-gradient-to-r from-[#2b9df4] to-[#a21caf]" />
+                    <div className="bg-[#121a45] px-5 py-3 flex items-center gap-3">
+                      <span className="text-white font-black tracking-wider text-lg">
+                        {MONTH_NAMES[viewMonth - 1].toUpperCase()} {viewYear}
+                      </span>
+                      <span className="ml-auto text-[11px] font-bold tracking-widest text-white/70">
+                        CALENDARIO DEL MES
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-7 bg-[#eef1f7]">
+                      {WEEK_DAYS.map(d => (
+                        <div key={d} className="text-center text-[10px] sm:text-[11px] font-black text-[#1b2350] uppercase py-2.5">
+                          {d}
+                        </div>
+                      ))}
+                    </div>
+                    <MonthGrid year={viewYear} month={viewMonth} />
+                  </div>
+                </div>
+              </>
+            )}
       </div>
+    </MonthlyShell>
+  );
+}
+
+function MonthGrid({ year, month }: { year: number; month: number }) {
+  const totalDays = daysInMonth(year, month);
+  const offset = firstWeekdayMonday(year, month);
+  const today = new Date();
+  const isCurrentMonth = today.getMonth() + 1 === month && today.getFullYear() === year;
+  const cells: (number | null)[] = [
+    ...Array(offset).fill(null),
+    ...Array.from({ length: totalDays }, (_, i) => i + 1),
+  ];
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  return (
+    <div className="grid grid-cols-7">
+      {cells.map((day, i) => {
+        const col = i % 7;
+        const isWeekend = col >= 5;
+        return (
+          <div
+            key={i}
+            className={`min-h-[52px] sm:min-h-[64px] p-1.5 sm:p-2 border-t border-gray-200 text-sm font-bold text-[#1b2350] ${
+              day === null ? 'bg-white' : isWeekend ? 'bg-[#f4f2ff]' : 'bg-white'
+            } ${isCurrentMonth && day === today.getDate() ? '!bg-[#1f6feb] !text-white' : ''}`}
+            style={{ borderLeftWidth: col === 0 ? 0 : 1, borderLeftColor: col === 0 ? 'transparent' : undefined }}
+          >
+            {day ?? ''}
+          </div>
+        );
+      })}
     </div>
   );
 }

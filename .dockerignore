@@ -1,0 +1,20 @@
+# La imagen solo necesita backend/ (el Dockerfile hace `COPY backend/ .`).
+# Sin esto, el contexto del build incluye node_modules y demás.
+.git
+.gitignore
+node_modules
+dist
+build
+coverage
+.openchamber
+.venv
+**/__pycache__
+*.pyc
+*.log
+docs
+parametros
+MCP
+public
+src
+backups
+tts_service

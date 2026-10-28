@@ -1,14 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Volume2, MessageSquare, Bell, Gauge, Clock, Wifi } from 'lucide-react';
+import { X, Save, Volume2, MessageSquare, Bell, Gauge, Clock, Wifi, Lock, Target, CalendarDays, Calendar } from 'lucide-react';
 import { configuracionService, ConfiguracionData } from '../services/api';
 import { AVATARS } from '../constants/avatars';
 
 interface ConfiguracionPanelProps {
   isOpen: boolean;
   onClose: () => void;
+  hasMetaAnualAprobada?: boolean;
+  onOpenGranMetaAnual?: () => void;
+  onOpenMetaMensual?: () => void;
+  onOpenMetaSemanal?: () => void;
 }
 
-export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({ isOpen, onClose }) => {
+export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
+  isOpen,
+  onClose,
+  hasMetaAnualAprobada = false,
+  onOpenGranMetaAnual,
+  onOpenMetaMensual,
+  onOpenMetaSemanal,
+}) => {
   const [config, setConfig] = useState<ConfiguracionData>({
     voz_genero: 'femenino',
     estilo_comunicacion: 'suave',
@@ -21,6 +32,9 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({ isOpen, 
     onboarding_completado: false,
     video_inicial_visto: false,
     ultimo_ingreso: null,
+    annual_report_month: 12,
+    annual_report_day: 31,
+    mission_photo_url: '',
   });
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -67,7 +81,7 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({ isOpen, 
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
-      <div className="bg-white/90 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
+      <div className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-[650px] max-h-[85vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-slate-700 to-slate-600 shrink-0">
           <div className="flex items-center gap-2">
             <Gauge className="w-5 h-5 text-white" />
@@ -266,6 +280,57 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({ isOpen, 
                 </div>
               </div>
 
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="flex items-center gap-2 mb-3">
+                  {hasMetaAnualAprobada ? (
+                    <Target className="w-4 h-4 text-emerald-500" />
+                  ) : (
+                    <Lock className="w-4 h-4 text-gray-400" />
+                  )}
+                  <span className={`text-sm font-bold ${hasMetaAnualAprobada ? 'text-gray-800' : 'text-gray-400'}`}>
+                    Modificar mi Plan
+                  </span>
+                </div>
+                {hasMetaAnualAprobada ? (
+                  <div className="space-y-2">
+                    <button
+                      onClick={onOpenGranMetaAnual}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-[#2b44ff]/10 to-[#0b153a]/10 border border-[#2b44ff]/20 hover:border-[#2b44ff]/40 transition-all text-left"
+                    >
+                      <Target className="w-4 h-4 text-[#2b44ff]" />
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">Gran Meta Anual</p>
+                        <p className="text-[10px] text-gray-500">Reconstruir tu meta SMART</p>
+                      </div>
+                    </button>
+                    <button
+                      onClick={onOpenMetaMensual}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-200 hover:border-purple-300 transition-all text-left"
+                    >
+                      <CalendarDays className="w-4 h-4 text-purple-500" />
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">Metas Mensuales</p>
+                        <p className="text-[10px] text-gray-500">Ajustar tus 12 objetivos</p>
+                      </div>
+                    </button>
+                    <button
+                      onClick={onOpenMetaSemanal}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 hover:border-amber-300 transition-all text-left"
+                    >
+                      <Calendar className="w-4 h-4 text-amber-500" />
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">Misiones Semanales</p>
+                        <p className="text-[10px] text-gray-500">Planificar tu semana</p>
+                      </div>
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400 italic">
+                    Crea tu Gran Meta Anual primero para desbloquear esta sección.
+                  </p>
+                )}
+              </div>
+
               <button
                 onClick={handleSave}
                 disabled={loading}
@@ -281,3 +346,4 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({ isOpen, 
     </div>
   );
 };
+

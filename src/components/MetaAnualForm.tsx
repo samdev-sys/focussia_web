@@ -99,7 +99,7 @@ export const MetaAnualForm: React.FC<MetaAnualFormProps> = ({ isOpen, onClose })
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
-      <div className="bg-white/90 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden">
+      <div className="bg-white/90 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-[650px] max-h-[85vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-emerald-600 to-teal-500 shrink-0">
           <div className="flex items-center gap-2">
             <Target className="w-5 h-5 text-white" />

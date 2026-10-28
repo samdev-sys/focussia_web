@@ -1,0 +1,16 @@
+allowBuilds:
+  esbuild: true
+
+minimumReleaseAgeExclude:
+  - browserslist@4.29.5
+  - postcss@8.5.32
+
+# Parches de seguridad para dependencias transitivas (pnpm >= 11).
+# Se mantienen alineados con "overrides" de package.json, que usa npm/Netlify.
+overrides:
+  baseline-browser-mapping: 2.11.33
+  browserslist: 4.29.5
+  follow-redirects: 1.16.2
+  nanoid: 3.3.18
+  postcss: 8.5.32
+  source-map-js: 1.2.2

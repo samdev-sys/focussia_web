@@ -1,55 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   LayoutDashboard, BookOpen, Settings, Sparkles, Play, ArrowRight,
-  ChevronRight, ChevronLeft, X, Heart, Target, Calendar, CheckSquare,
+  ChevronRight, ChevronLeft, X, Heart, Target, CheckSquare,
   Clock, Sun, Users, MessageSquare, Bell, Shield, CreditCard, Volume2,
-  Sliders, Smartphone, EyeOff, Eye, Star, Check, SkipForward,
+  Sliders, Smartphone, EyeOff, Eye, Star, Check, SkipForward, GraduationCap, Compass, MapPin,
+  CalendarDays, Flower2, Briefcase, BarChart3, ClipboardList, SlidersHorizontal, TrendingUp,
 } from 'lucide-react';
-import { authService, configuracionService } from '../services/api';
-import { AVATAR_FILES } from '../constants/avatars';
-
-const SECTIONS_DATA = [
-  { id: 'planificacion', icon: Target, color: 'from-purple-400 to-indigo-500', label: 'Planificación', desc: 'Rueda de la vida, Matriz, Meta anual, Objetivos mensuales/semanales/diarios' },
-  { id: 'ejecucion', icon: CheckSquare, color: 'from-emerald-400 to-teal-500', label: 'Ejecución diaria', desc: 'Agenda, Time Blocking, Mi misión de hoy, Kanban, Delegaciones, Recordatorios' },
-  { id: 'bienestar', icon: Heart, color: 'from-pink-400 to-rose-500', label: 'Bienestar', desc: 'Gratitud, Hora de oro familiar, Clima, Estado de ánimo, Medicamentos, Humor, Hobbies, Deportes' },
-  { id: 'herramientas', icon: Star, color: 'from-amber-400 to-orange-500', label: 'Herramientas personales', desc: 'Cursos, RRSS, Cuentas, Coaching, Tribu, Notas' },
-  { id: 'configuracion', icon: Sliders, color: 'from-slate-400 to-gray-600', label: 'Configuración', desc: 'Ajustes del sistema y perfil' },
-  { id: 'reportes', icon: Sparkles, color: 'from-cyan-400 to-blue-500', label: 'Reportes', desc: 'Visualización de progreso e indicadores' },
-];
-
-const TOUR_STEPS = [
-  { zone: 'Barra superior', desc: 'Aquí encuentras tu avatar, notificaciones y acceso directo a configuración.' },
-  { zone: 'Saludo del avatar', desc: 'Tu acompañante Focusia te da la bienvenida cada vez que ingresas.' },
-  { zone: 'Misión de hoy', desc: 'Espacio para definir tu objetivo principal del día.' },
-  { zone: 'Fechas importantes', desc: 'Calendario mensual con tus eventos y recordatorios.' },
-  { zone: 'Rueda de la vida', desc: 'Evalúa tu balance en salud, finanzas y relaciones.' },
-  { zone: 'Meta anual', desc: 'Tu gran objetivo del año, el norte estratégico de todo.' },
-  { zone: 'Objetivos mensuales', desc: 'Desglose mensual de tu meta anual.' },
-  { zone: 'Objetivo de la semana', desc: 'Define el foco semanal para mantener la dirección.' },
-  { zone: 'Métricas de ejecución', desc: 'Horas planificadas vs completadas en tiempo real.' },
-  { zone: 'Keep / Notas rápidas', desc: 'Captura ideas al vuelo sin interrumpir tu flujo.' },
-  { zone: 'Agenda - Time blocking', desc: 'Bloques horarios con tareas asignadas a cada hora.' },
-  { zone: 'Columnas Kanban', desc: 'Tablero visual: Pendientes, En progreso, Hecho.' },
-  { zone: 'Delegaciones pendientes', desc: 'Tareas que has delegado a otros miembros del equipo.' },
-  { zone: 'Matriz Eisenhower', desc: 'Clasifica tareas por urgencia e importancia.' },
-  { zone: 'Facturas / Gastos', desc: 'Control de pagos y facturación mensual.' },
-  { zone: 'Workspaces activos', desc: 'Tus espacios de trabajo colaborativo.' },
-  { zone: 'Miembros del equipo', desc: 'Personas con las que compartes workspace.' },
-  { zone: 'Recordatorios', desc: 'Alertas configuradas para medicamentos, cumpleaños, etc.' },
-  { zone: 'Buzón de propuestas IA', desc: 'Aquí llegan las sugerencias inteligentes de Focusia.' },
-  { zone: 'Configuración de IA', desc: 'Ajusta el tono, intensidad y canales del coach.' },
-  { zone: 'Activaciones', desc: 'Alertas adaptativas que Focusia programa para ti.' },
-  { zone: 'Notificaciones', desc: 'Historial de alertas e invitaciones.' },
-  { zone: 'Reportes y analytics', desc: 'Visualiza tu progreso y tendencias en tiempo real.' },
-  { zone: 'Menú de perfil', desc: 'Edita tu foto, nombre y datos de cuenta.' },
-  { zone: 'Sección de bienestar', desc: 'Gratitud, Hora de oro, Estado de ánimo, Medicamentos, Humor, Hobbies y Deportes — el cierre del recorrido.' },
-];
-
-const PROACTIVE_MESSAGES = [
-  'Puedes comenzar entrando al dashboard completo — ahí tendrás todo tu ecosistema productivo.',
-  'Si prefieres orientarte primero, el tutorial te muestra cada bloque paso a paso.',
-  'Recuerda que puedes ajustar todo desde Configuración cuando lo necesites.',
-];
+import { authService, inicioService, configService, usuarioService, GuidedTourBlockData, LearningCategoryData, ConfigProfileData } from '../services/api';
+import { AVATAR_FILES, AVATAR_VARIACIONES, AVATAR_VARIACION_POR_NOMBRE } from '../constants/avatars';
+import { ReiniciarOnboarding } from './ReiniciarOnboarding';
+import ConfiguracionModule from './ConfiguracionModule';
+import { requestTourAutostart } from './FocusiaTour';
 
 interface PostOnboardingHubProps {
   onGoToDashboard: () => void;
@@ -57,31 +18,42 @@ interface PostOnboardingHubProps {
 }
 
 export default function PostOnboardingHub({ onGoToDashboard, onComplete }: PostOnboardingHubProps) {
-  const [screen, setScreen] = useState<'loading' | 'video' | 'decision' | 'tutorial' | 'config' | 'tour'>('loading');
+  const [screen, setScreen] = useState<'loading' | 'video' | 'decision' | 'tutorial' | 'sections' | 'config' | 'tour'>('loading');
   const [userName, setUserName] = useState('');
   const [avatarIndex, setAvatarIndex] = useState(0);
-  const [showConfigVideo, setShowConfigVideo] = useState(true);
+  const [avatarName, setAvatarName] = useState('');
   const [hubEntryCount, setHubEntryCount] = useState(0);
   const [showProactive, setShowProactive] = useState(false);
-  const [guidedTourStarted, setGuidedTourStarted] = useState(false);
-  const sectionsRef = useRef<HTMLDivElement>(null);
+  const [videoOrigin, setVideoOrigin] = useState<'inicio' | 'tutorial'>('inicio');
+  const [guidedTourBlocks, setGuidedTourBlocks] = useState<GuidedTourBlockData[]>([]);
+  const [learnCategories, setLearnCategories] = useState<LearningCategoryData[]>([]);
 
   useEffect(() => {
-    authService.getCurrentUser().then(async u => {
-      setUserName(u.username);
-      const config = await configuracionService.getMiConfig();
-      setAvatarIndex(config.avatar_index || 0);
-      if (!config.video_inicial_visto) {
+    Promise.all([
+      authService.getCurrentUser(),
+      inicioService.getState().catch(() => null),
+      inicioService.guidedTourBlocks().catch(() => [] as GuidedTourBlockData[]),
+      inicioService.learnCategories().catch(() => [] as LearningCategoryData[]),
+      usuarioService.registrarIngreso().catch(() => null),
+    ]).then(([user, state, blocks, cats, ingreso]) => {
+      setUserName(user.username);
+      setGuidedTourBlocks(blocks);
+      setLearnCategories(cats);
+      if (ingreso && typeof ingreso.conteo_ingresos === 'number') {
+        setHubEntryCount(ingreso.conteo_ingresos);
+      }
+      configService.getAvatar().then(a => {
+        setAvatarIndex(a.current_avatar_id ?? 0);
+        const nm = (a.avatar as { name?: unknown } | null)?.name;
+        if (typeof nm === 'string') setAvatarName(nm);
+      }).catch(() => {});
+      if (!state || !state.has_seen_intro_video) {
         setScreen('video');
       } else {
         setScreen('decision');
       }
-      await configuracionService.updateMiConfig({ ultimo_ingreso: new Date().toISOString() });
+      inicioService.getState().then(s => {}).catch(() => {});
     });
-    fetch('/api/usuario/registrar-ingreso/', { method: 'POST', credentials: 'include' })
-      .then(r => r.json())
-      .then(d => setHubEntryCount(d.conteo_ingresos || 0))
-      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -91,9 +63,34 @@ export default function PostOnboardingHub({ onGoToDashboard, onComplete }: PostO
     }
   }, [screen, hubEntryCount]);
 
-  const handleVideoEnd = useCallback(() => {
-    setScreen('decision');
-    fetch('/api/usuario/marcar-video-visto/', { method: 'POST', credentials: 'include' }).catch(() => {});
+  const handleVideoComplete = useCallback(() => {
+    if (videoOrigin === 'tutorial') {
+      // §11: el video visto desde el tutorial vuelve a la pantalla Tutorial
+      inicioService.introVideoReplayed({ completed: true }).catch(() => {});
+      setScreen('tutorial');
+    } else {
+      inicioService.introVideoCompleted({ origin: 'inicio', completed: true }).catch(() => {});
+      setScreen('decision');
+    }
+  }, [videoOrigin]);
+
+  const handleVideoSkip = useCallback(() => {
+    if (videoOrigin === 'tutorial') {
+      inicioService.introVideoReplayed({ completed: false }).catch(() => {});
+      setScreen('tutorial');
+    } else {
+      inicioService.introVideoAbandoned({ origin: 'inicio', completed: false }).catch(() => {});
+      setScreen('decision');
+    }
+  }, [videoOrigin]);
+
+  const handleVideoShown = useCallback(() => {
+    inicioService.introVideoShown().catch(() => {});
+  }, []);
+
+  const openVideoFromTutorial = useCallback(() => {
+    setVideoOrigin('tutorial');
+    setScreen('video');
   }, []);
 
   if (screen === 'loading') {
@@ -101,46 +98,54 @@ export default function PostOnboardingHub({ onGoToDashboard, onComplete }: PostO
   }
 
   if (screen === 'video') {
-    return <VideoExplicativo onEnd={handleVideoEnd} userName={userName} />;
+    return <VideoExplicativo onComplete={handleVideoComplete} onSkip={handleVideoSkip} onShown={handleVideoShown} userName={userName} />;
   }
 
   if (screen === 'tour') {
-    return <GuidedTour onFinish={() => setScreen('tutorial')} />;
+    return (
+      <GuidedTour
+        blocks={guidedTourBlocks}
+        onFinish={() => setScreen('tutorial')}
+        onGoToDashboard={() => { inicioService.dashboardOpen({ origin: 'visita_guiada' }).catch(() => {}); onGoToDashboard(); }}
+        userName={userName}
+        avatarIndex={avatarIndex}
+      />
+    );
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F4F7] relative overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-10 right-20 w-72 h-72 bg-purple-200/30 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-10 w-80 h-80 bg-pink-200/20 rounded-full blur-3xl" />
+        
       </div>
 
-      <header className="relative z-10 flex items-center justify-between px-6 py-4">
-        <div className="flex items-center gap-3">
-          {avatarIndex > 0 && (
-            <img src={AVATAR_FILES[avatarIndex]} alt="avatar" className="w-10 h-10 rounded-md object-cover border-2 border-purple-200" />
-          )}
-          <div>
-            <p className="text-lg font-bold text-gray-800">Focusia</p>
-            <p className="text-xs text-gray-400">Acompañante estratégico</p>
-          </div>
-        </div>
-        <button onClick={onGoToDashboard} className="flex items-center gap-2 px-4 py-2 bg-white/70 border border-gray-200 rounded-md text-sm font-medium text-gray-600 hover:bg-white hover:shadow-md transition-all">
-          Ir al Dashboard <ArrowRight className="w-4 h-4" />
-        </button>
-      </header>
+      <header className=" ">
+       </header> 
+       <ReiniciarOnboarding userName={userName} onResetSuccess={() => {}} />
 
-      {screen === 'decision' && <PantallaDecision userName={userName} avatarIndex={avatarIndex} onGoDashboard={() => { fetch('/api/telemetria/interaccion/', { method: 'POST', credentials: 'include', headers: {'Content-Type':'application/json'}, body: JSON.stringify({tipo:'hub_to_dashboard', metadata:{}}) }).catch(() => {}); onGoToDashboard(); }} onGoTutorial={() => setScreen('tutorial')} onGoConfig={() => { setShowConfigVideo(true); setScreen('config'); }} showProactive={showProactive} proactiveMsg={PROACTIVE_MESSAGES[Math.min(hubEntryCount - 3, PROACTIVE_MESSAGES.length - 1)]} />}
+      {screen === 'decision' && <PantallaDecision userName={userName} avatarIndex={avatarIndex} avatarName={avatarName} onGoDashboard={() => { inicioService.dashboardOpen().catch(() => {}); onGoToDashboard(); }} onGoTutorial={() => { inicioService.tutorialOpen().catch(() => {}); setScreen('tutorial'); }} onGoConfig={() => { inicioService.configOpen().catch(() => {}); setScreen('config'); }} showProactive={showProactive} proactiveMsg={getProactiveMessage(hubEntryCount)} />}
 
-      {screen === 'tutorial' && <TutorialScreen userName={userName} avatarIndex={avatarIndex} onShowVideo={() => setScreen('video')} onStartTour={() => { setGuidedTourStarted(true); fetch('/api/telemetria/interaccion/', { method: 'POST', credentials: 'include', headers: {'Content-Type':'application/json'}, body: JSON.stringify({tipo:'guided_tour_started', metadata:{}}) }).catch(() => {}); setScreen('tour'); }} onBack={() => setScreen('decision')} sectionsRef={sectionsRef} />}
+      {screen === 'tutorial' && <TutorialScreen userName={userName} avatarIndex={avatarIndex} avatarName={avatarName} onShowVideo={openVideoFromTutorial} onStartTour={() => { inicioService.guidedTourStart().catch(() => {}); requestTourAutostart(); onGoToDashboard(); }} onGoSections={() => { inicioService.learnSectionsOpened().catch(() => {}); setScreen('sections'); }} onBack={() => setScreen('decision')} />}
 
-      {screen === 'config' && <ConfigScreen userName={userName} avatarIndex={avatarIndex} showVideo={showConfigVideo} onDismissVideo={() => setShowConfigVideo(false)} onBack={() => setScreen('decision')} />}
+      {screen === 'sections' && <SectionsScreen categories={learnCategories} avatarIndex={avatarIndex} avatarName={avatarName} onBack={() => setScreen('tutorial')} />}
+
+      {screen === 'config' && <ConfigScreen userName={userName} avatarIndex={avatarIndex} onVideoShown={() => inicioService.configVideoShown().catch(() => {})} onOpenNow={() => inicioService.configOpenNow().catch(() => {})} onBack={() => { inicioService.configVolverInicio().catch(() => {}); setScreen('decision'); }} onGoToDashboard={() => { inicioService.dashboardOpen({ origin: 'configuracion' }).catch(() => {}); onGoToDashboard(); }} />}
     </div>
   );
 }
 
-function VideoExplicativo({ onEnd, userName }: { onEnd: () => void; userName: string }) {
+function getProactiveMessage(count: number): string {
+  const msgs = [
+    'Puedes comenzar entrando al dashboard completo — ahí tendrás todo tu ecosistema productivo.',
+    'Si prefieres orientarte primero, el tutorial te muestra cada bloque paso a paso.',
+    'Recuerda que puedes ajustar todo desde Configuración cuando lo necesites.',
+  ];
+  return msgs[Math.min(count - 3, msgs.length - 1)] || msgs[msgs.length - 1];
+}
+
+function VideoExplicativo({ onComplete, onSkip, onShown, userName }: { onComplete: () => void; onSkip: () => void; onShown: () => void; userName: string }) {
   const [step, setStep] = useState(0);
+  const shownRef = useRef(false);
   const segments = [
     { icon: Heart, text: 'Focusia empieza conociendo tu equilibrio en la Rueda de la Vida.', sub: 'Salud, relaciones y propósito como base de todo.' },
     { icon: Target, text: 'Contigo, define una Meta Anual clara y la desglosa en objetivos.', sub: 'Cada mes, cada semana, cada día — todo conectado.' },
@@ -149,13 +154,20 @@ function VideoExplicativo({ onEnd, userName }: { onEnd: () => void; userName: st
   ];
 
   useEffect(() => {
+    if (!shownRef.current) {
+      shownRef.current = true;
+      onShown();
+    }
+  }, [onShown]);
+
+  useEffect(() => {
     if (step >= segments.length) {
-      const t = setTimeout(onEnd, 500);
+      const t = setTimeout(onComplete, 500);
       return () => clearTimeout(t);
     }
     const t = setTimeout(() => setStep(s => s + 1), 12000 / segments.length);
     return () => clearTimeout(t);
-  }, [step, onEnd]);
+  }, [step, onComplete]);
 
   if (step >= segments.length) {
     return (
@@ -188,7 +200,7 @@ function VideoExplicativo({ onEnd, userName }: { onEnd: () => void; userName: st
             <div key={i} className={`w-2 h-2 rounded-full transition-all ${i === step ? 'bg-purple-400 w-4' : i < step ? 'bg-purple-600' : 'bg-purple-800/40'}`} />
           ))}
         </div>
-        <button onClick={onEnd} className="mt-6 text-sm text-purple-300/60 hover:text-purple-200 transition-colors flex items-center gap-1 mx-auto">
+        <button onClick={onSkip} className="mt-6 text-sm text-purple-300/60 hover:text-purple-200 transition-colors flex items-center gap-1 mx-auto">
           Saltar <SkipForward className="w-3 h-3" />
         </button>
       </div>
@@ -196,137 +208,691 @@ function VideoExplicativo({ onEnd, userName }: { onEnd: () => void; userName: st
   );
 }
 
-function PantallaDecision({ userName, avatarIndex, onGoDashboard, onGoTutorial, onGoConfig, showProactive, proactiveMsg }: {
-  userName: string; avatarIndex: number; onGoDashboard: () => void; onGoTutorial: () => void; onGoConfig: () => void; showProactive?: boolean; proactiveMsg?: string;
+export function PantallaDecision({ userName, avatarIndex, avatarName, onGoDashboard, onGoTutorial, onGoConfig, showProactive, proactiveMsg }: {
+  userName: string; avatarIndex: number; avatarName?: string; onGoDashboard: () => void; onGoTutorial: () => void; onGoConfig: () => void; showProactive?: boolean; proactiveMsg?: string;
 }) {
+  const [imgOk, setImgOk] = useState(true);
+  // La foto es la del avatar elegido en el onboarding: se resuelve por nombre
+  // (los ids de BD pueden variar) con fallback por id y luego al jpeg base.
+  const nameKey = (avatarName || '').trim().toLowerCase();
+  const heroImg = AVATAR_VARIACION_POR_NOMBRE[nameKey]
+    || (avatarIndex > 0 ? AVATAR_VARIACIONES[avatarIndex] : undefined)
+    || (avatarIndex > 0 ? AVATAR_FILES[avatarIndex] : undefined)
+    || null;
   return (
-    <main className="relative z-10 flex flex-col items-center justify-center min-h-[80vh] px-6">
-      {showProactive && proactiveMsg && (
-        <div className="mb-6 max-w-md w-full bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-md p-4 animate-fade-in shadow-sm">
-          <div className="flex items-start gap-3">
-            {avatarIndex > 0 && <img src={AVATAR_FILES[avatarIndex]} alt="" className="w-8 h-8 rounded-md object-cover mt-0.5" />}
-            <p className="text-sm text-gray-700 leading-relaxed">{proactiveMsg}</p>
-          </div>
-        </div>
-      )}
-      <div className="flex flex-col items-center mb-10">
-        {avatarIndex > 0 && (
-          <img src={AVATAR_FILES[avatarIndex]} alt="avatar" className="w-24 h-24 rounded-md object-cover border-2 border-purple-200 shadow-lg mb-4" />
-        )}
-        <p className="text-sm text-purple-500 font-medium mb-1">Ya estamos listos,</p>
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-800">{userName}.</h1>
-        <p className="text-lg text-gray-500 mt-1">¿Dónde quieres ir?</p>
+    <main className="relative z-10 px-6 pb-10 overflow-hidden">
+      {/* Ondas decorativas laterales */}
+      <div aria-hidden className="pointer-events-none absolute inset-y-0 left-0 -ml-16 hidden md:block">
+       <img src="./onda4.png" alt="" className="w-[200px] h-[1000px] object-cover -mt-30" />
+      </div>
+      <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 mt-30 -mr-25 hidden md:block">
+        <img src="./onda3.png" alt="" className="w-[220px] h-[800px] object-cover" />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-3xl">
-        <DecisionCard icon={LayoutDashboard} title="Ir al Dashboard Completo" desc="Acceso directo a tu tablero de productividad" color="from-purple-500 to-indigo-500" onClick={onGoDashboard} />
-        <DecisionCard icon={BookOpen} title="Ir al Tutorial" desc="Aprende el ecosistema Focusia a tu ritmo" color="from-emerald-500 to-teal-500" onClick={onGoTutorial} />
-        <DecisionCard icon={Settings} title="Ir a Configuración" desc="Personaliza tu experiencia" color="from-amber-500 to-orange-500" onClick={onGoConfig} />
+      <div className="max-w-5xl mx-auto">
+        {/* Logo */}
+        <div className="flex items-center justify-center gap-2 pt-6 pb-5">
+          <img src="./focussia.png" alt="Focusia" className="w-10 h-10" />
+          <span className="text-xl font-bold text-gray-800 tracking-tight">Focusia</span>
+        </div>
+
+        {showProactive && proactiveMsg && (
+          <div className="mb-5 max-w-2xl mx-auto bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-2xl p-4 shadow-sm">
+            <p className="text-sm text-gray-700 leading-relaxed text-center">{proactiveMsg}</p>
+          </div>
+        )}
+
+        {/* Hero */}
+        <section className="relative bg-#3533cd rounded-xl p-4 md:p-2 overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+            <div className="relative rounded-xl overflow-hidden min-h-[240px] md:min-h-[550px] bg-gradient-to-br from-purple-200 via-indigo-100 to-blue-100 ml-20">
+              {heroImg && imgOk ? (
+                <img src={heroImg} alt="Tu acompañante Focusia" onError={() => setImgOk(false)} className="absolute inset-0 w-full h-full object-cover" />
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100">
+                  <Sparkles className="w-10 h-10 text-indigo-400" />
+                  <p className="text-xs text-indigo-400 font-medium">Tu acompañante Focusia</p>
+                </div>
+              )}
+            </div>
+            <div className="bg-gray rounded-xl shadow-sm p-8 md:p-10 flex flex-col justify-center h-[300px]">
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight">
+                Ya estamos listos,<br />
+                <span className="text-indigo-700">{userName}. ¿Dónde quieres ir?</span>
+              </h1>
+              <div className="w-10 h-0.5 bg-purple-400 my-5" />
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Tu espacio ya está preparado.<br />
+                Ahora tú decides hacia dónde comenzar.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Tarjetas */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          <DecisionCard
+            icon={LayoutDashboard}
+            iconBg="bg-blue-50"
+            iconColor="text-indigo-700"
+            title={<>Ir al<br />Dashboard completo</>}
+            desc="Accede a todas las herramientas de Focusia en un solo lugar."
+            cta="Entrar"
+            onClick={onGoDashboard}
+          />
+          <DecisionCard
+            icon={GraduationCap}
+            iconBg="bg-violet-50"
+            iconColor="text-violet-600"
+            title={<>Ir al<br />Tutorial</>}
+            desc="Conoce Focusia paso a paso y a tu propio ritmo."
+            cta="Abrir tutorial"
+            onClick={onGoTutorial}
+          />
+          <DecisionCard
+            icon={Settings}
+            iconBg="bg-orange-50"
+            iconColor="text-orange-500"
+            title={<>Ir a<br />Configuración</>}
+            desc="Ajusta tu avatar, acompañamiento y preferencias."
+            cta="Abrir configuración"
+            onClick={onGoConfig}
+          />
+        </section>
+
+        {/* Franja de cierre */}
+        <section className="mt-4  bg-purple-100/80 rounded-xl px-2 py-3.5 flex items-center justify-center gap-2">
+          <span className="w-8 h-8 rounded-full border border-indigo-400 text-indigo-600 flex items-center justify-center shrink-0">
+            <Star className="w-4 h-4" />
+          </span>
+          <p className="text-sm text-gray-700 font-medium">La aplicación te acompaña. Las decisiones siempre serán tuyas.</p>
+        </section>
       </div>
     </main>
   );
 }
 
-function DecisionCard({ icon: Icon, title, desc, color, onClick }: {
-  icon: React.ComponentType<{ className?: string }>; title: string; desc: string; color: string; onClick: () => void;
+function DecisionCard({ icon: Icon, iconBg, iconColor, title, desc, cta, onClick }: {
+  icon: React.ComponentType<{ className?: string }>; iconBg: string; iconColor: string; title: React.ReactNode; desc: string; cta: string; onClick: () => void;
 }) {
   return (
-    <button onClick={onClick} className="group bg-white/80 backdrop-blur-sm border border-white/60 rounded-md p-6 text-left shadow-sm hover:shadow-xl transition-all duration-300 hover:scale-[1.03] active:scale-[0.98]">
-      <div className={`w-12 h-12 bg-gradient-to-br ${color} rounded-md flex items-center justify-center mb-4 shadow-md group-hover:shadow-lg transition-shadow`}>
-        <Icon className="w-6 h-6 text-white" />
+    <div className="bg-white/85 backdrop-blur-sm border border-gray-100 rounded-2xl p-6 text-center shadow-sm hover:shadow-md transition-shadow flex flex-col">
+      <div className={`w-12 h-12 ${iconBg} rounded-full flex items-center justify-center mx-auto mb-3`}>
+        <Icon className={`w-6 h-6 ${iconColor}`} />
       </div>
-      <h3 className="font-bold text-gray-800 mb-1">{title}</h3>
-      <p className="text-xs text-gray-500">{desc}</p>
+      <h3 className="font-bold text-gray-800 leading-snug">{title}</h3>
+      <p className="text-xs text-gray-500 mt-2 leading-relaxed flex-1">{desc}</p>
+      <button onClick={onClick} className="mt-4 w-full py-2.5 border border-indigo-400 text-indigo-600 font-semibold text-sm rounded-lg hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2">
+        {cta} <ArrowRight className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
+const SECTION_STYLES: Record<string, {
+  Icon: React.ComponentType<{ className?: string }>;
+  circle: string; icon: string; btn: string; desc: string; img?: string;
+}> = {
+  planificacion: { Icon: Target, circle: 'bg-purple-100', icon: 'text-purple-700', btn: 'border-purple-600 text-purple-700 hover:bg-purple-50', desc: 'Convierte tus metas en un plan anual, mensual, semanal y diario.', img: './archer.png' },
+  ejecucion_diaria: { Icon: CalendarDays, circle: 'bg-blue-50', icon: 'text-blue-600', btn: 'border-blue-500 text-blue-600 hover:bg-blue-50', desc: 'Aprende cómo organizar y ejecutar las actividades de cada día.' },
+  bienestar: { Icon: Flower2, circle: 'bg-red-50', icon: 'text-red-500', btn: 'border-red-500 text-red-600 hover:bg-red-50', desc: 'Descubre las herramientas que apoyan tu equilibrio personal y familiar.', img: './loto.png' },
+  herramientas_personales: { Icon: Briefcase, circle: 'bg-teal-50', icon: 'text-teal-600', btn: 'border-teal-500 text-teal-600 hover:bg-teal-50', desc: 'Conoce los recursos complementarios para organizar y potenciar tu vida.', img: './bag.png' },
+  configuracion: { Icon: Settings, circle: 'bg-slate-100', icon: 'text-slate-600', btn: 'border-indigo-600 text-indigo-700 hover:bg-indigo-50', desc: 'Personaliza la forma en que Focusia te acompaña.' },
+  reportes: { Icon: BarChart3, circle: 'bg-indigo-50', icon: 'text-indigo-600', btn: 'border-indigo-500 text-indigo-600 hover:bg-indigo-50', desc: 'Comprende cómo visualizar tu progreso y evolución.',  },
+};
+
+// Módulos del detalle de Planificación (diseño "De la claridad a la acción")
+const PLANIFICACION_MODULES = [
+  'Rueda de la vida',
+  'Matriz',
+  'Meta anual',
+  'Objetivos mensuales',
+  'Mi misión semanal',
+  'Planificación semanal',
+  'Planificación diaria',
+];
+
+// Módulos del detalle de Ejecución diaria (diseño "De la planificación a la acción concreta del día")
+const EJECUCION_MODULES = [
+  'Agenda diaria con Time blocking, work in progress y status',
+  'Mi misión de hoy',
+  'Kanban Backlog',
+  'Acciones por delegar',
+  'Recordatorios',
+];
+
+// Módulos del detalle de Bienestar (diseño "Equilibrio, energía, cuidado personal y vida significativa")
+const BIENESTAR_MODULES = [
+  'Gratitud',
+  'La Hora de Oro Familiar',
+  'Medicamentos',
+  'Clima en mi comuna',
+  'Humor · Ejercicios · Hobbies · Viajes · Diversión · Reflexión · Salud',
+];
+
+// Módulos del detalle de Herramientas personales (diseño "Apoyo práctico, administración personal...")
+const HERRAMIENTAS_MODULES = [
+  'Cursos',
+  'RRSS',
+  'Cuentas',
+  'Coaching',
+  'Tribu',
+  'Cumpleaños',
+  'Block de notas',
+  'Recordatorio de fechas importantes',
+  'Focus',
+];
+
+// Módulos del detalle de Configuración (coinciden con el seed del backend)
+const CONFIGURACION_MODULES = [
+  'Avatar seleccionado',
+  'Intensidad del acompañamiento',
+  'Tipo de activaciones',
+  'Horarios permitidos',
+  'Tono del avatar',
+  'Notificaciones',
+  'Privacidad y seguridad',
+  'Cuenta de usuario',
+];
+
+// Módulos del detalle de Reportes (coinciden con el seed del backend)
+const REPORTES_MODULES = [
+  'Reporte semanal',
+  'Reporte mensual',
+  'Reporte anual',
+  'Mi Progreso',
+  'Indicadores de cumplimiento',
+  'Recomendaciones inteligentes',
+  'Historial de avances',
+];
+
+const FALLBACK_SECTIONS: { slug: string; name: string; modules: string[] }[] = [
+  { slug: 'planificacion', name: 'Planificación', modules: [...PLANIFICACION_MODULES] },
+  { slug: 'ejecucion_diaria', name: 'Ejecución diaria', modules: [...EJECUCION_MODULES] },
+  { slug: 'bienestar', name: 'Bienestar', modules: [...BIENESTAR_MODULES] },
+  { slug: 'herramientas_personales', name: 'Herramientas personales', modules: [...HERRAMIENTAS_MODULES] },
+  { slug: 'configuracion', name: 'Configuración', modules: [...CONFIGURACION_MODULES] },
+  { slug: 'reportes', name: 'Reportes', modules: [...REPORTES_MODULES] },
+];
+
+export function TutorialScreen({ userName, avatarIndex, avatarName, onShowVideo, onStartTour, onGoSections, onBack }: {
+  userName: string; avatarIndex: number; avatarName?: string; onShowVideo: () => void; onStartTour: () => void; onGoSections: () => void; onBack: () => void;
+}) {
+  const [imgOk, setImgOk] = useState(true);
+  const nameKey = (avatarName || '').trim().toLowerCase();
+  const heroImg = AVATAR_VARIACION_POR_NOMBRE[nameKey]
+    || (avatarIndex > 0 ? AVATAR_VARIACIONES[avatarIndex] : undefined)
+    || (avatarIndex > 0 ? AVATAR_FILES[avatarIndex] : undefined)
+    || null;
+  return (
+    <main className="relative z-10 px-6 pb-10 overflow-hidden">
+      {/* Ondas decorativas laterales */}
+      <div aria-hidden className="pointer-events-none absolute inset-y-0 left-0 -ml-16 hidden md:block">
+        <img src="./onda4.png" alt="" className="w-[200px] h-[1000px] object-cover" />
+      </div>
+      <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 -mr-16 hidden md:block">
+        <img src="./onda3.png" alt="" className="w-[250px] h-[800px]  mt-30 -mr-20 object-cover" />
+      </div>
+
+      <div className="max-w-5xl mx-auto ">
+        {/* Logo */}
+        <div className="flex items-center justify-center gap-2 pt-6 pb-4">
+          <img src="./focussia.png" alt="Focusia" className="w-10 h-10" />
+          <span className="text-xl font-bold text-gray-800 tracking-tight">Focusia</span>
+        </div>
+
+        <button onClick={onBack} className="flex items-center gap-8 text-sm font-semibold text-indigo-600 hover:text-indigo-800 mb-4 transition-colors">
+          <ChevronLeft className="w-4 h-4" /> Volver
+        </button>
+
+        {/* Hero */}
+        <section className="relative  rounded-xl p-4 md:p-2 overflow-hidden ml-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+            <div className="relative rounded-xl overflow-hidden min-h-[240px] md:min-h-[550px] w-[400px] bg-gradient-to-br from-purple-200 via-indigo-100 to-blue-100 ml-15">
+              {heroImg && imgOk ? (
+                <img src={heroImg} alt="Tu acompañante Focusia" onError={() => setImgOk(false)} className="absolute inset-0 w-full h-full object-cover" />
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100">
+                 
+                </div>
+              )}
+            </div>
+            <div className="bg-white rounded-2xl shadow-sm p-8 md:p-10 flex flex-col justify-center">
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight">
+                Tranquilo, {userName}.
+              </h1>
+              <div className="w-16 h-0.5 bg-indigo-500 my-5" />
+              <p className="text-sm text-gray-600 leading-relaxed">
+                No necesitas aprender todo de una vez.
+              </p>
+              <p className="text-base font-bold text-indigo-600 leading-snug mt-4">
+                Elige cómo quieres conocer Focusia.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Opciones */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          <div className="bg-white/90 border border-gray-100 rounded-2xl p-6 text-center shadow-sm hover:shadow-md transition-shadow flex flex-col">
+            <div className="w-28 h-28 rounded-full bg-purple-100 flex items-center justify-center mx-auto mb-4">
+              <span className="w-20 h-14 bg-gray-900 rounded-lg flex flex-col items-center justify-center gap-1.5 px-3">
+                <Play className="w-6 h-6 text-white fill-white" />
+                <span className="w-full h-1 rounded-full bg-white/25 overflow-hidden">
+                  <span className="block w-1/3 h-full bg-indigo-400 rounded-full" />
+                </span>
+              </span>
+            </div>
+            <h3 className="font-bold text-gray-900 flex items-center justify-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-purple-100 text-indigo-600 text-xs font-bold flex items-center justify-center shrink-0">1</span>
+              Ver video inicial
+            </h3>
+            <p className="text-xs text-gray-500 mt-2 leading-relaxed flex-1">
+              Vuelve a ver la introducción general de Focusia y recuerda cómo funciona la plataforma desde el comienzo.
+            </p>
+            <button onClick={onShowVideo} className="mt-4 w-full py-2.5 border border-indigo-500 text-indigo-600 font-semibold text-sm rounded-lg hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center">
+                <Play className="w-3 h-3 text-white fill-white" />
+              </span>
+              Ver video
+            </button>
+          </div>
+
+          <div className="bg-white/90 border border-gray-100 rounded-2xl p-6 text-center shadow-sm hover:shadow-md transition-shadow flex flex-col">
+            <div className="w-28 h-28 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4">
+              <BookOpen className="w-14 h-14 text-blue-500" strokeWidth={1.5} />
+            </div>
+            <h3 className="font-bold text-gray-900 flex items-center justify-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs font-bold flex items-center justify-center shrink-0">2</span>
+              Aprender por secciones
+            </h3>
+            <p className="text-xs text-gray-500 mt-2 leading-relaxed flex-1">
+              Accede a explicaciones organizadas por módulos para aprender únicamente la parte que necesitas.
+            </p>
+            <button onClick={onGoSections} className="mt-4 w-full py-2.5 border border-blue-500 text-blue-600 font-semibold text-sm rounded-lg hover:bg-blue-50 transition-colors flex items-center justify-center gap-2">
+              <BookOpen className="w-5 h-5" />
+              Comenzar
+            </button>
+          </div>
+
+          <div className="bg-white/90 border border-gray-100 rounded-2xl p-6 text-center shadow-sm hover:shadow-md transition-shadow flex flex-col">
+            <div className="w-28 h-28 rounded-full bg-orange-50 flex items-center justify-center mx-auto mb-4">
+              <img src="./tour.png" alt="Visita guiada del dashboard" className="w-16 h-14 text-purple-700 fill-purple-100" />
+            </div>
+            <h3 className="font-bold text-gray-900 flex items-center justify-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-orange-100 text-orange-600 text-xs font-bold flex items-center justify-center shrink-0">3</span>
+              Iniciar visita guiada del dashboard
+            </h3>
+            <p className="text-xs text-gray-500 mt-2 leading-relaxed flex-1">
+              Recorre el dashboard junto a Focusia y descubre la función de cada herramienta paso a paso.
+            </p>
+            <button onClick={onStartTour} className="mt-4 w-full py-2.5 border border-orange-500 text-orange-600 font-semibold text-sm rounded-lg hover:bg-orange-50 transition-colors flex items-center justify-center gap-2">
+              <Compass className="w-5 h-5" />
+              Iniciar recorrido
+            </button>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  );
+}
+
+export function SectionsScreen({ categories, avatarIndex, avatarName, onBack }: {
+  categories: LearningCategoryData[]; avatarIndex?: number; avatarName?: string; onBack: () => void;
+}) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [detailSlug, setDetailSlug] = useState<string | null>(null);
+  const sections = categories.length > 0
+    ? categories.map(c => ({ slug: c.slug, name: c.name, modules: c.modules.map(m => m.name) }))
+    : FALLBACK_SECTIONS;
+
+  if (detailSlug === 'planificacion' || detailSlug === 'ejecucion_diaria' || detailSlug === 'bienestar' || detailSlug === 'herramientas_personales' || detailSlug === 'configuracion' || detailSlug === 'reportes') {
+    const section = sections.find(s => s.slug === detailSlug);
+    const detailConfig = {
+      planificacion: {
+        title: 'PLANIFICACIÓN',
+        sideCaption: 'De la claridad a la acción',
+        sideImg: './task-1.png' as string | undefined,
+        sideIcon: undefined as 'check' | 'sliders' | undefined,
+        fallback: PLANIFICACION_MODULES,
+        useBackendModules: true,
+        darkNumbers: false,
+        threeCols: false,
+        splitRows: undefined as number | undefined,
+      },
+      ejecucion_diaria: {
+        title: 'EJECUCIÓN DIARIA',
+        sideCaption: 'De la planificación a la acción concreta del día',
+        sideImg: undefined as string | undefined,
+        sideIcon: undefined as 'check' | 'sliders' | undefined,
+        fallback: EJECUCION_MODULES,
+        useBackendModules: true,
+        darkNumbers: true,
+        threeCols: false,
+        splitRows: undefined as number | undefined,
+      },
+      bienestar: {
+        title: 'BIENESTAR',
+        sideCaption: 'Equilibrio, energía, cuidado personal y vida significativa',
+        sideImg: './loto.png' as string | undefined,
+        sideIcon: undefined as 'check' | 'sliders' | undefined,
+        fallback: BIENESTAR_MODULES,
+        useBackendModules: false,
+        darkNumbers: true,
+        threeCols: false,
+        splitRows: undefined as number | undefined,
+      },
+      herramientas_personales: {
+        title: 'HERRAMIENTAS PERSONALES',
+        sideCaption: 'Apoyo práctico, administración personal, vínculos, aprendizaje y organización complementaria',
+        sideImg: './bag.png' as string | undefined,
+        sideIcon: undefined as 'check' | 'sliders' | undefined,
+        fallback: HERRAMIENTAS_MODULES,
+        useBackendModules: false,
+        darkNumbers: true,
+        threeCols: true,
+        splitRows: undefined as number | undefined,
+      },
+      configuracion: {
+        title: 'CONFIGURACIÓN',
+        sideCaption: 'Comprenda y modifique cómo Focusia lo acompaña, se comunica con usted y protege su información',
+        sideImg: undefined as string | undefined,
+        sideIcon: 'sliders' as 'check' | 'sliders' | 'chart' | undefined,
+        fallback: CONFIGURACION_MODULES,
+        useBackendModules: true,
+        darkNumbers: true,
+        threeCols: true,
+        splitRows: undefined as number | undefined,
+      },
+      reportes: {
+        title: 'REPORTES',
+        sideCaption: 'Focusia transforma sus acciones en conciencia, progreso visible y decisiones de ajuste',
+        sideImg: undefined as string | undefined,
+        sideIcon: 'chart' as 'check' | 'sliders' | 'chart' | undefined,
+        fallback: REPORTES_MODULES,
+        useBackendModules: true,
+        darkNumbers: true,
+        threeCols: true,
+        splitRows: 3 as number | undefined,
+      },
+    }[detailSlug];
+    return (
+      <CategoryDetail
+        title={detailConfig.title}
+        tagline="Elige el módulo que quieres conocer"
+        sideCaption={detailConfig.sideCaption}
+        sideImg={detailConfig.sideImg}
+        sideIcon={detailConfig.sideIcon}
+        modules={detailConfig.useBackendModules && section && section.modules.length > 0 ? section.modules : [...detailConfig.fallback]}
+        darkNumbers={detailConfig.darkNumbers}
+        threeCols={detailConfig.threeCols}
+        splitRows={detailConfig.splitRows}
+        avatarIndex={avatarIndex}
+        avatarName={avatarName}
+        onBack={() => setDetailSlug(null)}
+      />
+    );
+  }
+
+  return (
+    <main className="relative z-10 px-6 pb-10 overflow-hidden">
+      {/* Ondas decorativas laterales */}
+      <div aria-hidden className="pointer-events-none absolute inset-y-0 left-0 -ml-16 hidden md:block">
+        <img src="./onda4.png" alt="" className="w-[200px] h-[1000px] object-cover" />
+      </div>
+      <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 -mr-16 hidden md:block">
+        <img src="./onda3.png" alt="" className="w-[250px] h-[800px] mt-30 -mr-20 object-cover" />
+      </div>
+
+      <div className="max-w-5xl mx-auto">
+        {/* Encabezado */}
+        <div className="relative pt-6 pb-2">
+          <button onClick={onBack} className="absolute left-0 top-6 flex items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors">
+            <ChevronLeft className="w-4 h-4" /> Volver
+          </button>
+          <div className="flex items-center justify-center gap-2">
+            <img src="./focussia.png" alt="Focusia" className="w-10 h-10" />
+            <span className="text-xl font-bold tracking-tight">
+              <span className="text-purple-500">F</span><span className="text-gray-800">ocusia</span>
+            </span>
+          </div>
+        </div>
+
+        <div className="text-center mt-4 mb-8">
+          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900">
+            APRENDER POR <span className="text-blue-700">SECCIONES</span>
+          </h1>
+          <p className="text-sm md:text-base text-indigo-600 font-medium mt-3">
+            Elige una categoría para conocer sus módulos paso a paso.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {sections.map(s => {
+            const style = SECTION_STYLES[s.slug] || {
+              Icon: BookOpen, circle: 'bg-gray-100', icon: 'text-gray-500',
+              btn: 'border-gray-400 text-gray-600 hover:bg-gray-50',
+              desc: 'Explora los módulos de esta categoría paso a paso.',
+            };
+            const Icon = style.Icon;
+            const isOpen = expanded === s.slug;
+            return (
+              <div key={s.slug} className="bg-white border border-gray-100 rounded-2xl p-6 text-center shadow-sm hover:shadow-md transition-shadow flex flex-col">
+                <div className={`w-16 h-16 ${style.circle} rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden`}>
+                  {'img' in style && style.img ? (
+                    <img src={style.img} alt={s.name} className="w-10 h-10 object-contain" />
+                  ) : (
+                    <Icon className={`w-8 h-8 ${style.icon}`} />
+                  )}
+                </div>
+                <h3 className="font-bold text-slate-900">{s.name}</h3>
+                <p className="text-xs text-indigo-800 mt-2 leading-relaxed flex-1">{style.desc}</p>
+                <button
+                  onClick={() => {
+                    if (s.slug === 'planificacion' || s.slug === 'ejecucion_diaria' || s.slug === 'bienestar' || s.slug === 'herramientas_personales' || s.slug === 'configuracion' || s.slug === 'reportes') {
+                      inicioService.learnCategorySelect(s.slug).catch(() => {});
+                      setDetailSlug(s.slug);
+                    } else {
+                      setExpanded(isOpen ? null : s.slug);
+                    }
+                  }}
+                  className={`mt-4 w-full py-2 border font-semibold text-sm rounded-lg transition-colors ${style.btn}`}
+                >
+                  {(s.slug === 'planificacion' || s.slug === 'ejecucion_diaria' || s.slug === 'bienestar' || s.slug === 'herramientas_personales' || s.slug === 'configuracion' || s.slug === 'reportes') ? 'Ver módulos' : (isOpen ? 'Ocultar módulos' : 'Ver módulos')}
+                </button>
+                {isOpen && (
+                  <ul className="mt-3 pt-3 border-t border-gray-100 text-left space-y-1.5">
+                    {s.modules.map(m => (
+                      <li key={m} className="flex items-start gap-2 text-xs text-gray-600">
+                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-current opacity-40 shrink-0" />
+                        {m}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function ModuleButton({ name, index, darkNumbers, className }: {
+  name: string; index: number; darkNumbers?: boolean; className?: string;
+}) {
+  return (
+    <button
+      className={`bg-white border border-indigo-100 rounded-2xl px-5 py-5 flex items-center gap-4 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all text-left ${className || ''}`}
+    >
+      <span className={`w-10 h-10 rounded-full text-lg font-bold flex items-center justify-center shrink-0 ${darkNumbers ? 'bg-[#141433] text-white' : 'bg-[#ede9fe] text-[#141433]'}`}>
+        {index + 1}
+      </span>
+      <span className="font-bold text-[#141433] text-base md:text-lg leading-snug">{name}</span>
     </button>
   );
 }
 
-function TutorialScreen({ userName, avatarIndex, onShowVideo, onStartTour, onBack, sectionsRef }: {
-  userName: string; avatarIndex: number; onShowVideo: () => void; onStartTour: () => void; onBack: () => void; sectionsRef?: React.RefObject<HTMLDivElement | null>;
+function CategoryDetail({ title, tagline, sideCaption, sideImg, sideIcon, modules, darkNumbers, threeCols, splitRows, avatarIndex, avatarName, onBack }: {
+  title: string; tagline: string; sideCaption: string; sideImg?: string; sideIcon?: 'check' | 'sliders' | 'chart';
+  modules: string[]; darkNumbers?: boolean; threeCols?: boolean; splitRows?: number; avatarIndex?: number; avatarName?: string; onBack: () => void;
 }) {
+  const [imgOk, setImgOk] = useState(true);
+  const nameKey = (avatarName || '').trim().toLowerCase();
+  const avatarImg = AVATAR_VARIACION_POR_NOMBRE[nameKey]
+    || (avatarIndex && avatarIndex > 0 ? AVATAR_VARIACIONES[avatarIndex] : undefined)
+    || (avatarIndex && avatarIndex > 0 ? AVATAR_FILES[avatarIndex] : undefined)
+    || null;
+  const items = modules.length > 0 ? modules : [];
   return (
-    <main className="relative z-10 max-w-3xl mx-auto px-6 py-8">
-      <button onClick={onBack} className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-6 transition-colors">
-        <ChevronLeft className="w-4 h-4" /> Volver
-      </button>
+    <main className="relative z-10 px-6 pb-10 overflow-hidden min-h-screen">
+      {/* Ondas decorativas laterales */}
+      <div aria-hidden className="pointer-events-none absolute inset-y-0 left-0 -ml-10 hidden md:block">
+        <img src="./onda4.png" alt="" className="w-[160px] h-full object-cover" />
+      </div>
+      <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 -mr-10 hidden md:block">
+        <img src="./onda3.png" alt="" className="w-[200px] h-full object-cover" />
+      </div>
 
-      <div className="flex items-center gap-4 mb-8">
-        {avatarIndex > 0 && <img src={AVATAR_FILES[avatarIndex]} alt="avatar" className="w-14 h-14 rounded-md object-cover border-2 border-purple-200" />}
-        <div>
-          <p className="text-lg font-bold text-gray-800">Tranquilo, {userName}.</p>
-          <p className="text-sm text-gray-500">No necesitas aprender todo de una vez.</p>
+      <div className="max-w-5xl mx-auto relative">
+        {/* Encabezado */}
+        <div className="relative pt-6 pb-2">
+          <button onClick={onBack} className="absolute left-0 top-6 flex items-center gap-1.5 text-base font-semibold text-[#141433] hover:text-indigo-700 transition-colors">
+            <ArrowRight className="w-5 h-5 rotate-180" /> Volver
+          </button>
+          <div className="flex items-center justify-center gap-2">
+            <img src="./focussia.png" alt="Focusia" className="w-10 h-10" />
+            <span className="text-xl font-bold tracking-tight">
+              <span className="text-purple-500">F</span><span className="text-gray-800">ocusia</span>
+            </span>
+          </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
-        <button onClick={onShowVideo} className="bg-white/80 border border-white/60 rounded-md p-5 text-left shadow-sm hover:shadow-md transition-all hover:scale-[1.02]">
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-400 rounded-md flex items-center justify-center mb-3">
-            <Play className="w-5 h-5 text-white" />
-          </div>
-          <h3 className="font-bold text-gray-800 text-sm mb-1">Ver video inicial</h3>
-          <p className="text-xs text-gray-400">Reproduce el clip conceptual de Focusia</p>
-        </button>
+        <div className="text-center mt-6 mb-8">
+          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-[#141433]">
+            {title}
+          </h1>
+          <p className="text-sm md:text-lg text-indigo-600 font-medium mt-3">
+            {tagline}
+          </p>
+        </div>
 
-        <button onClick={() => { fetch('/api/telemetria/interaccion/', { method: 'POST', credentials: 'include', headers: {'Content-Type':'application/json'}, body: JSON.stringify({tipo:'sections_clicked', metadata:{}}) }).catch(() => {}); sectionsRef?.current?.scrollIntoView({ behavior: 'smooth' }); }} className="bg-white/80 border border-white/60 rounded-md p-5 text-left shadow-sm hover:shadow-md transition-all hover:scale-[1.02]">
-          <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-teal-400 rounded-md flex items-center justify-center mb-3">
-            <BookOpen className="w-5 h-5 text-white" />
-          </div>
-          <h3 className="font-bold text-gray-800 text-sm mb-1">Aprender por secciones</h3>
-          <p className="text-xs text-gray-400">Explora 6 categorías del ecosistema</p>
-        </button>
-
-        <button onClick={onStartTour} className="bg-white/80 border border-white/60 rounded-md p-5 text-left shadow-sm hover:shadow-md transition-all hover:scale-[1.02]">
-          <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-400 rounded-md flex items-center justify-center mb-3">
-            <Star className="w-5 h-5 text-white" />
-          </div>
-          <h3 className="font-bold text-gray-800 text-sm mb-1">Iniciar visita guiada</h3>
-          <p className="text-xs text-gray-400">Recorrido automatizado de 25 bloques</p>
-        </button>
-      </div>
-
-      <h3 ref={sectionsRef} className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Aprender por secciones</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {SECTIONS_DATA.map(s => {
-          const Icon = s.icon;
-          return (
-            <div key={s.id} className="bg-white/70 border border-gray-100 rounded-md p-4 hover:shadow-md transition-shadow cursor-default">
-              <div className={`w-8 h-8 bg-gradient-to-br ${s.color} rounded-md flex items-center justify-center mb-2`}>
-                <Icon className="w-4 h-4 text-white" />
-              </div>
-              <h4 className="font-bold text-gray-800 text-xs mb-1">{s.label}</h4>
-              <p className="text-[10px] text-gray-400 leading-relaxed">{s.desc}</p>
+        <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] gap-6 items-start">
+          {/* Tarjeta lateral */}
+          <div className="bg-white border border-indigo-100 rounded-2xl overflow-hidden shadow-sm">
+            <div className="relative min-h-[280px] bg-gradient-to-br from-indigo-600 via-purple-500 to-blue-500">
+              {avatarImg && imgOk ? (
+                <img src={avatarImg} alt="Tu acompañante Focusia" onError={() => setImgOk(false)} className="absolute inset-0 w-full h-full object-cover object-top" />
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                  <Sparkles className="w-10 h-10 text-white/80" />
+                </div>
+              )}
             </div>
-          );
-        })}
+            <div className="p-6 text-center">
+              <div className="w-20 h-20 rounded-full bg-indigo-50 flex items-center justify-center mx-auto mb-4 overflow-hidden">
+                {sideImg ? (
+                  <img src={sideImg} alt="" className="w-12 h-12 object-contain" />
+                ) : sideIcon === 'sliders' ? (
+                  <SlidersHorizontal className="w-10 h-10 text-indigo-600" strokeWidth={1.5} />
+                ) : sideIcon === 'chart' ? (
+                  <span className="relative inline-flex">
+                    <BarChart3 className="w-10 h-10 text-indigo-600" strokeWidth={1.5} />
+                    <span className="absolute -top-1 -right-2 w-5 h-5 bg-white rounded-full flex items-center justify-center">
+                      <TrendingUp className="w-4 h-4 text-indigo-600" strokeWidth={3} />
+                    </span>
+                  </span>
+                ) : (
+                  <span className="relative inline-flex">
+                    <ClipboardList className="w-10 h-10 text-indigo-600" strokeWidth={1.5} />
+                    <span className="absolute -bottom-1 -right-2 w-5 h-5 bg-white rounded-full flex items-center justify-center">
+                      <Check className="w-4 h-4 text-indigo-600" strokeWidth={3} />
+                    </span>
+                  </span>
+                )}
+              </div>
+              <p className="font-bold text-[#141433] text-lg leading-snug">{sideCaption}</p>
+            </div>
+          </div>
+
+          {/* Módulos */}
+          {threeCols && splitRows ? (
+            <div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {items.slice(0, splitRows).map((m, i) => (
+                  <ModuleButton key={m} name={m} index={i} darkNumbers={darkNumbers} className="" />
+                ))}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                {items.slice(splitRows).map((m, k) => (
+                  <ModuleButton key={m} name={m} index={splitRows + k} darkNumbers={darkNumbers} className="" />
+                ))}
+              </div>
+            </div>
+          ) : threeCols ? (
+            <div className="flex flex-wrap justify-center gap-4">
+              {items.map((m, i) => {
+                const smFull = i === items.length - 1 && items.length % 2 === 1;
+                return (
+                  <ModuleButton
+                    key={m}
+                    name={m}
+                    index={i}
+                    darkNumbers={darkNumbers}
+                    className={`w-full ${smFull ? 'sm:w-full' : 'sm:w-[calc(50%-0.5rem)]'} lg:w-[calc(33.333%-0.75rem)]`}
+                  />
+                );
+              })}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {items.map((m, i) => (
+                <ModuleButton
+                  key={m}
+                  name={m}
+                  index={i}
+                  darkNumbers={darkNumbers}
+                  className={i === items.length - 1 && items.length % 2 === 1 ? 'sm:col-span-2' : ''}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </main>
   );
 }
 
-function GuidedTour({ onFinish }: { onFinish: () => void }) {
+function GuidedTour({ blocks, onFinish, onGoToDashboard, userName, avatarIndex }: {
+  blocks: GuidedTourBlockData[]; onFinish: () => void; onGoToDashboard: () => void; userName: string; avatarIndex: number;
+}) {
+  const tourBlocks = blocks.length > 0 ? blocks : FALLBACK_TOUR_BLOCKS;
   const [step, setStep] = useState(0);
   const finishedRef = useRef(false);
 
   useEffect(() => {
-    if (step >= TOUR_STEPS.length) {
+    if (step >= tourBlocks.length) {
       if (!finishedRef.current) {
         finishedRef.current = true;
-        fetch('/api/telemetria/interaccion/', { method: 'POST', credentials: 'include', headers: {'Content-Type':'application/json'}, body: JSON.stringify({tipo:'guided_tour_completed', metadata:{pasos: TOUR_STEPS.length}}) }).catch(() => {});
+        inicioService.guidedTourComplete().catch(() => {});
       }
       return;
     }
     const t = setTimeout(() => setStep(s => s + 1), 3000);
     return () => clearTimeout(t);
-  }, [step]);
+  }, [step, tourBlocks.length]);
 
   const handleSkip = useCallback(() => {
     if (!finishedRef.current) {
-      fetch('/api/telemetria/interaccion/', { method: 'POST', credentials: 'include', headers: {'Content-Type':'application/json'}, body: JSON.stringify({tipo:'guided_tour_abandoned', metadata:{paso_actual: step, total_pasos: TOUR_STEPS.length}}) }).catch(() => {});
+      finishedRef.current = true;
+      inicioService.guidedTourAbandon({ paso_actual: step, total_pasos: tourBlocks.length }).catch(() => {});
     }
     onFinish();
-  }, [onFinish, step]);
+  }, [onFinish, step, tourBlocks.length]);
 
-  if (step >= TOUR_STEPS.length) {
+  if (step >= tourBlocks.length) {
     return (
       <main className="relative z-10 flex flex-col items-center justify-center min-h-[80vh] px-6">
         <div className="text-center max-w-md">
@@ -335,35 +901,40 @@ function GuidedTour({ onFinish }: { onFinish: () => void }) {
           </div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Visita completada</h2>
           <p className="text-sm text-gray-500 mb-6">Ya conoces las zonas principales de Focusia. Este recorrido concluye en la sección de Bienestar — el resto lo descubrirás explorando.</p>
-          <button onClick={onFinish} className="px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-md hover:shadow-lg transition-all">
-            Volver al inicio
-          </button>
+          <div className="flex flex-col gap-3">
+            <button onClick={onGoToDashboard} className="px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-md hover:shadow-lg transition-all">
+              Ir al dashboard completo
+            </button>
+            <button onClick={onFinish} className="px-6 py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors">
+              Volver al tutorial
+            </button>
+          </div>
         </div>
       </main>
     );
   }
 
-  const s = TOUR_STEPS[step];
+  const s = tourBlocks[step];
   return (
     <main className="relative z-10 flex flex-col items-center justify-center min-h-[80vh] px-6">
       <div className="bg-white/90 backdrop-blur-md border border-white/60 rounded-md shadow-2xl p-8 max-w-lg w-full">
         <div className="flex items-center gap-2 mb-6">
           <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-purple-400 to-pink-400 rounded-full transition-all" style={{ width: `${((step + 1) / TOUR_STEPS.length) * 100}%` }} />
+            <div className="h-full bg-gradient-to-r from-purple-400 to-pink-400 rounded-full transition-all" style={{ width: `${((step + 1) / tourBlocks.length) * 100}%` }} />
           </div>
-          <span className="text-xs text-gray-400 font-medium">{step + 1}/{TOUR_STEPS.length}</span>
+          <span className="text-xs text-gray-400 font-medium">{step + 1}/{tourBlocks.length}</span>
         </div>
 
         <div className="w-16 h-16 mx-auto bg-gradient-to-br from-purple-400 to-pink-400 rounded-md flex items-center justify-center mb-5 shadow-lg">
           <span className="text-2xl font-bold text-white">{step + 1}</span>
         </div>
 
-        <h3 className="text-xl font-bold text-gray-800 text-center mb-2">{s.zone}</h3>
-        <p className="text-sm text-gray-500 text-center leading-relaxed">{s.desc}</p>
+        <h3 className="text-xl font-bold text-gray-800 text-center mb-2">{s.title}</h3>
+        <p className="text-sm text-gray-500 text-center leading-relaxed">{s.avatar_message}</p>
 
         <div className="flex items-center justify-center gap-3 mt-8">
           {step > 0 && <button onClick={() => setStep(s => s - 1)} className="px-4 py-2 border border-gray-200 rounded-md text-sm text-gray-500 hover:bg-white transition-colors">Anterior</button>}
-          {step < TOUR_STEPS.length - 1 && <button onClick={() => setStep(s => s + 1)} className="px-4 py-2 bg-purple-500 text-white rounded-md text-sm font-medium hover:bg-purple-600 transition-colors">Siguiente</button>}
+          {step < tourBlocks.length - 1 && <button onClick={() => setStep(s => s + 1)} className="px-4 py-2 bg-purple-500 text-white rounded-md text-sm font-medium hover:bg-purple-600 transition-colors">Siguiente</button>}
           <button onClick={handleSkip} className="px-4 py-2 text-xs text-gray-400 hover:text-gray-600 transition-colors">Saltar</button>
         </div>
       </div>
@@ -371,18 +942,63 @@ function GuidedTour({ onFinish }: { onFinish: () => void }) {
   );
 }
 
-function ConfigScreen({ userName, avatarIndex, showVideo, onDismissVideo, onBack }: {
-  userName: string; avatarIndex: number; showVideo: boolean; onDismissVideo: () => void; onBack: () => void;
+const FALLBACK_TOUR_BLOCKS: GuidedTourBlockData[] = [
+  { slug: 'inicio', title: 'Inicio', avatar_message: 'Este es tu botón de inicio. Desde aquí puedes volver al punto central de Focusia, entrar al dashboard completo, revisar el tutorial o ajustar tu configuración cuando lo necesites.', order: 1 },
+  { slug: 'rueda', title: 'Rueda', avatar_message: 'Aquí comienza tu diagnóstico personal. La Rueda de la Vida te ayuda a observar cómo están las áreas principales de tu vida, para tomar decisiones con más claridad y no planificar desde la improvisación.', order: 2 },
+  { slug: 'anual', title: 'Anual', avatar_message: 'Este es tu espacio anual. Aquí definirás tu gran meta del año: una dirección clara que servirá como guía para tus objetivos mensuales, tu planificación semanal y tus acciones diarias.', order: 3 },
+  { slug: 'mensual', title: 'Mensual', avatar_message: 'Aquí organizarás tu meta anual en objetivos mensuales. Cada mes será un bloque estratégico de avance, para que tu gran meta no quede como una idea lejana, sino como un camino concreto.', order: 4 },
+  { slug: 'semanal', title: 'Semanal', avatar_message: 'Aquí organizarás tu semana. Focusia te ayuda a convertir tu objetivo mensual en acciones concretas, para que cada semana tenga dirección, prioridad y avance real.', order: 5 },
+  { slug: 'kanban_backlog', title: 'Kanban Backlog', avatar_message: 'Este es tu Kanban Backlog. Aquí puedes ordenar tareas, ideas o acciones pendientes antes de decidir cuándo ejecutarlas. Te ayuda a no perder nada importante y a mantener tu planificación más limpia.', order: 6 },
+  { slug: 'objetivo_semana', title: 'Objetivo Semana', avatar_message: 'Este es tu Objetivo de la Semana. Aquí defines el foco principal que guiará tus próximos días, para que tus acciones no se dispersen y sigan conectadas con tu objetivo mensual.', order: 7 },
+  { slug: 'mision_hoy', title: 'Mision Hoy', avatar_message: 'Esta es tu Misión de Hoy. Aquí eliges la acción más importante del día: esa tarea que realmente mueve tu avance y que conecta con lo que tú mismo definiste como prioridad.', order: 8 },
+  { slug: 'agenda_diaria', title: 'Agenda Diaria', avatar_message: 'Esta es tu agenda diaria. Aquí organizas lo que harás hoy, conectando tus tareas con tu misión, tu objetivo semanal y tu avance real.', order: 9 },
+  { slug: 'time_blocking', title: 'Time Blocking', avatar_message: 'Este es tu Time Blocking. Aquí puedes organizar tu día por bloques de tiempo, para que tus acciones no queden solo como pendientes, sino como espacios concretos e innegociables dentro de tu jornada.', order: 10 },
+  { slug: 'wip_status', title: 'WIP Status', avatar_message: 'Aquí verás el estado de tus acciones. Focusia te mostrará qué está pendiente, qué está en proceso y qué ya completaste, para que tengas claridad sobre tu avance real.', order: 11 },
+  { slug: 'fechas_importantes', title: 'Fechas Importantes', avatar_message: 'Aquí puedes registrar tus fechas importantes. Focusia te ayudará a recordarlas con anticipación, para que no solo las tengas anotadas, sino que puedas prepararte antes de que lleguen.', order: 12 },
+  { slug: 'acciones_delegar', title: 'Acciones Delegar', avatar_message: 'Aquí puedes registrar acciones que no necesariamente debes hacer tú. Focusia te ayuda a identificar qué puedes delegar, para liberar carga, cuidar tu foco y avanzar con mayor claridad.', order: 13 },
+  { slug: 'gratitud', title: 'Gratitud', avatar_message: 'Este es tu espacio de gratitud. Aquí puedes detenerte un momento y registrar algo valioso de tu día. Focusia no solo busca que avances, también que tomes conciencia de lo que ya estás construyendo.', order: 14 },
+  { slug: 'coaching', title: 'Coaching', avatar_message: 'Este es tu espacio de coaching. Aquí encontrarás orientación y herramientas prácticas para fortalecer tus decisiones, tu disciplina y tu capacidad de avanzar con más claridad.', order: 15 },
+  { slug: 'tribu', title: 'Tribu', avatar_message: 'Este es tu espacio de Tribu. Aquí podrás conectar con apoyo, comunidad e inspiración, para que tu proceso no dependa solo de ti, sino también de un entorno que refuerce tu avance.', order: 16 },
+  { slug: 'cursos', title: 'Cursos', avatar_message: 'Este es tu espacio de Cursos. Aquí podrás acceder a contenidos más estructurados para fortalecer tus habilidades, mejorar tu forma de organizarte y avanzar con mayor preparación.', order: 17 },
+  { slug: 'rrss', title: 'RRSS', avatar_message: 'Este es tu espacio de RRSS. Aquí puedes organizar tus redes sociales, ideas de contenido o presencia digital, para que tu actividad online tenga más orden, intención y dirección.', order: 18 },
+  { slug: 'cuentas', title: 'Cuentas', avatar_message: 'Este es tu espacio de Cuentas. Aquí puedes organizar información administrativa o financiera importante, para mantener mayor claridad sobre compromisos, pagos y datos que no quieres perder de vista.', order: 19 },
+  { slug: 'medicamentos', title: 'Medicamentos', avatar_message: 'Este es tu espacio de Medicamentos. Aquí puedes registrar recordatorios relacionados con tu cuidado personal, para que Focusia te ayude a no olvidar acciones importantes de salud que tú mismo hayas definido.', order: 20 },
+  { slug: 'cumpleanos', title: 'Cumpleaños', avatar_message: 'Este es tu espacio de Cumpleaños. Aquí puedes registrar fechas importantes de personas relevantes para ti, para que Focusia te ayude a recordarlas con anticipación y puedas prepararte a tiempo.', order: 21 },
+  { slug: 'focus', title: 'Focus', avatar_message: 'Este es tu espacio Focus. Aquí puedes volver a centrarte en lo importante, recuperar claridad y dirigir tu atención hacia aquello que realmente necesita tu enfoque en este momento.', order: 22 },
+  { slug: 'clima_comuna', title: 'Clima Comuna', avatar_message: 'Aquí puedes ver el clima de tu comuna. Focusia te ayuda a considerar esta información para planificar mejor tu día, anticipar traslados, ajustar actividades y tomar decisiones con más contexto.', order: 23 },
+  { slug: 'notas', title: 'Notas', avatar_message: 'Este es tu block de notas. Aquí puedes guardar ideas, apuntes o información rápida para no perder nada importante y mantener tu mente más despejada.', order: 24 },
+  { slug: 'bienestar_complementario', title: 'Bienestar Complementario', avatar_message: 'Estos espacios te ayudan a cuidar tu bienestar y tu vida personal. Aquí puedes organizar momentos de humor, ejercicio, hobbies, viajes, diversión y reflexión, para que tu planificación no solo sea productiva, sino también significativa.', order: 25 },
+];
+
+function ConfigScreen({ userName, avatarIndex, onVideoShown, onOpenNow, onBack, onGoToDashboard }: {
+  userName: string; avatarIndex: number; onVideoShown: () => void; onOpenNow: () => void; onBack: () => void; onGoToDashboard: () => void;
 }) {
-  const [showCategories, setShowCategories] = useState(!showVideo);
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [showVideo, setShowVideo] = useState(false);
+  const [showPostVideo, setShowPostVideo] = useState(false);
+  const [showCategories, setShowCategories] = useState(true);
+  const [avatarImgOk, setAvatarImgOk] = useState(true);
+  const videoShownRef = useRef(false);
+  const avatarImg = avatarIndex > 0 ? AVATAR_FILES[avatarIndex] : null;
+
+  useEffect(() => {
+    if (!videoShownRef.current) {
+      videoShownRef.current = true;
+      onVideoShown();
+    }
+  }, [onVideoShown]);
 
   useEffect(() => {
     if (showVideo) {
-      const t = setTimeout(() => { onDismissVideo(); setShowCategories(true); }, 8000);
+      const t = setTimeout(() => { setShowVideo(false); setShowPostVideo(true); }, 8000);
       return () => clearTimeout(t);
     }
-  }, [showVideo, onDismissVideo]);
+  }, [showVideo]);
+
+  const goToCategories = useCallback(() => {
+    setShowPostVideo(false);
+    setShowCategories(true);
+    onOpenNow();
+  }, [onOpenNow]);
 
   if (showVideo) {
     return (
@@ -393,42 +1009,42 @@ function ConfigScreen({ userName, avatarIndex, showVideo, onDismissVideo, onBack
           </div>
           <h2 className="text-xl font-bold text-gray-800 mb-3">Antes de configurar</h2>
           <p className="text-sm text-gray-500 leading-relaxed">
-            Los cambios se realizan de forma permanente mediante el icono de engranaje 
+            Los cambios se realizan de forma permanente mediante el icono de engranaje
             ubicado en la parte superior del dashboard, junto a la campanita de notificaciones.
           </p>
-          <button onClick={() => { onDismissVideo(); setShowCategories(true); }} 
+          <button onClick={() => { setShowVideo(false); setShowPostVideo(true); }}
             className="mt-6 text-sm text-purple-500 hover:text-purple-700 font-medium transition-colors">
-            Ir a configuración ahora →
+            Continuar →
           </button>
         </div>
       </main>
     );
   }
 
-  const CATEGORIES = [
-    { id: 'avatar', icon: Volume2, title: 'Avatar', desc: 'Cambiar avatar y probar voces', color: 'from-purple-400 to-pink-400' },
-    { id: 'acompanamiento', icon: Sliders, title: 'Acompañamiento', desc: 'Intensidad, tono y tipo de apoyo', color: 'from-emerald-400 to-teal-400' },
-    { id: 'notificaciones', icon: Bell, title: 'Notificaciones', desc: 'App, Push, WhatsApp, Llamadas', color: 'from-blue-400 to-cyan-400' },
-    { id: 'horarios', icon: Clock, title: 'Horarios', desc: 'Ventanas con excepciones restrictivas', color: 'from-amber-400 to-orange-400' },
-    { id: 'privacidad', icon: Shield, title: 'Privacidad', desc: 'Gestión de datos, exportación y borrado', color: 'from-rose-400 to-red-400' },
-    { id: 'cuenta', icon: CreditCard, title: 'Cuenta', desc: 'Datos administrativos y suscripción', color: 'from-slate-400 to-gray-500' },
-  ];
-
-  if (activeCategory) {
-    const cat = CATEGORIES.find(c => c.id === activeCategory);
+  if (showPostVideo) {
     return (
-      <main className="relative z-10 max-w-xl mx-auto px-6 py-8">
-        <button onClick={() => setActiveCategory(null)} className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-6">
-          <ChevronLeft className="w-4 h-4" /> Categorías
-        </button>
-        <div className="bg-white/80 border border-white/60 rounded-md p-6 shadow-sm">
-          <div className={`w-10 h-10 bg-gradient-to-br ${cat?.color} rounded-md flex items-center justify-center mb-3`}>
-            {cat && <cat.icon className="w-5 h-5 text-white" />}
-          </div>
-          <h3 className="text-lg font-bold text-gray-800 mb-2">{cat?.title}</h3>
-          <p className="text-sm text-gray-500 mb-4">{cat?.desc}</p>
-          <div className="bg-gray-50 rounded-md p-4 text-center">
-            <p className="text-xs text-gray-400">Panel de {cat?.title?.toLowerCase()} — disponible desde Configuración en el Dashboard.</p>
+      <main className="relative z-10 flex flex-col items-center justify-center min-h-[80vh] px-6">
+        <div className="text-center max-w-md animate-fade-in">
+          {avatarImg && avatarImgOk ? (
+            <img src={avatarImg} alt="Tu avatar" onError={() => setAvatarImgOk(false)} className="w-20 h-20 mx-auto rounded-md object-cover border-2 border-purple-200 mb-6 shadow-lg" />
+          ) : (
+            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-amber-400 to-orange-500 rounded-md flex items-center justify-center mb-6 shadow-2xl">
+              <Settings className="w-10 h-10 text-white" />
+            </div>
+          )}
+          <p className="text-base text-gray-700 leading-relaxed">
+            Listo, {userName}. Cuando quieras cambiar tu configuración, puedes hacerlo desde el
+            engranaje ubicado junto a la campanita de notificaciones.
+          </p>
+          <div className="flex flex-col gap-3 mt-8">
+            <button onClick={goToCategories}
+              className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-md hover:shadow-lg transition-all">
+              Ir a configuración ahora
+            </button>
+            <button onClick={onBack}
+              className="px-6 py-2 text-sm text-gray-400 hover:text-gray-600 transition-colors">
+              Volver a inicio
+            </button>
           </div>
         </div>
       </main>
@@ -436,36 +1052,13 @@ function ConfigScreen({ userName, avatarIndex, showVideo, onDismissVideo, onBack
   }
 
   return (
-    <main className="relative z-10 max-w-3xl mx-auto px-6 py-8">
-      <button onClick={onBack} className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-6">
-        <ChevronLeft className="w-4 h-4" /> Volver
-      </button>
-
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">Configuración</h2>
-      <p className="text-sm text-gray-500 mb-8">Selecciona una categoría para personalizar</p>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {CATEGORIES.map(c => {
-          const Icon = c.icon;
-          return (
-            <button key={c.id} onClick={() => setActiveCategory(c.id)}
-              className="bg-white/80 border border-white/60 rounded-md p-5 text-left shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98]">
-              <div className={`w-10 h-10 bg-gradient-to-br ${c.color} rounded-md flex items-center justify-center mb-3`}>
-                <Icon className="w-5 h-5 text-white" />
-              </div>
-              <h3 className="font-bold text-gray-800 text-sm mb-1">{c.title}</h3>
-              <p className="text-xs text-gray-400">{c.desc}</p>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="flex gap-3 mt-8">
-        <button onClick={onBack} className="px-6 py-2.5 border border-gray-200 rounded-md text-sm text-gray-500 hover:bg-white transition-colors">Volver a inicio</button>
-        <button onClick={() => {}} className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-md hover:shadow-lg transition-all">
-          Ir a Configuración ahora
-        </button>
-      </div>
-    </main>
+    <ConfiguracionModule
+      username={userName}
+      pantallaInicial="menu"
+      onClose={onBack}
+      onLogout={() => window.location.reload()}
+      avatarIndex={avatarIndex}
+    />
   );
 }
+

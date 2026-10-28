@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reporte semanal — Focussia</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #ffffff;
+    color: #111827;
+    line-height: 1.5;
+    padding: 24px;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .back-link {
+    color: #2563eb;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .back-link::before { content: "‹ "; }
+  .logo img { width: 96px; height: auto; display: block; }
+  .page-title { font-size: 52px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; color: #111827; }
+  .period { font-size: 20px; color: #2563eb; font-weight: 600; margin-bottom: 4px; }
+  .period-sub { font-size: 16px; color: #475569; margin-bottom: 4px; }
+  .period-note { font-size: 14px; color: #64748b; }
+  .summary-row {
+    margin: 32px 0 24px 0;
+    font-size: 30px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.2;
+  }
+  .summary-row span { color: #8b5cf6; }
+  .stats {
+    display: flex;
+    gap: 32px;
+    margin-bottom: 40px;
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .stat .value { font-size: 40px; font-weight: 700; }
+  .stat .label { font-size: 16px; color: #475569; font-weight: 500; }
+  .stat-blue .value { color: #22d3ee; }
+  .stat-purple .value { color: #a855f7; }
+  .stat-dark .value { color: #111827; }
+  .stat-cumplimiento .value { color: #2563eb; }
+  .divider-line {
+    border: none;
+    height: 1px;
+    background: #e2e8f0;
+    margin: 0 0 40px 0;
+  }
+  .cards-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+  .card {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    background: #ffffff;
+  }
+  .card h3 { font-size: 22px; font-weight: 700; margin-bottom: 16px; color: #111827; }
+  .donut-wrap { display: flex; align-items: center; gap: 24px; margin-bottom: 16px; }
+  .donut {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: conic-gradient(#a855f7 0deg 270deg, #cbd5e1 270deg 360deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .donut::before {
+    content: "";
+    position: absolute;
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: #ffffff;
+  }
+  .donut-value { position: relative; font-size: 32px; font-weight: 700; color: #111827; }
+  .donut-legend { display: flex; flex-direction: column; gap: 10px; font-size: 16px; }
+  .legend-item { display: flex; align-items: center; gap: 10px; }
+  .legend-dot { width: 14px; height: 14px; border-radius: 50%; }
+  .legend-dot-purple { background: #a855f7; }
+  .legend-dot-gray { background: #cbd5e1; }
+  .desglose {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 16px;
+    margin-top: 16px;
+  }
+  .desglose h4 { font-size: 16px; font-weight: 700; color: #2563eb; margin-bottom: 10px; }
+  .desglose ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .desglose li { display: flex; gap: 14px; font-size: 16px; color: #334155; }
+  .desglose li .num { font-weight: 700; color: #2563eb; min-width: 24px; }
+  .bar-chart { height: 320px; position: relative; }
+  .bar-chart .legend {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    display: flex;
+    gap: 16px;
+    font-size: 14px;
+    color: #475569;
+  }
+  .legend-dot-sm { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .legend-dot-blue { background: #22d3ee; }
+  .legend-dot-purple { background: #a855f7; }
+  .bars {
+    position: absolute;
+    bottom: 56px;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 0 40px;
+  }
+  .bar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .bar-val { font-size: 14px; font-weight: 700; color: #475569; }
+  .bar-val-blue { color: #22d3ee; }
+  .bar-val-purple { color: #a855f7; }
+  .bar-rect { width: 48px; border-radius: 4px 4px 0 0; }
+  .bar-rect-blue { background: linear-gradient(180deg, #38bdf8, #0ea5e9); }
+  .bar-rect-purple { background: linear-gradient(180deg, #c084fc, #a855f7); }
+  .bar-label { font-size: 14px; font-weight: 600; color: #334155; margin-top: 6px; }
+  .bar-date { font-size: 12px; color: #64748b; }
+  .chart-note {
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 12px;
+    font-style: italic;
+  }
+  .footer-row {
+    display: flex;
+    gap: 24px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px 24px;
+    background: #ffffff;
+    align-items: center;
+  }
+  .footer-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: #c084fc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+    border: 2px solid #e2e8f0;
+  }
+  .footer-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .footer-info { flex: 1; min-width: 0; }
+  .footer-name { font-size: 22px; font-weight: 700; color: #111827; margin-bottom: 6px; }
+  .footer-name span { color: #2563eb; font-weight: 700; }
+  .footer-text { font-size: 15px; color: #334155; margin-bottom: 4px; }
+  .footer-actions { display: flex; gap: 12px; flex-shrink: 0; border-left: 1px solid #e2e8f0; padding-left: 24px; }
+  .footer-actions h3 { font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 16px; white-space: nowrap; }
+  .btn {
+    padding: 14px 28px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: linear-gradient(135deg, #8b5cf6, #a855f7); color: #ffffff; }
+  .btn-outline { background: #ffffff; color: #111827; border: 2px solid #8b5cf6; }
+  .link-text { color: #2563eb; text-decoration: underline; font-size: 15px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <a href="#" class="back-link">Volver a Reportes</a>
+    <div class="logo">
+      <img src="https://placehold.co/96x32?text=Focussia" alt="Focussia logo">
+    </div>
+  </div>
+
+  <h1 class="page-title">Reporte semanal</h1>
+  <div class="period">5–11 de octubre de 2026</div>
+  <div class="period-sub">Período cerrado.</div>
+  <div class="period-note">Simulación · Datos de ejemplo</div>
+
+  <div class="summary-row">
+    Completaste <span>63</span> de tus <span>84</span> acciones planificadas.
+  </div>
+
+  <div class="stats">
+    <div class="stat stat-blue">
+      <div class="value">84</div>
+      <div class="label">Planificadas</div>
+    </div>
+    <div class="stat stat-purple">
+      <div class="value">63</div>
+      <div class="label">Completadas</div>
+    </div>
+    <div class="stat stat-dark">
+      <div class="value">21</div>
+      <div class="label">Sin completar</div>
+    </div>
+    <div class="stat stat-cumplimiento">
+      <div class="value">75 %</div>
+      <div class="label">Cumplimiento</div>
+    </div>
+  </div>
+  <hr class="divider-line">
+
+  <div class="cards-grid">
+    <div class="card">
+      <h3>Cumplimiento semanal</h3>
+      <div class="donut-wrap">
+        <div class="donut"><div class="donut-value">75 %</div></div>
+        <div class="donut-legend">
+          <div class="legend-item">
+            <span class="legend-dot legend-dot-purple"></span>
+            <span>63 completadas</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot legend-dot-gray"></span>
+            <span>21 sin completar</span>
+          </div>
+        </div>
+      </div>
+      <div class="desglose">
+        <h4>Desglose de acciones sin completar (21)</h4>
+        <ul>
+          <li><span class="num">12</span>pendientes al cierre</li>
+          <li><span class="num">6</span>reprogramadas a otra semana</li>
+          <li><span class="num">3</span>eliminadas tras planificar</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Tu semana, día a día</h3>
+      <div class="bar-chart">
+        <div class="legend">
+          <span><span class="legend-dot legend-dot-blue"></span>Planificadas</span>
+          <span><span class="legend-dot legend-dot-purple"></span>Completadas</span>
+        </div>
+        <div class="bars">
+          <div class="bar">
+            <div class="bar-val bar-val-blue">12</div>
+            <div class="bar-rect bar-rect-blue" style="height:80%;"></div>
+            <div class="bar-val bar-val-purple">10</div>
+            <div class="bar-rect bar-rect-purple" style="height:67%;"></div>
+            <div class="bar-label">Lun</div>
+            <div class="bar-date">5 oct.</div>
+          </div>
+          <div class="bar">
+            <div class="bar-val bar-val-blue">14</div>
+            <div class="bar-rect bar-rect-blue" style="height:93%;"></div>
+            <div class="bar-val bar-val-purple">11</div>
+            <div class="bar-rect bar-rect-purple" style="height:73%;"></div>
+            <div class="bar-label">Mar</div>
+            <div class="bar-date">6 oct.</div>
+          </div>
+          <div class="bar">
+            <div class="bar-val bar-val-blue">12</div>
+            <div class="bar-rect bar-rect-blue" style="height:80%;"></div>
+            <div class="bar-val bar-val-purple">9</div>
+            <div class="bar-rect bar-rect-purple" style="height:60%;"></div>
+            <div class="bar-label">Mié</div>
+            <div class="bar-date">7 oct.</div>
+          </div>
+          <div class="bar">
+            <div class="bar-val bar-val-blue">14</div>
+            <div class="bar-rect bar-rect-blue" style="height:93%;"></div>
+            <div class="bar-val bar-val-purple">11</div>
+            <div class="bar-rect bar-rect-purple" style="height:73%;"></div>
+            <div class="bar-label">Jue</div>
+            <div class="bar-date">8 oct.</div>
+          </div>
+          <div class="bar">
+            <div class="bar-val bar-val-blue">12</div>
+            <div class="bar-rect bar-rect-blue" style="height:80%;"></div>
+            <div class="bar-val bar-val-purple">9</div>
+            <div class="bar-rect bar-rect-purple" style="height:60%;"></div>
+            <div class="bar-label">Vie</div>
+            <div class="bar-date">9 oct.</div>
+          </div>
+          <div class="bar">
+            <div class="bar-val bar-val-blue">10</div>
+            <div class="bar-rect bar-rect-blue" style="height:67%;"></div>
+            <div class="bar-val bar-val-purple">7</div>
+            <div class="bar-rect bar-rect-purple" style="height:47%;"></div>
+            <div class="bar-label">Sáb</div>
+            <div class="bar-date">10 oct.</div>
+          </div>
+          <div class="bar">
+            <div class="bar-val bar-val-blue">10</div>
+            <div class="bar-rect bar-rect-blue" style="height:67%;"></div>
+            <div class="bar-val bar-val-purple">6</div>
+            <div class="bar-rect bar-rect-purple" style="height:40%;"></div>
+            <div class="bar-label">Dom</div>
+            <div class="bar-date">11 oct.</div>
+          </div>
+        </div>
+        <div class="chart-note">Acciones principales: cada una cuenta una sola vez.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-row">
+    <div class="footer-avatar">
+      <img src="https://placehold.co/72x72?text=L%C3%8DA" alt="LÍA">
+    </div>
+    <div class="footer-info">
+      <div class="footer-name">LÍA · <span>Análisis pendiente</span></div>
+      <div class="footer-text">Los datos del período están disponibles.</div>
+      <div class="footer-text">La interpretación se completará aquí automáticamente.</div>
+    </div>
+    <div class="footer-actions">
+      <h3>¿Cómo quieres continuar?</h3>
+      <button class="btn btn-primary">Reorganizar semana</button>
+      <button class="btn btn-outline">Mantener plan</button>
+      <a href="#" class="link-text">Revisar más tarde</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

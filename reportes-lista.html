@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reportes — Focussia</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #ffffff;
+    color: #111827;
+    line-height: 1.5;
+    padding: 24px;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+  .top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  .back-link {
+    color: #2563eb;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .back-link::before { content: "‹ "; }
+  .logo img { width: 96px; height: auto; display: block; }
+  .top-right { display: flex; align-items: center; gap: 16px; }
+  .notif-badge {
+    position: relative;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .notif-badge .dot {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #a855f7;
+    border: 2px solid #ffffff;
+  }
+  .user-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .page-title { font-size: 52px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 8px; color: #111827; }
+  .subtitle { font-size: 20px; color: #2563eb; font-weight: 600; margin-bottom: 8px; }
+  .subtitle-note { font-size: 14px; color: #475569; margin-bottom: 20px; }
+  .focus-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 24px;
+    border: 2px solid #a855f7;
+    background: #ffffff;
+    color: #8b5cf6;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 32px;
+  }
+  .focus-badge::before { content: "◐"; }
+  .reports-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .report-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .icon-wrap {
+    width: 72px;
+    height: 72px;
+    border-radius: 16px;
+    background: #dbeafe;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .icon-wrap svg { width: 40px; height: 40px; color: #2563eb; }
+  .report-type { font-size: 24px; font-weight: 700; color: #111827; }
+  .report-status { font-size: 16px; color: #2563eb; font-weight: 600; }
+  .report-meta { font-size: 16px; color: #334155; font-weight: 500; }
+  .report-note { font-size: 14px; color: #475569; margin-top: 4px; line-height: 1.5; }
+  .btn {
+    padding: 14px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    width: 100%;
+  }
+  .btn-primary { background: linear-gradient(135deg, #8b5cf6, #a855f7); color: #ffffff; }
+  .btn-link { background: transparent; color: #2563eb; border: none; padding: 8px 0; font-size: 15px; text-decoration: underline; display: inline-block; width: auto; }
+  .footer-note {
+    margin-top: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: #475569;
+    font-size: 15px;
+  }
+  .footer-note::before {
+    content: "i";
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #2563eb;
+    flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="top-bar">
+    <a href="#" class="back-link">Volver al inicio</a>
+    <div class="logo">
+      <img src="https://placehold.co/96x32?text=Focussia" alt="Focussia logo">
+    </div>
+    <div class="top-right">
+      <div class="notif-badge">
+        <span style="font-size: 14px; font-weight: 700; color: #475569;">🔔</span>
+        <div class="dot"></div>
+      </div>
+      <div class="user-icon">👤</div>
+    </div>
+  </div>
+
+  <h1 class="page-title">Reportes</h1>
+  <div class="subtitle">Tus reportes siguen disponibles durante Focus.</div>
+  <div class="subtitle-note">Simulación · 11 de octubre de 2026, 21:30</div>
+
+  <div class="focus-badge">Focus activo</div>
+
+  <div class="reports-grid">
+    <!-- Semanal -->
+    <div class="report-card">
+      <div class="icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+      </div>
+      <div class="report-type">Semanal</div>
+      <div class="report-status">Último reporte disponible</div>
+      <div class="report-meta">5–11 de octubre de 2026</div>
+      <div class="report-note">En actualización hasta las 00:00</div>
+      <button class="btn btn-primary">Ver reporte</button>
+      <a href="#" class="btn-link">Ver reportes anteriores</a>
+    </div>
+
+    <!-- Mensual -->
+    <div class="report-card">
+      <div class="icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+      </div>
+      <div class="report-type">Mensual</div>
+      <div class="report-status">Último reporte disponible</div>
+      <div class="report-meta">Septiembre de 2026</div>
+      <button class="btn btn-primary">Ver reporte</button>
+      <a href="#" class="btn-link">Ver reportes anteriores</a>
+    </div>
+
+    <!-- Anual -->
+    <div class="report-card">
+      <div class="icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+      </div>
+      <div class="report-type">Anual</div>
+      <div class="report-status">Aún no tienes reportes de este tipo.</div>
+      <div class="report-note">Primer reporte previsto<br>31 de diciembre de 2026 · 21:00</div>
+      <a href="#" class="btn-link">Sin reportes anteriores</a>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    El reporte está disponible. Su aviso se entregará después de Focus, dentro del horario permitido.
+  </div>
+</div>
+</body>
+</html>

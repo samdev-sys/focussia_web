@@ -1,10 +1,11 @@
 [build]
 command = "npm run build"
 publish = "dist"
-node_version = "20"
 
 [build.environment]
 NODE_ENV = "production"
+# Netlify lee la versión de Node de NODE_VERSION; Node 20 está EOL desde marzo 2026.
+NODE_VERSION = "22"
 
 # Redirects para manejar las rutas del frontend (SPA)
 [[redirects]]

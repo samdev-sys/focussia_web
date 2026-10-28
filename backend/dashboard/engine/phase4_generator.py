@@ -60,7 +60,7 @@ def generar_propuesta(user, tipo_impacto, situacion):
 
     try:
         body = json.dumps({
-            'model': 'llama-3.3-70b-versatile',
+            'model': 'openai/gpt-oss-120b',
             'messages': [{'role': 'user', 'content': prompt}],
         }).encode()
         req = urllib.request.Request(
@@ -69,7 +69,7 @@ def generar_propuesta(user, tipo_impacto, situacion):
             headers={
                 'Content-Type': 'application/json',
                 'Authorization': f'Bearer {api_key}',
-                'User-Agent': 'Mozilla/5.0',
+                'User-Agent': 'curl/8.4.0',
             },
             method='POST',
         )
@@ -178,7 +178,7 @@ def generar_payload_coach(user, tipo_impacto, tipo_alerta, meta_anual=None, metr
                 tareas_backlog=json.dumps(tareas or [], indent=2, ensure_ascii=False),
             )
             body = json.dumps({
-                'model': 'llama-3.3-70b-versatile',
+                'model': 'openai/gpt-oss-120b',
                 'messages': [{'role': 'user', 'content': prompt}],
             }).encode()
             req = urllib.request.Request(

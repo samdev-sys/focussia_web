@@ -15,6 +15,9 @@ body,
 }
 
 @theme {
+  --font-inter: "Inter", sans-serif;
+  --font-montserrat: "Montserrat", sans-serif;
+  --font-caveat: "Caveat", cursive;
   --color-cyber-black: #0A090B;
   --color-cyber-red: #7A0826;
   --color-cyber-burgundy: #4A0214;
@@ -134,4 +137,24 @@ body,
 
 .animate-slide-in {
   animation: slide-in 0.3s ease-out;
+}
+
+.marquee-container {
+  overflow: hidden;
+  width: 100%;
+}
+
+.marquee {
+  display: inline-block;
+  animation: marquee-scroll 15s linear infinite;
+  white-space: nowrap;
+}
+
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
