@@ -2,6 +2,7 @@ import React from 'react';
 import {
   X, ChevronDown,
   Bell, Settings, Moon, Sparkles, Crosshair, Smile,
+  CircleHelp,
 } from 'lucide-react';
 import { NAV_ICONS } from './navIcons';
 
@@ -45,7 +46,7 @@ function UserAvatar({ src, name }: { src?: string; name: string }) {
   );
 }
 
-export default function AppShell({ activeNav, title, subtitle, username, avatarUrl, onNavigate, onClose, decorated, children }: {
+export default function AppShell({ activeNav, title, subtitle, username, avatarUrl, onNavigate, onClose, decorated, onOpenHelp, onOpenNotifications, onOpenSettings, children }: {
   activeNav: MonthlyNavKey;
   title: React.ReactNode;
   subtitle?: string;
@@ -53,6 +54,9 @@ export default function AppShell({ activeNav, title, subtitle, username, avatarU
   avatarUrl?: string;
   onNavigate?: (key: MonthlyNavKey) => void;
   onClose: () => void;
+  onOpenHelp?: () => void;
+  onOpenNotifications?: () => void;
+  onOpenSettings?: () => void;
   decorated?: boolean;
   children: React.ReactNode;
 }) {
@@ -61,11 +65,12 @@ export default function AppShell({ activeNav, title, subtitle, username, avatarU
     <div className="fixed inset-0 z-50 flex bg-[#070b22]" onClick={onClose}>
       {/* Sidebar */}
       <aside
-        className="hidden md:flex w-[232px] shrink-0 flex-col bg-[#080f2e] px-3 py-4"
+        className="hidden md:flex w-48 shrink-0 flex-col bg-[#080f2e] px-3 py-4"
         onClick={e => e.stopPropagation()}
       >
-        <div className="bg-white rounded-2xl px-3 py-2.5 mb-4 flex items-center">
-          <img src="/focusia-logo.png" alt="Focusia" className="h-9 object-contain" />
+        <div className="flex items-center gap-3 text-white">
+         <img src="./focussia.png" alt="Focusia" className='w-8 h-8' />
+          <span className="text-xl font-bold tracking-wide">Focusia</span>
         </div>
         <nav className="flex-1 overflow-y-auto space-y-0.5 pr-0.5">
           {NAV_ITEMS.map(({ key, label, Icon }) => {
@@ -99,7 +104,7 @@ export default function AppShell({ activeNav, title, subtitle, username, avatarU
             );
           })}
         </nav>
-        <div className="mt-3 bg-[#101a45] rounded-2xl p-2.5 flex items-center gap-2.5">
+        <div className="mt-3 bg-[#101a45] rounded-md p-2.5 flex items-center gap-2.5">
           <UserAvatar src={avatarUrl} name={displayName} />
           <div className="flex-1 min-w-0">
             <p className="text-white text-sm font-bold truncate">{displayName}</p>
@@ -125,19 +130,19 @@ export default function AppShell({ activeNav, title, subtitle, username, avatarU
         <div className="relative z-10 px-4 sm:px-8 pt-6 pb-10 max-w-6xl mx-auto">
           <div className="flex items-start gap-3 mb-5">
             <div className="flex-1 min-w-0">
-              <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-[#101433]">{title}</h1>
+              <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-[#101433]">{title}</h1>
               {subtitle && <p className="text-[#5b6b8c] text-base sm:text-xl mt-1">{subtitle}</p>}
             </div>
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              <span className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow flex items-center justify-center">
+              <button onClick={() => onOpenNotifications?.()} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow flex items-center justify-center" title="Notificaciones">
                 <Bell className="w-5 h-5 text-[#101433]" fill="currentColor" />
-              </span>
-              <span className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow hidden sm:flex items-center justify-center">
+              </button>
+              <button onClick={() => onOpenSettings?.()} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow hidden sm:flex items-center justify-center" title="Ajustes">
                 <Settings className="w-5 h-5 text-[#101433]" />
-              </span>
-              <span className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow hidden sm:flex items-center justify-center">
-                <Moon className="w-5 h-5 text-[#101433]" fill="currentColor" />
-              </span>
+              </button>
+              <button onClick={() => onOpenHelp?.()} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow hidden sm:flex items-center justify-center" title="Ayuda">
+                <CircleHelp className="w-5 h-5 text-[#101433]" />
+              </button>
               <button onClick={onClose} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow flex md:hidden items-center justify-center">
                 <X className="w-5 h-5 text-gray-500" />
               </button>

@@ -4,7 +4,7 @@ import {
   Target, Shield, Sparkles, ClipboardList, Dumbbell, Signpost, Bell,
   Smartphone, MessageCircle, Phone, Sun, Briefcase, Sunrise, SlidersHorizontal,
   ShieldCheck, Download, Trash2, FileText, User as UserIcon, CreditCard,
-  LogOut, ChevronRight, X, Loader2, Lock, KeyRound, UserCog, Leaf,
+  LogOut, ChevronRight, X, Loader2, Lock, KeyRound, Leaf,
   ListChecks, CalendarDays, Heart, Settings, BarChart3, BellRing,
 } from 'lucide-react';
 import { configService, configuracionService, authService } from '../services/api';
@@ -487,6 +487,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
       a.download = 'mis-datos-focusia.json';
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      setCuentaMsg('Tus datos se descargaron correctamente.');
     } catch { setError('No se pudo exportar.'); }
   };
 
@@ -508,7 +509,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-[80] bg-[#050816] flex items-center justify-center">
+      <div className="fixed inset-0 z-[300] bg-[#050816] flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
       </div>
     );
@@ -526,7 +527,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
     ];
     const fotoMenu = AVATARS.find(a => a.index === avatarId)?.file || AVATARS[3].file;
     return (
-      <div className="fixed inset-0 z-[80] bg-[#f4f6fb] overflow-y-auto">
+      <div className="fixed inset-0 z-[300] bg-[#f4f6fb] overflow-y-auto">
         <div className="relative min-h-full">
           <img src="./onda1.png" alt="" className="w-30 h-160" />
           <img src="./onda3.png" alt="" aria-hidden className="absolute right-0 top-0 w-30 h-160 object-cover pointer-events-none ml-8" />
@@ -573,7 +574,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
   if (screen === 'avatar') {
     const otros = AVATARS.filter(a => a.index !== avatarDraft);
     return (
-      <div className="fixed inset-0 z-[80] bg-[#f4f6fb] overflow-y-auto">
+      <div className="fixed inset-0 z-[300] bg-[#f4f6fb] overflow-y-auto">
         <div className="relative min-h-full">
          <img src="./onda1.png" alt="" className="w-30 h-160" />
           <img src="./onda3.png" alt="" aria-hidden className="absolute right-0 top-0 w-30 h-160 object-cover pointer-events-none ml-8" />
@@ -682,7 +683,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
     : (screen === 'notifs' ? fotoCiber : fotoLia);
   const nombreLia = (AVATAR_NOMBRES[avatarId] || 'Lía').toUpperCase();
   const shell = (titulo: string, subtitulo: React.ReactNode, tabs: React.ReactNode, contenido: React.ReactNode, notaLia: React.ReactNode, extraLia?: React.ReactNode) => (
-    <div className="fixed inset-0 z-[80] bg-[#050816] text-white overflow-y-auto">
+    <div className="fixed inset-0 z-[300] bg-[#050816] text-white overflow-y-auto">
       <div className="grid lg:grid-cols-[300px_1fr] min-h-full">
         <aside
           className="relative p-6 flex flex-col gap-10 overflow-hidden"
@@ -1076,31 +1077,30 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
       <div>
         <h2 className="text-3xl font-bold">Privacidad</h2>
         <p className="text-white/70 mt-1">Revisa cómo Focusia protege tu información.</p>
-        <div className="rounded-xl border border-blue-500/40 bg-white/[0.02] p-5 mt-6">
-          <div className="flex items-center gap-4 mb-4">
-            <img src="./SF2.png" alt="Protección de datos" className="w-18 h-20" />
-            <p className="font-bold">1. Cómo Focusia protege tus datos</p>
+        <div className="rounded-xl border border-[#60a5fa]/40 bg-white/[0.02] p-5 mt-6">
+          <div className="flex items-center gap-4 mb-5">
+            <img src="./SF2.png" alt="Protección de datos" className="w-11 h-11 object-contain shrink-0" />
+            <p className="font-bold text-base">1. Cómo Focusia protege tus datos</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 md:divide-x md:divide-white/10 gap-y-4">
             {([
               ['Privacidad', 'Respetamos tu información personal.', Lock],
               ['Seguridad', 'Protegemos tus datos con altos estándares.', ShieldCheck],
               ['Cifrado', 'Tus datos están cifrados siempre.', Lock],
-              ['Control del usuario', 'Tú decides qué datos compartir y usar.', UserCog],
+              ['Control del usuario', 'Tú decides qué datos compartir y usar.', UserIcon],
               ['Uso responsable', 'Utilizamos tus datos solo para mejorar tu experiencia.', Leaf],
-            ] as [string, string, React.ComponentType<{ className?: string }>][]).map(([t, d, Icon]) => (
-              <div key={t}>
-                <div className="flex items-center gap-2">
-                  <Icon className="w-4 h-4 text-[#c084fc] shrink-0" />
-                  <p className="text-xs font-bold">{t}</p>
+            ] as [string, string, React.ComponentType<{ className?: string }>][]).map(([t, d, Icon], i) => (
+              <div key={t} className={`flex items-start gap-2.5 ${i === 0 ? 'md:pr-4' : i === 4 ? 'md:pl-4' : 'md:px-4'}`}>
+                <Icon className="w-4 h-4 text-[#8fb4f0] shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-bold text-white">{t}</p>
+                  <p className="text-[11px] text-white/55 mt-1.5 leading-relaxed">{d}</p>
                 </div>
-                <p className="text-[11px] text-white/55 mt-1.5">{d}</p>
               </div>
             ))}
           </div>
-         
         </div>
-         
+
             <p className="text-[11px] text-white/50">Marco normativo: Chile · Ley N.º 19.628 | Unión Europea · RGPD/GDPR | EE. UU. · CCPA/CPRA y demás normas aplicables.</p>
           
         <div className="rounded-xl border border-[#a855f7]/40 bg-white/[0.02] p-5 mt-2">
@@ -1241,8 +1241,18 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
               <button type="button" onClick={cargarDispositivos} className="text-xs border border-[#a855f7]/60 text-[#c084fc] rounded-lg px-3 py-1.5">Ver dispositivos</button>
             </div>
             {dispositivos.length > 0 && (
-              <div className="text-xs text-white/60 space-y-1">
+              <div className="text-xs text-white/60 space-y-2">
                 <p>{dispositivos.length} sesión(es) activa(s).</p>
+                <ul className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                  {dispositivos.map((d, i) => (
+                    <li key={d.session_key || i} className="rounded-lg border border-white/10 bg-white/[0.02] px-2.5 py-1.5">
+                      <p className="text-white/80 font-medium truncate">{(d.user_agent || 'Dispositivo desconocido').slice(0, 60)}</p>
+                      <p className="text-[10px] text-white/45">
+                        {d.ip_address ? `IP ${d.ip_address} · ` : ''}{d.last_activity ? `Última actividad: ${new Date(d.last_activity).toLocaleString()}` : ''}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
                 <button type="button" onClick={() => configService.logoutAllDevices().then(cargarDispositivos).catch(() => {})} className="text-[#c084fc] underline">Cerrar otras sesiones</button>
               </div>
             )}
@@ -1259,6 +1269,9 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
         <div className="rounded-2xl border border-emerald-500/50 p-5">
           <p className="font-bold flex items-center gap-2 text-sm"><Check className="w-5 h-5 text-emerald-400" /> Estado de cuenta</p>
           <span className="inline-block mt-3 text-xs border border-emerald-500/60 text-emerald-300 rounded-full px-3 py-1">Cuenta activa</span>
+          {cuenta.date_joined && (
+            <p className="mt-2 text-xs text-white/50">Miembro desde {new Date(cuenta.date_joined).toLocaleDateString()}</p>
+          )}
         </div>
         <div className="rounded-2xl border border-red-500/50 p-5">
           <p className="font-bold flex items-center gap-2 text-sm"><LogOut className="w-5 h-5 text-red-400" /> Cerrar sesión</p>
@@ -1276,7 +1289,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
   /* ============ MIS REDES SOCIALES (claro) ============ */
   if (screen === 'redes') {
     return (
-      <div className="fixed inset-0 z-[80] bg-[#f4f6fb] overflow-y-auto">
+      <div className="fixed inset-0 z-[300] bg-[#f4f6fb] overflow-y-auto">
         <div className="relative min-h-full">
           <img src="./onda1.png" alt="" className="w-30 h-160" />
           <img src="./onda3.png" alt="" aria-hidden className="absolute right-0 top-0 w-30 h-160 object-cover pointer-events-none ml-8" />

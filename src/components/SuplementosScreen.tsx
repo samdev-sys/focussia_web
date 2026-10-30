@@ -105,7 +105,7 @@ function Tarjeta({ s, marcando, onTomado, onEliminar }: {
       : 'Hoy';
 
   return (
-    <div className={`relative flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-gray-100 dark:border-white/10 border-l-4 ${est.borde} bg-white dark:bg-[#14142e] p-3.5 shadow-sm`}>
+    <div className={`relative flex flex-col sm:flex-row sm:items-center gap-3 rounded-md border border-gray-100 dark:border-white/10 border-l-4 ${est.borde} bg-white dark:bg-[#14142e] p-3.5 shadow-sm`}>
       <div className={`w-14 h-14 rounded-xl shrink-0 flex items-center justify-center bg-gradient-to-br ${est.thumb}`}>
         <Pill className="w-6 h-6" />
       </div>
@@ -113,7 +113,7 @@ function Tarjeta({ s, marcando, onTomado, onEliminar }: {
       <div className="flex-1 min-w-0 sm:min-w-[170px]">
         <div className="flex items-center gap-2 flex-wrap">
           <h3 className="text-base font-bold text-[#101433] dark:text-white truncate">{s.nombre}</h3>
-          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-gray-400 whitespace-nowrap">
+          <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-gray-400 whitespace-nowrap">
             {s.tipo}
           </span>
         </div>
@@ -126,7 +126,7 @@ function Tarjeta({ s, marcando, onTomado, onEliminar }: {
         <p className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase tracking-wide whitespace-nowrap">
           <Clock className="w-3 h-3 shrink-0" /> Próxima toma
         </p>
-        <p className="text-lg font-black text-[#101433] dark:text-white leading-tight">{s.proxima_toma_hora || '—'}</p>
+        <p className="text-lg font-bold text-[#101433] dark:text-white leading-tight">{s.proxima_toma_hora || '—'}</p>
         <p className="text-xs text-slate-500 dark:text-gray-400">{diaLabel}</p>
       </div>
 
@@ -136,7 +136,7 @@ function Tarjeta({ s, marcando, onTomado, onEliminar }: {
           <span className="text-xs text-slate-500 dark:text-gray-400 whitespace-nowrap">Día {s.dia_actual} de {s.dias_totales}</span>
         ) : null}
         {s.estado === 'pendiente' && s.retraso_min > 0 && (
-          <span className="text-xs font-semibold text-rose-500 whitespace-nowrap">Retrasada {formatoRetraso(s.retraso_min)}</span>
+          <span className="text-xs font-bold text-rose-500 whitespace-nowrap">Retrasada {formatoRetraso(s.retraso_min)}</span>
         )}
       </div>
 
@@ -144,7 +144,7 @@ function Tarjeta({ s, marcando, onTomado, onEliminar }: {
         type="button"
         disabled={marcando}
         onClick={onTomado}
-        className="sm:w-[118px] shrink-0 rounded-xl border-2 border-[#101433] dark:border-white/40 text-[#101433] dark:text-white font-bold py-2.5 text-sm flex items-center justify-center gap-1.5 hover:bg-[#101433] hover:text-white dark:hover:bg-white dark:hover:text-[#101433] transition-colors disabled:opacity-50"
+        className="sm:w-[90px] shrink-0 rounded-md border-2 border-[#101433] dark:border-white/40 text-[#101433] dark:text-white font-bold py-2.0 text-sm flex items-center justify-center gap-1.5 hover:bg-[#101433] hover:text-white dark:hover:bg-white dark:hover:text-[#101433] transition-colors disabled:opacity-50 -ml-4"
       >
         {marcando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" strokeWidth={3} />}
         Tomado
@@ -584,25 +584,25 @@ export default function SuplementosScreen({ onBack, userName, onNavigate }: {
         <div className="max-w-[1500px] mx-auto flex flex-col xl:flex-row gap-6">
             {/* Columna principal */}
             <div className="flex-1 min-w-0 flex flex-col gap-6">
-              <section className="bg-white dark:bg-[#14142e] rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-6">
+              <section className="bg-white dark:bg-[#14142e] rounded-xl border border-gray-100 dark:border-white/10 shadow-sm p-6">
                 {/* Encabezado */}
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                   <div className="flex items-start gap-3 min-w-0">
-                    <span className="w-12 h-12 rounded-2xl bg-[#F3F0FF] dark:bg-white/5 text-[#6236FF] dark:text-purple-300 flex items-center justify-center shrink-0">
-                      <Pill className="w-6 h-6" />
+                    <span className="w-12 h-12 rounded-xl bg-[#F3F0FF] dark:bg-white/5 text-[#6236FF] dark:text-purple-300 flex items-center justify-center shrink-0">
+                      <img className="w-12 h-12" src="./pill-2.jpg" alt="Suplemento" />
                     </span>
                     <div className="min-w-0">
-                      <h1 className="text-lg sm:text-2xl font-black tracking-tight text-[#101433] dark:text-white">
+                      <h1 className="text-lg sm:text-xl font-bold tracking-tight text-[#101433] dark:text-white">
                         SUPLEMENTOS Y MEDICAMENTOS
                       </h1>
-                      <p className="text-sm text-slate-500 dark:text-gray-400 mt-0.5">
+                      <p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
                         Organiza tus suplementos y tratamientos. Focusia te acompaña para que no olvides ninguna dosis.
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={() => { setCreado(null); setAsistente(true); }}
-                    className="shrink-0 w-full sm:w-auto justify-center bg-[#6236FF] text-white rounded-xl px-5 py-2.5 font-bold text-sm flex items-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all"
+                    className="shrink-0 w-full sm:w-auto justify-center bg-[#6236FF] text-white rounded-md px-3 py-2.5 font-bold text-xs flex items-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all"
                   >
                     <Plus className="w-4 h-4" strokeWidth={3} /> Agregar
                   </button>
@@ -615,7 +615,7 @@ export default function SuplementosScreen({ onBack, userName, onNavigate }: {
                       <button
                         key={t.key}
                         onClick={() => setTab(t.key)}
-                        className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition-colors ${
+                        className={`flex items-center gap-2 rounded-md px-3.5 py-2 text-xs font-semibold transition-colors ${
                           tab === t.key
                             ? 'bg-[#6236FF] text-white'
                             : 'bg-white dark:bg-white/5 border border-gray-200 dark:border-white/15 text-slate-600 dark:text-gray-300 hover:border-slate-300'
@@ -634,7 +634,7 @@ export default function SuplementosScreen({ onBack, userName, onNavigate }: {
                   <div className="relative">
                     <button
                       onClick={() => setFiltroAbierto(v => !v)}
-                      className="flex items-center gap-2 rounded-xl border border-gray-200 dark:border-white/15 px-3.5 py-2 text-sm font-semibold text-slate-600 dark:text-gray-300 hover:border-slate-300"
+                      className="flex items-center gap-2 rounded-md border border-gray-200 dark:border-white/15 px-3.5 py-2 text-xs font-semibold text-slate-600 dark:text-gray-300 hover:border-slate-300"
                     >
                       <Filter className="w-4 h-4" /> Estado: {filtroLabel}
                       <ChevronDown className="w-4 h-4 text-slate-400" />
@@ -642,12 +642,12 @@ export default function SuplementosScreen({ onBack, userName, onNavigate }: {
                     {filtroAbierto && (
                       <>
                         <div className="fixed inset-0 z-40" onClick={() => setFiltroAbierto(false)} />
-                        <div className="absolute right-0 top-full mt-1 z-50 w-48 bg-white dark:bg-[#1a1a3a] rounded-xl shadow-2xl border border-gray-100 dark:border-white/10 overflow-hidden py-1">
+                        <div className="absolute right-0 top-full mt-1 z-50 w-40 bg-white dark:bg-[#1a1a3a] rounded-md shadow-xl border border-gray-100 dark:border-white/10 overflow-hidden py-1">
                           {FILTROS_ESTADO.map(f => (
                             <button
                               key={f.key}
                               onClick={() => { setFiltroEstado(f.key); setFiltroAbierto(false); }}
-                              className={`w-full px-4 py-2 text-left text-sm flex items-center justify-between hover:bg-slate-50 dark:hover:bg-white/5 ${
+                              className={`w-full px-4 py-2 text-left text-xs flex items-center justify-between hover:bg-slate-50 dark:hover:bg-white/5 ${
                                 filtroEstado === f.key ? 'text-[#6236FF] font-semibold' : 'text-slate-600 dark:text-gray-300'
                               }`}
                             >
@@ -675,7 +675,7 @@ export default function SuplementosScreen({ onBack, userName, onNavigate }: {
                   </div>
                 ) : visibles.length === 0 ? (
                   <div className="mt-5 rounded-xl border border-dashed border-slate-300 dark:border-white/15 py-14 text-center">
-                    <Pill className="w-10 h-10 text-slate-300 mx-auto" />
+                    <img src="./pill-1.png" alt="Placeholder" className="w-10 h-10 text-slate-300 mx-auto" />
                     <p className="mt-3 font-semibold text-slate-600 dark:text-gray-300">
                       {activos.length === 0 ? 'Aún no tienes suplementos ni medicamentos' : 'Sin resultados con este filtro'}
                     </p>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Save, Volume2, MessageSquare, Bell, Gauge, Clock, Wifi, Lock, Target, CalendarDays, Calendar } from 'lucide-react';
 import { configuracionService, ConfiguracionData } from '../services/api';
 import { AVATARS } from '../constants/avatars';
@@ -79,8 +80,8 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[300] flex items-center justify-center p-4">
       <div className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-[650px] max-h-[85vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-slate-700 to-slate-600 shrink-0">
           <div className="flex items-center gap-2">
@@ -343,7 +344,8 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

@@ -1,13 +1,21 @@
+export interface Subaccion {
+  id: string;
+  texto: string;
+  estado: 'Pendiente' | 'Haciendo' | 'Completada';
+}
+
 export interface AccionKanban {
   id: string;
   texto_accion: string;
+  subacciones: Subaccion[];
   origen: 'MANUAL' | 'RUEDA_VIDA' | 'OTRO';
   clasificacion: 'H' | 'P' | 'D' | 'E' | null;
-  estado_actual: string;
+  estado: 'Pendiente' | 'Haciendo' | 'Completada';
   destino_asignado: string;
   fecha_seleccionada: string | null;
   hora_seleccionada: string | null;
   es_fijo: boolean;
+  estado_actual?: string;
   creado_en: string;
   actualizado_en: string;
 }

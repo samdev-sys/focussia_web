@@ -565,6 +565,62 @@ export const gratitudService = {
   },
 };
 
+/* ── Módulo Cumpleaños (Doc 22) ── */
+
+export type CumpleanosCategoria = 'Familia' | 'Familiares' | 'Amigos' | 'Trabajo';
+
+export type CumpleanosAccion = 'regalo' | 'celebracion' | 'llamada' | 'otra';
+
+export interface CumpleanosData {
+  id: number;
+  nombre: string;
+  categoria: CumpleanosCategoria;
+  fecha: string;
+  anticipacion_dias: number;
+  fecha_proxima: string;
+  dias_restantes: number;
+  fecha_aviso: string;
+  aviso_activo: boolean;
+  aviso_enviado: boolean;
+}
+
+export interface CumpleanosAccionData {
+  id: number;
+  titulo: string;
+  columna: string;
+}
+
+export const cumpleanosService = {
+  listar: async (): Promise<CumpleanosData[]> => {
+    const response = await api.get('/api/cumpleanos/');
+    return response.data;
+  },
+  crear: async (datos: {
+    nombre: string;
+    categoria: CumpleanosCategoria;
+    fecha: string;
+    anticipacion_dias: number;
+  }): Promise<CumpleanosData> => {
+    const response = await api.post('/api/cumpleanos/', datos);
+    return response.data;
+  },
+  eliminar: async (id: number): Promise<void> => {
+    await api.delete(`/api/cumpleanos/${id}/`);
+  },
+  /** Doc 22 §III — la acción sugerida se envía al Kanban Backlog. */
+  enviarAccion: async (
+    id: number,
+    accion: CumpleanosAccion,
+    detalle?: string,
+  ): Promise<CumpleanosAccionData> => {
+    const response = await api.post(`/api/cumpleanos/${id}/accion/`, {
+      accion,
+      detalle,
+    });
+    return response.data;
+  },
+};
+
 export interface RuedaCategoria {
   id: number;
   nombre: string;

@@ -1,18 +1,12 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Camera } from 'lucide-react';
-import { weeklyPlanService, configuracionService } from '../services/api';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { weeklyPlanService } from '../services/api';
 
-const FALLBACK_SVG = encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">' +
-    '<circle cx="60" cy="60" r="58" fill="#1e1b4b" stroke="#a855f7" stroke-width="3"/>' +
-    '<circle cx="60" cy="45" r="18" fill="#c4b5fd"/>' +
-    '<ellipse cx="60" cy="90" rx="28" ry="22" fill="#a78bfa"/>' +
-    '<path d="M50 43 Q60 50 70 43" stroke="#7c3aed" stroke-width="2" fill="none"/>' +
-    '<circle cx="50" cy="40" r="2.5" fill="#4c1d95"/>' +
-    '<circle cx="70" cy="40" r="2.5" fill="#4c1d95"/>' +
-  '</svg>'
-);
-const FALLBACK_AVATAR = `data:image/svg+xml,${FALLBACK_SVG}`;
+/* ──────────────────────────────────────────────────────────────────────────
+   Doc 11 · Widget MI MISIÓN DE ESTA SEMANA
+   Vista permanente, sólo informativa y motivacional, de la Misión Semanal
+   definida en el módulo SEMANAL. No edita, no crea, no modifica y no
+   permite interactuar con el contenido.
+   ────────────────────────────────────────────────────────────────────────── */
 
 const MIN_FONT_SIZE = 8;
 const MAX_FONT_SIZE = 18;
@@ -29,83 +23,74 @@ function smartFontSize(text: string, containerWidth: number): number {
 }
 
 export default function WeeklyMissionWidget({
-  missionPhotoUrl,
-  onMissionUpdate,
-  onPhotoChange,
+  photoUrl,
 }: {
-  missionPhotoUrl?: string;
-  onMissionUpdate?: (text: string) => void;
-  onPhotoChange?: (base64: string) => void;
+  photoUrl?: string;
 }): React.ReactElement {
   const [missionText, setMissionText] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const hexCanvasRef = useRef<HTMLCanvasElement>(null);
   const hexHoverRef = useRef(false);
   const [fontSize, setFontSize] = useState(MAX_FONT_SIZE);
 
+  /* ── Evento: LoadWeeklyMission ── */
   const loadMission = useCallback(async () => {
     setLoading(true);
     try {
+      window.dispatchEvent(new CustomEvent('LoadWeeklyMission'));
+
       const { plan } = await weeklyPlanService.getCurrentWeek();
       const text = plan.weekly_mission || '';
       setMissionText(text);
-      if (onMissionUpdate) onMissionUpdate(text);
+
+      /* ── Evento: BuildMissionWidget ── */
+      window.dispatchEvent(new CustomEvent('BuildMissionWidget'));
     } catch {
       setMissionText(null);
     } finally {
       setLoading(false);
     }
-  }, [onMissionUpdate]);
+  }, []);
 
   useEffect(() => { loadMission(); }, [loadMission]);
 
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const w = containerRef.current.offsetWidth;
-    setFontSize(smartFontSize(missionText || '', w));
-  }, [missionText]);
-
-  const handlePhotoUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = reader.result as string;
-      try {
-        const canvas = document.createElement('canvas');
-        const img = new Image();
-        await new Promise<void>((resolve) => {
-          img.onload = () => {
-            const maxSize = 200;
-            let w = img.width;
-            let h = img.height;
-            if (w > h) { if (w > maxSize) { h *= maxSize / w; w = maxSize; } }
-            else { if (h > maxSize) { w *= maxSize / h; h = maxSize; } }
-            canvas.width = w;
-            canvas.height = h;
-            const ctx = canvas.getContext('2d')!;
-            ctx.drawImage(img, 0, 0, w, h);
-            resolve();
-          };
-          img.src = base64;
-        });
-        const compressed = canvas.toDataURL('image/jpeg', 0.7);
-        await configuracionService.updateMiConfig({ mission_photo_url: compressed } as any);
-        if (onPhotoChange) onPhotoChange(compressed);
-      } catch {}
-    };
-    reader.readAsDataURL(file);
-  }, [onPhotoChange]);
-
+  /* ── Evento: RefreshMissionWidget ── */
   useEffect(() => {
     const handler = () => { loadMission(); };
     window.addEventListener('RefreshMissionWidget', handler);
     return () => window.removeEventListener('RefreshMissionWidget', handler);
   }, [loadMission]);
 
+  /* ── Evento: LoadUserProfilePhoto ── */
+  useEffect(() => {
+    if (photoUrl) {
+      window.dispatchEvent(new CustomEvent('LoadUserProfilePhoto', {
+        detail: { photoUrl },
+      }));
+    }
+  }, [photoUrl]);
+
+  /* ── Evento: RemovePhotoBackground ──
+     En producción aquí se integraría un servicio de eliminación de fondo
+     para conservar únicamente la silueta del usuario. Por ahora se
+     dispara el evento para que la capa de proceso de imagen lo capture. ── */
+  useEffect(() => {
+    if (photoUrl) {
+      window.dispatchEvent(new CustomEvent('RemovePhotoBackground', {
+        detail: { photoUrl },
+      }));
+    }
+  }, [photoUrl]);
+
+  /* ── Ajuste de tamaño de fuente según ancho del contenedor ── */
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const w = containerRef.current.offsetWidth;
+    setFontSize(smartFontSize(missionText || '', w));
+  }, [missionText]);
+
+  /* ── Fondo gráfico del Dashboard (canvas de hexágonos) ── */
   useEffect(() => {
     const canvas = hexCanvasRef.current;
     if (!canvas) return;
@@ -258,56 +243,45 @@ export default function WeeklyMissionWidget({
           className="absolute -inset-6 rounded-md pointer-events-none z-0"
         />
         <div className="relative pointer-events-none select-none bg-white rounded-md overflow-hidden">
-        <div className="bg-[#1e2540] text-white text-center py-2 font-bold text-[10px] uppercase tracking-wider rounded-md flex items-center justify-center gap-1.5">
-          MI MISIÓN SEMANAL ES : 
-        </div>
-        <div className="bg-gradient-to-br from-[#ff7c90] to-[#ffe1a4] h-[180px] relative flex flex-col items-center px-2 py-3 overflow-hidden mt-2 rounded-md">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handlePhotoUpload}
-          />
-          {loading ? (
-            <div className="flex items-center justify-center h-full w-full py-8">
-              <div className="w-8 h-8 border-3 border-purple-500 border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : (
-            <>
-              <div
-                className="text-center font-bold text-slate-800 italic leading-tight mt-1"
-                style={{ fontSize: `${fontSize}px` }}
-              >
-                &ldquo;{missionText || 'Terminar carpeta Wireframe del proyecto'}&rdquo;
-                
+          {/* Título del widget (Doc 11: "MI MISIÓN DE ESTA SEMANA") */}
+          <div className="bg-[#1e2540] text-white text-center py-2 font-bold text-[10px] uppercase tracking-wider rounded-md flex items-center justify-center gap-1.5">
+            MI MISIÓN DE ESTA SEMANA
+          </div>
+
+          <div className="bg-gradient-to-br from-[#ff7c90] to-[#ffe1a4] h-[180px] relative flex flex-col items-center px-2 py-3 overflow-hidden mt-2 rounded-md">
+            {/* Fotografía de perfil del usuario (Doc 11: imagen de perfil del onboarding) */}
+            {loading ? (
+              <div className="flex items-center justify-center h-full w-full py-8">
+                <div className="w-8 h-8 border-3 border-purple-500 border-t-transparent rounded-full animate-spin" />
               </div>
-              <div className="relative w-[50px] h-[60px] flex-shrink-0" style={{ animation: 'float-slow 3s ease-in-out infinite' }}>
-                {missionPhotoUrl ? (
-                  <div className="w-full h-full relative">
-                    <img
-                      src={missionPhotoUrl}
-                      alt=""
-                      className="w-full h-full object-contain relative z-10"
-                    />
-                  </div>
-                ) : (
-                  <img
-                    src={FALLBACK_AVATAR}
-                    alt=""
-                    className="w-full h-full object-contain rounded-full"
-                  />
-                )}
-                <button
-                  onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                  className="absolute -bottom-1 -right-1 pointer-events-auto w-5 h-5 rounded-full bg-white/80 hover:bg-white flex items-center justify-center z-20"
+            ) : (
+              <>
+                <div
+                  className="text-center font-bold text-slate-800 italic leading-tight mt-1"
+                  style={{ fontSize: `${fontSize}px` }}
                 >
-                  <Camera className="w-3 h-3 text-slate-600" />
-                </button>
-              </div>
-            </>
-          )}
-        </div>
+                  &ldquo;{missionText || 'Sin misión semanal definida'}&rdquo;
+                </div>
+
+                {/* Silueta del usuario: foto de perfil en contenedor circular (Doc 11: conservar silueta) */}
+                <div className="relative w-[50px] h-[50px] flex-shrink-0 mt-2">
+                  <div className="w-full h-full rounded-full overflow-hidden border-2 border-white shadow-md">
+                    {photoUrl ? (
+                      <img
+                        src={photoUrl}
+                        alt="Perfil usuario"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400 text-xs font-bold rounded-full">
+                        U
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

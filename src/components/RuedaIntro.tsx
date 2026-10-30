@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Play, Volume2, Settings, Maximize, CircleHelp, Bell, ShieldCheck, Info
 } from 'lucide-react';
+import { notificationService, type NotificationData } from '../services/api';
+import { ConfiguracionPanel } from './ConfiguracionPanel';
+import HelpChat from './HelpChat';
 
 interface IntroVideoProps {
   userName?: string;
@@ -11,6 +14,69 @@ interface IntroVideoProps {
 
 function MiniWheel() {
   return <img src="/rueda.png" alt="Rueda de la Vida" className="w-full h-full object-contain" />;
+}
+
+/** Acciones de cabecera compartidas por las pantallas del flujo Rueda. */
+function RuedaHeaderActions() {
+  const [showHelp, setShowHelp] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationData[]>([]);
+
+  const toggleNotifications = async () => {
+    if (!showNotifications) {
+      try { setNotifications(await notificationService.getAll()); } catch { /* noop */ }
+    }
+    setShowNotifications(v => !v);
+  };
+
+  return (
+    <>
+      <div className="flex items-center gap-2">
+        <button onClick={() => setShowHelp(true)} className="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-700 hover:bg-gray-50" title="Ayuda de IA">
+          <CircleHelp className="w-5 h-5" />
+        </button>
+        <div className="relative">
+          <button onClick={toggleNotifications} className="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-700 hover:bg-gray-50 relative" title="Notificaciones">
+            <Bell className="w-5 h-5" />
+            {notifications.length > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#6d28d9] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                {notifications.length > 9 ? '9+' : notifications.length}
+              </span>
+            )}
+          </button>
+          {showNotifications && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
+              <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-white rounded-xl shadow-2xl border border-gray-100 z-50">
+                <p className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-gray-400 border-b border-gray-100">Notificaciones</p>
+                {notifications.length === 0 ? (
+                  <p className="px-4 py-6 text-sm text-gray-400 text-center">Sin notificaciones.</p>
+                ) : notifications.map(n => (
+                  <div key={n.id} className="px-4 py-3 border-b border-gray-50 last:border-0 hover:bg-gray-50">
+                    <p className="text-sm font-semibold text-gray-800">{n.title}</p>
+                    <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{n.message}</p>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+        <button onClick={() => setShowConfig(true)} className="w-9 h-9 rounded-full border border-gray-200 bg-white hidden sm:flex items-center justify-center text-gray-700 hover:bg-gray-50" title="Configuración">
+          <Settings className="w-5 h-5" />
+        </button>
+      </div>
+      <ConfiguracionPanel isOpen={showConfig} onClose={() => setShowConfig(false)} />
+      <HelpChat
+        open={showHelp}
+        onClose={() => setShowHelp(false)}
+        pasoLabel="Rueda de la Vida"
+        titulo="Introducción y evaluación"
+        bienvenida="¡Hola! Soy FocusIA. Puedo explicarte cómo funciona la Rueda de la Vida y cómo evaluar cada área. ¿En qué te ayudo?"
+        contextoAyuda="El usuario está en la introducción de la Rueda de la Vida de Focussia y pidió ayuda desde el icono de interrogación."
+      />
+    </>
+  );
 }
 
 export const RuedaIntroVideo: React.FC<IntroVideoProps> = ({ userName = 'Don Roberto', onStart, onClose }) => {
@@ -35,16 +101,7 @@ export const RuedaIntroVideo: React.FC<IntroVideoProps> = ({ userName = 'Don Rob
             <h1 className="text-lg sm:text-2xl font-extrabold text-[#101331]">Rueda de la Vida</h1>
           </div>
           <div className="flex items-center gap-2">
-            <button className="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-700 hover:bg-gray-50" title="Ayuda">
-              <CircleHelp className="w-5 h-5" />
-            </button>
-            <button className="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-700 hover:bg-gray-50 relative" title="Notificaciones">
-              <Bell className="w-5 h-5" />
-              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#6d28d9] text-white text-[10px] font-bold rounded-full flex items-center justify-center">3</span>
-            </button>
-            <button className="w-9 h-9 rounded-full border border-gray-200 bg-white hidden sm:flex items-center justify-center text-gray-700 hover:bg-gray-50" title="Configuración">
-              <Settings className="w-5 h-5" />
-            </button>
+            <RuedaHeaderActions />
           </div>
         </div>
 
@@ -160,9 +217,7 @@ export const RuedaGuiaEvaluacion: React.FC<GuiaProps> = ({ onBack, onContinue, o
             <h1 className="text-lg sm:text-2xl font-extrabold text-[#101331]">Rueda de la Vida</h1>
           </div>
           <div className="flex items-center gap-2">
-            <button className="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-700" title="Ayuda"><CircleHelp className="w-5 h-5" /></button>
-            <button className="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-700 relative" title="Notificaciones"><Bell className="w-5 h-5" /><span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#6d28d9] text-white text-[10px] font-bold rounded-full flex items-center justify-center">3</span></button>
-            <button onClick={onClose} className="w-9 h-9 rounded-full border border-gray-200 bg-white hidden sm:flex items-center justify-center text-gray-700" title="Configuración"><Settings className="w-5 h-5" /></button>
+            <RuedaHeaderActions />
           </div>
         </div>
 

@@ -4,6 +4,7 @@ import {
   PlayCircle, Scan, ShieldCheck, CheckCircle2, Star, Shield, Pause, Square,
 } from 'lucide-react';
 import ModuleShell from './ModuleShell';
+import { desbloquearAudio } from './focusAudio';
 
 /* ──────────────────────────────────────────────────────────────────────────
    Doc 23 · Modo Focus (módulo BOTÓN FOCUS)
@@ -134,6 +135,7 @@ function ModalConfiguracion({ herramienta, onIniciar, onCerrar, ocupado }: {
 
   const iniciar = () => {
     if (ocupado) return;
+    desbloquearAudio();
     if (herramienta === 'reloj') onIniciar('reloj', {});
     else if (herramienta === 'pomodoro') onIniciar('pomodoro', { concentracion: minConc, descanso: minDes, ciclos: minCic });
     else if (herramienta === 'temporizador') onIniciar('temporizador', { duracion_min: minDur });
@@ -141,6 +143,10 @@ function ModalConfiguracion({ herramienta, onIniciar, onCerrar, ocupado }: {
   };
 
   return (
+
+    
+
+    
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onCerrar}>
       <div
         className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl"
@@ -318,37 +324,26 @@ export default function FocusModeScreen({ userName, sesionActiva, onIniciar, onB
 
   return (
     <>
-      <ModuleShell activeNav="focus" userName={userName} onBack={onBack} onNavigate={onNavigate}>
+      <ModuleShell activeNav="focus" userName={userName} onBack={onBack} onNavigate={onNavigate} titulo="ENFÓCATE" subtitulo="Herramientas para proteger tu concentración y lograr más." iconoTitulo={() => <img src="./archer.png" alt="Archer" className="w-8 h-8" />}>
         <div className="mx-auto max-w-7xl px-6 py-8">
-          {/* Encabezado (mockup) */}
-          <div className="flex items-center gap-4">
-            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#8B5CF6] to-[#6D28D9] text-white shadow-md">
-              <Target className="h-6 w-6" />
-            </span>
-            <div>
-              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">ENFÓCATE</h1>
-              <p className="text-sm text-slate-500">Herramientas para proteger tu concentración y lograr más.</p>
-            </div>
-          </div>
-
           <div className="mt-6 grid items-start gap-6 xl:grid-cols-[1fr_310px]">
             {/* Columna principal */}
             <div>
               {/* Hero (mockup) */}
-              <div className="relative overflow-hidden rounded-2xl bg-[#101828] text-white">
+              <div className="relative overflow-hidden rounded-xl bg-[#101828] text-white">
                 <img
-                  src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1600&q=80"
+                  src="./focus.jpg"
                   alt="" aria-hidden
-                  className="absolute inset-0 h-full w-full object-cover"
+                  className="absolute inset-0 h-full w-full h-100"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-r from-[#0B1023]/95 via-[#0B1023]/75 to-transparent" />
                 <div className="relative z-10 flex min-h-[300px] max-w-md flex-col justify-between gap-6 p-8 sm:min-h-[340px] sm:p-10">
                   <div>
-                    <h2 className="text-3xl font-extrabold leading-snug sm:text-[34px] sm:leading-[1.25]">
+                    <h2 className="text-xs font-bold leading-snug sm:text-[28px] sm:leading-[1.25]">
                       Tu atención es<br />tu recurso más valioso.
                     </h2>
-                    <p className="mt-4 text-sm leading-relaxed text-slate-300">
+                    <p className="mt-4 text-xs leading-relaxed text-slate-300">
                       Entra en modo enfoque, elimina distracciones y avanza con claridad hacia lo que
                       realmente importa para ti.
                     </p>
@@ -404,8 +399,8 @@ export default function FocusModeScreen({ userName, sesionActiva, onIniciar, onB
                     <Info className="h-4 w-4 text-slate-300" />
                   </div>
                   <div className="mt-4 flex items-center gap-4">
-                    <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-white shadow-inner ${enCurso ? 'bg-[#059669]' : 'bg-[#16A34A]'}`}>
-                      <Target className="h-7 w-7" />
+                    <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-white shadow-inner ${enCurso ? 'bg-[#059669]' : 'bg-[#79A7D1]'}`}>
+                      <img src="./archer.png" alt="Archer" className="h-9 w-9" />
                     </span>
                     {enCurso ? (
                       <p className="text-[13px] leading-relaxed text-slate-700">

@@ -60,15 +60,15 @@ export default function PlanAnualView({ highlightActionId, refreshKey, onConfirm
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
       {/* Año */}
-      <div className="bg-white rounded-2xl border border-[#e3e8f5] overflow-hidden">
+      <div className="bg-white rounded-xl border border-[#e3e8f5] overflow-hidden">
         <div className="flex items-center gap-2 sm:gap-3 px-4 py-3 border-b border-[#eef1f8] flex-wrap">
-          <span className="w-10 h-10 rounded-xl border border-[#dbe3f5] flex items-center justify-center">
+          <span className="w-10 h-10 rounded-md border border-[#dbe3f5] flex items-center justify-center">
             <Calendar className="w-5 h-5 text-[#1f6feb]" />
           </span>
           <button type="button" onClick={() => setYear(y => y - 1)} className="w-9 h-9 rounded-lg border border-[#e3e8f5] flex items-center justify-center text-[#101433] hover:bg-gray-50">
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <span className="font-black text-[#101433] text-sm sm:text-base">{year}</span>
+          <span className="font-bold text-[#101433] text-sm sm:text-base">{year}</span>
           <button type="button" onClick={() => setYear(y => y + 1)} className="w-9 h-9 rounded-lg border border-[#e3e8f5] flex items-center justify-center text-[#101433] hover:bg-gray-50">
             <ChevronRight className="w-5 h-5" />
           </button>
@@ -83,11 +83,11 @@ export default function PlanAnualView({ highlightActionId, refreshKey, onConfirm
                 key={m}
                 type="button"
                 onClick={() => setDetailMonth(i + 1)}
-                className={`rounded-xl border p-3 text-center transition-all hover:shadow-md ${
+                className={`rounded-md border p-3 text-center transition-all hover:shadow-md ${
                   selected ? 'border-[#a21caf] bg-[#faf0fd]' : 'border-[#e3e8f5] bg-white hover:border-[#1f6feb]'
                 }`}
               >
-                <p className={`text-xs font-black ${selected ? 'text-[#a21caf]' : 'text-[#101433]'}`}>{m}</p>
+                <p className={`text-xs font-bold ${selected ? 'text-[#a21caf]' : 'text-[#101433]'}`}>{m}</p>
                 <p className="text-xs text-[#5b6b8c] mt-2">
                   {n === 0 ? 'Sin acciones' : n === 1 ? '1 acción' : `${n} acciones`}
                 </p>
@@ -98,9 +98,9 @@ export default function PlanAnualView({ highlightActionId, refreshKey, onConfirm
       </div>
 
       {/* Detalle mes */}
-      <div className="bg-white rounded-2xl border border-[#e3e8f5] overflow-hidden">
+      <div className="bg-white rounded-md border border-[#e3e8f5] overflow-hidden">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-[#eef1f8]">
-          <span className="font-black text-[#101433] text-base sm:text-lg uppercase">
+          <span className="font-bold text-[#101433] text-base sm:text-lg uppercase">
             {MESES[detailMonth - 1]} {year}
           </span>
           <button
@@ -114,7 +114,7 @@ export default function PlanAnualView({ highlightActionId, refreshKey, onConfirm
         <div className="p-3">
           <div className="grid grid-cols-7 gap-1">
             {WEEK_DAYS.map(d => (
-              <div key={d} className="text-center text-[9px] sm:text-[10px] font-black text-[#101433] py-1.5">{d}</div>
+              <div key={d} className="text-center text-[9px] sm:text-[10px] font-bold text-[#101433] py-1.5">{d}</div>
             ))}
             {detailCells.map(c => {
               const dayItems = items.filter(a => a.fecha_seleccionada === c.iso);
@@ -128,7 +128,7 @@ export default function PlanAnualView({ highlightActionId, refreshKey, onConfirm
                     isHighlight ? 'border-[#a21caf] bg-[#faf0fd]' : 'border-[#e3e8f5] bg-white hover:border-[#1f6feb]'
                   }`}
                 >
-                  <span className={`text-xs font-black ${isHighlight ? 'text-[#a21caf]' : c.outside ? 'text-gray-400' : 'text-[#101433]'}`}>
+                  <span className={`text-xs font-bold ${isHighlight ? 'text-[#a21caf]' : c.outside ? 'text-gray-400' : 'text-[#101433]'}`}>
                     {c.day}
                   </span>
                   <div className="mt-0.5 space-y-0.5">

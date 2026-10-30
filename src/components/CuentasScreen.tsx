@@ -12,7 +12,11 @@ import {
   cuentasService,
   type CuentaColumnaData,
   type CuentaFilaData,
+  notificationService,
+  type NotificationData,
 } from '../services/api';
+import { ConfiguracionPanel } from './ConfiguracionPanel';
+import HelpChat from './HelpChat';
 
 const NAV_ITEMS = [
   { icon: Home, label: 'Inicio', section: 'inicio' },
@@ -132,6 +136,10 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
   // Form columna
   const [nuevaCol, setNuevaCol] = useState('');
   const [colAEliminar, setColAEliminar] = useState<CuentaColumnaData | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationData[]>([]);
 
   const tablaRef = useRef<HTMLDivElement>(null);
 
@@ -321,7 +329,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
     const faltantes = COLUMNAS_SUGERIDAS.filter(n => !existentes.has(n.toLowerCase()));
     if (faltantes.length === 0) return;
     try {
-      const creadas = [];
+      const creadas: CuentaColumnaData[] = [];
       for (const n of faltantes) {
         creadas.push(await cuentasService.crearColumna(n));
       }
@@ -435,7 +443,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
   return (
     <div className="flex h-full overflow-hidden text-slate-800 bg-[#F8F9FB]">
       {/* Sidebar */}
-      <aside className="w-64 bg-[#0A0A26] h-full hidden md:flex flex-col z-20 shrink-0">
+      <aside className="w-48 bg-[#0A0A26] h-full hidden md:flex flex-col z-20 shrink-0">
         <div className="h-16 flex items-center px-6 pt-4 pb-2">
           <div className="flex items-center gap-3 text-white">
             <img src="./focussia.png" alt="Focusia" className="w-4 h-4 text-white" />
@@ -484,16 +492,47 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
             <Wallet className="w-6 h-6 text-white" />
           </span>
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-extrabold text-slate-900">Cuentas</h1>
+            <h1 className="text-xl font-bold text-slate-900">Cuentas</h1>
             <p className="text-sm text-slate-500">Administra tus pagos recurrentes y mantén todo bajo control.</p>
           </div>
           <div className="hidden sm:flex items-center gap-2">
-            <button title="Ayuda" className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:shadow-md transition-shadow font-black">?</button>
-            <button title="Notificaciones" className="relative w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:shadow-md transition-shadow">
-              <Bell className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#6236FF] text-white text-[10px] font-black flex items-center justify-center">3</span>
-            </button>
-            <button title="Configuración" className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:shadow-md transition-shadow">
+            <button title="Ayuda de IA" onClick={() => setShowHelp(true)} className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:shadow-md transition-shadow font-black">?</button>
+            <div className="relative">
+              <button
+                title="Notificaciones"
+                onClick={async () => {
+                  if (!showNotifications) {
+                    try { setNotifications(await notificationService.getAll()); } catch { /* noop */ }
+                  }
+                  setShowNotifications(v => !v);
+                }}
+                className="relative w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:shadow-md transition-shadow"
+              >
+                <Bell className="w-5 h-5" />
+                {notifications.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#6236FF] text-white text-[10px] font-black flex items-center justify-center">
+                    {notifications.length > 9 ? '9+' : notifications.length}
+                  </span>
+                )}
+              </button>
+              {showNotifications && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-white rounded-xl shadow-2xl border border-slate-100 z-50">
+                    <p className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">Notificaciones</p>
+                    {notifications.length === 0 ? (
+                      <p className="px-4 py-6 text-sm text-slate-400 text-center">Sin notificaciones.</p>
+                    ) : notifications.map(n => (
+                      <div key={n.id} className="px-4 py-3 border-b border-slate-50 last:border-0 hover:bg-slate-50">
+                        <p className="text-sm font-semibold text-slate-800">{n.title}</p>
+                        <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{n.message}</p>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+            <button title="Configuración" onClick={() => setShowConfig(true)} className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:shadow-md transition-shadow">
               <Settings className="w-5 h-5" />
             </button>
           </div>
@@ -504,27 +543,27 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
             <div className="flex-1 flex flex-col gap-5 min-w-0">
               {/* Barra de acciones */}
               <div className="flex items-center gap-2 flex-wrap">
-                <button onClick={abrirNuevaFila} className="flex items-center gap-1.5 text-sm font-bold text-white bg-gradient-to-r from-[#6236FF] to-[#8A2BE2] rounded-xl px-4 py-2.5 hover:brightness-110 active:scale-95 transition-all shadow-sm">
+                <button onClick={abrirNuevaFila} className="flex items-center gap-1.5 text-sm font-bold text-white bg-gradient-to-r from-[#6236FF] to-[#8A2BE2] rounded-md px-4 py-2.5 hover:brightness-110 active:scale-95 transition-all shadow-sm">
                   <Plus className="w-4 h-4" /> Agregar fila
                 </button>
-                <button onClick={() => { setNuevaCol(''); setPanel('columna'); }} className="flex items-center gap-1.5 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-xl px-4 py-2.5 hover:shadow-md active:scale-95 transition-all">
+                <button onClick={() => { setNuevaCol(''); setPanel('columna'); }} className="flex items-center gap-1.5 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-md px-4 py-2.5 hover:shadow-md active:scale-95 transition-all">
                   <Plus className="w-4 h-4" /> Agregar columna
                 </button>
                 <span className="flex-1" />
-                <button onClick={() => { cargarHistorial(); setPanel('historial'); }} className="flex items-center gap-1.5 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-xl px-4 py-2.5 hover:shadow-md active:scale-95 transition-all">
+                <button onClick={() => { cargarHistorial(); setPanel('historial'); }} className="flex items-center gap-1.5 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-md px-4 py-2.5 hover:shadow-md active:scale-95 transition-all">
                   <CalendarIcon className="w-4 h-4" /> Historial
                 </button>
-                <button onClick={exportarCSV} className="flex items-center gap-1.5 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-xl px-4 py-2.5 hover:shadow-md active:scale-95 transition-all">
+                <button onClick={exportarCSV} className="flex items-center gap-1.5 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-md px-4 py-2.5 hover:shadow-md active:scale-95 transition-all">
                   <Download className="w-4 h-4" /> Exportar
                 </button>
                 <div className="relative">
-                  <button onClick={() => setPanel(panel === 'acciones' ? null : 'acciones')} title="Acciones" className="w-10 h-10 flex items-center justify-center text-slate-700 bg-white border border-slate-200 rounded-xl hover:shadow-md active:scale-95 transition-all font-black">
+                  <button onClick={() => setPanel(panel === 'acciones' ? null : 'acciones')} title="Acciones" className="w-10 h-10 flex items-center justify-center text-slate-700 bg-white border border-slate-200 rounded-md hover:shadow-md active:scale-95 transition-all font-black">
                     •••
                   </button>
                   {panel === 'acciones' && (
                     <>
                       <div className="fixed inset-0 z-10" onClick={() => setPanel(null)} />
-                      <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl border border-slate-100 shadow-xl z-20 overflow-hidden">
+                      <div className="absolute right-0 mt-2 w-56 bg-white rounded-md border border-slate-100 shadow-xl z-20 overflow-hidden">
                         <button onClick={() => { setEditCols(v => !v); setPanel(null); }} className="w-full flex items-center gap-2.5 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 text-left">
                           <Pencil className="w-4 h-4" /> {editCols ? 'Terminar edición' : 'Editar columnas'}
                         </button>
@@ -539,10 +578,10 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                   )}
                 </div>
               </div>
-              {error && <p className="bg-red-50 text-red-600 text-xs font-medium rounded-xl px-4 py-2">{error}</p>}
+              {error && <p className="bg-red-50 text-red-600 text-xs font-medium rounded-md px-4 py-2">{error}</p>}
 
               {/* Tabla */}
-              <section ref={tablaRef} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden scroll-mt-4">
+              <section ref={tablaRef} className="bg-white rounded-md border border-slate-100 shadow-sm overflow-hidden scroll-mt-4 -ml-4">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm border-collapse min-w-[760px]">
                     <thead>
@@ -678,13 +717,13 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
 
             {/* Columna derecha */}
             <div className="w-full xl:w-[320px] shrink-0 flex flex-col gap-5">
-              <section className="rounded-2xl bg-gradient-to-br from-[#2b3df0] via-[#6236FF] to-[#a21caf] text-white p-5 shadow-md">
+              <section className="rounded-md bg-gradient-to-br from-[#2b3df0] via-[#6236FF] to-[#a21caf] text-white p-5 shadow-md">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-extrabold">Resumen del mes</h3>
+                  <h3 className="font-bold">Resumen del mes</h3>
                   <select
                     value={`${anio}-${String(mes).padStart(2, '0')}`}
                     onChange={e => { const [a, m] = e.target.value.split('-').map(Number); irPeriodo(a, m); }}
-                    className="bg-white/15 border border-white/25 rounded-lg text-xs font-bold px-2 py-1.5 outline-none cursor-pointer [&>option]:text-slate-800"
+                    className="bg-white/15 border border-white/25 rounded-md text-xs font-bold px-2 py-1.5 outline-none cursor-pointer [&>option]:text-slate-800"
                   >
                     {opcionesMeses.map(o => (
                       <option key={`${o.a}-${o.m}`} value={`${o.a}-${String(o.m).padStart(2, '0')}`}>
@@ -694,35 +733,35 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                   </select>
                 </div>
                 <p className="text-xs opacity-80 mt-3">Total estimado</p>
-                <p className="text-3xl font-black">{fmtMonto(total)}</p>
+                <p className="text-3xl font-bold">{fmtMonto(total)}</p>
                 <div className="grid grid-cols-2 gap-3 mt-3">
-                  <div className="rounded-xl bg-black/20 p-3 text-center">
+                  <div className="rounded-md bg-black/20 p-3 text-center">
                     <p className="text-xs opacity-80">Pagadas</p>
-                    <p className="text-xl font-black">{pagadas}</p>
+                    <p className="text-xl font-bold">{pagadas}</p>
                   </div>
-                  <div className="rounded-xl bg-black/20 p-3 text-center">
+                  <div className="rounded-md bg-black/20 p-3 text-center">
                     <p className="text-xs opacity-80">Pendientes</p>
-                    <p className="text-xl font-black">{pendientes}</p>
+                    <p className="text-xl font-bold">{pendientes}</p>
                   </div>
                 </div>
               </section>
 
               <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-                <h3 className="font-extrabold text-slate-900 text-[15px]">Próximos vencimientos</h3>
+                <h3 className="font-bold text-slate-900 text-[15px]">Próximos vencimientos</h3>
                 <div className="flex flex-col gap-2 mt-3">
                   {vencimientos.length === 0 ? (
                     <p className="text-[13px] text-slate-400">Sin vencimientos pendientes.</p>
                   ) : (
                     vencimientos.map(f => (
-                      <div key={f.id} className="rounded-xl bg-[#f4f6fb] p-3 flex items-center gap-3">
+                      <div key={f.id} className="rounded-md bg-[#f4f6fb] p-3 flex items-center gap-3">
                         <span className="text-xl leading-none">{emojiCuenta(f.cuenta)}</span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-extrabold text-slate-900 truncate">{f.cuenta}</p>
+                          <p className="text-sm font-bold text-slate-900 truncate">{f.cuenta}</p>
                           <p className="text-xs text-slate-500">{textoVence(f.dia_vencimiento || 0)}</p>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-lg font-black text-slate-900">{String(f.dia_vencimiento).padStart(2, '0')}</p>
-                          <p className="text-[10px] font-black text-[#6236FF]">{MESES_CORTO[mes - 1]}</p>
+                          <p className="text-lg font-bold text-slate-900">{String(f.dia_vencimiento).padStart(2, '0')}</p>
+                          <p className="text-[10px] font-bold text-[#6236FF]">{MESES_CORTO[mes - 1]}</p>
                         </div>
                       </div>
                     ))
@@ -904,6 +943,16 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
         <span className="text-xs font-black text-slate-800 px-1">{MESES[mes - 1]} {anio}</span>
         <button onClick={() => moverMes(1)} className="p-2 text-slate-600"><ChevronRight className="w-5 h-5" /></button>
       </div>
+
+      <ConfiguracionPanel isOpen={showConfig} onClose={() => setShowConfig(false)} />
+      <HelpChat
+        open={showHelp}
+        onClose={() => setShowHelp(false)}
+        pasoLabel="Cuentas"
+        titulo="Pagos recurrentes"
+        bienvenida="¡Hola! Soy FocusIA. Puedo ayudarte a organizar tus cuentas, recordarte vencimientos o explicarte cómo usar la tabla. ¿Qué necesitas?"
+        contextoAyuda="El usuario está en el módulo Cuentas de Focussia y pidió ayuda desde el icono de interrogación."
+      />
     </div>
   );
 }

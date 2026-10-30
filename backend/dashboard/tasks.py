@@ -1014,3 +1014,29 @@ def flush_notificaciones():
             resultado.get('entregados'), resultado.get('cancelados'),
             resultado.get('esperando'))
     return resultado
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Módulo Cumpleaños (Doc 22)
+# ──────────────────────────────────────────────────────────────────────────
+@shared_task
+def recordar_cumpleanos():
+    """Doc 22 §III: recordatorio inteligente y reprogramación anual.
+
+    Cada día, para cada cumpleaños registrado: reprograma el Evento Focusia
+    al año siguiente si la fecha ya pasó y envía la activación proactiva
+    («¿Te gustaría comenzar a prepararlo desde ahora?») cuando llega la fecha
+    de anticipación configurada por el usuario.
+    """
+    from django.contrib.auth import get_user_model
+    from dashboard.models import Cumpleanos
+    from dashboard.services.cumpleanos import revisar_avisos
+
+    User = get_user_model()
+    for user in User.objects.filter(is_active=True):
+        if not Cumpleanos.objects.filter(user=user).exists():
+            continue
+        try:
+            revisar_avisos(user)
+        except Exception as e:
+            logger.error(f'[CUMPLEAÑOS] recordatorio falló user={user.id}: {e}')

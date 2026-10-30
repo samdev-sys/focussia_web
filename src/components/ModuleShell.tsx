@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  ChevronDown, ChevronLeft, Bell, Settings, Moon, Sun,
+  ChevronDown, ChevronLeft, Bell, Settings, Moon, Sun, CircleHelp,
 } from 'lucide-react';
 import { NAV_ICONS } from './navIcons';
 import {
@@ -9,6 +9,7 @@ import {
 } from '../services/api';
 import { AVATAR_FILES, AVATAR_VARIACIONES } from '../constants/avatars';
 import { ConfiguracionPanel } from './ConfiguracionPanel';
+import HelpChat from './HelpChat';
 
 /* ──────────────────────────────────────────────────────────────────────────
    Marco compartido de las pantallas de módulo: sidebar oscura + barra
@@ -109,15 +110,15 @@ const Sidebar = ({ activeNav, onNav, userName, photoUrl, profile, onLogout, onBa
 }) => {
   const [showProfile, setShowProfile] = useState(false);
   return (
-    <aside className="w-64 bg-[#0A0A26] h-full flex flex-col shrink-0 z-20">
-      <div className="h-16 flex items-center px-6 pt-4 pb-2">
+    <aside className="w-48 bg-[#0A0A26] h-full flex flex-col shrink-0 z-20">
+      <div className="h-16 flex items-center px-4 pt-2 pb-1">
         <div className="flex items-center gap-3 text-white">
           <img src="/focussia.png" alt="Focusia" className="w-8 h-8" />
           <span className="text-xl font-bold tracking-wide">Focusia</span>
         </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
+      <nav className="flex-1 overflow-y-auto py-2 px-2 flex flex-col gap-1">
         {NAV_ITEMS.map(item => (
           <NavItem
             key={item.key}
@@ -178,6 +179,7 @@ const Header = ({ userName, photoUrl, profile, onBack, onLogout, titulo, subtitu
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const [showConfig, setShowConfig] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
@@ -192,7 +194,7 @@ const Header = ({ userName, photoUrl, profile, onBack, onLogout, titulo, subtitu
   };
 
   return (
-    <header className="h-20 flex items-center justify-between px-6 bg-white dark:bg-[#14142e] border-b border-gray-100 dark:border-white/10 shrink-0 z-10">
+    <header className="h-15 flex items-center justify-between px-6 bg-white dark:bg-[#14142e] border-b border-gray-100 dark:border-white/10 shrink-0 z-10">
       <div className="flex items-center gap-3 min-w-0 shrink-0">
         <button
           onClick={onBack}
@@ -204,11 +206,11 @@ const Header = ({ userName, photoUrl, profile, onBack, onLogout, titulo, subtitu
         </button>
         {titulo && IconoTitulo && (
           <div className="flex items-center gap-3 min-w-0">
-            <span className="w-11 h-11 rounded-xl bg-[#F3F0FF] dark:bg-white/10 flex items-center justify-center text-[#6236FF] dark:text-purple-300 shrink-0">
+            <span className="w-11 h-11 rounded-md bg-[#F3F0FF] dark:bg-white/10 flex items-center justify-center text-[#6236FF] dark:text-purple-300 shrink-0">
               <IconoTitulo className="w-5 h-5" />
             </span>
             <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-[#6236FF] to-[#8A2BE2] bg-clip-text text-transparent truncate">
+              <h1 className="text-xl sm:text-xl font-bold bg-gradient-to-r from-[#6236FF] to-[#8A2BE2] bg-clip-text text-transparent truncate">
                 {titulo}
               </h1>
               <p className="hidden sm:block text-sm text-slate-500 dark:text-gray-400 truncate">
@@ -224,6 +226,10 @@ const Header = ({ userName, photoUrl, profile, onBack, onLogout, titulo, subtitu
       </div>
 
       <div className="w-40 sm:w-auto shrink-0 flex items-center justify-end gap-5">
+        <button onClick={() => setShowHelp(true)} title="Ayuda de IA" className="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors">
+          <CircleHelp className="w-5 h-5" />
+        </button>
+
         <div className="relative">
           <button onClick={toggleNotifications} title="Notificaciones" className="relative text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors">
             <Bell className="w-5 h-5" />
@@ -236,7 +242,7 @@ const Header = ({ userName, photoUrl, profile, onBack, onLogout, titulo, subtitu
           {showNotifications && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
-              <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-white dark:bg-[#1a1a3a] rounded-xl shadow-2xl border border-gray-100 dark:border-white/10 z-50">
+              <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-white dark:bg-[#1a1a3a] rounded-md shadow-xl border border-gray-100 dark:border-white/10 z-50 -ml-2">
                 <p className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 border-b border-gray-100 dark:border-white/10">
                   Notificaciones
                 </p>
@@ -289,6 +295,14 @@ const Header = ({ userName, photoUrl, profile, onBack, onLogout, titulo, subtitu
       </div>
 
       <ConfiguracionPanel isOpen={showConfig} onClose={() => setShowConfig(false)} />
+      <HelpChat
+        open={showHelp}
+        onClose={() => setShowHelp(false)}
+        pasoLabel="Módulo"
+        titulo={titulo || 'Focusia'}
+        bienvenida="¡Hola! Soy FocusIA. Puedo explicarte cómo funciona este módulo, ayudarte con tus tareas o darte recomendaciones. ¿Qué necesitas?"
+        contextoAyuda={`El usuario está en el módulo ${titulo || 'de la app'} de Focussia y pidió ayuda desde el icono de interrogación.`}
+      />
     </header>
   );
 };

@@ -8,7 +8,9 @@ import {
 } from 'lucide-react';
 import { NAV_ICONS } from './navIcons';
 import { REDES, RedIcon, normalizarUrl, validarRed, type RedId } from './RedesIcons';
-import { configuracionService } from '../services/api';
+import { configuracionService, notificationService, type NotificationData } from '../services/api';
+import { ConfiguracionPanel } from './ConfiguracionPanel';
+import HelpChat from './HelpChat';
 
 const NAV_ITEMS = [
   { icon: Home, label: 'Inicio', section: 'inicio' },
@@ -56,6 +58,7 @@ const COMO_FUNCIONA = [
 
 interface Props {
   userName?: string;
+  avatarUrl?: string;
   links: Record<string, string>;
   irAConfig?: boolean;
   onLinksChange?: (links: Record<string, string>) => void;
@@ -63,12 +66,16 @@ interface Props {
   onNavigate?: (section: string) => void;
 }
 
-export default function RedesSocialesScreen({ userName, links, irAConfig, onLinksChange, onBack, onNavigate }: Props) {
+export default function RedesSocialesScreen({ userName, avatarUrl, links, irAConfig, onLinksChange, onBack, onNavigate }: Props) {
   const [redes, setRedes] = useState<Record<string, string>>(links || {});
   const [saving, setSaving] = useState<string | null>(null);
   const [errs, setErrs] = useState<Record<string, string>>({});
   const [oks, setOks] = useState<Record<string, boolean>>({});
   const [tutAbierto, setTutAbierto] = useState<string | null>(null);
+const [showHelp, setShowHelp] = useState(false);
+const [showConfig, setShowConfig] = useState(false);
+const [showNotifications, setShowNotifications] = useState(false);
+const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const configRef = useRef<HTMLDivElement>(null);
   const ayudaRef = useRef<HTMLDivElement>(null);
 
@@ -148,7 +155,7 @@ export default function RedesSocialesScreen({ userName, links, irAConfig, onLink
   return (
     <div className="flex h-full overflow-hidden text-slate-800 bg-[#F8F9FB]">
       {/* Sidebar */}
-      <aside className="w-64 bg-[#0A0A26] h-full hidden md:flex flex-col z-20 shrink-0">
+      <aside className="w-48 bg-[#0A0A26] h-full hidden md:flex flex-col z-20 shrink-0">
         <div className="h-16 flex items-center px-6 pt-4 pb-2">
           <div className="flex items-center gap-3 text-white">
             <img src="./focussia.png" alt="Focusia" className="w-4 h-4 text-white" />
@@ -178,7 +185,7 @@ export default function RedesSocialesScreen({ userName, links, irAConfig, onLink
         <div className="p-4">
           <button onClick={onBack} className="flex items-center w-full p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-sm font-bold">
-              {userName?.[0]?.toUpperCase() || 'U'}
+             {avatarUrl && <img src={avatarUrl} alt="profile" className="w-full h-full object-cover" />}
             </div>
             <div className="ml-3 text-left flex-1">
               <p className="text-sm font-semibold text-white">{userName || 'Usuario'}</p>
@@ -194,24 +201,55 @@ export default function RedesSocialesScreen({ userName, links, irAConfig, onLink
         {/* Header */}
         <div className="flex items-center gap-4 px-6 pt-5 pb-3 shrink-0">
           <button onClick={onBack} className="md:hidden text-slate-500 hover:text-slate-800 font-bold">←</button>
-          <span className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#6236FF] to-[#8A2BE2] flex items-center justify-center shrink-0 shadow-md">
+          <span className="w-12 h-12 rounded-md bg-gradient-to-br from-[#6236FF] to-[#8A2BE2] flex items-center justify-center shrink-0 shadow-md">
             <Link2 className="w-6 h-6 text-white" />
           </span>
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-extrabold text-slate-900">Redes Sociales</h1>
+            <h1 className="text-xl font-bold text-slate-900">Redes Sociales</h1>
             <p className="text-sm text-slate-500">Accede rápidamente a tus perfiles personales desde Focusia.</p>
           </div>
           <div className="hidden sm:flex items-center gap-2">
             <button
-              title="¿Cómo funciona?"
-              onClick={() => ayudaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+              title="Ayuda de IA"
+              onClick={() => setShowHelp(true)}
               className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:shadow-md transition-shadow font-black"
             >?</button>
-            <button title="Notificaciones" className="relative w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:shadow-md transition-shadow">
-              <Bell className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#6236FF] text-white text-[10px] font-black flex items-center justify-center">2</span>
-            </button>
-            <button title="Configuración" className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:shadow-md transition-shadow">
+            <div className="relative">
+              <button
+                title="Notificaciones"
+                onClick={async () => {
+                  if (!showNotifications) {
+                    try { setNotifications(await notificationService.getAll()); } catch { /* noop */ }
+                  }
+                  setShowNotifications(v => !v);
+                }}
+                className="relative w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:shadow-md transition-shadow"
+              >
+                <Bell className="w-5 h-5" />
+                {notifications.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#6236FF] text-white text-[10px] font-black flex items-center justify-center">
+                    {notifications.length > 9 ? '9+' : notifications.length}
+                  </span>
+                )}
+              </button>
+              {showNotifications && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-white rounded-xl shadow-2xl border border-slate-100 z-50">
+                    <p className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">Notificaciones</p>
+                    {notifications.length === 0 ? (
+                      <p className="px-4 py-6 text-sm text-slate-400 text-center">Sin notificaciones.</p>
+                    ) : notifications.map(n => (
+                      <div key={n.id} className="px-4 py-3 border-b border-slate-50 last:border-0 hover:bg-slate-50">
+                        <p className="text-sm font-semibold text-slate-800">{n.title}</p>
+                        <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{n.message}</p>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+            <button title="Configuración" onClick={() => setShowConfig(true)} className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:shadow-md transition-shadow">
               <Settings className="w-5 h-5" />
             </button>
           </div>
@@ -221,7 +259,7 @@ export default function RedesSocialesScreen({ userName, links, irAConfig, onLink
           <div className="max-w-[1200px] flex flex-col xl:flex-row gap-5">
             <div className="flex-1 flex flex-col gap-5 min-w-0">
               {/* Mis accesos directos */}
-              <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+              <section className="bg-white rounded-md border border-slate-100 shadow-sm p-5">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div>
                     <h2 className="text-lg font-extrabold text-slate-900">Mis accesos directos</h2>
@@ -229,7 +267,7 @@ export default function RedesSocialesScreen({ userName, links, irAConfig, onLink
                   </div>
                   <button
                     onClick={irAConfiguracion}
-                    className="flex items-center gap-2 text-sm font-bold text-[#6236FF] border border-[#6236FF]/40 rounded-xl px-4 py-2 hover:bg-[#6236FF]/5 active:scale-95 transition-all"
+                    className="flex items-center gap-2 text-sm font-bold text-[#6236FF] border border-[#6236FF]/40 rounded-md px-4 py-2 hover:bg-[#6236FF]/5 active:scale-95 transition-all"
                   >
                     <Settings className="w-4 h-4" /> Gestionar mis redes
                   </button>
@@ -251,7 +289,7 @@ export default function RedesSocialesScreen({ userName, links, irAConfig, onLink
                         title={`Abrir mi ${NOMBRE_MOSTRAR[r.id]}`}
                         className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-slate-100 bg-white shadow-sm hover:shadow-md hover:scale-[1.03] active:scale-95 transition-all"
                       >
-                        <span className="w-9 h-9 rounded-full flex items-center justify-center text-white" style={{ background: FONDO_MARCA[r.id] }}>
+                        <span className="w-9 h-9 rounded-md flex items-center justify-center text-white" style={{ background: FONDO_MARCA[r.id] }}>
                           <RedIcon id={r.id} className="w-10 h-10" />
                         </span>
                         <span className="text-xs font-bold text-slate-700">{NOMBRE_MOSTRAR[r.id]}</span>
@@ -262,7 +300,7 @@ export default function RedesSocialesScreen({ userName, links, irAConfig, onLink
               </section>
 
               {/* Configuración */}
-              <section ref={configRef} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 scroll-mt-4">
+              <section ref={configRef} className="bg-white rounded-md border border-slate-100 shadow-sm p-5 scroll-mt-4">
                 <h2 className="text-lg font-extrabold text-slate-900">Configuración de mis redes sociales</h2>
                 <p className="text-sm text-slate-500">Agrega los enlaces de tus perfiles. Solo toma unos segundos.</p>
                 <div className="hidden md:grid grid-cols-[170px_210px_1fr_110px] gap-3 mt-4 pb-2 text-xs font-bold text-slate-500">
@@ -326,7 +364,7 @@ export default function RedesSocialesScreen({ userName, links, irAConfig, onLink
 
             {/* Columna derecha */}
             <div className="w-full xl:w-[320px] shrink-0 flex flex-col gap-5">
-              <section ref={ayudaRef} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 scroll-mt-4">
+              <section ref={ayudaRef} className="bg-white rounded-md border border-slate-100 shadow-sm p-5 scroll-mt-4">
                 <div className="flex items-center gap-2.5">
                   <span className="w-10 h-10 rounded-full bg-[#ede9fe] flex items-center justify-center">
                     <HelpCircle className="w-5 h-5 text-[#6236FF]" />
@@ -346,7 +384,7 @@ export default function RedesSocialesScreen({ userName, links, irAConfig, onLink
                 </div>
               </section>
 
-              <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex gap-3">
+              <section className="bg-white rounded-md border border-slate-100 shadow-sm p-5 flex gap-3">
                 <span className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
                   <ShieldCheck className="w-5 h-5 text-emerald-600" />
                 </span>
@@ -356,7 +394,7 @@ export default function RedesSocialesScreen({ userName, links, irAConfig, onLink
                 </div>
               </section>
 
-              <section className="rounded-2xl bg-[#f1edfd] border border-[#e2d9fb] p-5 flex flex-col">
+              <section className="rounded-md bg-[#f1edfd] border border-[#e2d9fb] p-5 flex flex-col">
                 <div className="flex items-center gap-2.5">
                   <span className="w-10 h-10 rounded-full bg-[#e2d9fb] flex items-center justify-center">
                     <Star className="w-5 h-5 text-[#6236FF]" />
@@ -373,7 +411,7 @@ export default function RedesSocialesScreen({ userName, links, irAConfig, onLink
                 </div>
                 <button
                   onClick={irAConfiguracion}
-                  className="mt-2 w-full flex items-center justify-center gap-2 text-sm font-bold text-white bg-gradient-to-r from-[#6236FF] to-[#8A2BE2] rounded-xl px-4 py-3 hover:brightness-110 active:scale-95 transition-all"
+                  className="mt-2 w-full flex items-center justify-center gap-2 text-sm font-bold text-white bg-gradient-to-r from-[#6236FF] to-[#8A2BE2] rounded-md px-4 py-3 hover:brightness-110 active:scale-95 transition-all"
                 >
                   Ir a Mis Redes Sociales <ArrowRight className="w-4 h-4" />
                 </button>
@@ -382,6 +420,15 @@ export default function RedesSocialesScreen({ userName, links, irAConfig, onLink
           </div>
         </div>
       </main>
+      <ConfiguracionPanel isOpen={showConfig} onClose={() => setShowConfig(false)} />
+      <HelpChat
+        open={showHelp}
+        onClose={() => setShowHelp(false)}
+        pasoLabel="Redes Sociales"
+        titulo="Accesos directos"
+        bienvenida="¡Hola! Soy FocusIA. Puedo ayudarte a configurar tus redes sociales o explicarte cómo funcionan los accesos directos. ¿Qué necesitas?"
+        contextoAyuda="El usuario está en el módulo Redes Sociales de Focussia y pidió ayuda desde el icono de interrogación."
+      />
     </div>
   );
 }

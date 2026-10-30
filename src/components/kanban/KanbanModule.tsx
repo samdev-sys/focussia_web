@@ -3,7 +3,8 @@ import { api } from '../../services/api';
 import AppShell, { MonthlyNavKey } from '../AppShell';
 import KanbanPage from './KanbanPage';
 import PlanDestinoModal, { Destino } from './PlanDestinoModal';
-import AgendaDiariaView from './AgendaDiariaView';
+import { AgendaDiariaBoard } from '../AgendaDiaria';
+import HoraAgendaModal from './HoraAgendaModal';
 import PlanSemanalView from './PlanSemanalView';
 import PlanMensualView from './PlanMensualView';
 import PlanAnualView from './PlanAnualView';
@@ -14,16 +15,19 @@ type ViewName = 'kanban' | 'diaria' | 'semanal' | 'mensual' | 'anual';
 
 export type KanbanVistaInicial = ViewName;
 
-const H_TEXT = 'Acción enviada a tu agenda diaria. Puedes fijarla aquí con doble clic o moverla al horario que prefieras.';
+const H_TEXT = 'Acción enviada a tu agenda diaria, en el bloque horario que elegiste.';
 const D_TEXT = 'Acción enviada a Acciones por Delegar.';
 const E_TEXT = 'Acción enviada a Ideas desechadas.';
 
-export default function KanbanModule({ username, avatarUrl, onNavigate, onClose, vistaInicial }: {
+export default function KanbanModule({ username, avatarUrl, onNavigate, onClose, vistaInicial, onOpenHelp, onOpenNotifications, onOpenSettings }: {
   username?: string;
   avatarUrl?: string;
   onNavigate?: (key: MonthlyNavKey) => void;
   onClose: () => void;
   vistaInicial?: ViewName;
+  onOpenHelp?: () => void;
+  onOpenNotifications?: () => void;
+  onOpenSettings?: () => void;
 }) {
   const [view, setView] = useState<ViewName>(vistaInicial || 'kanban');
   const [acciones, setAcciones] = useState<AccionKanban[]>([]);
@@ -34,10 +38,9 @@ export default function KanbanModule({ username, avatarUrl, onNavigate, onClose,
   const [pickerAction, setPickerAction] = useState<AccionKanban | null>(null);
   const [pickerBanner, setPickerBanner] = useState<{ text: string; actionId: string } | null>(null);
   const [pickerRefresh, setPickerRefresh] = useState(0);
+  const [horaModal, setHoraModal] = useState<AccionKanban | null>(null);
   const [dailyDate, setDailyDate] = useState(isoToday());
-  const [dailyFocusId, setDailyFocusId] = useState<string | null>(null);
   const [dailyBanner, setDailyBanner] = useState<{ text: string; actionId: string } | null>(null);
-  const [dailyRefresh, setDailyRefresh] = useState(0);
 
   const refreshAll = useCallback(async () => {
     try {
@@ -66,7 +69,7 @@ export default function KanbanModule({ username, avatarUrl, onNavigate, onClose,
     setPickerAction(null);
     setPickerBanner(null);
     setDailyBanner(null);
-    setDailyFocusId(null);
+    setHoraModal(null);
     refreshAll();
   };
 
@@ -94,11 +97,13 @@ export default function KanbanModule({ username, avatarUrl, onNavigate, onClose,
     decision: Decision,
     destino?: string,
     fecha?: string,
+    hora?: string,
   ) => {
     const res = await api.patch(`/api/acciones-kanban/${accion.id}/clasificar/`, {
       clasificacion: decision,
       destino_planificacion: destino || null,
       ...(fecha ? { fecha_seleccionada: fecha } : {}),
+      ...(hora ? { hora_seleccionada: hora } : {}),
     });
     await refreshAll();
     return res.data as AccionKanban;
@@ -111,15 +116,18 @@ export default function KanbanModule({ username, avatarUrl, onNavigate, onClose,
   };
 
   // ── H ──
-  const handleClassifyH = async (accion: AccionKanban) => {
+  const confirmHoraH = async (hora: number): Promise<string | null> => {
+    if (!horaModal) return null;
+    const accion = horaModal;
     try {
-      await classify(accion, 'H');
+      await classify(accion, 'H', undefined, isoToday(), `${String(hora).padStart(2, '0')}:00`);
+      setHoraModal(null);
       setDailyDate(isoToday());
-      setDailyFocusId(accion.id);
       setDailyBanner({ text: H_TEXT, actionId: accion.id });
       setView('diaria');
-    } catch (err) {
-      console.error('Error classifying H:', err);
+      return null;
+    } catch (err: any) {
+      return err?.response?.data?.detail || 'No se pudo enviar la acción a la agenda.';
     }
   };
 
@@ -165,7 +173,6 @@ export default function KanbanModule({ username, avatarUrl, onNavigate, onClose,
     // Modo consulta (sin acción pendiente): pinchar un día baja a la agenda de ese día.
     if (!pickerAction) {
       setDailyDate(iso);
-      setDailyFocusId(null);
       setDailyBanner(null);
       setView('diaria');
       return;
@@ -200,41 +207,6 @@ export default function KanbanModule({ username, avatarUrl, onNavigate, onClose,
     }
   };
 
-  // ── Diaria: fijar / mover ──
-  const handlePin = async (accion: AccionKanban, hour: number) => {
-    try {
-      await api.patch(`/api/acciones-kanban/${accion.id}/fijar/`);
-      setDailyRefresh(r => r + 1);
-      const hh = String(hour).padStart(2, '0');
-      setDailyBanner({ text: `Acción fijada correctamente a las ${hh}:00.`, actionId: accion.id });
-    } catch (err) {
-      console.error('Error fijando:', err);
-    }
-  };
-
-  const handleMoveHour = async (accion: AccionKanban, hour: number) => {
-    try {
-      const hh = `${String(hour).padStart(2, '0')}:00`;
-      await api.patch(`/api/acciones-kanban/${accion.id}/`, { hora_seleccionada: hh });
-      setDailyRefresh(r => r + 1);
-    } catch (err) {
-      console.error('Error moviendo:', err);
-    }
-  };
-
-  const undoDailyBanner = async () => {
-    if (!dailyBanner) return;
-    try {
-      await deshacer(dailyBanner.actionId);
-    } catch (err) {
-      console.error('Error deshaciendo:', err);
-    } finally {
-      setDailyBanner(null);
-      setDailyFocusId(null);
-      resetToKanban();
-    }
-  };
-
   const titles: Record<ViewName, { nav: MonthlyNavKey; title: string; subtitle: string }> = {
     kanban: { nav: 'kanban', title: 'KANBAN BACKLOG', subtitle: 'Aterriza tus acciones pendientes y decide qué hacer con cada una.' },
     diaria: { nav: 'diaria', title: 'AGENDA DIARIA', subtitle: 'Organiza tus acciones en bloques de tiempo.' },
@@ -253,6 +225,9 @@ export default function KanbanModule({ username, avatarUrl, onNavigate, onClose,
       avatarUrl={avatarUrl}
       onNavigate={shellNav}
       onClose={onClose}
+      onOpenHelp={onOpenHelp}
+      onOpenNotifications={onOpenNotifications}
+      onOpenSettings={onOpenSettings}
     >
       {view === 'kanban' && (
         <KanbanPage
@@ -261,7 +236,7 @@ export default function KanbanModule({ username, avatarUrl, onNavigate, onClose,
           loading={loading}
           onAdd={addAction}
           onClassify={(a, d) => {
-            if (d === 'H') handleClassifyH(a);
+            if (d === 'H') setHoraModal(a);
             else if (d === 'D' || d === 'E') handleClassifyDE(a, d);
           }}
           onPlan={a => setDestinoModal(a)}
@@ -270,17 +245,13 @@ export default function KanbanModule({ username, avatarUrl, onNavigate, onClose,
       )}
 
       {view === 'diaria' && (
-        <AgendaDiariaView
-          key={dailyRefresh}
-          date={dailyDate}
-          focusId={dailyFocusId}
-          banner={dailyBanner?.text || null}
-          onDateChange={iso => { setDailyDate(iso); setDailyBanner(null); }}
-          onBack={resetToKanban}
-          onUndoBanner={undoDailyBanner}
-          onDismissBanner={() => setDailyBanner(null)}
-          onPin={handlePin}
-          onMoveHour={handleMoveHour}
+        <AgendaDiariaBoard
+          key={dailyDate}
+          todayStr={dailyDate}
+          bannerText={dailyBanner?.text || null}
+          hActionId={dailyBanner?.actionId || null}
+          onBackToKanban={resetToKanban}
+          onAfterUndo={resetToKanban}
         />
       )}
 
@@ -314,6 +285,15 @@ export default function KanbanModule({ username, avatarUrl, onNavigate, onClose,
           refreshKey={pickerRefresh}
           onConfirm={iso => confirmPickerDate('ANUAL', iso)}
           onBack={resetToKanban}
+        />
+      )}
+
+      {horaModal && (
+        <HoraAgendaModal
+          accion={horaModal}
+          fecha={isoToday()}
+          onPick={confirmHoraH}
+          onCancel={() => setHoraModal(null)}
         />
       )}
 

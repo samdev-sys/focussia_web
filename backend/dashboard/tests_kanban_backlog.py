@@ -195,7 +195,8 @@ class DeshacerTests(TestCase):
         acc = AccionKanban.objects.create(
             user=self.user, texto_accion='Tarea H', estado_actual='KANBAN_ACTIVO')
         resp = self.client.patch(
-            f'/api/acciones-kanban/{acc.id}/clasificar/', {'clasificacion': 'H'}, format='json')
+            f'/api/acciones-kanban/{acc.id}/clasificar/',
+            {'clasificacion': 'H', 'hora_seleccionada': '09:00'}, format='json')
         self.assertEqual(resp.status_code, 200, resp.data)
         self.assertTrue(Action.objects.filter(title='Tarea H').exists())
         resp = self.client.patch(f'/api/acciones-kanban/{acc.id}/deshacer/', {}, format='json')

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { NAV_ICONS } from './navIcons';
 import { ModuleHeader } from './ModuleHeader';
+import HelpChat from './HelpChat';
 import {
   cursosService, motivationalService,
   CursosMesActualData,
@@ -119,7 +120,7 @@ export default function CursosScreen({ onBack, userName, onNavigate }: { onBack:
   return (
     <div className="flex h-full overflow-hidden text-slate-800 dark:text-gray-100 bg-[#F8F9FB] dark:bg-[#0A0A26]">
       {/* Sidebar */}
-      <aside className="w-64 bg-[#0A0A26] h-full hidden md:flex flex-col z-20 shrink-0">
+      <aside className="w-48 bg-[#0A0A26] h-full hidden md:flex flex-col z-20 shrink-0">
         <div className="h-16 flex items-center px-6 pt-4 pb-2">
           <div className="flex items-center gap-3 text-white">
            
@@ -149,16 +150,7 @@ export default function CursosScreen({ onBack, userName, onNavigate }: { onBack:
           </button>
         </nav>
         <div className="p-4">
-          <button onClick={onBack} className="flex items-center w-full p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-sm font-bold">
-              {userName?.[0]?.toUpperCase() || 'U'}
-            </div>
-            <div className="ml-3 text-left flex-1">
-              <p className="text-sm font-semibold text-white">{userName || 'Usuario'}</p>
-              <p className="text-xs text-white/50">Ver perfil</p>
-            </div>
-            <ChevronDown className="w-4 h-4 text-white/50" />
-          </button>
+         
         </div>
       </aside>
 
@@ -180,7 +172,7 @@ export default function CursosScreen({ onBack, userName, onNavigate }: { onBack:
               {/* Hero */}
               <section className="bg-purple-50/60 dark:bg-white/5 rounded-xl p-4 md:p-2 overflow-hidden ">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
-                  <div className="flex flex-col justify-center px-2 py-2 h-[310px]  w-[300px] ">
+                  <div className="flex flex-col justify-center  py-2 h-[310px]  w-[320px] ">
                     {mesVisto !== null && (
                       <button onClick={() => verMes(data?.mes_actual || mesVisto)}
                         className="self-start mb-2 text-[11px] font-bold text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-white/15 rounded-lg px-2.5 py-1 hover:bg-indigo-50 dark:hover:bg-white/5">
@@ -188,14 +180,14 @@ export default function CursosScreen({ onBack, userName, onNavigate }: { onBack:
                       </button>
                     )}
                     <p className="text-[11px] font-bold tracking-widest text-indigo-600 dark:text-indigo-300">TEMA DEL MES</p>
-                    <h2 className="text-xl md:text-xl font-extrabold text-slate-900 dark:text-white mt-1">
+                    <h2 className="text-xs md:text-xs font-bold text-slate-900 dark:text-white mt-1">
                       {cap?.month_theme || 'Gestión del Tiempo'}
                     </h2>
                     <p className="text-[11px] font-bold tracking-widest text-indigo-600 dark:text-indigo-300 mt-5">CAPACITACIÓN DEL MES</p>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-1">
+                    <h3 className="text-[11px] font-bold text-slate-900 dark:text-white mt-1">
                       {cap?.title || 'Protege tu tiempo y dirige tu atención'}
                     </h3>
-                    <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed mt-2">
+                    <p className="text-[11px] text-gray-600 dark:text-gray-300 leading-relaxed mt-2">
                       {cap?.content || 'Aprende a identificar qué merece realmente tu energía y cómo organizar tus decisiones alrededor de tus prioridades.'}
                     </p>
                     <div className="flex items-center gap-5 mt-4 text-xs text-gray-500 dark:text-gray-400">
@@ -208,7 +200,7 @@ export default function CursosScreen({ onBack, userName, onNavigate }: { onBack:
                     </div>
                     <button
                       onClick={comenzar}
-                      className="mt-4 w-fit px-6 py-3 rounded-md text-white font-semibold text-sm shadow-lg transition-all hover:shadow-xl flex items-center gap-2"
+                      className="mt-4 w-fit px-3 py-3 rounded-md text-white font-bold text-xs shadow-lg transition-all hover:shadow-xl flex items-center gap-2"
                       style={{ background: 'linear-gradient(135deg, #5b21b6, #8b5cf6)' }}
                     >
                       <Play className="w-4 h-4 fill-white" /> Comenzar capacitación
@@ -389,22 +381,15 @@ export default function CursosScreen({ onBack, userName, onNavigate }: { onBack:
         </div>
       )}
 
-      {/* Modal ayuda */}
-      {showHelp && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowHelp(false)}>
-          <div className="bg-white dark:bg-[#14142e] rounded-2xl shadow-2xl max-w-md w-full p-8" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-slate-900 dark:text-white">¿Cómo funcionan los Cursos?</h3>
-              <button onClick={() => setShowHelp(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
-            </div>
-            <ul className="text-sm text-gray-600 dark:text-gray-300 space-y-2 leading-relaxed">
-              <li>• Cada mes se desbloquea una microcapacitación de ~5 minutos.</li>
-              <li>• Mírala, marca como completada y avanza en tu ruta de 12 meses.</li>
-              <li>• Las frases diarias refuerzan lo aprendido durante el mes.</li>
-            </ul>
-          </div>
-        </div>
-      )}
+      {/* Ayuda con IA */}
+      <HelpChat
+        open={showHelp}
+        onClose={() => setShowHelp(false)}
+        pasoLabel="Cursos"
+        titulo="Microcapacitaciones mensuales"
+        bienvenida="¡Hola! Soy FocusIA. Puedo explicarte cómo funcionan los Cursos: cada mes desbloqueas una microcapacitación, la completas y avanzas en tu ruta de 12 meses. ¿Qué necesitas?"
+        contextoAyuda="El usuario está en el módulo Cursos de Focussia y pidió ayuda desde el icono de interrogación."
+      />
     </div>
   );
 }

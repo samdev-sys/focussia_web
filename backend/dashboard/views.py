@@ -14,13 +14,15 @@ from rest_framework.response import Response
 from django.db import IntegrityError, models, transaction
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils.dateparse import parse_date, parse_time
 from .models import (
     User, RuedaVida, TimeBlock, KanbanTask, Recordatorio, ObjetivoSemana,
     KeepNota, MisionHoy, CategoriaRueda, RegistroRueda, MatrixItem, Factura,
     Workspace, WorkspaceMember, Invitation, Delegation, Notification,
     MetaAnual, GranMetaAnual, AnnualGoalConversationTurn, ObjetivoMensual, PropuestaIA, ConfiguracionUsuario, MatrizEisenhower, Activacion,
     InteraccionUsuario, DiagnosticoRueda, AccionSugerida, FocusArea, KanbanAction,
-    AccionKanban, HistorialMovimiento, ObjetivoSemanal, MonthlyPlan, MonthlyGoal,
+    AccionKanban, SubaccionKanban, EventoAccion, HistorialMovimiento, ObjetivoSemanal, MonthlyPlan, MonthlyGoal,
     TribuTemaSemana, TribuCompromiso,
     WeeklyPlan, Action, ActionDelegation, AgentConversation, AgentSchedule, AgentConfig,
     PushSubscription,
@@ -54,6 +56,7 @@ from .serializers import (
     MonthlyPlanSerializer, MonthlyGoalSerializer, MonthlyGenerateSerializer,
     KanbanActionSerializer, KanbanActionClassifySerializer,
     AccionKanbanSerializer, AccionKanbanCreateSerializer, ClasificarAccionSerializer,
+    SubaccionKanbanSerializer,
     TribuTemaSemanaSerializer, TribuCompromisoSerializer, JuegoSerializer,
     HistorialMovimientoSerializer, ObjetivoSemanalSerializer,
     WeeklyPlanSerializer, WeeklyPlanListSerializer, ActionSerializer,
@@ -81,6 +84,7 @@ from .services.program_service import (
     get_progress_summary, get_or_create_progress,
 )
 from .services.asignaciones import filtrar_queryset, ids_asignados
+from .services.agenda_eventos import registrar_evento
 from .engine import DecisionEngine
 from .engine.phase4_generator import generar_payload_coach
 
@@ -3064,6 +3068,18 @@ class AccionKanbanViewSet(BaseUserViewSet):
         fecha_seleccionada = serializer.validated_data.get('fecha_seleccionada')
         hora_seleccionada = serializer.validated_data.get('hora_seleccionada')
 
+        if clasificacion == 'H':
+            from datetime import date as _date
+            fecha_agenda = fecha_seleccionada or _date.today()
+            if not hora_seleccionada:
+                return Response(
+                    {'detail': 'La hora es obligatoria para enviar una acción a la agenda diaria.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            error = self._validar_bloque_libre(request.user, fecha_agenda, hora_seleccionada, accion.pk)
+            if error:
+                return Response({'detail': error}, status=status.HTTP_400_BAD_REQUEST)
+
         estado_anterior = accion.estado_actual
         clasificacion_anterior = accion.clasificacion
 
@@ -3088,17 +3104,9 @@ class AccionKanbanViewSet(BaseUserViewSet):
             if clasificacion == 'H':
                 accion.estado_actual = AccionKanban.EstadoChoices.AGENDA_DIARIA
                 accion.destino_asignado = AccionKanban.DestinoChoices.AGENDA_DIARIA
-                service = WeeklyPlanService(request.user)
-                plan, _ = service.get_or_create_week_of(fecha_destino)
-                action_obj, action_created = Action.objects.get_or_create(
-                    weekly_plan=plan,
-                    title=accion.texto_accion,
-                    assigned_calendar_date=fecha_destino,
-                    origin_module=Action.OriginModule.KANBAN_BACKLOG,
-                    defaults={'fecha_planificada_original': fecha_destino},
-                )
-                if action_created:
-                    lado['actions'].append(str(action_obj.pk))
+                pk_semanal = self._reflejar_en_semanal(request.user, accion.texto_accion, fecha_destino)
+                if pk_semanal:
+                    lado['actions'].append(pk_semanal)
             elif clasificacion == 'P':
                 if not destino_planificacion:
                     return Response(
@@ -3207,6 +3215,9 @@ class AccionKanbanViewSet(BaseUserViewSet):
             if accion.fecha_seleccionada and not accion.fecha_planificada_original:
                 accion.fecha_planificada_original = accion.fecha_seleccionada
             accion.save()
+            if clasificacion == 'H':
+                registrar_evento(accion, EventoAccion.Tipo.CREATE_ACTION,
+                                 origen='kanban', fecha=str(fecha_destino), hora=str(hora_seleccionada))
 
             HistorialMovimiento.objects.create(
                 accion=accion,
@@ -3358,8 +3369,53 @@ class AccionKanbanViewSet(BaseUserViewSet):
         except AccionKanban.DoesNotExist:
             return Response({'detail': 'Acción no encontrada'}, status=status.HTTP_404_NOT_FOUND)
 
-        allowed_fields = {'texto_accion', 'fecha_seleccionada', 'hora_seleccionada', 'es_fijo', 'estado_actual'}
-        for field in allowed_fields:
+        Estado = AccionKanban.EstadoEjecucionChoices
+        cambia_bloque = 'hora_seleccionada' in request.data or 'fecha_seleccionada' in request.data
+        if instance.estado == Estado.HACIENDO and cambia_bloque:
+            return Response(
+                {'detail': 'La acción está en «Haciendo». No puede cambiar de hora ni de día mientras esté en ejecución.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        anterior = {
+            'texto': instance.texto_accion,
+            'estado': instance.estado,
+            'fecha': instance.fecha_seleccionada,
+            'hora': instance.hora_seleccionada,
+        }
+
+        if 'texto_accion' in request.data:
+            texto = (request.data.get('texto_accion') or '').strip()
+            if not texto:
+                return Response({'detail': 'El texto de la acción no puede estar vacío'}, status=status.HTTP_400_BAD_REQUEST)
+            instance.texto_accion = texto
+
+        if 'estado' in request.data:
+            error = self._validar_transicion(instance, request.data['estado'])
+            if error:
+                return Response({'detail': error}, status=status.HTTP_400_BAD_REQUEST)
+            instance.estado = request.data['estado']
+
+        if 'hora_seleccionada' in request.data:
+            hora = parse_time(str(request.data.get('hora_seleccionada') or ''))
+            if hora is None:
+                return Response({'detail': 'La hora es obligatoria (formato HH:MM)'}, status=status.HTTP_400_BAD_REQUEST)
+            instance.hora_seleccionada = hora
+
+        if 'fecha_seleccionada' in request.data:
+            fecha = parse_date(str(request.data.get('fecha_seleccionada') or ''))
+            if fecha is None:
+                return Response({'detail': 'La fecha es obligatoria'}, status=status.HTTP_400_BAD_REQUEST)
+            instance.fecha_seleccionada = fecha
+
+        if instance.estado_actual == AccionKanban.EstadoChoices.AGENDA_DIARIA and cambia_bloque:
+            error = self._validar_bloque_libre(
+                request.user, instance.fecha_seleccionada, instance.hora_seleccionada, instance.pk,
+            )
+            if error:
+                return Response({'detail': error}, status=status.HTTP_400_BAD_REQUEST)
+
+        for field in ('es_fijo', 'estado_actual'):
             if field in request.data:
                 setattr(instance, field, request.data[field])
         # Doc 27 §5: reprogramar conserva la fecha de planificación original.
@@ -3367,7 +3423,189 @@ class AccionKanbanViewSet(BaseUserViewSet):
                 and instance.estado_actual != AccionKanban.EstadoChoices.KANBAN_ACTIVO):
             instance.fecha_planificada_original = instance.fecha_seleccionada
         instance.save()
+
+        if instance.texto_accion != anterior['texto']:
+            registrar_evento(instance, EventoAccion.Tipo.EDIT_ACTION,
+                             desde=anterior['texto'], hasta=instance.texto_accion)
+        if instance.estado != anterior['estado']:
+            registrar_evento(instance, EventoAccion.Tipo.CHANGE_STATUS, origen='usuario',
+                             desde=anterior['estado'], hasta=instance.estado)
+        if instance.fecha_seleccionada != anterior['fecha'] or instance.hora_seleccionada != anterior['hora']:
+            registrar_evento(instance, EventoAccion.Tipo.DROP_ACTION,
+                             desde_fecha=str(anterior['fecha']), desde_hora=str(anterior['hora']),
+                             hasta_fecha=str(instance.fecha_seleccionada), hasta_hora=str(instance.hora_seleccionada))
         return Response(AccionKanbanSerializer(instance).data)
+
+    def _validar_bloque_libre(self, user, fecha, hora, excluir_pk=None):
+        if not fecha or not hora:
+            return 'La fecha y la hora son obligatorias'
+        qs = AccionKanban.objects.filter(
+            user=user,
+            estado_actual=AccionKanban.EstadoChoices.AGENDA_DIARIA,
+            fecha_seleccionada=fecha,
+            hora_seleccionada=hora,
+        )
+        if excluir_pk:
+            qs = qs.exclude(pk=excluir_pk)
+        if qs.exists():
+            return f'Ya hay una acción en el bloque de las {hora.strftime("%H:%M")}.'
+        return None
+
+    def _validar_transicion(self, accion, nuevo):
+        Estado = AccionKanban.EstadoEjecucionChoices
+        if nuevo not in Estado.values:
+            return 'Estado no válido'
+        actual = accion.estado
+        if nuevo == actual:
+            return None
+        if nuevo == Estado.COMPLETADA:
+            pendiente = accion.subacciones.filter(estado=Estado.PENDIENTE).first()
+            if pendiente:
+                return f'No se puede completar la acción. La subacción «{pendiente.texto}» sigue pendiente.'
+        # Transiciones de usuario permitidas (Doc 9, §5). Completada se alcanza
+        # solo desde Haciendo y los grupos se completan por consistencia.
+        permitidas = {
+            ('Pendiente', 'Haciendo'),
+            ('Haciendo', 'Completada'),
+            ('Haciendo', 'Pendiente'),
+        }
+        if (actual, nuevo) not in permitidas:
+            return f'No se puede pasar la acción de {actual} a {nuevo}.'
+        if nuevo == Estado.HACIENDO:
+            otra = AccionKanban.objects.filter(
+                user=accion.user,
+                estado=Estado.HACIENDO,
+                estado_actual=AccionKanban.EstadoChoices.AGENDA_DIARIA,
+                fecha_seleccionada=accion.fecha_seleccionada,
+            ).exclude(pk=accion.pk).first()
+            if otra:
+                return (f'Ya hay una acción en «Haciendo». Finalice «{otra.texto_accion}» '
+                        f'para iniciar «{accion.texto_accion}».')
+        return None
+
+    def _sincronizar_estado(self, accion):
+        Estado = AccionKanban.EstadoEjecucionChoices
+        subs = list(accion.subacciones.all())
+        if not subs:
+            return
+        anterior = accion.estado
+        if all(s.estado == Estado.COMPLETADA for s in subs):
+            nuevo = Estado.COMPLETADA
+        elif anterior == Estado.COMPLETADA:
+            nuevo = Estado.PENDIENTE
+        else:
+            nuevo = anterior
+        if nuevo != anterior:
+            accion.estado = nuevo
+            accion.save(update_fields=['estado', 'actualizado_en'])
+            registrar_evento(accion, EventoAccion.Tipo.CHANGE_STATUS, origen='sistema',
+                             desde=anterior, hasta=nuevo)
+
+    def _reflejar_en_semanal(self, user, texto, fecha):
+        plan, _ = WeeklyPlanService(user).get_or_create_week_of(fecha)
+        action_obj, created = Action.objects.get_or_create(
+            weekly_plan=plan,
+            title=texto,
+            assigned_calendar_date=fecha,
+            origin_module=Action.OriginModule.KANBAN_BACKLOG,
+            defaults={'fecha_planificada_original': fecha},
+        )
+        return str(action_obj.pk) if created else None
+
+    @action(detail=False, methods=['post'], url_path='agenda')
+    def crear_en_agenda(self, request):
+        texto = (request.data.get('texto_accion') or '').strip()
+        if not texto:
+            return Response({'detail': 'La acción necesita un nombre'}, status=status.HTTP_400_BAD_REQUEST)
+        fecha = parse_date(str(request.data.get('fecha_seleccionada') or ''))
+        if fecha is None:
+            return Response({'detail': 'La fecha es obligatoria'}, status=status.HTTP_400_BAD_REQUEST)
+        hora = parse_time(str(request.data.get('hora_seleccionada') or ''))
+        if hora is None:
+            return Response({'detail': 'La hora es obligatoria (formato HH:MM)'}, status=status.HTTP_400_BAD_REQUEST)
+        error = self._validar_bloque_libre(request.user, fecha, hora)
+        if error:
+            return Response({'detail': error}, status=status.HTTP_400_BAD_REQUEST)
+
+        with transaction.atomic():
+            accion = AccionKanban.objects.create(
+                user=request.user,
+                texto_accion=texto,
+                origen=AccionKanban.OrigenChoices.MANUAL,
+                clasificacion='H',
+                estado_actual=AccionKanban.EstadoChoices.AGENDA_DIARIA,
+                destino_asignado=AccionKanban.DestinoChoices.AGENDA_DIARIA,
+                fecha_seleccionada=fecha,
+                fecha_planificada_original=fecha,
+                hora_seleccionada=hora,
+                estado=AccionKanban.EstadoEjecucionChoices.PENDIENTE,
+            )
+            HistorialMovimiento.objects.create(
+                accion=accion,
+                estado_anterior='',
+                estado_nuevo=AccionKanban.EstadoChoices.AGENDA_DIARIA,
+                clasificacion_anterior=None,
+                clasificacion_nueva='H',
+            )
+            self._reflejar_en_semanal(request.user, texto, fecha)
+            registrar_evento(accion, EventoAccion.Tipo.CREATE_ACTION,
+                             origen='agenda', fecha=str(fecha), hora=str(hora))
+        return Response(AccionKanbanSerializer(accion).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'], url_path='subacciones')
+    def crear_subaccion(self, request, pk=None):
+        try:
+            accion = AccionKanban.objects.get(pk=pk, user=request.user)
+        except (AccionKanban.DoesNotExist, DjangoValidationError):
+            return Response({'detail': 'Acción no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
+        texto = (request.data.get('texto') or '').strip()
+        if not texto:
+            return Response({'detail': 'La subacción necesita un texto'}, status=status.HTTP_400_BAD_REQUEST)
+
+        sub = SubaccionKanban.objects.create(
+            accion=accion,
+            texto=texto,
+            orden=accion.subacciones.count(),
+        )
+        registrar_evento(accion, EventoAccion.Tipo.CREATE_SUBACTION, subaccion=str(sub.pk), texto=texto)
+        self._sincronizar_estado(accion)
+        return Response(SubaccionKanbanSerializer(sub).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['patch', 'delete'], url_path=r'subacciones/(?P<sub_id>[^/.]+)')
+    def subaccion_detalle(self, request, pk=None, sub_id=None):
+        try:
+            accion = AccionKanban.objects.get(pk=pk, user=request.user)
+            sub = accion.subacciones.get(pk=sub_id)
+        except (AccionKanban.DoesNotExist, SubaccionKanban.DoesNotExist, DjangoValidationError):
+            return Response({'detail': 'Subacción no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.method == 'DELETE':
+            registrar_evento(accion, EventoAccion.Tipo.DELETE_SUBACTION, subaccion=str(sub.pk), texto=sub.texto)
+            sub.delete()
+            self._sincronizar_estado(accion)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        Estado = AccionKanban.EstadoEjecucionChoices
+        if 'texto' in request.data:
+            texto = (request.data.get('texto') or '').strip()
+            if not texto:
+                return Response({'detail': 'La subacción necesita un texto'}, status=status.HTTP_400_BAD_REQUEST)
+            if texto != sub.texto:
+                registrar_evento(accion, EventoAccion.Tipo.EDIT_SUBACTION,
+                                 subaccion=str(sub.pk), desde=sub.texto, hasta=texto)
+                sub.texto = texto
+        if 'estado' in request.data:
+            nuevo = request.data['estado']
+            if nuevo not in (Estado.PENDIENTE, Estado.COMPLETADA):
+                return Response({'detail': 'Estado de subacción no válido'}, status=status.HTTP_400_BAD_REQUEST)
+            if nuevo != sub.estado:
+                registrar_evento(accion, EventoAccion.Tipo.CHANGE_STATUS, origen='usuario',
+                                 subaccion=str(sub.pk), desde=sub.estado, hasta=nuevo)
+                sub.estado = nuevo
+        sub.save()
+        self._sincronizar_estado(accion)
+        return Response(SubaccionKanbanSerializer(sub).data)
 
     def destroy(self, request, *args, **kwargs):
         try:
@@ -3385,6 +3623,9 @@ class AccionKanbanViewSet(BaseUserViewSet):
             estado_anterior=estado_anterior,
             estado_nuevo=AccionKanban.EstadoChoices.ELIMINADA,
         )
+        if estado_anterior == AccionKanban.EstadoChoices.AGENDA_DIARIA:
+            registrar_evento(instance, EventoAccion.Tipo.DELETE_ACTION,
+                             texto=instance.texto_accion, subacciones=instance.subacciones.count())
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -4994,8 +5235,82 @@ def config_privacy_permissions(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def config_privacy_export(request):
+    """Exporta (de forma síncrona) toda la información personal del usuario
+    en un formato descargable (JSON)."""
+    user = request.user
+    export_data = {
+        'exported_at': timezone.now().isoformat(),
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'date_joined': user.date_joined,
+            'last_login': user.last_login,
+        },
+    }
+
+    def _add(key, qs):
+        try:
+            export_data[key] = list(qs.values())
+        except Exception:
+            export_data[key] = []
+
+    _add('rueda_vida', RuedaVida.objects.filter(user=user))
+    _add('registros_rueda', RegistroRueda.objects.filter(user=user))
+    _add('diagnosticos_rueda', DiagnosticoRueda.objects.filter(user=user))
+    _add('focus_areas', FocusArea.objects.filter(diagnostico__user=user))
+    _add('time_blocks', TimeBlock.objects.filter(user=user))
+    _add('kanban_tasks', KanbanTask.objects.filter(user=user))
+    _add('recordatorios', Recordatorio.objects.filter(user=user))
+    _add('suplementos', Suplemento.objects.filter(user=user))
+    _add('suplemento_tomas', SuplementoToma.objects.filter(suplemento__user=user))
+    _add('keep_notas', KeepNota.objects.filter(user=user))
+    _add('matrix_items', MatrixItem.objects.filter(user=user))
+    _add('metas_anuales', MetaAnual.objects.filter(user=user))
+    _add('gran_metas_anuales', GranMetaAnual.objects.filter(user=user))
+    _add('objetivos_mensuales', ObjetivoMensual.objects.filter(user=user))
+    _add('objetivos_semanales', ObjetivoSemanal.objects.filter(user=user))
+    _add('propuestas_ia', PropuestaIA.objects.filter(user=user))
+    _add('kanban_actions', KanbanAction.objects.filter(user=user))
+    _add('acciones_kanban', AccionKanban.objects.filter(user=user))
+    _add('subacciones_kanban', SubaccionKanban.objects.filter(accion__user=user))
+    _add('eventos_accion', EventoAccion.objects.filter(accion__user=user))
+    _add('historial_movimiento', HistorialMovimiento.objects.filter(accion__user=user))
+    _add('monthly_plans', MonthlyPlan.objects.filter(user=user))
+    _add('monthly_goals', MonthlyGoal.objects.filter(plan__user=user))
+    _add('weekly_plans', WeeklyPlan.objects.filter(user=user))
+    _add('actions', Action.objects.filter(weekly_plan__user=user))
+    _add('action_delegations', ActionDelegation.objects.filter(user=user))
+    _add('accompanied_preferences', AccompanimentPreferences.objects.filter(user=user))
+    _add('notification_preferences', NotificationPreference.objects.filter(user=user))
+    _add('schedule_exceptions', ScheduleException.objects.filter(user=user))
+    _add('privacy_preferences', InicioPrivacyPreferences.objects.filter(user=user))
+    _add('account_change_logs', AccountChangeLog.objects.filter(user=user))
+    _add('inicio_state', InicioState.objects.filter(user=user))
+    try:
+        _add('inicio_events', InicioEventLog.objects.filter(user=user).order_by('-created_at')[:1000])
+    except Exception:
+        export_data['inicio_events'] = []
+    _add('configuracion_usuario', ConfiguracionUsuario.objects.filter(user=user))
+    _add('activaciones', Activacion.objects.filter(user=user))
+    _add('cuentas_columnas', CuentaColumna.objects.filter(user=user))
+    _add('cuentas_registros', CuentaRegistro.objects.filter(user=user))
+    _add('cuentas_valores', CuentaValor.objects.filter(registro__user=user))
+    _add('hora_oro_experiencias', HoraOroExperiencia.objects.filter(user=user))
+    _add('hora_oro_ajustes', HoraOroAjustes.objects.filter(user=user))
+    _add('focus_sessions', FocusSession.objects.filter(user=user))
+    _add('coaching_entries', CoachingEntry.objects.filter(user=user))
+    _add('tribu_compromisos', TribuCompromiso.objects.filter(user=user))
+    _add('push_subscriptions', PushSubscription.objects.filter(user=user))
+    _add('agent_conversations', AgentConversation.objects.filter(user=user))
+    _add('agent_schedules', AgentSchedule.objects.filter(user=user))
+    _add('agent_config', AgentConfig.objects.filter(user=user))
+    _add('focusia_reports', FocusiaReport.objects.filter(user=user))
+
     _log_inicio_event(request.user, 'data_export_requested', 'config')
-    return Response({'status': 'export_requested', 'message': 'Tu exportación será procesada y recibirás una notificación cuando esté lista.'})
+    return Response(export_data)
 
 
 @api_view(['POST'])
@@ -5383,3 +5698,86 @@ def gratitud_hoy(request):
         guardar_respuesta(request.user, request.data.get('texto'))
 
     return Response(estado(request.user))
+
+
+# ══════════════ Módulo Cumpleaños (Doc 22) ══════════════
+
+def _cumpleanos_o_404(user, pk):
+    from .models import Cumpleanos
+    try:
+        return Cumpleanos.objects.get(user=user, pk=pk)
+    except Cumpleanos.DoesNotExist:
+        from rest_framework.exceptions import NotFound
+        raise NotFound('Cumpleaños no encontrado.')
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([permissions.IsAuthenticated])
+def cumpleanos_lista(request):
+    """Doc 22 — pantalla principal del módulo.
+
+    GET  → próximos cumpleaños ordenados por cercanía (§II.4).
+    POST → finaliza el asistente (§II.5): registra la persona y genera el
+           Evento Focusia en Fechas Importantes.
+    """
+    from .services import cumpleanos as svc
+
+    if request.method == 'POST':
+        from .models import Cumpleanos
+
+        nombre = (request.data.get('nombre') or '').strip()
+        categoria = request.data.get('categoria') or ''
+        fecha_raw = request.data.get('fecha') or ''
+        try:
+            anticipacion = int(request.data.get('anticipacion_dias', 3))
+        except (TypeError, ValueError):
+            anticipacion = -1
+        try:
+            fecha = date.fromisoformat(fecha_raw)
+        except ValueError:
+            return Response({'error': 'Fecha inválida.'}, status=400)
+        if not nombre:
+            return Response({'error': 'Falta el nombre de la persona.'}, status=400)
+        if categoria not in dict(Cumpleanos.CATEGORIAS):
+            return Response({'error': 'Categoría inválida.'}, status=400)
+        if not 0 <= anticipacion <= 365:
+            return Response({'error': 'Anticipación inválida.'}, status=400)
+
+        cumpleanos = svc.registrar(
+            request.user, nombre, categoria, fecha, anticipacion)
+        return Response(svc.estado(cumpleanos), status=201)
+
+    return Response(svc.listar(request.user))
+
+
+@api_view(['DELETE'])
+@permission_classes([permissions.IsAuthenticated])
+def cumpleanos_detalle(request, pk):
+    """Elimina el cumpleaños y su Evento Focusia asociado."""
+    cumpleanos = _cumpleanos_o_404(request.user, pk)
+    recordatorio = cumpleanos.recordatorio
+    cumpleanos.delete()
+    if recordatorio is not None:
+        recordatorio.delete()
+    return Response(status=204)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def cumpleanos_accion(request, pk):
+    """Doc 22 §III — acciones sugeridas tras el recordatorio.
+
+    Cada acción elegida (regalo, celebración, llamada u otra) se envía
+    automáticamente al Kanban Backlog.
+    """
+    from .services import cumpleanos as svc
+
+    cumpleanos = _cumpleanos_o_404(request.user, pk)
+    accion = request.data.get('accion') or ''
+    detalle = request.data.get('detalle') or ''
+    if accion not in (*svc.ACCIONES, 'otra'):
+        return Response({'error': 'Acción inválida.'}, status=400)
+    tarea = svc.enviar_accion(request.user, cumpleanos, accion, detalle)
+    return Response(
+        {'id': tarea.id, 'titulo': tarea.titulo, 'columna': tarea.columna},
+        status=201)

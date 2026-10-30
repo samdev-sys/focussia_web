@@ -1002,6 +1002,11 @@ class AccionKanban(models.Model):
         COMPLETADA = 'COMPLETADA', 'Completada'
         HISTORICA = 'HISTORICA', 'Histórica'
 
+    class EstadoEjecucionChoices(models.TextChoices):
+        PENDIENTE = 'Pendiente', 'Pendiente'
+        HACIENDO = 'Haciendo', 'Haciendo'
+        COMPLETADA = 'Completada', 'Completada'
+
     class DestinoChoices(models.TextChoices):
         AGENDA_DIARIA = 'AGENDA_DIARIA', 'Agenda Diaria'
         PLAN_SEMANAL = 'PLAN_SEMANAL', 'Planificación Semanal'
@@ -1032,6 +1037,10 @@ class AccionKanban(models.Model):
     )
     hora_seleccionada = models.TimeField(null=True, blank=True)
     es_fijo = models.BooleanField(default=False)
+    estado = models.CharField(
+        max_length=12, choices=EstadoEjecucionChoices.choices,
+        default=EstadoEjecucionChoices.PENDIENTE,
+    )
     revert_data = models.JSONField(
         default=dict, blank=True,
         help_text='IDs laterales creados al clasificar (para DESHACER preciso)',
@@ -1046,6 +1055,52 @@ class AccionKanban(models.Model):
 
     def __str__(self):
         return f'{self.texto_accion[:50]} [{self.get_clasificacion_display() or "Sin clasificar"}]'
+
+
+class SubaccionKanban(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    accion = models.ForeignKey(AccionKanban, on_delete=models.CASCADE, related_name='subacciones')
+    texto = models.TextField()
+    estado = models.CharField(
+        max_length=12, choices=AccionKanban.EstadoEjecucionChoices.choices,
+        default=AccionKanban.EstadoEjecucionChoices.PENDIENTE,
+    )
+    orden = models.PositiveIntegerField(default=0)
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['orden', 'creado_en']
+        verbose_name = 'Subacción'
+        verbose_name_plural = 'Subacciones'
+
+    def __str__(self):
+        return f'{self.texto[:50]} [{self.estado}]'
+
+
+class EventoAccion(models.Model):
+    class Tipo(models.TextChoices):
+        CREATE_ACTION = 'CreateAction', 'Se crea una acción principal'
+        EDIT_ACTION = 'EditAction', 'Se modifica una acción principal'
+        DELETE_ACTION = 'DeleteAction', 'Se elimina una acción principal'
+        CREATE_SUBACTION = 'CreateSubaction', 'Se crea una subacción'
+        EDIT_SUBACTION = 'EditSubaction', 'Se modifica una subacción'
+        DELETE_SUBACTION = 'DeleteSubaction', 'Se elimina una subacción'
+        CHANGE_STATUS = 'ChangeStatus', 'Cambio de estado'
+        DROP_ACTION = 'DropAction', 'Reprogramación de la acción'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    accion = models.ForeignKey(AccionKanban, on_delete=models.CASCADE, related_name='eventos')
+    tipo = models.CharField(max_length=30, choices=Tipo.choices)
+    datos = models.JSONField(default=dict, blank=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-creado_en']
+        verbose_name = 'Evento de acción'
+        verbose_name_plural = 'Eventos de acción'
+
+    def __str__(self):
+        return f'{self.tipo} · {self.accion_id}'
 
 
 class HistorialMovimiento(models.Model):
@@ -2084,3 +2139,47 @@ class FocusSession(models.Model):
 
     def __str__(self):
         return f'{self.get_herramienta_display()} · {self.user.username} · {self.estado}'
+
+
+# ══════════════ Módulo Cumpleaños (Doc 22) ══════════════
+
+class Cumpleanos(models.Model):
+    """Doc 22 — cumpleaños de una persona importante para el usuario.
+
+    El módulo registra la fecha y genera un Evento Focusia (un ``Recordatorio``
+    de categoría «Cumpleaños» administrado por Fechas Importantes). Su
+    responsabilidad termina al confirmar el registro; desde ahí los Sistemas
+    Transversales se encargan de comunicar (Sistema Proactivo), mostrar
+    (calendario) y derivar acciones (Kanban Backlog).
+    """
+    CATEGORIAS = (
+        ('Familia', 'Familia'),
+        ('Familiares', 'Familiares'),
+        ('Amigos', 'Amigos'),
+        ('Trabajo', 'Compañeros de trabajo'),
+    )
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cumpleanos')
+    nombre = models.CharField(max_length=160)
+    categoria = models.CharField(max_length=20, choices=CATEGORIAS)
+    # Día y mes del cumpleaños; el año es solo de referencia y no se muestra.
+    fecha = models.DateField()
+    # Días de anticipación del recordatorio (Doc 22 §II.5 Paso 4).
+    anticipacion_dias = models.PositiveIntegerField(default=3)
+    # Ocurrencia del cumpleaños para la que ya se envió el aviso proactivo.
+    aviso_enviado_para = models.DateField(null=True, blank=True)
+    # Evento Focusia en Fechas Importantes.
+    recordatorio = models.ForeignKey(
+        Recordatorio, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='cumpleanos',
+    )
+    creado = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['fecha']
+        verbose_name = 'Cumpleaños'
+        verbose_name_plural = 'Cumpleaños'
+
+    def __str__(self):
+        return f'{self.nombre} · {self.fecha:%d/%m} · {self.user.username}'

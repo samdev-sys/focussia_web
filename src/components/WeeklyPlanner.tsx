@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Plus, ChevronDown, ChevronRight, Check, X, GripVertical, AlertCircle, ChevronLeft, MoreVertical } from 'lucide-react';
-import { weeklyPlanService, weeklyActionService, timeBlockService } from '../services/api';
+import { weeklyPlanService, weeklyActionService, timeBlockService, kanbanActionService } from '../services/api';
 import type { WeeklyPlanData, ActionData, SubactionData } from '../services/api';
 
 const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -354,6 +354,21 @@ export default function WeeklyPlanner({ onClose }: { onClose: () => void }): Rea
     setAiChecklistAction(null);
   };
 
+  const importFromKanban = async () => {
+    try {
+      const kanbanActions = await kanbanActionService.getActive();
+      for (const kb of kanbanActions) {
+        await weeklyActionService.addAction({
+          title: kb.title,
+          assigned_calendar_date: currentDayKey,
+        });
+      }
+      const updated = await weeklyActionService.list();
+      setActions(updated);
+    } catch { /* ignore */ }
+    setActiveDropdownId(null);
+  };
+
   const confirmTimeBlock = async (action: ActionData) => {
     try {
       await timeBlockService.create({
@@ -382,9 +397,9 @@ export default function WeeklyPlanner({ onClose }: { onClose: () => void }): Rea
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[90] flex items-center justify-center p-2">
       <div className="bg-white rounded-md shadow-2xl border border-white/50 w-[650px] max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-[#d97706] to-[#f59e0b] shrink-0">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-[#7c3aed] to-[#8b5cf6] shrink-0">
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-bold uppercase text-white">Plan Semanal</h2>
+            <h2 className="text-sm font-bold uppercase text-white">Planificación Semanal</h2>
             {totalWeekActions > 0 && (
               <span className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded-full">{completedWeekActions}/{totalWeekActions}</span>
             )}
@@ -439,21 +454,21 @@ export default function WeeklyPlanner({ onClose }: { onClose: () => void }): Rea
               <button
                 key={key}
                 onClick={() => setSelectedDayIdx(idx)}
-                className={`flex-1 min-w-0 py-2 px-1 text-center border-b-2 transition-colors relative ${isSelected ? 'border-amber-500 bg-amber-50' : 'border-transparent hover:bg-slate-50'}`}
+                className={`flex-1 min-w-0 py-2 px-1 text-center border-b-2 transition-colors relative ${isSelected ? 'border-[#8b5cf6] bg-[#8b5cf6]/5' : 'border-transparent hover:bg-slate-50'}`}
               >
-                <div className={`text-[10px] font-semibold uppercase ${isSelected ? 'text-amber-700' : 'text-slate-400'}`}>
+                <div className={`text-[10px] font-semibold uppercase ${isSelected ? 'text-[#8b5cf6]' : 'text-slate-400'}`}>
                   {DAY_NAMES[idx]}
                 </div>
-                <div className={`text-base font-bold leading-tight ${isSelected ? 'text-amber-600' : 'text-slate-700'}`}>
+                <div className={`text-base font-bold leading-tight ${isSelected ? 'text-[#8b5cf6]' : 'text-slate-700'}`}>
                   {day.getDate()}
                 </div>
                 {count > 0 && (
-                  <div className={`text-[9px] mt-0.5 ${isSelected ? 'text-amber-500' : 'text-slate-400'}`}>
+                  <div className={`text-[9px] mt-0.5 ${isSelected ? 'text-[#8b5cf6]' : 'text-slate-400'}`}>
                     {count} {count === 1 ? 'tarea' : 'tareas'}
                   </div>
                 )}
                 {isToday(day) && (
-                  <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-[#8b5cf6]" />
                 )}
               </button>
             );
@@ -495,14 +510,14 @@ export default function WeeklyPlanner({ onClose }: { onClose: () => void }): Rea
                 onDragStart={e => handleDragStart(e, action)}
                 onDragEnd={() => setDraggedAction(null)}
                 className={`group border rounded-xl p-2.5 transition-all cursor-grab active:cursor-grabbing ${
-                  action.status === 'COMPLETADA' ? 'border-green-200 bg-green-50/30' : 'border-slate-200 bg-white hover:shadow-sm'
+                  action.status === 'COMPLETADA' ? 'border-[#8b5cf6] bg-purple-50/30' : 'border-slate-200 bg-white hover:shadow-sm'
                 } ${draggedAction?.id === action.id ? 'opacity-40' : ''}`}
               >
                 <div className="flex items-start gap-2">
                   <button
                     onClick={() => toggleCompleteAction(action.id)}
                     className={`mt-0.5 shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-                      action.status === 'COMPLETADA' ? 'bg-green-500 border-green-500 text-white' : 'border-slate-300 hover:border-green-400'
+                      action.status === 'COMPLETADA' ? 'bg-[#8b5cf6] border-[#8b5cf6] text-white' : 'border-slate-300 hover:border-[#8b5cf6]'
                     }`}
                   >
                     {action.status === 'COMPLETADA' && <Check size={10} />}
@@ -626,6 +641,16 @@ export default function WeeklyPlanner({ onClose }: { onClose: () => void }): Rea
                                     <div className="text-[10px] text-slate-400">Enviar a Acciones por Delegar</div>
                                   </div>
                                 </button>
+                                <button
+                                  onClick={importFromKanban}
+                                  className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-left hover:bg-indigo-50 transition-colors"
+                                >
+                                  <span className="text-base shrink-0">📥</span>
+                                  <div>
+                                    <div className="font-medium text-slate-700">Importar desde Kanban</div>
+                                    <div className="text-[10px] text-slate-400">Agregar acciones del backlog</div>
+                                  </div>
+                                </button>
                               </>
                             )}
                           </div>
@@ -647,7 +672,7 @@ export default function WeeklyPlanner({ onClose }: { onClose: () => void }): Rea
                     {(action.subactions?.length || 0) > 0 && (
                       <div className="flex items-center gap-2 mb-1">
                         <div className="flex-1 h-1 rounded-full bg-slate-100 overflow-hidden">
-                          <div className="h-full bg-green-500 transition-all" style={{ width: `${groupProgress(action)}%` }} />
+                          <div className="h-full bg-[#8b5cf6] transition-all" style={{ width: `${groupProgress(action)}%` }} />
                         </div>
                         <span className="text-[10px] text-slate-400 font-medium">{groupProgress(action)}%</span>
                       </div>
@@ -656,7 +681,7 @@ export default function WeeklyPlanner({ onClose }: { onClose: () => void }): Rea
                       <div key={sub.id} className="flex items-center gap-1.5 group/sub">
                         <button
                           onClick={() => toggleSubactionStatus(action.id, sub.id, sub.is_completed)}
-                          className={`shrink-0 w-3 h-3 rounded-sm border flex items-center justify-center ${sub.is_completed ? 'bg-green-500 border-green-500 text-white' : 'border-slate-300'}`}
+                          className={`shrink-0 w-3 h-3 rounded-sm border flex items-center justify-center ${sub.is_completed ? 'bg-[#8b5cf6] border-[#8b5cf6] text-white' : 'border-slate-300'}`}
                         >
                           {sub.is_completed && <Check size={8} />}
                         </button>

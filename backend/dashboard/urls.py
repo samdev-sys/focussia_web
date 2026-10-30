@@ -44,6 +44,7 @@ from .views import (
     config_modify_plan_availability,
     motivational_today, motivational_current_training, motivational_progress,
     gratitud_hoy,
+    cumpleanos_lista, cumpleanos_detalle, cumpleanos_accion,
     push_public_key, push_subscribe, push_unsubscribe,
     cursos_mes_actual, cursos_mes, cursos_completar, juegos_catalogo,
     motivational_master_table, motivational_master_months, motivational_master_days,
@@ -222,6 +223,10 @@ urlpatterns = [
     path('admin/overview/', admin_overview, name='admin-overview'),
     path('admin/asistente/chat/', admin_asistente_chat, name='admin-asistente-chat'),
     path('gratitud/hoy/', gratitud_hoy, name='gratitud-hoy'),
+    # Módulo Cumpleaños (Doc 22)
+    path('cumpleanos/', cumpleanos_lista, name='cumpleanos-lista'),
+    path('cumpleanos/<int:pk>/', cumpleanos_detalle, name='cumpleanos-detalle'),
+    path('cumpleanos/<int:pk>/accion/', cumpleanos_accion, name='cumpleanos-accion'),
     path('admin/', include(admin_router.urls)),
     path('', include(router.urls)),
 ]

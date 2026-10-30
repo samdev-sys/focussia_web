@@ -116,7 +116,7 @@ const PlanificacionModalComponent: React.FC<PlanificacionModalInnerProps> = ({ a
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={onCancel}>
       <div
-        className="bg-white rounded-2xl w-[650px] shadow-2xl overflow-hidden"
+        className="bg-white rounded-xl w-[650px] shadow-xl overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}

@@ -1,7 +1,7 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
-from .models import (User, RuedaVida, TimeBlock, KanbanTask, Recordatorio, ObjetivoSemana, KeepNota, MisionHoy, CategoriaRueda, RegistroRueda, MatrixItem, Factura, Workspace, WorkspaceMember, Invitation, Delegation, Notification, MetaAnual, GranMetaAnual, AnnualGoalConversationTurn, ObjetivoMensual, PropuestaIA, ConfiguracionUsuario, MatrizEisenhower, Activacion, InteraccionUsuario, DiagnosticoRueda, AccionSugerida, FocusArea, KanbanAction, AccionKanban, HistorialMovimiento, ObjetivoSemanal, MonthlyPlan, MonthlyGoal, WeeklyPlan, Action, ActionDelegation, AgentConversation, AgentSchedule, AgentConfig, FocusiaReport, ReportDataSource, Avatar, OnboardingProfile, InicioState, InicioEventLog, LearningCategory, LearningModuleRef, GuidedTourBlock, AccompanimentPreferences, NotificationPreference, ScheduleException, AccountChangeLog,     InicioPrivacyPreferences, ProgramMonth, MonthlyTraining, ProgramDay, UserProgramProgress, DailyPhraseViewLog,
+from .models import (User, RuedaVida, TimeBlock, KanbanTask, Recordatorio, ObjetivoSemana, KeepNota, MisionHoy, CategoriaRueda, RegistroRueda, MatrixItem, Factura, Workspace, WorkspaceMember, Invitation, Delegation, Notification, MetaAnual, GranMetaAnual, AnnualGoalConversationTurn, ObjetivoMensual, PropuestaIA, ConfiguracionUsuario, MatrizEisenhower, Activacion, InteraccionUsuario, DiagnosticoRueda, AccionSugerida, FocusArea, KanbanAction, AccionKanban, SubaccionKanban, HistorialMovimiento, ObjetivoSemanal, MonthlyPlan, MonthlyGoal, WeeklyPlan, Action, ActionDelegation, AgentConversation, AgentSchedule, AgentConfig, FocusiaReport, ReportDataSource, Avatar, OnboardingProfile, InicioState, InicioEventLog, LearningCategory, LearningModuleRef, GuidedTourBlock, AccompanimentPreferences, NotificationPreference, ScheduleException, AccountChangeLog,     InicioPrivacyPreferences, ProgramMonth, MonthlyTraining, ProgramDay, UserProgramProgress, DailyPhraseViewLog,
     CoachingEntry, TribuTemaSemana, TribuCompromiso, UserTrainingProgress, Juego, Membresia,
     AsignacionContenido, CuentaColumna, CuentaRegistro, CuentaValor, Suplemento, SuplementoToma,
     HoraOroExperiencia, HoraOroAjustes, FocusSession)
@@ -539,15 +539,24 @@ class HistorialMovimientoSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'fecha_movimiento']
 
 
+class SubaccionKanbanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubaccionKanban
+        fields = ['id', 'texto', 'estado', 'orden']
+        read_only_fields = ['id', 'orden']
+
+
 class AccionKanbanSerializer(serializers.ModelSerializer):
     historial = HistorialMovimientoSerializer(many=True, read_only=True)
+    subacciones = SubaccionKanbanSerializer(many=True, read_only=True)
 
     class Meta:
         model = AccionKanban
         fields = [
             'id', 'user', 'texto_accion', 'origen', 'clasificacion',
             'estado_actual', 'destino_asignado', 'fecha_seleccionada',
-            'hora_seleccionada', 'es_fijo', 'creado_en', 'actualizado_en', 'historial',
+            'hora_seleccionada', 'es_fijo', 'estado', 'subacciones',
+            'creado_en', 'actualizado_en', 'historial',
         ]
         read_only_fields = ['id', 'user', 'creado_en', 'actualizado_en']
 

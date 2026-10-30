@@ -4,7 +4,7 @@ import {
   CalendarRange, CalendarCheck, Target, Clock, Pill, Cake,
   UserCheck, MessageSquare, Heart, Smile, GraduationCap, MoreHorizontal,
   Bell, Settings, Moon, ChevronDown, ChevronLeft, Sun, Lock, Send,
-  ChevronRight, Sparkles, Check,
+  ChevronRight, Sparkles, Check, CircleHelp,
 } from 'lucide-react';
 import { NAV_ICONS } from './navIcons';
 import { coachingService, CoachingEntryData, CoachingQuestionData, notificationService, NotificationData, authService, configService } from '../services/api';
@@ -49,7 +49,7 @@ const Sidebar = ({ onNav, userName, photoUrl, profile, onLogout, onBack }: { onN
   ];
 
   return (
-    <aside className="w-64 bg-[#0A0A26] h-full flex flex-col transition-all duration-300 z-20 shrink-0">
+    <aside className="w-48 bg-[#0A0A26] h-full flex flex-col transition-all duration-300 z-20 shrink-0">
       <div className="h-16 flex items-center px-6 pt-4 pb-2">
         <div className="flex items-center gap-3 text-white">
          <img src="./focussia.png" alt="Focusia" className='w-8 h-8' />
@@ -119,7 +119,7 @@ function ProfileMenu({ profile, userName, onBack, onLogout, onClose }: {
   );
 }
 
-const Header = ({ onBack, userName, photoUrl, profile, onLogout }: { onBack: () => void; userName?: string; photoUrl?: string | null; profile?: { username?: string; email?: string } | null; onLogout: () => void }) => {
+const Header = ({ onBack, userName, photoUrl, profile, onLogout, onOpenNotifications, onOpenSettings, onOpenHelp }: { onBack: () => void; userName?: string; photoUrl?: string | null; profile?: { username?: string; email?: string } | null; onLogout: () => void; onOpenNotifications?: () => void; onOpenSettings?: () => void; onOpenHelp?: () => void }) => {
   const [dark, setDark] = useState(() =>
     typeof window !== 'undefined' && localStorage.getItem('focusia-theme') === 'dark');
   const [showNotifications, setShowNotifications] = useState(false);
@@ -165,7 +165,10 @@ const Header = ({ onBack, userName, photoUrl, profile, onLogout }: { onBack: () 
 
     <div className="flex items-center gap-6">
       <div className="relative">
-        <button onClick={toggleNotifications} title="Notificaciones" className="relative text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors">
+        <button onClick={() => { if (onOpenHelp) onOpenHelp(); }} title="Ayuda" className="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors">
+        <CircleHelp className="w-5 h-5" />
+      </button>
+      <button onClick={() => { if (onOpenNotifications) onOpenNotifications(); else toggleNotifications(); }} title="Notificaciones" className="relative text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors">
           <Bell className="w-5 h-5" />
           {notifications.length > 0 && (
             <span className="absolute -top-1 -right-1 min-w-4 h-4 px-0.5 bg-[#6236FF] text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white dark:border-[#14142e]">
@@ -193,7 +196,7 @@ const Header = ({ onBack, userName, photoUrl, profile, onLogout }: { onBack: () 
         )}
       </div>
 
-      <button onClick={() => setShowConfig(true)} title="Configuración" className="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors">
+      <button onClick={() => { if (onOpenSettings) onOpenSettings(); else setShowConfig(true); }} title="Configuración" className="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors">
         <Settings className="w-5 h-5" />
       </button>
 
@@ -300,7 +303,7 @@ const TimelineSidebar = () => {
   );
 };
 
-export default function CoachingScreen({ onBack, userName, onNavigate }: { onBack: () => void; userName?: string; onNavigate?: (section: string) => void }) {
+export default function CoachingScreen({ onBack, userName, onNavigate, onOpenHelp, onOpenNotifications, onOpenSettings }: { onBack: () => void; userName?: string; onNavigate?: (section: string) => void; onOpenHelp?: () => void; onOpenNotifications?: () => void; onOpenSettings?: () => void }) {
   const [reflection, setReflection] = useState('');
   const [action, setAction] = useState('');
   const [sending, setSending] = useState(false);
@@ -384,7 +387,7 @@ export default function CoachingScreen({ onBack, userName, onNavigate }: { onBac
       {showSidebar && <Sidebar onNav={handleNav} userName={userName} photoUrl={photoUrl} profile={profile} onLogout={handleLogout} onBack={onBack} />}
 
       <main className={`flex-1 flex flex-col h-full overflow-hidden bg-[#F8F9FB] dark:bg-[#0A0A26] ${showSidebar ? 'rounded-tl-[2rem] border-l border-gray-200 dark:border-white/10' : ''}`}>
-        <Header onBack={onBack} userName={userName} photoUrl={photoUrl} profile={profile} onLogout={handleLogout} />
+        <Header onBack={onBack} userName={userName} photoUrl={photoUrl} profile={profile} onLogout={handleLogout} onOpenHelp={onOpenHelp} onOpenNotifications={onOpenNotifications} onOpenSettings={onOpenSettings} />
 
         <div className="flex-1 overflow-y-auto p-8">
           <div className="max-w-[1400px] mx-auto flex flex-col xl:flex-row gap-8">

@@ -10,10 +10,13 @@ interface AnnualModuleViewProps {
   onClose: () => void;
   onEdit: () => void;
   onNavigate?: (section: string) => void;
+  onOpenHelp?: () => void;
+  onOpenNotifications?: () => void;
+  onOpenSettings?: () => void;
 }
 
 /** Spec §15: meta vigente arriba + calendario anual debajo. */
-export default function AnnualModuleView({ userName = '', avatarImg, onClose, onEdit, onNavigate }: AnnualModuleViewProps) {
+export default function AnnualModuleView({ userName = '', avatarImg, onClose, onEdit, onNavigate, onOpenHelp, onOpenNotifications, onOpenSettings }: AnnualModuleViewProps) {
   const [goal, setGoal] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -27,7 +30,7 @@ export default function AnnualModuleView({ userName = '', avatarImg, onClose, on
   }, []);
 
   return (
-    <AnualShell userName={userName} avatarImg={avatarImg} onClose={onClose} onNavigate={onNavigate} dark hideTopbar>
+    <AnualShell userName={userName} avatarImg={avatarImg} onClose={onClose} onNavigate={onNavigate} dark hideTopbar onOpenHelp={onOpenHelp} onOpenNotifications={onOpenNotifications} onOpenSettings={onOpenSettings}>
       <div className="max-w-[1200px] mx-auto relative">
         <button onClick={onClose} className="absolute -top-1 right-1 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors" title="Cerrar">
           <X className="w-5 h-5 text-white" />

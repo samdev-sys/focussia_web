@@ -248,8 +248,8 @@ export default function GratitudScreen({ userName, onBack, onNavigate }: {
                     <img src="./stars.png" alt="" />
                   </span>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[#2B2350] dark:text-white">
-                      Tu respuesta de hoy se guarda automáticamente.
+                    <p className="text-sm font-semibold text-[#6C17BD] dark:text-white">
+                      Tu reflexion de hoy se guardará automáticamente.
                     </p>
                     <p className="text-xs text-slate-500 dark:text-gray-400">
                       Gracias por reconocer lo positivo de ti vida cada día.
@@ -276,7 +276,7 @@ export default function GratitudScreen({ userName, onBack, onNavigate }: {
                         className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
                         style={{ backgroundColor: fondo }}
                       >
-                        <img src={img} alt="" className="w-[22px] h-[22px] object-contain" />
+                        <img src={img} alt="" className="w-[30px] h-[30px] object-contain" />
                       </span>
                       <div className="min-w-0 pt-0.5">
                         <p className="text-[13px] font-bold leading-snug text-[#1B1440] dark:text-white">

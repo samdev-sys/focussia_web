@@ -16,6 +16,9 @@ interface GranMetaAnualModalProps {
   onApproved: () => void;
   existingMeta?: any;
   editMode?: boolean;
+  onOpenHelp?: () => void;
+  onOpenNotifications?: () => void;
+  onOpenSettings?: () => void;
 }
 
 type Stage = 'intro' | 'p1' | 'p2' | 'p3' | 'preSmart' | 'generating' | 'smart' | 'edit' | 'approved';
@@ -50,6 +53,9 @@ export function GranMetaAnualModal({
   onApproved,
   existingMeta,
   editMode,
+  onOpenHelp,
+  onOpenNotifications,
+  onOpenSettings,
 }: GranMetaAnualModalProps) {
   const [stage, setStage] = useState<Stage>('intro');
   const [p1, setP1] = useState('');
@@ -546,6 +552,9 @@ export function GranMetaAnualModal({
       avatarImg={avatarSrc}
       title={shellTitle}
       onClose={onClose}
+      onOpenHelp={onOpenHelp}
+      onOpenNotifications={onOpenNotifications}
+      onOpenSettings={onOpenSettings}
     >
       <div ref={chatRef} className="max-w-[1100px] mx-auto">
         {renderContent()}

@@ -47,8 +47,8 @@ export default function KanbanPage({ acciones, papelera, loading, onAdd, onClass
   return (
     <div className="space-y-4">
       {/* Input */}
-      <div className="bg-white rounded-2xl border border-[#e3e8f5] p-3 sm:p-4 flex items-center gap-3">
-        <span className="w-11 h-11 rounded-xl bg-[#eef3ff] hidden sm:flex items-center justify-center shrink-0">
+      <div className="bg-white rounded-md border border-[#e3e8f5] p-3 sm:p-4 flex items-center gap-3">
+        <span className="w-11 h-11 rounded-md bg-[#eef3ff] hidden sm:flex items-center justify-center shrink-0">
           <FileText className="w-6 h-6 text-[#1f6feb]" />
         </span>
         <input
@@ -63,7 +63,7 @@ export default function KanbanPage({ acciones, papelera, loading, onAdd, onClass
           type="button"
           onClick={handleAdd}
           disabled={!texto.trim() || adding}
-          className="shrink-0 flex items-center gap-2 px-5 sm:px-7 py-3 rounded-xl bg-gradient-to-r from-[#1f6feb] to-[#a21caf] text-white font-black tracking-wide text-sm hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50"
+          className="shrink-0 flex items-center gap-2 px-5 sm:px-7 py-3 rounded-md bg-gradient-to-r from-[#1f6feb] to-[#a21caf] text-white font-black tracking-wide text-sm hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50"
         >
           <span className="hidden sm:inline">AGREGAR ACCIÓN</span>
           <Plus className="w-5 h-5" strokeWidth={3} />
@@ -77,9 +77,9 @@ export default function KanbanPage({ acciones, papelera, loading, onAdd, onClass
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Pendientes */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-[#e3e8f5] overflow-hidden">
+        <div className="lg:col-span-2 bg-white rounded-md border border-[#e3e8f5] overflow-hidden">
           <div className="flex items-center gap-3 px-5 pt-4 pb-3">
-            <h2 className="text-xl sm:text-2xl font-black text-[#101433]">ACCIONES PENDIENTES</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-[#101433]">ACCIONES PENDIENTES</h2>
             <button
               type="button"
               onClick={() => setShowHelp(v => !v)}
@@ -100,7 +100,7 @@ export default function KanbanPage({ acciones, papelera, loading, onAdd, onClass
               acciones.map(a => (
                 <div
                   key={a.id}
-                  className="flex items-center gap-3 bg-[#f7f9fe] border border-[#eef1f8] rounded-xl px-4 py-3 mb-2"
+                  className="flex items-center gap-3 bg-[#f7f9fe] border border-[#eef1f8] rounded-md px-4 py-3 mb-2"
                 >
                   <p className="flex-1 min-w-0 text-[#101433] text-base font-medium truncate" title={a.texto_accion}>
                     {a.texto_accion}
@@ -129,10 +129,10 @@ export default function KanbanPage({ acciones, papelera, loading, onAdd, onClass
         </div>
 
         {/* Ideas desechadas */}
-        <div className="bg-white rounded-2xl border border-[#e3e8f5] p-5">
+        <div className="bg-white rounded-md border border-[#e3e8f5] p-5">
           <div className="flex items-center gap-2">
             <Trash2 className="w-6 h-6 text-[#101433]" />
-            <h2 className="text-xl font-black text-[#101433]">IDEAS DESECHADAS</h2>
+            <h2 className="text-xl font-bold text-[#101433]">IDEAS DESECHADAS</h2>
           </div>
           <p className="text-sm text-[#5b6b8c] mt-1">Puedes recuperar estas acciones cuando lo necesites.</p>
           <div className="w-10 h-1 rounded-full bg-gradient-to-r from-[#1f6feb] to-[#a21caf] mt-2 mb-4" />
@@ -141,7 +141,7 @@ export default function KanbanPage({ acciones, papelera, loading, onAdd, onClass
               <p className="text-sm text-gray-400">Sin ideas desechadas.</p>
             )}
             {papelera.map(a => (
-              <div key={a.id} className="border border-[#e3e8f5] rounded-xl p-4">
+              <div key={a.id} className="border border-[#e3e8f5] rounded-md p-4">
                 <p className="text-[#101433] font-bold text-base">{a.texto_accion}</p>
                 <div className="flex items-center gap-2 mt-3">
                   <span className="w-8 h-8 rounded-full bg-black text-white text-sm font-black flex items-center justify-center">E</span>

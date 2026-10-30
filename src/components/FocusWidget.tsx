@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import type { FocusConfig } from './FocusModeScreen';
 import { ETIQUETA_HERRAMIENTA } from './FocusModeScreen';
+import { sonarFin } from './focusAudio';
 
 /* ──────────────────────────────────────────────────────────────────────────
    Doc 23 · Modo Focus — widget flotante y modales del ciclo de sesión.
@@ -56,27 +57,6 @@ export const leerMinimizadoLocal = (): boolean => {
   try { return JSON.parse(localStorage.getItem(STORAGE_MIN) || 'false') === true; } catch { return false; }
 };
 
-/* Sonido breve de fin de sesión / alarma (WebAudio, silencioso si falla). */
-function sonarFin(veces = 2) {
-  try {
-    const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    const ctx = new Ctx();
-    for (let i = 0; i < veces; i++) {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = 880;
-      gain.gain.setValueAtTime(0.001, ctx.currentTime + i * 0.35);
-      gain.gain.exponentialRampToValueAtTime(0.15, ctx.currentTime + i * 0.35 + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.35 + 0.28);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(ctx.currentTime + i * 0.35);
-      osc.stop(ctx.currentTime + i * 0.35 + 0.3);
-    }
-    setTimeout(() => { ctx.close().catch(() => { /* noop */ }); }, veces * 400 + 300);
-  } catch { /* noop */ }
-}
-
 /* Línea de tiempo de pomodoro: [concentración, descanso, … , concentración]. */
 interface Fase { tipo: 'concentracion' | 'descanso'; dur: number }
 function planPomodoro(config: FocusConfig): Fase[] {
@@ -91,11 +71,12 @@ function planPomodoro(config: FocusConfig): Fase[] {
   return fases;
 }
 
-function msHastaAlarma(hora: string, startedAtMs: number): number {
+function objetivoAlarmaMs(hora: string, startedAtMs: number): number {
   const [h, m] = (hora || '00:00').split(':').map(Number);
-  const objetivo = new Date();
+  const objetivo = new Date(startedAtMs);
   objetivo.setHours(h || 0, m || 0, 0, 0);
-  if (objetivo.getTime() <= Math.max(Date.now(), startedAtMs)) objetivo.setDate(objetivo.getDate() + 1);
+  // Si la hora ya pasó al iniciar la alarma, programar para mañana
+  if (objetivo.getTime() <= startedAtMs) objetivo.setDate(objetivo.getDate() + 1);
   return objetivo.getTime();
 }
 
@@ -229,7 +210,7 @@ export default function FocusWidget({ sesion, minimizado, onMinimizar, onCerrarS
     }
 
     if (herramienta === 'alarma') {
-      const objetivoMs = msHastaAlarma(sesion.config.hora || '', sesion.startedAtMs);
+      const objetivoMs = objetivoAlarmaMs(sesion.config.hora || '', sesion.startedAtMs);
       const restante = (objetivoMs - now) / 1000;
       return {
         principal: formatearHora12(sesion.config.hora || ''),

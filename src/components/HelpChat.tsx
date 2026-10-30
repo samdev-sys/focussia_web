@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Send, Bot, Loader2, Sparkles } from 'lucide-react';
 import { agentService } from '../services/api';
 
@@ -68,7 +69,7 @@ export default function HelpChat({ open, onClose, pasoLabel, titulo, bienvenida,
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[250] w-[380px] max-w-[calc(100vw-2rem)] bg-[#0c0b24]/95 backdrop-blur-xl rounded-2xl shadow-[0_24px_64px_rgba(0,0,0,0.6)] border border-white/10 flex flex-col overflow-hidden font-montserrat">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-[#1d2fdc] to-[#7c3aed] shrink-0">
@@ -142,6 +143,7 @@ export default function HelpChat({ open, onClose, pasoLabel, titulo, bienvenida,
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

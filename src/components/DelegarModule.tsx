@@ -36,10 +36,10 @@ const TIPOS = [
 ] as const;
 
 const BUENAS_PRACTICAS = [
-  { t: 'Define claramente', d: 'Quién será responsable y qué esperas como resultado.', f: <img src="./User-1.png" alt="Spin" className="w-4 h-4" /> },
-  { t: 'Realiza seguimiento', d: 'Comienza registrando la primera acción de control.', f: <img src="./Spin-1.png" alt="Spin" className="w-4 h-4" /> },
-  { t: 'Confirma el resultado', d: 'Solo tú puedes marcar una delegación como cumplida.', f: <img src="./Check-1.png" alt="Spin" className="w-4 h-4" /> },
-  { t: 'Recupera si es necesario', d: 'Si no avanza, recupera y reasigna o ejecútala tú.', f: <img src="./Refresh-1.png" alt="Spin" className="w-4 h-4" /> },
+  { t: 'Define claramente', d: 'Quién será responsable y qué esperas como resultado.', f: <img src="./User-1.png" alt="Spin" className="w-7 h-6" /> },
+  { t: 'Realiza seguimiento', d: 'Comienza registrando la primera acción de control.', f: <img src="./t1.png" alt="Spin" className="w-6 h-6" /> },
+  { t: 'Confirma el resultado', d: 'Solo tú puedes marcar una delegación como cumplida.', f: <img src="./KAN.png" alt="Spin" className="w-6 h-6" /> },
+  { t: 'Recupera si es necesario', d: 'Si no avanza, recupera y reasigna o ejecútala tú.', f: <img src="./Spin-1.png" alt="Spin" className="w-7 h-8" /> },
 ];
 
 function fmtAt(iso: string): string {
@@ -141,10 +141,10 @@ function DelegationRow({ deleg, expanded, responsables, onToggle, onChanged }: {
       <button
         type="button"
         onClick={onToggle}
-        className="w-full flex items-center gap-3 bg-white rounded-xl border border-[#e3e8f5] px-4 py-3 hover:border-[#1f6feb] hover:shadow-sm transition-all text-left"
+        className="w-100 flex items-center gap-3 bg-white rounded-md border border-[#e3e8f5] px-4 py-3 hover:border-[#1f6feb] hover:shadow-sm transition-all text-left"
       >
         <ChevronRight className="w-4 h-4 text-[#8a93b2] shrink-0" />
-        <span className="w-8 h-8 rounded-lg bg-[#eef3ff] flex items-center justify-center shrink-0 text-[#1f6feb] font-black text-sm">
+        <span className="w-8 h-8 rounded-lg bg-[#eef3ff] flex items-center justify-center shrink-0 text-[#1f6feb] font-bold text-sm">
           {deleg.titulo.charAt(0).toUpperCase()}
         </span>
         <span className="flex-1 min-w-0">
@@ -157,10 +157,10 @@ function DelegationRow({ deleg, expanded, responsables, onToggle, onChanged }: {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-[#e3e8f5] shadow-sm overflow-hidden">
+    <div className="bg-white rounded-md w-190 border border-[#e3e8f5] shadow-sm overflow-hidden -ml-4">
       {/* Cabecera */}
       <div className="flex items-center gap-4 px-6 pt-5">
-        <span className="w-12 h-12 rounded-full bg-[#1e1b4b] text-white font-black text-xl flex items-center justify-center shrink-0">
+        <span className="w-8 h-8 rounded-full bg-[#1e1b4b] text-white font-bold text-xl flex items-center justify-center shrink-0">
           {deleg.titulo.charAt(0).toUpperCase()}
         </span>
         <div className="flex-1 min-w-0">
@@ -174,7 +174,7 @@ function DelegationRow({ deleg, expanded, responsables, onToggle, onChanged }: {
       </div>
 
       {/* Cuerpo en 3 columnas */}
-      <div className="grid md:grid-cols-[1fr_1.5fr_1.2fr] px-0 py-5 gap-6 md:gap-0 md:divide-x md:divide-[#eef1f7]">
+      <div className="grid md:grid-cols-[1fr_1.5fr_1.2fr] px-3 py-2 gap-4 md:gap-0 md:divide-x md:divide-[#eef1f7]">
         {/* Responsable */}
         <div className="md:pr-6">
           <p className="text-xs font-bold text-[#4338ca] mb-3">Responsable</p>
@@ -217,9 +217,9 @@ function DelegationRow({ deleg, expanded, responsables, onToggle, onChanged }: {
                 onClick={() => doFollowup(key)}
                 disabled={busy || !deleg.responsable}
                 title={deleg.responsable ? label : 'Asigna un responsable primero'}
-                className="flex flex-col items-center gap-2 py-4 px-1 rounded-md border border-[#e3e8f5] bg-white text-[#1e1b4b] hover:border-[#4338ca] hover:shadow-sm transition-all disabled:opacity-40"
+                className="flex flex-col items-center gap-2 py-1 px-1 rounded-md border border-[#e3e8f5] bg-white text-[#1e1b4b] hover:border-[#4338ca] hover:shadow-sm transition-all disabled:opacity-40"
               >
-                {renderIcon(`w-6 h-6 ${iconCls}`)}
+                {renderIcon(`w-8 h-6 ${iconCls}`)}
                 <span className="text-[8px] font-bold leading-tight">{label}</span>
               </button>
             ))}
@@ -277,7 +277,7 @@ function DelegationRow({ deleg, expanded, responsables, onToggle, onChanged }: {
           iconCls="text-[#6d28d9]"
           label="Recuperar acción"
           desc="Aparecerá nuevamente en mi planificación."
-          className="md:pr-6"
+          className="md:pr-6 "
         />
         <ProcessActionButton
           onClick={() => { setEditingResp(true); setTimeout(() => respRef.current?.focus(), 60); }}
@@ -315,7 +315,7 @@ function ProcessActionButton({ onClick, disabled, Icon, Img, iconCls, label, des
     >
       <span className="shrink-0 mt-0.5">
         {Img ? (
-          <img src={Img} alt="" className={`w-8 h-8 object-contain ${iconCls}`} />
+          <img src={Img} alt="" className={`w-20 h-20 object-contain ${iconCls}`} />
         ) : Icon ? (
           <Icon className={`w-8 h-8 ${iconCls}`} strokeWidth={1.8} />
         ) : null}
@@ -328,11 +328,14 @@ function ProcessActionButton({ onClick, disabled, Icon, Img, iconCls, label, des
   );
 }
 
-export default function DelegarModule({ username, avatarUrl, onNavigate, onClose }: {
+export default function DelegarModule({ username, avatarUrl, onNavigate, onClose, onOpenHelp, onOpenNotifications, onOpenSettings }: {
   username?: string;
   avatarUrl?: string;
   onNavigate?: (key: MonthlyNavKey) => void;
   onClose: () => void;
+  onOpenHelp?: () => void;
+  onOpenNotifications?: () => void;
+  onOpenSettings?: () => void;
 }) {
   const [items, setItems] = useState<DelegacionProcesoData[]>([]);
   const [responsables, setResponsables] = useState<string[]>([]);
@@ -385,6 +388,9 @@ export default function DelegarModule({ username, avatarUrl, onNavigate, onClose
       avatarUrl={avatarUrl}
       onNavigate={shellNav}
       onClose={onClose}
+      onOpenHelp={onOpenHelp}
+      onOpenNotifications={onOpenNotifications}
+      onOpenSettings={onOpenSettings}
     >
       {/* Hero */}
       <div className="relative mb-6 overflow-hidden rounded-xl h-50">
@@ -451,29 +457,29 @@ export default function DelegarModule({ username, avatarUrl, onNavigate, onClose
 
         {/* Resumen lateral */}
         <div className="space-y-4">
-          <div className="bg-white rounded-2xl border border-[#e3e8f5] p-5">
-            <p className="text-[11px] font-bold tracking-widest text-[#5b6b8c] mb-3">Resumen de seguimientos</p>
+          <div className="bg-white rounded-md w-72 border border-[#e3e8f5] p-5 ml-13">
+            <p className="text-[11px] font-bold tracking-widest text-[#5b6b8c] mb-3">Resumen de delegaciones</p>
             <div className="grid grid-cols-2 gap-2">
-              <div className="bg-[#f0fdf4] rounded-xl p-3 text-center">
-                <p className="text-xl font-black text-[#16a34a] flex items-center justify-center gap-1">
+              <div className="bg-[#f0fdf4] rounded-md p-3 text-center">
+                <p className="text-xl font-bold text-[#16a34a] flex items-center justify-center gap-1">
                   <CheckCircle2 className="w-4 h-4" /> {enSeguimiento}
                 </p>
                 <p className="text-[10px] font-bold text-[#5b6b8c] mt-0.5">En seguimiento</p>
               </div>
-              <div className="bg-[#eef4ff] rounded-xl p-3 text-center">
-                <p className="text-xl font-black text-[#1f6feb] flex items-center justify-center gap-1">
+              <div className="bg-[#eef4ff] rounded-md p-3 text-center">
+                <p className="text-xl font-bold text-[#1f6feb] flex items-center justify-center gap-1">
                   <img className="w-6 h-7" src="./wait.png" alt="Spin" /> {pendientes}
                 </p>
                 <p className="text-[10px] font-bold text-[#5b6b8c] mt-0.5">Pendientes</p>
               </div>
-              <div className="bg-[#fff7ed] rounded-xl p-3 text-center">
-                <p className="text-xl font-black text-[#ea580c] flex items-center justify-center gap-1">
+              <div className="bg-[#fff7ed] rounded-md p-3 text-center">
+                <p className="text-xl font-bold text-[#ea580c] flex items-center justify-center gap-1">
                   <img className="w-4 h-4" src="./Spin-2.png" alt="Spin" /> {porRecuperar}
                 </p>
                 <p className="text-[10px] font-bold text-[#5b6b8c] mt-0.5">Por recuperar</p>
               </div>
-              <div className="bg-[#faf5ff] rounded-xl p-3 text-center">
-                <p className="text-xl font-black text-[#9333ea] flex items-center justify-center gap-1">
+              <div className="bg-[#faf5ff] rounded-md p-3 text-center">
+                <p className="text-xl font-bold text-[#9333ea] flex items-center justify-center gap-1">
                   <Check className="w-4 h-4" /> {completadas}
                 </p>
                 <p className="text-[10px] font-bold text-[#5b6b8c] mt-0.5">Completadas</p>
@@ -481,7 +487,7 @@ export default function DelegarModule({ username, avatarUrl, onNavigate, onClose
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-[#e3e8f5] p-5">
+          <div className="bg-white rounded-md  w-72 border border-[#e3e8f5] p-5 ml-13">
             <p className="text-[11px] font-bold tracking-widest text-black mb-3">Buenas prácticas de delegación</p>
             <div className="space-y-2.5">
               {BUENAS_PRACTICAS.map(b => (
@@ -495,9 +501,9 @@ export default function DelegarModule({ username, avatarUrl, onNavigate, onClose
             </div>
           </div>
 
-          <div className="rounded-md bg-gradient-to-br from-[#DFE2EB]  p-5 text-indigo text-center">
-            <Quote className="w-6 h-6 opacity-60 mb-2" fill="currentColor" />
-            <p className="text-sm font-bold leading-relaxed text-[#2D096E]">La confianza construye equipos: supervisa sin controlar y celebra cada avance.</p>
+          <div className="rounded-md bg-gradient-to-br from-[#DFE2EB]  w-72 p-5 text-indigo text-center ml-13">
+            <img src="./apostrofe.png" alt="" className='w-10 h-10' />
+            <p className="text-sm font-bold leading-relaxed text-[#7C0DA8]">La confianza construye equipos: supervisa sin controlar y celebra cada avance.</p>
           </div>
         </div>
       </div>

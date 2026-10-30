@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  Check, ChevronLeft, Info, FileWarning,
+  Check, Info, FileWarning, Clock, ClipboardCheck,
 } from 'lucide-react';
 import {
   Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -8,15 +8,24 @@ import {
 import {
   FocusiaReportData, FocusiaReportRawMetadata, reportService,
 } from '../services/api';
-import { AVATAR_VARIACION_POR_NOMBRE } from '../constants/avatars';
-
-// ──────────────────────────────────────────────────────────────────────────
-// Tokens visuales (mockups del módulo de Reportes)
-// ──────────────────────────────────────────────────────────────────────────
-const CYAN = '#22D3EE';
-const PURPLE = '#A855F7';
-const BLUE = '#2563EB';
-const GRAY_LINE = '#E2E8F0';
+import { ReportAvatarPose } from '../constants/avatars';
+import {
+  DEMO_REPORT_ANNUAL,
+  DEMO_REPORT_MONTHLY,
+  DEMO_REPORT_WEEKLY_CLOSED,
+  DEMO_REPORT_WEEKLY_EMPTY,
+  DEMO_REPORT_WEEKLY_FAILED,
+  DEMO_REPORT_WEEKLY_LIVE,
+  DEMO_REPORT_WEEKLY_PENDING_ANALYSIS,
+  REPORT_BLUE as BLUE,
+  REPORT_CYAN as CYAN,
+  REPORT_GRAY_LINE as GRAY_LINE,
+  REPORT_PURPLE as PURPLE,
+  ReportHeroHeader,
+  getReportAvatarName,
+  getReportAvatarThumb,
+  useResolvedAvatarIndex,
+} from './reportMockups';
 
 const LEVEL_TITULO: Record<string, string> = {
   weekly: 'Reporte semanal',
@@ -47,17 +56,9 @@ const CHART_TITULO: Record<string, string> = {
 // ──────────────────────────────────────────────────────────────────────────
 function fmtDiaMes(iso: string): string {
   try {
-    return new Date(iso + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
+    return new Date(iso + 'T00:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
   } catch {
     return iso;
-  }
-}
-
-function nombreMes(iso: string): string {
-  try {
-    return new Date(iso + 'T00:00:00').toLocaleDateString('es-AR', { month: 'long' });
-  } catch {
-    return '';
   }
 }
 
@@ -70,21 +71,26 @@ function mesCorto(iso: string): string {
   }
 }
 
+function capFirst(s: string): string {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+
 /** Encabezado del período, como en los mockups: «5–11 de octubre de 2026». */
-function rangoPeriodo(report: FocusiaReportData): string {
+export function rangoPeriodo(report: FocusiaReportData): string {
   const start = report.period_start;
   const end = report.period_end;
   try {
     if (report.level === 'annual') return String(new Date(end + 'T00:00:00').getFullYear());
     if (report.level === 'monthly') {
-      return new Date(end + 'T00:00:00')
-        .toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+      const m = new Date(end + 'T00:00:00').toLocaleDateString('es-AR', { month: 'long' });
+      const y = new Date(end + 'T00:00:00').getFullYear();
+      return `${capFirst(m)} ${y}`;
     }
     const a = new Date(start + 'T00:00:00');
     const b = new Date(end + 'T00:00:00');
     if (a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear()) {
-      const mes = b.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
-      return `${a.getDate()}–${b.getDate()} de ${mes}`;
+      const mes = b.toLocaleDateString('es-AR', { month: 'long' });
+      return `${a.getDate()}–${b.getDate()} de ${mes} de ${b.getFullYear()}`;
     }
     return `${a.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })} – ${
       b.toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })}`;
@@ -93,18 +99,40 @@ function rangoPeriodo(report: FocusiaReportData): string {
   }
 }
 
-/** Subtítulo bajo el rango: «1–30 de septiembre · Período cerrado». */
-function subtituloPeriodo(report: FocusiaReportData): string {
-  const cerrado = !!report.closed_at;
-  const base = report.level === 'weekly'
-    ? rangoPeriodo(report)
-    : `${fmtDiaMes(report.period_start)} – ${fmtDiaMes(report.period_end)}`;
-  const estado = cerrado ? 'Período cerrado' : 'Se actualiza hasta las 00:00';
-  const parcial = report.is_partial ? 'Período parcial · ' : '';
-  return `${base} · ${parcial}${estado}`;
+/** Subtítulo bajo el rango cuando el período está cerrado: «5–11 de octubre · Período cerrado». */
+function subtituloCerrado(report: FocusiaReportData): string {
+  try {
+    const a = new Date(report.period_start + 'T00:00:00');
+    const b = new Date(report.period_end + 'T00:00:00');
+    let base = '';
+    if (report.level === 'annual') {
+      const mA = a.toLocaleDateString('es-AR', { month: 'long' });
+      const mB = b.toLocaleDateString('es-AR', { month: 'long' });
+      base = `${a.getDate()} de ${mA} – ${b.getDate()} de ${mB}`;
+    } else if (a.getMonth() === b.getMonth()) {
+      const mes = b.toLocaleDateString('es-AR', { month: 'long' });
+      base = `${a.getDate()}–${b.getDate()} de ${mes}`;
+    } else {
+      base = `${fmtDiaMes(report.period_start)} – ${fmtDiaMes(report.period_end)}`;
+    }
+    const parcial = report.is_partial ? 'Período parcial · ' : '';
+    return `${base} · ${parcial}Período cerrado`;
+  } catch {
+    return 'Período cerrado';
+  }
 }
 
 const DIAS_CORTOS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+function rangoCortoDias(report: FocusiaReportData): string {
+  try {
+    const a = new Date(report.period_start + 'T00:00:00');
+    const b = new Date(report.period_end + 'T00:00:00');
+    return `${DIAS_CORTOS[a.getDay()]} ${a.getDate()} ${mesCorto(report.period_start)} – ${DIAS_CORTOS[b.getDay()]} ${b.getDate()} ${mesCorto(report.period_end)}`;
+  } catch {
+    return `${report.period_start} – ${report.period_end}`;
+  }
+}
 
 // ──────────────────────────────────────────────────────────────────────────
 // Datos del reporte
@@ -115,7 +143,6 @@ interface SerieDatum {
   completadas: number;
 }
 
-/** Desglose de las acciones sin completar (Doc 27 §5), con respaldo para reportes previos. */
 function desglosePendientes(report: FocusiaReportData) {
   const raw: FocusiaReportRawMetadata = (report.ai_raw_metadata || {}) as FocusiaReportRawMetadata;
   const pending = report.pending_count;
@@ -126,7 +153,6 @@ function desglosePendientes(report: FocusiaReportData) {
   return { reprogramadas, eliminadas, pendientesAlCierre };
 }
 
-/** Serie del período, agrupada según el nivel (día / semana / mes). */
 function serieGrafico(report: FocusiaReportData): Array<{
   etiqueta: string;
   detalle: string;
@@ -144,7 +170,6 @@ function serieGrafico(report: FocusiaReportData): Array<{
   };
 
   if (report.level === 'weekly') {
-    // Los 7 días del período, incluyendo los sin acciones (como en el mockup).
     const inicio = new Date(report.period_start + 'T00:00:00');
     for (let i = 0; i < 7; i++) {
       const d = new Date(inicio);
@@ -162,13 +187,14 @@ function serieGrafico(report: FocusiaReportData): Array<{
   }
 
   if (report.level === 'monthly') {
-    // Agrupado por semana natural dentro del mes.
     const inicio = new Date(report.period_start + 'T00:00:00');
     const fin = new Date(report.period_end + 'T00:00:00');
     let corte = new Date(inicio);
     while (corte <= fin) {
       const borde = new Date(corte);
-      borde.setDate(corte.getDate() + 6);
+      // Primera semana corta o bloques de 7 días (1–6, 7–13, 14–20, 21–27, 28–30)
+      const diasBloque = corte.getDate() === 1 ? 5 : 6;
+      borde.setDate(corte.getDate() + diasBloque);
       if (borde > fin) borde.setTime(fin.getTime());
       const acumulado = { planificadas: 0, completadas: 0 };
       for (let d = new Date(corte); d <= borde; d.setDate(d.getDate() + 1)) {
@@ -223,27 +249,28 @@ const ESTADISTICAS: Array<{
 
 function Estadisticas({ report, placeholder }: { report: FocusiaReportData; placeholder?: boolean }) {
   const total = report.completed_count + report.pending_count;
+  const sinDatos = total === 0;
   const valores: Record<string, string> = {
     planificadas: String(total),
     completadas: String(report.completed_count),
     sinCompletar: String(report.pending_count),
-    cumplimiento: `${Math.round(report.completion_percentage)} %`,
+    cumplimiento: sinDatos ? '— %' : `${Math.round(report.completion_percentage)} %`,
   };
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4">
+    <div className="grid grid-cols-2 sm:grid-cols-4 border-b border-slate-100 pb-2">
       {ESTADISTICAS.map((s, i) => (
         <div
           key={s.key}
-          className={`flex flex-col gap-1 py-4 ${i > 0 ? 'sm:border-l sm:border-[#f1f5f9]' : ''}`}
+          className={`flex flex-col gap-1 py-4 ${i > 0 ? 'sm:border-l sm:border-[#e2e8f0] sm:pl-6' : ''}`}
         >
           {placeholder ? (
-            <span className="block w-10 h-1 rounded-full" style={{ background: s.color }} />
+            <span className="block w-9 h-1.5 rounded-full my-3" style={{ background: s.color }} />
           ) : (
-            <span className="text-4xl font-bold tracking-tight" style={{ color: s.color }}>
+            <span className="text-4xl font-black tracking-tight" style={{ color: s.color }}>
               {valores[s.key]}
             </span>
           )}
-          <span className="text-sm text-slate-500">{s.label}</span>
+          <span className="text-sm text-slate-600">{s.label}</span>
         </div>
       ))}
     </div>
@@ -261,22 +288,26 @@ function Donut({ porcentaje, completadas, sinCompletar, pendiente }: {
     <div className="flex flex-wrap items-center gap-6 mb-4">
       <div
         className="relative w-36 h-36 rounded-full shrink-0"
-        style={{ background: pendiente ? '#f1f5f9' : `conic-gradient(${PURPLE} 0deg ${deg}deg, ${GRAY_LINE} ${deg}deg 360deg)` }}
+        style={{
+          background: pendiente
+            ? GRAY_LINE
+            : `conic-gradient(${PURPLE} 0deg ${deg}deg, ${GRAY_LINE} ${deg}deg 360deg)`,
+        }}
       >
         <div className="absolute inset-[20px] rounded-full bg-white flex items-center justify-center">
-          <span className="text-2xl font-bold text-slate-900">
+          <span className="text-2xl font-black text-slate-900">
             {pendiente ? '— %' : `${Math.round(porcentaje)} %`}
           </span>
         </div>
       </div>
-      <div className="space-y-2 text-[15px] text-slate-700">
-        <div className="flex items-center gap-2">
-          <span className="w-3.5 h-3.5 rounded-full" style={{ background: PURPLE }} />
-          <span className="font-bold">{completadas}</span> completadas
+      <div className="space-y-2.5 text-[15px] text-slate-700">
+        <div className="flex items-center gap-2.5">
+          <span className="w-3.5 h-3.5 rounded-full shrink-0" style={{ background: PURPLE }} />
+          <span><strong className="font-bold text-slate-900">{completadas}</strong> completadas</span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="w-3.5 h-3.5 rounded-full bg-slate-300" />
-          <span className="font-bold">{sinCompletar}</span> sin completar
+        <div className="flex items-center gap-2.5">
+          <span className="w-3.5 h-3.5 rounded-full bg-slate-300 shrink-0" />
+          <span><strong className="font-bold text-slate-900">{sinCompletar}</strong> sin completar</span>
         </div>
       </div>
     </div>
@@ -295,25 +326,24 @@ function DesgloseSinCompletar({ report }: { report: FocusiaReportData }) {
   if (filas.length === 0) return null;
   return (
     <div className="border-t border-[#e2e8f0] pt-4 mt-4">
-      <h4 className="text-base font-bold mb-2" style={{ color: BLUE }}>
+      <h4 className="text-[15px] font-bold mb-2.5" style={{ color: BLUE }}>
         Desglose de acciones sin completar ({total})
       </h4>
       <ul className="space-y-1.5">
         {filas.map((f, i) => (
-          <li key={i} className="flex gap-4 text-sm text-slate-700">
-            <span className="font-bold min-w-[22px]" style={{ color: BLUE }}>{f.n}</span>
-            {f.texto}
+          <li key={i} className="flex gap-3 text-sm text-slate-700">
+            <span className="font-bold min-w-[20px]" style={{ color: BLUE }}>{f.n}</span>
+            <span>{f.texto}</span>
           </li>
         ))}
       </ul>
-      <p className="text-xs text-slate-400 mt-2 italic">
+      <p className="text-xs text-slate-400 mt-3">
         Acciones principales: cada una cuenta una sola vez.
       </p>
     </div>
   );
 }
 
-/** Tick del eje X con etiqueta principal y detalle (día + fecha). */
 function TickEtiqueta({ x, y, payload }: any) {
   const { etiqueta, detalle } = payload.payload || {};
   return (
@@ -331,8 +361,22 @@ function TickEtiqueta({ x, y, payload }: any) {
 }
 
 function EtiquetaBarra(props: any) {
-  const { x, y, width, value, color } = props;
-  if (!value) return null;
+  const { x, y, width, value, color, mostrarCero } = props;
+  if (!value) {
+    if (!mostrarCero) return null;
+    return (
+      <text
+        x={Number(x) + Number(width)}
+        y={Number(y) - 6}
+        textAnchor="middle"
+        fontSize={12}
+        fontWeight={600}
+        fill="#94A3B8"
+      >
+        0
+      </text>
+    );
+  }
   return (
     <text
       x={Number(x) + Number(width) / 2}
@@ -348,23 +392,18 @@ function EtiquetaBarra(props: any) {
 }
 
 function BarraSerie({
+  report,
   data,
   height,
 }: {
+  report: FocusiaReportData;
   data: Array<{ etiqueta: string; detalle: string; planificadas: number; completadas: number }>;
   height: number;
 }) {
   const hayDatos = data.some(d => d.planificadas > 0);
-  if (!hayDatos) {
-    return (
-      <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 p-8 text-center text-sm text-slate-400">
-        Todavía no hay acciones computables para graficar en este período.
-      </div>
-    );
-  }
   return (
     <div>
-      <div className="flex items-center gap-5 text-sm text-slate-600 mb-2">
+      <div className="flex items-center gap-5 text-sm text-slate-700 mb-3">
         <span className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full" style={{ background: CYAN }} /> Planificadas
         </span>
@@ -372,57 +411,75 @@ function BarraSerie({
           <span className="w-3 h-3 rounded-full" style={{ background: PURPLE }} /> Completadas
         </span>
       </div>
-      <ResponsiveContainer width="100%" height={height}>
-        <BarChart data={data} margin={{ top: 24, right: 8, left: -16, bottom: 12 }} barGap={4}>
-          <defs>
-            <linearGradient id="gplan" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#7DD3FC" />
-              <stop offset="100%" stopColor={CYAN} />
-            </linearGradient>
-            <linearGradient id="gcomp" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#C084FC" />
-              <stop offset="100%" stopColor={PURPLE} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="0" vertical={false} stroke={GRAY_LINE} />
-          <XAxis
-            dataKey="etiqueta"
-            interval={0}
-            axisLine={false}
-            tickLine={false}
-            tick={<TickEtiqueta />}
-            height={34}
-          />
-          <YAxis
-            allowDecimals={false}
-            axisLine={false}
-            tickLine={false}
-            tick={{ fill: '#64748B', fontSize: 12 }}
-          />
-          <Tooltip
-            cursor={{ fill: 'rgba(148,163,184,0.08)' }}
-            contentStyle={{ borderRadius: 10, border: `1px solid ${GRAY_LINE}`, fontSize: 13 }}
-          />
-          <Bar dataKey="planificadas" fill="url(#gplan)" radius={[4, 4, 0, 0]} maxBarSize={44}>
-            <LabelList dataKey="planificadas" content={<EtiquetaBarra color={CYAN} />} />
-          </Bar>
-          <Bar dataKey="completadas" fill="url(#gcomp)" radius={[4, 4, 0, 0]} maxBarSize={44}>
-            <LabelList dataKey="completadas" content={<EtiquetaBarra color={PURPLE} />} />
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+
+      {!hayDatos ? (
+        <div className="py-12 px-4 flex flex-col items-center justify-center text-center">
+          <div className="w-16 h-16 rounded-2xl bg-[#E8F1FF] flex items-center justify-center mb-4">
+            <ClipboardCheck className="w-8 h-8" style={{ color: BLUE }} />
+          </div>
+          <h4 className="text-lg font-bold text-slate-800">
+            Sin actividad registrada en los 7 días
+          </h4>
+          <p className="text-sm text-slate-400 mt-1">
+            {rangoCortoDias(report)} · 0 acciones planificadas
+          </p>
+        </div>
+      ) : (
+        <ResponsiveContainer width="100%" height={height}>
+          <BarChart data={data} margin={{ top: 24, right: 8, left: -18, bottom: 14 }} barGap={4}>
+            <defs>
+              <linearGradient id="gplan" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#67E8F9" />
+                <stop offset="100%" stopColor={CYAN} />
+              </linearGradient>
+              <linearGradient id="gcomp" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#C084FC" />
+                <stop offset="100%" stopColor={PURPLE} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="0" vertical={false} stroke={GRAY_LINE} />
+            <XAxis
+              dataKey="etiqueta"
+              interval={0}
+              axisLine={false}
+              tickLine={false}
+              tick={<TickEtiqueta />}
+              height={36}
+            />
+            <YAxis
+              allowDecimals={false}
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: '#64748B', fontSize: 12 }}
+            />
+            <Tooltip
+              cursor={{ fill: 'rgba(148,163,184,0.08)' }}
+              contentStyle={{ borderRadius: 10, border: `1px solid ${GRAY_LINE}`, fontSize: 13 }}
+            />
+            <Bar dataKey="planificadas" fill="url(#gplan)" radius={[4, 4, 0, 0]} maxBarSize={38}>
+              <LabelList
+                dataKey="planificadas"
+                content={<EtiquetaBarra color="#06B6D4" mostrarCero={report.level === 'weekly'} />}
+              />
+            </Bar>
+            <Bar dataKey="completadas" fill="url(#gcomp)" radius={[4, 4, 0, 0]} maxBarSize={38}>
+              <LabelList dataKey="completadas" content={<EtiquetaBarra color={PURPLE} />} />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 }
 
 function BarraProgreso({ porcentaje }: { porcentaje: number }) {
   return (
-    <div className="h-4 rounded-full bg-slate-200 overflow-hidden">
+    <div className="h-3.5 rounded-full bg-slate-200 overflow-hidden">
       <div
         className="h-full rounded-full transition-all duration-700"
         style={{
           width: `${Math.max(0, Math.min(100, porcentaje))}%`,
-          background: `linear-gradient(90deg, #7DD3FC, ${CYAN})`,
+          background: `linear-gradient(90deg, #38BDF8, ${CYAN})`,
         }}
       />
     </div>
@@ -430,34 +487,54 @@ function BarraProgreso({ porcentaje }: { porcentaje: number }) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// Pantalla
+// Pantalla de Detalle del Reporte (Doc 27)
 // ──────────────────────────────────────────────────────────────────────────
-export function ReportDetailScreen({ report: initialReport, onBack, onNavigate }: {
+export function ReportDetailScreen({
+  report: initialReport,
+  avatarIndex,
+  onBack,
+  onNavigate,
+}: {
   report: FocusiaReportData;
+  avatarIndex?: number;
   onBack: () => void;
   onNavigate?: (section: string) => void;
 }) {
   const [report, setReport] = useState(initialReport);
-  const [actionTaken, setActionTaken] = useState(report.action_taken);
+  const [actionTaken, setActionTaken] = useState(initialReport.action_taken);
   const [loading, setLoading] = useState(false);
-  const openedRef = useRef(false);
+  const openedRef = useRef<number | null>(null);
+  const resolvedAvatarIdx = useResolvedAvatarIndex(avatarIndex);
 
-  // Doc 27 §7: se registra la consulta una sola vez por ingreso.
   useEffect(() => {
-    if (openedRef.current) return;
-    openedRef.current = true;
-    reportService.open(initialReport.id).then(setReport).catch(() => {});
+    setReport(initialReport);
+    setActionTaken(initialReport.action_taken);
+  }, [initialReport]);
+
+  // Doc 27 §7: se registra la consulta una sola vez por ingreso (si es un reporte real en BD).
+  useEffect(() => {
+    if (openedRef.current === initialReport.id) return;
+    openedRef.current = initialReport.id;
+    if (initialReport.id < 9000) {
+      reportService.open(initialReport.id).then(setReport).catch(() => {});
+    }
   }, [initialReport.id]);
 
   const handleAction = async (action: string, section: string | null, volver = false) => {
     setLoading(true);
     try {
-      const updated = await reportService.takeAction(report.id, action);
-      setReport(updated);
+      if (report.id < 9000) {
+        const updated = await reportService.takeAction(report.id, action);
+        setReport(updated);
+      }
       setActionTaken(action as typeof actionTaken);
       if (section && onNavigate) onNavigate(section);
       else if (volver) onBack();
-    } catch {}
+    } catch {
+      setActionTaken(action as typeof actionTaken);
+      if (section && onNavigate) onNavigate(section);
+      else if (volver) onBack();
+    }
     setLoading(false);
   };
 
@@ -468,88 +545,161 @@ export function ReportDetailScreen({ report: initialReport, onBack, onNavigate }
   const vencido = !!report.closed_at;
   const serie = failed ? [] : serieGrafico(report);
   const meta = !failed ? report.goal_context?.meta_mensual : undefined;
-  const granMeta = !failed ? report.goal_context?.gran_meta_anual : undefined;
+  const granMeta = !failed ? (report.goal_context?.gran_meta_anual as { texto?: string; progreso?: number } | undefined) : undefined;
+
+  // Pose del avatar en el Hero según la pantalla del mockup:
+  const heroPose: ReportAvatarPose = (() => {
+    if (failed || pendienteAnalisis) return 'book';
+    if (!vencido) return 'pc';
+    if (report.level === 'monthly') return 'tab2';
+    if (report.level === 'annual') return 'person';
+    return 'bottom';
+  })();
+
+  const avatarThumb = getReportAvatarThumb(resolvedAvatarIdx);
+  const avatarNombre = getReportAvatarName(resolvedAvatarIdx);
 
   const CTA_NIVEL: Record<string, { action: string; label: string; section: string | null }> = {
     weekly: { action: 'reorganize_week', label: 'Reorganizar semana', section: 'semanal' },
     monthly: { action: 'adjust_goal', label: 'Ajustar objetivo', section: 'mensual' },
-    annual: { action: 'adjust_goal', label: 'Revisar meta', section: null },
+    annual: { action: 'adjust_goal', label: 'Revisar meta', section: 'anual' },
   };
+
+  const captionHero = !vencido ? (
+    <span className="inline-flex items-center gap-1.5 text-slate-600">
+      <Clock className="w-4 h-4 shrink-0" style={{ color: BLUE }} />
+      En actualización · Los datos pueden cambiar hasta las 00:00
+    </span>
+  ) : (
+    <span>{subtituloCerrado(report)}</span>
+  );
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-6xl mx-auto px-5 sm:px-8 py-6">
+      <div className="max-w-6xl mx-auto px-5 sm:px-8 pb-10">
+        {/* Selector rápido entre las vistas de detalle digitalizadas */}
+        <div className="pt-3 pb-1 flex flex-wrap items-center gap-1.5 border-b border-slate-100 text-xs">
+          <span className="font-bold text-slate-400 mr-1">Vistas de reporte:</span>
+          {[
+            { label: '‹ Lista / Historial / Notificaciones', active: false, onClick: onBack },
+            {
+              label: '2. Semanal',
+              active: report.id === DEMO_REPORT_WEEKLY_CLOSED.id,
+              onClick: () => { setReport(DEMO_REPORT_WEEKLY_CLOSED); setActionTaken(null); },
+            },
+            {
+              label: '3. Mensual',
+              active: report.id === DEMO_REPORT_MONTHLY.id,
+              onClick: () => { setReport(DEMO_REPORT_MONTHLY); setActionTaken(null); },
+            },
+            {
+              label: '4. Anual',
+              active: report.id === DEMO_REPORT_ANNUAL.id,
+              onClick: () => { setReport(DEMO_REPORT_ANNUAL); setActionTaken(null); },
+            },
+            {
+              label: '6. Sin acciones (0/0)',
+              active: report.id === DEMO_REPORT_WEEKLY_EMPTY.id,
+              onClick: () => { setReport(DEMO_REPORT_WEEKLY_EMPTY); setActionTaken(null); },
+            },
+            {
+              label: '7. En actualización',
+              active: report.id === DEMO_REPORT_WEEKLY_LIVE.id,
+              onClick: () => { setReport(DEMO_REPORT_WEEKLY_LIVE); setActionTaken(null); },
+            },
+            {
+              label: '9. Análisis pendiente',
+              active: report.id === DEMO_REPORT_WEEKLY_PENDING_ANALYSIS.id,
+              onClick: () => { setReport(DEMO_REPORT_WEEKLY_PENDING_ANALYSIS); setActionTaken(null); },
+            },
+            {
+              label: '10. Estado de error',
+              active: report.id === DEMO_REPORT_WEEKLY_FAILED.id,
+              onClick: () => { setReport(DEMO_REPORT_WEEKLY_FAILED); setActionTaken(null); },
+            },
+          ].map((btn) => (
+            <button
+              key={btn.label}
+              type="button"
+              onClick={btn.onClick}
+              className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
+                btn.active
+                  ? 'bg-[#E8F1FF] text-[#2563EB]'
+                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+              }`}
+            >
+              {btn.label}
+            </button>
+          ))}
+        </div>
 
-        {/* Volver */}
-        <button
-          onClick={onBack}
-          className="inline-flex items-center gap-1 text-[15px] font-medium hover:underline"
-          style={{ color: BLUE }}
-        >
-          <ChevronLeft className="w-5 h-5" /> Volver a Reportes
-        </button>
-
-        {/* Encabezado */}
-        <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-slate-900 mt-5 mb-2">
-          {LEVEL_TITULO[report.level] || 'Reporte'}
-        </h1>
-        <p className="text-xl sm:text-2xl font-bold" style={{ color: BLUE }}>
-          {rangoPeriodo(report)}
-        </p>
-        <p className="text-sm text-slate-600 mt-1">{subtituloPeriodo(report)}</p>
+        <ReportHeroHeader
+          pose={heroPose}
+          avatarIndex={resolvedAvatarIdx}
+          backLabel="Volver a Reportes"
+          onBack={onBack}
+          title={LEVEL_TITULO[report.level] || 'Reporte'}
+          subtitle={rangoPeriodo(report)}
+          caption={captionHero}
+        />
 
         {failed ? (
           <>
-            {/* Estado de error (período cerrado sin datos verificables) */}
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-8 mb-4">
+            {/* Foto 10 · Estado de error (período cerrado sin datos verificables) */}
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-7 mb-2">
               Los datos del período aún no están disponibles.
             </h2>
             <Estadisticas report={report} placeholder />
 
-            <div className="grid md:grid-cols-2 gap-6 mt-2">
-              <div className="border border-[#e2e8f0] rounded-xl p-6 text-center flex flex-col items-center justify-center">
-                <div className="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center mb-4">
-                  <FileWarning className="w-8 h-8 text-indigo-300" />
+            <div className="grid md:grid-cols-5 gap-6 mt-5">
+              <div className="border border-[#e2e8f0] rounded-xl p-6 md:col-span-2 flex flex-col">
+                <h3 className="text-xl font-bold text-slate-900 mb-6">Resumen no disponible</h3>
+                <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
+                  <div className="w-16 h-16 rounded-2xl bg-[#EEF2FF] flex items-center justify-center mb-4">
+                    <FileWarning className="w-8 h-8 text-indigo-400" />
+                  </div>
+                  <p className="text-base font-bold text-slate-800 max-w-xs">
+                    No pudimos generar tu reporte. Volveremos a intentarlo.
+                  </p>
+                  <p className="text-sm text-slate-400 mt-1.5 max-w-xs">
+                    Todavía no hay una base verificable para mostrar resultados.
+                  </p>
                 </div>
-                <h3 className="text-lg font-bold text-slate-800">Resumen no disponible</h3>
-                <p className="text-base font-semibold text-slate-800 mt-3">
-                  No pudimos generar tu reporte. Volveremos a intentarlo.
-                </p>
-                <p className="text-sm text-slate-400 mt-1">
-                  Todavía no hay una base verificable para mostrar resultados.
-                </p>
               </div>
-              <div className="border border-[#e2e8f0] rounded-xl p-6 flex flex-col">
-                <h3 className="text-lg font-bold text-slate-800 mb-4">Gráficos pendientes</h3>
-                <div className="flex-1 space-y-3 opacity-40">
-                  {[92, 76, 84, 68].map((w, i) => (
+
+              <div className="border border-[#e2e8f0] rounded-xl p-6 md:col-span-3 flex flex-col">
+                <h3 className="text-xl font-bold text-slate-900 mb-5">Gráficos pendientes</h3>
+                <div className="flex-1 space-y-3.5 py-2">
+                  {[88, 72, 82, 64].map((w, i) => (
                     <div key={i} className="flex items-center gap-3">
-                      <span className="w-4 h-1.5 rounded-full bg-indigo-200" />
+                      <span className="w-6 h-1.5 rounded-full bg-indigo-200" />
                       <span className="h-1.5 rounded-full bg-slate-200" style={{ width: `${w}%` }} />
                     </div>
                   ))}
                   <div className="border-t border-dashed border-slate-200 mt-6 pt-3" />
                 </div>
-                <p className="text-base font-semibold text-slate-800 mt-6">
-                  Los gráficos aparecerán cuando los datos estén disponibles.
-                </p>
-                <p className="text-sm text-slate-400 mt-1">
-                  El reintento conserva este mismo reporte y los datos correspondientes al cierre.
-                </p>
+                <div className="text-center mt-4">
+                  <p className="text-base font-bold text-slate-800">
+                    Los gráficos aparecerán cuando los datos estén disponibles.
+                  </p>
+                  <p className="text-sm text-slate-400 mt-1">
+                    El reintento conserva este mismo reporte y los datos correspondientes al cierre.
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* LÍA · Reporte pendiente */}
-            <div className="border border-[#e2e8f0] rounded-xl p-6 mt-6 flex flex-col md:flex-row md:items-center gap-6">
-              <div className="flex items-start gap-4 flex-1 min-w-0">
+            {/* Avatar · Reporte pendiente */}
+            <div className="border border-[#e2e8f0] rounded-xl p-5 sm:p-6 mt-6 flex flex-col lg:flex-row lg:items-center gap-6">
+              <div className="flex items-center gap-4 flex-1 min-w-0">
                 <img
-                  src={AVATAR_VARIACION_POR_NOMBRE['lia'] || '/avatars/Lia.jpeg'}
-                  alt="LÍA"
+                  src={avatarThumb}
+                  alt={avatarNombre}
                   className="w-16 h-16 rounded-full object-cover border-2 border-purple-100 shrink-0"
                 />
                 <div className="min-w-0">
                   <h3 className="text-xl font-bold text-slate-900">
-                    LÍA · <span style={{ color: BLUE }}>Reporte pendiente</span>
+                    {avatarNombre} · <span style={{ color: BLUE }}>Reporte pendiente</span>
                   </h3>
                   <p className="text-sm text-slate-700 mt-1">
                     Estamos recuperando los datos del período.
@@ -557,49 +707,59 @@ export function ReportDetailScreen({ report: initialReport, onBack, onNavigate }
                   <p className="text-sm text-slate-700">No necesitas iniciar otro reporte.</p>
                 </div>
               </div>
-              <div className="md:border-l md:border-[#e2e8f0] md:pl-6 flex items-center gap-4">
-                <h4 className="text-lg font-bold text-slate-900 whitespace-nowrap">¿Cómo quieres continuar?</h4>
-                <button
-                  onClick={onBack}
-                  className="border-2 rounded-lg px-5 py-2.5 text-[15px] font-semibold hover:shadow transition-all active:scale-95 whitespace-nowrap"
-                  style={{ borderColor: PURPLE, color: '#7C3AED' }}
-                >
-                  Volver a Reportes
-                </button>
-                <button
-                  onClick={() => handleAction('review_later', null, true)}
-                  disabled={loading}
-                  className="text-[15px] underline hover:opacity-80 disabled:opacity-50 whitespace-nowrap"
-                  style={{ color: BLUE }}
-                >
-                  Revisar más tarde
-                </button>
+              <div className="lg:border-l lg:border-[#e2e8f0] lg:pl-6 flex flex-col sm:flex-row sm:items-center gap-4">
+                <div>
+                  <h4 className="text-lg font-bold text-slate-900 mb-3">¿Cómo quieres continuar?</h4>
+                  <div className="flex flex-wrap items-center gap-4">
+                    <button
+                      onClick={onBack}
+                      className="border-2 rounded-lg px-5 py-2.5 text-[15px] font-semibold hover:shadow transition-all active:scale-95 whitespace-nowrap"
+                      style={{ borderColor: PURPLE, color: '#7C3AED' }}
+                    >
+                      Volver a Reportes
+                    </button>
+                    <button
+                      onClick={() => handleAction('review_later', null, true)}
+                      disabled={loading}
+                      className="text-[15px] underline hover:opacity-80 disabled:opacity-50 whitespace-nowrap"
+                      style={{ color: BLUE }}
+                    >
+                      Revisar más tarde
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </>
         ) : (
           <>
             {/* Mensaje principal */}
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-8">
-              {report.level === 'annual' ? (
-                sinDatos
-                  ? 'Tu año todavía no tiene acciones computables.'
-                  : <>Cerraste el período con el <span style={{ color: BLUE }}>{Math.round(report.completion_percentage)}%</span> de acciones completadas.</>
+            <h2 className="text-2xl sm:text-[28px] font-bold text-slate-900 mt-7">
+              {report.level === 'annual' && !sinDatos ? (
+                <>
+                  Cerraste el período con el{' '}
+                  <span style={{ color: BLUE }}>{Math.round(report.completion_percentage)}%</span>{' '}
+                  de acciones completadas.
+                </>
               ) : (
-                sinDatos
-                  ? 'Este período todavía no tiene acciones computables.'
-                  : <>Completaste <span style={{ color: PURPLE }}>{report.completed_count}</span> de tus <span style={{ color: BLUE }}>{report.completed_count + report.pending_count}</span> acciones planificadas.</>
+                <>
+                  Completaste{' '}
+                  <span style={{ color: PURPLE }}>{report.completed_count}</span>{' '}
+                  de tus{' '}
+                  <span style={{ color: BLUE }}>{report.completed_count + report.pending_count}</span>{' '}
+                  acciones planificadas.
+                </>
               )}
             </h2>
-            {report.level === 'monthly' && meta?.texto && !sinDatos && (
-              <p className="text-base text-slate-600 mt-2">Tu meta: {meta.texto}.</p>
+            {report.level === 'monthly' && meta?.texto && (
+              <p className="text-base text-slate-700 mt-1.5">Tu meta: {meta.texto}.</p>
             )}
 
-            {!sinDatos && <Estadisticas report={report} />}
+            <Estadisticas report={report} />
 
-            {/* Tarjetas */}
-            <div className="grid md:grid-cols-5 gap-6 mt-2">
-              <div className="border border-[#e2e8f0] rounded-xl p-6 md:col-span-2">
+            {/* Tarjetas de gráfico (Donut + Serie) */}
+            <div className="grid md:grid-cols-5 gap-6 mt-5">
+              <div className="border border-[#e2e8f0] rounded-xl p-6 md:col-span-2 flex flex-col">
                 <h3 className="text-xl font-bold text-slate-900 mb-5">
                   {DONUT_TITULO[report.level]}
                 </h3>
@@ -607,53 +767,67 @@ export function ReportDetailScreen({ report: initialReport, onBack, onNavigate }
                   porcentaje={report.completion_percentage}
                   completadas={report.completed_count}
                   sinCompletar={report.pending_count}
+                  pendiente={sinDatos}
                 />
-                <DesgloseSinCompletar report={report} />
-                {sinDatos && (
-                  <p className="text-sm text-slate-400 mt-3">
-                    No hay acciones computables en este período, así que no se calcula un porcentaje.
-                  </p>
+                {sinDatos ? (
+                  <div className="border-t border-[#e2e8f0] pt-4 mt-4">
+                    <h4 className="text-[15px] font-bold mb-1.5" style={{ color: BLUE }}>
+                      Sin acciones computables
+                    </h4>
+                    <p className="text-sm text-slate-700 leading-relaxed">
+                      No registraste acciones principales en este período. Las subtareas se reflejan
+                      a través de su acción principal.
+                    </p>
+                    <p className="text-xs text-slate-400 mt-3">
+                      Acciones principales: cada una cuenta una sola vez.
+                    </p>
+                  </div>
+                ) : (
+                  <DesgloseSinCompletar report={report} />
                 )}
               </div>
 
-              <div className="border border-[#e2e8f0] rounded-xl p-6 md:col-span-3">
-                <h3 className="text-xl font-bold text-slate-900 mb-5">
-                  {CHART_TITULO[report.level]}
-                </h3>
-                <BarraSerie data={serie} height={260} />
+              <div className="border border-[#e2e8f0] rounded-xl p-6 md:col-span-3 flex flex-col justify-between">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900 mb-4">
+                    {CHART_TITULO[report.level]}
+                  </h3>
+                  <BarraSerie
+                    report={report}
+                    data={serie}
+                    height={report.level === 'annual' && granMeta?.texto ? 220 : 255}
+                  />
+                </div>
+
+                {/* Foto 4 · Gran Meta Anual integrada bajo el gráfico anual */}
+                {report.level === 'annual' && granMeta?.texto && (
+                  <div className="border-t border-[#e2e8f0] pt-4 mt-3">
+                    <div className="flex items-center justify-between gap-4 mb-2">
+                      <p className="text-sm text-slate-800">
+                        <strong className="font-bold text-slate-900">Tu Gran Meta Anual:</strong>{' '}
+                        {granMeta.texto}
+                      </p>
+                      <span className="text-base font-bold shrink-0" style={{ color: BLUE }}>
+                        {Math.round(granMeta.progreso ?? report.completion_percentage)}%
+                      </span>
+                    </div>
+                    <BarraProgreso porcentaje={granMeta.progreso ?? report.completion_percentage} />
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Meta mensual vigente (solo si hay registrada) */}
-            {meta?.texto && (
-              <div className="border border-[#e2e8f0] rounded-xl p-6 mt-6">
-                <h3 className="text-lg font-bold text-slate-900 mb-1">Tu meta mensual</h3>
-                <p className="text-sm text-slate-700">{meta.texto}</p>
-                {meta.relacion_anual && (
-                  <p className="text-xs text-slate-400 mt-1">{meta.relacion_anual}</p>
-                )}
-              </div>
-            )}
-
-            {/* Gran Meta Anual (anual) */}
-            {report.level === 'annual' && granMeta?.texto && (
-              <div className="border border-[#e2e8f0] rounded-xl p-6 mt-6">
-                <h3 className="text-lg font-bold text-slate-900 mb-1">Tu Gran Meta Anual</h3>
-                <p className="text-sm text-slate-700">{granMeta.texto}</p>
-              </div>
-            )}
-
-            {/* LÍA · balance */}
-            <div className="border border-[#e2e8f0] rounded-xl p-6 mt-6 flex flex-col md:flex-row md:items-center gap-6">
-              <div className="flex items-start gap-4 flex-1 min-w-0">
+            {/* Tarjeta inferior: Avatar · Balance + ¿Cómo quieres continuar? */}
+            <div className="border border-[#e2e8f0] rounded-xl p-5 sm:p-6 mt-6 flex flex-col lg:flex-row lg:items-center gap-6">
+              <div className="flex items-center gap-4 flex-1 min-w-0">
                 <img
-                  src={AVATAR_VARIACION_POR_NOMBRE['lia'] || '/avatars/Lia.jpeg'}
-                  alt="LÍA"
+                  src={avatarThumb}
+                  alt={avatarNombre}
                   className="w-16 h-16 rounded-full object-cover border-2 border-purple-100 shrink-0"
                 />
                 <div className="min-w-0">
                   <h3 className="text-xl font-bold text-slate-900">
-                    LÍA ·{' '}
+                    {avatarNombre} ·{' '}
                     {pendienteAnalisis ? (
                       <span style={{ color: BLUE }}>Análisis pendiente</span>
                     ) : (
@@ -670,31 +844,32 @@ export function ReportDetailScreen({ report: initialReport, onBack, onNavigate }
                       </p>
                     </>
                   ) : (
-                    <p className="text-sm text-slate-700 mt-1 whitespace-pre-line">
+                    <p className="text-sm text-slate-700 mt-1 whitespace-pre-line leading-relaxed">
                       {report.ai_interpretation || 'Sin interpretación disponible para este período.'}
                     </p>
                   )}
                 </div>
               </div>
 
-              <div className="md:border-l md:border-[#e2e8f0] md:pl-6 md:w-[420px] shrink-0">
-                <h4 className="text-lg font-bold text-slate-900 mb-4">¿Cómo quieres continuar?</h4>
+              <div className="lg:border-l lg:border-[#e2e8f0] lg:pl-6 shrink-0">
+                <h4 className="text-lg font-bold text-slate-900 mb-3">¿Cómo quieres continuar?</h4>
                 {actionTaken ? (
-                  <div className="flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-100 p-4">
-                    <span className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                      <Check className="w-5 h-5 text-emerald-600" />
+                  <div className="flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-3">
+                    <span className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                      <Check className="w-4 h-4 text-emerald-600" />
                     </span>
                     <p className="text-sm font-semibold text-slate-700">
-                      Acción registrada: {({
+                      Acción registrada:{' '}
+                      {({
                         reorganize_week: 'Reorganizar semana',
-                        adjust_goal: 'Ajustar objetivo',
+                        adjust_goal: report.level === 'annual' ? 'Revisar meta' : 'Ajustar objetivo',
                         keep_plan: 'Mantener plan',
                         review_later: 'Revisar más tarde',
                       } as Record<string, string>)[actionTaken]}
                     </p>
                   </div>
                 ) : (
-                  <div className="flex flex-wrap md:flex-nowrap items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <button
                       onClick={() => {
                         const cta = CTA_NIVEL[report.level];
@@ -717,7 +892,7 @@ export function ReportDetailScreen({ report: initialReport, onBack, onNavigate }
                     <button
                       onClick={() => handleAction('review_later', null, true)}
                       disabled={loading}
-                      className="text-[15px] underline hover:opacity-80 disabled:opacity-50 whitespace-nowrap"
+                      className="text-[15px] underline hover:opacity-80 disabled:opacity-50 whitespace-nowrap ml-1"
                       style={{ color: BLUE }}
                     >
                       Revisar más tarde
@@ -727,12 +902,20 @@ export function ReportDetailScreen({ report: initialReport, onBack, onNavigate }
               </div>
             </div>
 
-            {/* Nota de ventana de actualización */}
-            {!vencido && (
-              <div className="mt-4 flex items-center gap-2 text-sm" style={{ color: BLUE }}>
-                <Info className="w-4 h-4" />
-                El reporte puede actualizarse hasta las 00:00.
+            {/* Nota inferior de ventana de actualización */}
+            {!vencido ? (
+              <div className="mt-4 flex items-center gap-2 text-sm text-slate-600">
+                <Info className="w-4 h-4 shrink-0" style={{ color: BLUE }} />
+                Si completas o modificas acciones antes de las 00:00, este reporte se actualizará.
+                Después de esa hora el período queda cerrado.
               </div>
+            ) : (
+              report.level === 'weekly' && !sinDatos && !pendienteAnalisis && (
+                <div className="mt-4 flex items-center gap-2 text-sm text-slate-600">
+                  <Info className="w-4 h-4 shrink-0" style={{ color: BLUE }} />
+                  El reporte puede actualizarse hasta las 00:00.
+                </div>
+              )
             )}
           </>
         )}

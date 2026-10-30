@@ -79,7 +79,7 @@ function base(props: React.SVGProps<SVGSVGElement>, children: React.ReactNode) {
   );
 }
 
-export const RedIcon: React.FC<{ id: RedId; className?: string }> = ({ id, className = 'w-10 h-10' }) => {
+export const RedIcon: React.FC<{ id: RedId; className?: string }> = ({ id, className = 'w-8 h-6' }) => {
   switch (id) {
     case 'tiktok':
       return img({ className }, './tiktok-1.png');

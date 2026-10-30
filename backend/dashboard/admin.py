@@ -20,6 +20,7 @@ from .models import (
     HoraOroExperiencia,
     HoraOroAjustes,
     FraseGratitud, EntradaGratitud,
+    Cumpleanos,
 )
 
 
@@ -438,4 +439,15 @@ class EntradaGratitudAdmin(admin.ModelAdmin):
     list_display = ['user', 'fecha', 'frase', 'actualizado']
     list_filter = ['fecha']
     search_fields = ['user__username', 'user__email', 'texto']
+    readonly_fields = ['creado', 'actualizado']
+
+
+# ══════════════ Módulo Cumpleaños (Doc 22) ══════════════
+
+@admin.register(Cumpleanos)
+class CumpleanosAdmin(admin.ModelAdmin):
+    list_display = ['user', 'nombre', 'categoria', 'fecha',
+                    'anticipacion_dias', 'aviso_enviado_para']
+    list_filter = ['categoria']
+    search_fields = ['user__username', 'user__email', 'nombre']
     readonly_fields = ['creado', 'actualizado']

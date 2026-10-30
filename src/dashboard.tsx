@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   workspaceService, invitationService, delegationService, authService, notificationService, kanbanService, recordatorioService, ruedaService, timeBlockService, objetivoSemanaService, keepNotaService, misionHoyService, matrixService, configuracionService, agentService, motivationalService,
   InvitationData, DelegationData, NotificationData, WorkspaceData, WorkspaceMemberData, RuedaCategoria, ResumenRuedaDashboard, TimeBlockData, ObjetivoSemanaData, KeepNotaData, MisionHoyData, RecordatorioData, MatrixItemData, KanbanTaskData, api, monthlyService, progresoService, ProgresoData, granMetaAnualService, FocusiaReportData, DailyPhraseData, reportService,
@@ -28,10 +29,12 @@ import { MetaAnualForm } from './components/MetaAnualForm';
 import { GranMetaAnualModal } from './components/GranMetaAnualModal';
 import MonthlyWizard from './components/MonthlyWizard';
 import AgendaDiaria from './components/AgendaDiaria';
+import TimeBlockingCard from './components/TimeBlockingCard';
 import MonthlyCalendar from './components/MonthlyCalendar';
 import KanbanModule, { KanbanVistaInicial } from './components/kanban/KanbanModule';
 import DelegarModule from './components/DelegarModule';
 import FloatingAssistant from './components/FloatingAssistant';
+import HelpChat from './components/HelpChat';
 import WeeklyPlanner from './components/WeeklyPlanner';
 import { PlanificarModal } from './components/PlanificarModal';
 
@@ -44,6 +47,7 @@ import CuentasScreen from './components/CuentasScreen';
 import HoraDeOroScreen from './components/HoraDeOroScreen';
 import SuplementosScreen from './components/SuplementosScreen';
 import GratitudScreen from './components/GratitudScreen';
+import CumpleanosScreen from './components/CumpleanosScreen';
 import EditGoalWarningModal from './components/EditGoalWarningModal';
 import { ReportsListScreen } from './components/ReportsListScreen';
 import { ReportDetailScreen } from './components/ReportDetailScreen';
@@ -62,7 +66,7 @@ import FocusWidget, {
 import { FocusModales } from './components/FocusWidget';
 import { focusService } from './services/api';
 
-import {   X, LogOut, User, Plus, ArrowRight, Calendar, Edit3, CheckCircle2, Play, ChevronRight, Target, TrendingUp, CalendarDays, CheckCircle, CreditCard, Landmark, Receipt, AlertCircle, CheckSquare, Pill, Clock, Edit, Check, Zap, Trophy, Star, Shield, Flame, Users, Settings, Mail, Copy, Crown, ShieldCheck, UserPlus, Trash2, Send, Briefcase, Bell, MessageSquare, Sparkles, RefreshCw, Lightbulb, RotateCcw, LayoutGrid, Upload, BarChart3, Bot, Loader2 } from 'lucide-react';
+import {   X, LogOut, User, Plus, ArrowRight, Calendar, Edit3, CheckCircle2, Play, ChevronRight, Target, TrendingUp, CalendarDays, CheckCircle, CreditCard, Landmark, Receipt, AlertCircle, CheckSquare, Pill, Clock, Edit, Check, Zap, Trophy, Star, Shield, Flame, Users, Settings, Mail, Copy, Crown, ShieldCheck, UserPlus, Trash2, Send, Briefcase, Bell, MessageSquare, Sparkles, RefreshCw, Lightbulb, RotateCcw, LayoutGrid, Upload, BarChart3, Bot, Loader2, CircleHelp } from 'lucide-react';
 
 
 interface DashboardProps {
@@ -186,8 +190,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
       case 'mas':
       case 'mision':
       case 'gratitud':
-      case 'focus':
+        break;
       case 'cumple':
+        setShowCumpleanos(true);
+        break;
+      case 'focus':
+        setShowFocusScreen(true);
         break;
       case 'rueda':
         setShowDiagnosticoRueda(true);
@@ -250,8 +258,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
   const handleSuplementosNavigate = (section: string) => {
     setShowSuplementosScreen(false);
     if (section === 'coaching') { setShowCoaching(true); return; }
+    if (section === 'cumple') { setShowCumpleanos(true); return; }
     if (section === 'redes' || section === 'rrss') { handleOpenRrss(); return; }
-    if (['inicio', 'suplementos', 'mas', 'mision', 'focus', 'cumple'].includes(section)) return;
+    if (['inicio', 'suplementos', 'mas', 'mision'].includes(section)) return;
     goSection(section);
   };
   // Sidebar del módulo Hora de Oro Familiar: cierra la pantalla y abre el destino.
@@ -260,16 +269,26 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
     setHoraOroSlot(null);
     setHoraOroKey(k => k + 1);
     if (section === 'coaching') { setShowCoaching(true); return; }
+    if (section === 'cumple') { setShowCumpleanos(true); return; }
     if (section === 'redes' || section === 'rrss') { handleOpenRrss(); return; }
-    if (['inicio', 'hora-oro', 'mas', 'mision', 'focus', 'cumple'].includes(section)) return;
+    if (['inicio', 'hora-oro', 'mas', 'mision'].includes(section)) return;
     goSection(section);
   };
   // Sidebar del módulo Gratitud: cierra la pantalla y abre el destino.
   const handleGratitudNavigate = (section: string) => {
     setShowGratitud(false);
     if (section === 'coaching') { setShowCoaching(true); return; }
+    if (section === 'cumple') { setShowCumpleanos(true); return; }
     if (section === 'redes' || section === 'rrss') { handleOpenRrss(); return; }
-    if (['inicio', 'gratitud', 'mas', 'mision', 'focus', 'cumple'].includes(section)) return;
+    if (['inicio', 'gratitud', 'mas', 'mision'].includes(section)) return;
+    goSection(section);
+  };
+  // Sidebar del módulo Cumpleaños: cierra la pantalla y abre el destino.
+  const handleCumpleanosNavigate = (section: string) => {
+    setShowCumpleanos(false);
+    if (section === 'coaching') { setShowCoaching(true); return; }
+    if (section === 'redes' || section === 'rrss') { handleOpenRrss(); return; }
+    if (['inicio', 'cumple', 'mas', 'mision'].includes(section)) return;
     goSection(section);
   };
   // ── Doc 23 · Modo Focus ────────────────────────────────────────────────
@@ -381,8 +400,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
   const handleFocusNavigate = (section: string) => {
     setShowFocusScreen(false);
     if (section === 'coaching') { setShowCoaching(true); return; }
+    if (section === 'cumple') { setShowCumpleanos(true); return; }
     if (section === 'redes' || section === 'rrss') { handleOpenRrss(); return; }
-    if (['inicio', 'focus', 'mas', 'mision', 'cumple'].includes(section)) return;
+    if (['inicio', 'focus', 'mas', 'mision'].includes(section)) return;
     goSection(section);
   };
 
@@ -504,6 +524,19 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
       case 'coaching':
         setShowCoaching(true);
         break;
+      case 'focus':
+        setShowFocusScreen(true);
+        break;
+      case 'gratitud':
+        setShowGratitud(true);
+        break;
+      case 'cumpleanos':
+      case 'cumple':
+        setShowCumpleanos(true);
+        break;
+      case 'mision':
+      case 'mas':
+        break;
       case 'redes':
       case 'rrss':
         handleOpenRrss();
@@ -550,6 +583,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
   const [showAnnualView, setShowAnnualView] = useState(false);
   const [showBuzonPropuestas, setShowBuzonPropuestas] = useState(false);
   const [showConfigPanel, setShowConfigPanel] = useState(false);
+  const [showAyuda, setShowAyuda] = useState(false);
   const [configPantalla, setConfigPantalla] = useState<ConfigScreen>('menu');
   const [showRedes, setShowRedes] = useState(false);
   const [redesIrAConfig, setRedesIrAConfig] = useState(false);
@@ -564,6 +598,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
   const [showSuplementosScreen, setShowSuplementosScreen] = useState(false);
   const [showHoraDeOro, setShowHoraDeOro] = useState(false);
   const [showGratitud, setShowGratitud] = useState(false);
+  const [showCumpleanos, setShowCumpleanos] = useState(false);
   const [horaOroSlot, setHoraOroSlot] = useState<{ dia: string; posicion: number } | null>(null);
   const [horaOroKey, setHoraOroKey] = useState(0);
   const [showBillModal, setShowBillModal] = useState(false);
@@ -729,7 +764,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
   const [timeBlocks, setTimeBlocks] = useState<TimeBlockData[]>([]);
   const [objetivo, setObjetivo] = useState<ObjetivoSemanaData | null>(null);
   const [keepNota, setKeepNota] = useState<KeepNotaData | null>(null);
-  const [missionPhotoUrl, setMissionPhotoUrl] = useState<string>('');
   const [misionHoy, setMisionHoy] = useState<MisionHoyData | null>(null);
   const [kanbanTasks, setKanbanTasks] = useState<KanbanTaskData[]>([]);
   const [progreso, setProgreso] = useState<ProgresoData | null>(null);
@@ -737,6 +771,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
   const todayStr = new Date().toISOString().split('T')[0];
   const [tbError, setTbError] = useState<string | null>(null);
   const [savingStatus, setSavingStatus] = useState<string>('');
+  const [diariaBannerText, setDiariaBannerText] = useState<string | null>(null);
+  const [diariaBannerActionId, setDiariaBannerActionId] = useState<string | null>(null);
   const [clima, setClima] = useState<{
     temp: number;
     sensacion: number;
@@ -1220,7 +1256,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         });
         setNewUsername(data.username);
         setNewAvatarUrl(resolvedAvatar);
-        if (config.mission_photo_url) setMissionPhotoUrl(config.mission_photo_url);
       } catch (err) {
         console.error('Error fetching user data:', err);
       }
@@ -1400,17 +1435,39 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
     if (block && block.tarea === value) return;
     try {
       if (block) {
-        setTimeBlocks((prev: TimeBlockData[]) => prev.map((t: TimeBlockData) => t.id === block.id ? { ...t, tarea: value } : t));
-        await timeBlockService.update(block.id, { tarea: value, fecha: block.fecha || todayStr });
+        if (hora === block.hora) {
+          await timeBlockService.update(block.id, { tarea: value });
+          setTimeBlocks(prev => prev.map(t => t.id === block.id ? { ...t, tarea: value } : t));
+          return;
+        } else {
+          await timeBlockService.delete(block.id);
+          const newBlock = await timeBlockService.create({
+            fecha: block.fecha,
+            hora,
+            tarea: value,
+            estado: block.estado,
+          });
+          setTimeBlocks(prev => {
+            const newPrev = prev.filter(t => t.id !== block.id);
+            return [...newPrev, newBlock];
+          });
+        }
       } else {
-        const newBlock = await timeBlockService.create({ fecha: todayStr, hora, tarea: value, estado: 'pending' });
-        setTimeBlocks(prev => [...prev, newBlock]);
+        const newBlock = await timeBlockService.create({
+          fecha: todayStr,
+          hora,
+          tarea: value,
+          estado: 'pending',
+        });
+        setTimeBlocks(prev => {
+          return [...prev, newBlock];
+        });
       }
       showSaving();
       setTbError(null);
     } catch (e) {
       if (block) {
-        setTimeBlocks((prev: TimeBlockData[]) => prev.map((t: TimeBlockData) => t.id === block.id ? { ...t, tarea: block.tarea } : t));
+        setTimeBlocks(prev => prev.map(t => t.id === block.id ? { ...t, tarea: block.tarea } : t));
       }
       setTbError('Error al guardar bloque horario');
       setTimeout(() => setTbError(null), 3000);
@@ -1422,17 +1479,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
     const block = findBlock(hora);
     try {
       if (block) {
-        setTimeBlocks((prev: TimeBlockData[]) => prev.map((t: TimeBlockData) => t.id === block.id ? { ...t, estado } : t));
         await timeBlockService.update(block.id, { estado, fecha: block.fecha || todayStr });
+        setTimeBlocks(prev => prev.map(t => t.id === block.id ? { ...t, estado } : t));
       } else {
         const newBlock = await timeBlockService.create({ fecha: todayStr, hora, tarea: '', estado });
-        setTimeBlocks((prev: TimeBlockData[]) => [...prev, newBlock]);
+        setTimeBlocks(prev => [...prev, newBlock]);
       }
       showSaving();
       setTbError(null);
     } catch (e) {
       if (block) {
-        setTimeBlocks((prev: TimeBlockData[]) => prev.map((t: TimeBlockData) => t.id === block.id ? { ...t, estado: block.estado } : t));
+        setTimeBlocks(prev => prev.map(t => t.id === block.id ? { ...t, estado: block.estado } : t));
       }
       setTbError('Error al actualizar estado');
       setTimeout(() => setTbError(null), 3000);
@@ -1630,6 +1687,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
       <Settings className="w-4 h-4 text-white" />
     </button>
 
+    {/* Ayuda de IA */}
+   
     {/* Centro de Notificaciones */}
     <div className="relative ml-2">
       <button
@@ -1645,44 +1704,47 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         )}
       </button>
 
-      {/* Dropdown de notificaciones */}
       {showNotifications && (
-        <div className="absolute top-full mt-2 left-0 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 p-4 w-80 z-50 animate-in fade-in slide-in-from-top-2">
-          <div className="mb-3">
-            <ReportNotificationBanner onOpen={(r) => { setSelectedReport(r); setShowNotifications(false); }} />
+        <>
+          {/* Backdrop para cerrar al hacer clic fuera del dropdown */}
+          <div className="fixed inset-0 z-[239] bg-black/20" onClick={() => setShowNotifications(false)} />
+          <div className="absolute left-0 mt-2 z-[240] w-80 max-h-[80vh] overflow-y-auto rounded-2xl border border-white/50 shadow-xl bg-white/95 backdrop-blur-xl p-4 animate-in fade-in slide-in-from-top-2" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3">
+              <ReportNotificationBanner onOpen={(r) => { setSelectedReport(r); setShowNotifications(false); }} />
+            </div>
+            <h3 className="text-sm font-bold text-gray-800 mb-3">Notificaciones</h3>
+            <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+              {notifications.length === 0 && (
+                <p className="text-[11px] text-gray-500 text-center py-4">No tenés notificaciones.</p>
+              )}
+              {notifications.map((n) => {
+                const Icono = n.type === 'invitation' ? Mail
+                  : n.type === 'delegation' ? Briefcase
+                  : n.type === 'report' ? BarChart3
+                  : Clock;
+                return (
+                  <button
+                    key={n.id}
+                    type="button"
+                    onClick={() => abrirNotificacion(n)}
+                    className={`flex w-full items-start gap-2 rounded-xl border p-2.5 text-left ${n.type === 'report' && n.data?.report_id ? 'cursor-pointer hover:brightness-95' : 'cursor-default'} ${n.is_read ? 'bg-white border-gray-100' : 'bg-indigo-50/70 border-indigo-100'}`}
+                  >
+                    <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${n.is_read ? 'bg-gray-100 text-gray-500' : 'bg-[#6236FF]/10 text-[#6236FF]'}`}>
+                      <Icono className="h-3.5 w-3.5" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[12px] font-semibold leading-tight text-gray-800">{n.title}</p>
+                      {n.message && (
+                        <p className="mt-0.5 text-[11px] leading-snug text-gray-600">{n.message}</p>
+                      )}
+                      <p className="mt-1 text-[10px] text-gray-400">{fechaNotificacion(n.created_at)}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          <h3 className="text-sm font-bold text-gray-800 mb-3">Notificaciones</h3>
-          <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
-            {notifications.length === 0 && (
-              <p className="text-[11px] text-gray-500 text-center py-4">No tenés notificaciones.</p>
-            )}
-            {notifications.map((n) => {
-              const Icono = n.type === 'invitation' ? Mail
-                : n.type === 'delegation' ? Briefcase
-                : n.type === 'report' ? BarChart3
-                : Clock;
-              return (
-                <button
-                  key={n.id}
-                  type="button"
-                  onClick={() => abrirNotificacion(n)}
-                  className={`flex w-full items-start gap-2 rounded-xl border p-2.5 text-left ${n.type === 'report' && n.data?.report_id ? 'cursor-pointer hover:brightness-95' : 'cursor-default'} ${n.is_read ? 'bg-white border-gray-100' : 'bg-indigo-50/70 border-indigo-100'}`}
-                >
-                  <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${n.is_read ? 'bg-gray-100 text-gray-500' : 'bg-[#6236FF]/10 text-[#6236FF]'}`}>
-                    <Icono className="h-3.5 w-3.5" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-[12px] font-semibold leading-tight text-gray-800">{n.title}</p>
-                    {n.message && (
-                      <p className="mt-0.5 text-[11px] leading-snug text-gray-600">{n.message}</p>
-                    )}
-                    <p className="mt-1 text-[10px] text-gray-400">{fechaNotificacion(n.created_at)}</p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        </>
       )}
     </div>
     {/* Visita guiada Focusia (driver.js) */}
@@ -1936,107 +1998,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
 
 
         </div>
-          {/* Time Blocking Table */}
-        <div id="tour-timeblocking" className=" p-3 flex flex-col w-[400px] shadow-[0_8px_32px_rgba(31,38,135,0.03)] overflow-hidden" >
-  
-  {/* 👇 SOLUCIÓN: Agrupamos estos dos elementos en un bloque compacto sin GAP */}
-  <div className="w-[380px]  flex flex-col overflow-hidden rounded-md border border-gray-200/60 shadow-xs -ml-2">
-    
-    {/* BARRA HEADER DEL TIME BLOCKING */}
-    <div className="bg-gradient-to-r from-[#200013] via-[#814B8D] to-[#143CCC] text-white text-center py-1.5 text-[15px] font-bold tracking-widest uppercase rounded-md select-nonep-3.5 space-y-3 bg-white flex-1 flex flex-col justify-center -mt-1 font-montserrat">
-      TIME BLOCKING
-    </div>
-    {tbError && (
-      <div className="bg-red-100 border border-red-300 text-red-700 text-[10px] px-3 py-1.5 text-center font-medium">
-        {tbError}
-      </div>
-    )}
-  {/* CONTENEDOR CON SCROLL DE LA TABLA */}
-  <div className="overflow-y-auto max-h-[520px] bg-white/40 scrollbar-hide rounded-b-xl">
-      <table className="w-full text-[11px] border-collapse table-fixed">
-        
-        <thead id="tour-wip-status" className="sticky top-0 z-20 bg-white/90 backdrop-blur-md shadow-2xs">
-          <tr>
-            <th className="w-16 p-2 border-b border-slate-100">
-              <div className="w-full bg-[linear-gradient(90deg,#ff7c90,#ffe1a4)] text-slate-800 text-[10px] py-1.5 px-1 rounded-md font-black tracking-wider uppercase border border-black-200/40 text-center">
-                TIME
-              </div>
-            </th>
-            <th className="p-2 border-b border-slate-100">
-              <div className="w-full bg-[linear-gradient(90deg,#ff7c90,#ffe1a4)]  text-slate-800 text-[10px] py-1.5 px-2 rounded-md font-black tracking-wider uppercase border border-black-200/40 text-center">
-                WORK IN PROGRESS
-              </div>
-            </th>
-            <th className="w-20 p-2 border-b border-slate-100">
-              <div className="w-full bg-[linear-gradient(90deg,#ff7c90,#ffe1a4)] text-slate-800 text-[10px] py-1.5 px-1 rounded-md font-black tracking-wider uppercase border border-black-300/40 text-center">
-                STATUS
-              </div>
-            </th>
-          </tr>
-        </thead>
-
-      {/* CUERPO DE HORARIOS (FILAS) */}
-      <tbody>
-  {defaultHours.map((h, i) => {
-    const block = findBlock(h);
-    const estado = block?.estado || 'pending';
-
-    return (
-      <tr 
-        key={h} 
-        className="hover:bg-white/60 bg-slate-50/40 transition-colors h-[36px]"
-      >
-        
-        {/* CELDA 1: INDICADOR HORARIO */}
-        <td className="py-1 text-center font-bold text-slate-700 w-16">
-          <span className="inline-block px-2 py-0.5 border border-slate-200 rounded-md text-[10px] bg-white shadow-3xs select-none">
-            {h < 10 ? `0${h}:00` : `${h}:00`}
-          </span>
-        </td>
-
-        {/* CELDA 2: INPUT DENTRO DE RECUADRO BLANCO SOFT UI */}
-        <td className="py-1 px-2.5">
-          <div className="w-full bg-white border border-slate-200/70 rounded-md px-2 py-0.5 shadow-3xs flex items-center transition-all focus-within:border-indigo-500/50">
-            <input
-              type="text"
-              className={`w-full bg-transparent outline-none text-[11px] text-slate-700 placeholder:text-slate-400 placeholder:italic ${
-                estado === 'done' ? 'line-through text-slate-400 italic' : 'font-medium'
-              }`}
-              placeholder="Escriba aquí..."
-              defaultValue={block?.tarea || ''}
-              onBlur={(e) => handleTimeBlockBlur(h, e.target.value)}
-            />
-          </div>
-        </td>
-
-        {/* CELDA 3: SELECTOR DE ESTADO */}
-        <td className="w-20 py-1 px-2 text-center">
-          <select
-            value={estado}
-            onChange={(e) => handleTimeBlockStatus(h, e.target.value as 'pending' | 'doing' | 'done')}
-            className={`w-full text-[9px] py-0.5 px-1 rounded-md border font-bold text-center cursor-pointer transition-all outline-none appearance-none ${
-              estado === 'done'
-                ? 'bg-slate-100 text-slate-500 border-slate-200'
-                : estado === 'doing'
-                ? 'bg-white text-slate-900 border-slate-200/60 animate-pulse'
-                : 'bg-white text-slate-400 border-slate-200'
-            }`}
-          >
-            <option value="pending">Pendiente</option>
-            <option value="doing">Haciendo</option>
-            <option value="done">Hecho</option>
-          </select>
-        </td>
-
-      </tr>
-    );
-  })}
-</tbody>
-
-    </table>
-  </div>
+          {/* Time Blocking Table (digitalización fotos Time Blocking) */}
+        <div id="tour-timeblocking" className="p-3 flex flex-col w-[415px] shadow-[0_8px_32px_rgba(31,38,135,0.03)] overflow-hidden -ml-5">
+          <TimeBlockingCard
+            todayStr={todayStr}
+            refreshTrigger={accionesClasificadas}
+          />
         </div>
-          </div>
 
         </div>
           <div className="xl:col-start-3 xl:row-start-4 w-full">
@@ -2080,9 +2048,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
               </div>
             </div>
 
-            <div className="xl:col-start-5 xl:row-start-3 bg-white backdrop-blur-sm border border-white/20 rounded-md p-1 flex flex-col gap-5 w-[150px] shadow-[0_4px_10px_rgba(0,0,0,0.02)] flex flex-justify-between items-center -mt-70 ml-15">
+            <div className="xl:col-start-5 xl:row-start-3 bg-white backdrop-blur-sm border border-white/20 rounded-md p-1 flex flex-col gap-5 w-[150px] shadow-[0_4px_10px_rgba(0,0,0,0.02)] flex flex-justify-between items-center -mt-75 ml-15">
               <span id="tour-suplementos-btn" className="contents"><ActionButton label="SUPLEMENTOS" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern"  onClick={() => setShowSuplementosScreen(true)} /></span>
-              <span id="tour-cumpleanos-btn" className="contents"><ActionButton label="CUMPLEAÑOS" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"  variant="modern" /></span>
+              <span id="tour-cumpleanos-btn" className="contents"><ActionButton label="CUMPLEAÑOS" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"  variant="modern" onClick={() => setShowCumpleanos(true)} /></span>
               <span id="tour-focus-btn" className="contents"><ActionButton label="FOCUS" color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"  variant="modern" onClick={() => setShowFocusScreen(true)} /></span>
             </div>
           </div>
@@ -2094,7 +2062,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
 
           {/* Bloque Medio: Misión */}
           <div id="tour-mision-semanal" className="xl:col-start-4 xl:row-start-4 flex flex-col items-start w-full">
-            <WeeklyMissionWidget missionPhotoUrl={missionPhotoUrl} onPhotoChange={setMissionPhotoUrl} />
+            <WeeklyMissionWidget photoUrl={userData.avatar_url} />
           </div>
 
           {/* Bloque Hora de Oro Familiar */}
@@ -2594,14 +2562,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
       {/* Agenda Diaria full-page (foto) */}
       {showMetaDiariaModal && (
         <AgendaDiaria
-          timeBlocks={timeBlocks}
           todayStr={todayStr}
           username={userData.username}
           avatarUrl={userData.avatar_url}
           onNavigate={(key) => { setShowMetaDiariaModal(false); handleMonthlyNavigate(key); }}
-          onSaveBlock={(hora, tarea) => handleTimeBlockBlur(hora, tarea)}
           onClose={() => setShowMetaDiariaModal(false)}
           onBackToKanban={() => { setShowMetaDiariaModal(false); setShowKanbanModule(true); }}
+          onOpenHelp={() => setShowAyuda(true)}
+          onOpenNotifications={abrirNotificaciones}
+          onOpenSettings={() => setShowConfigPanel(true)}
         />
       )}
 
@@ -2677,6 +2646,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
             userName={userData.username}
             onBack={() => setShowGratitud(false)}
             onNavigate={handleGratitudNavigate}
+          />
+        </div>
+      )}
+
+      {/* Pantalla: Cumpleaños (Doc 22) */}
+      {showCumpleanos && (
+        <div className="fixed inset-0 z-50">
+          <CumpleanosScreen
+            userName={userData.username}
+            onBack={() => setShowCumpleanos(false)}
+            onNavigate={handleCumpleanosNavigate}
           />
         </div>
       )}
@@ -3780,6 +3760,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
           setTimeout(() => setSavingStatus(''), 6000);
           refreshAccionesClasificadas();
         }}
+        onOpenHelp={() => setShowAyuda(true)}
+        onOpenNotifications={() => abrirNotificaciones()}
+        onOpenSettings={() => { setShowGranMetaAnual(false); setShowConfigPanel(true); }}
       />
 
       {/* Monthly Wizard */}
@@ -3814,6 +3797,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         avatarIndex={userData.avatar_index}
       />
 
+      {/* Ayuda de IA global: se abre desde la cabecera de cualquier módulo */}
+      <HelpChat
+        open={showAyuda}
+        onClose={() => setShowAyuda(false)}
+        pasoLabel="Focusia"
+        titulo="Ayuda de IA"
+        bienvenida="¡Hola! Soy FocusIA, tu asistente de productividad personal. Puedo explicarte cualquier módulo, revisar tus tareas o darte recomendaciones. ¿En qué te ayudo?"
+        contextoAyuda="El usuario pidió ayuda desde el icono de interrogación de Focussia."
+      />
+
       {/* Kanban Backlog full page */}
       {showKanbanModule && (
         <KanbanModule
@@ -3822,6 +3815,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
           vistaInicial={kanbanVistaInicial}
           onNavigate={(key) => { setShowKanbanModule(false); handleMonthlyNavigate(key); }}
           onClose={() => setShowKanbanModule(false)}
+          onOpenHelp={() => setShowAyuda(true)}
+          onOpenNotifications={abrirNotificaciones}
+          onOpenSettings={() => setShowConfigPanel(true)}
         />
       )}
 
@@ -3832,6 +3828,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
           avatarUrl={userData.avatar_url}
           onNavigate={(key) => { setShowDelegarModule(false); handleMonthlyNavigate(key); }}
           onClose={() => setShowDelegarModule(false)}
+          onOpenHelp={() => setShowAyuda(true)}
+          onOpenNotifications={abrirNotificaciones}
+          onOpenSettings={() => setShowConfigPanel(true)}
         />
       )}
 
@@ -3843,6 +3842,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
           onClose={() => setShowAnnualView(false)}
           onEdit={() => setShowEditGoalWarning(true)}
           onNavigate={(s) => { setShowAnnualView(false); goSection(s); }}
+          onOpenHelp={() => setShowAyuda(true)}
+          onOpenNotifications={abrirNotificaciones}
+          onOpenSettings={() => setShowConfigPanel(true)}
         />
       )}
 
@@ -3903,6 +3905,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         <div className="fixed inset-0 z-50">
           <RedesSocialesScreen
             userName={userData.username}
+            avatarUrl={userData.avatar_url}
             links={redesLinks}
             irAConfig={redesIrAConfig}
             onLinksChange={setRedesLinks}
@@ -3939,7 +3942,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
       {/* Coaching */}
       {showCoaching && (
         <div className="fixed inset-0 z-50">
-          <CoachingScreen onBack={() => setShowCoaching(false)} userName={userData.username} onNavigate={handleCoachingNavigate} />
+          <CoachingScreen onBack={() => setShowCoaching(false)} userName={userData.username} onNavigate={handleCoachingNavigate} onOpenHelp={() => setShowAyuda(true)} onOpenNotifications={abrirNotificaciones} onOpenSettings={() => setShowConfigPanel(true)} />
         </div>
       )}
 
@@ -3962,6 +3965,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <ReportDetailScreen
             report={selectedReport}
+            avatarIndex={userData.avatar_index}
             onBack={() => setSelectedReport(null)}
             onNavigate={(s) => { setSelectedReport(null); setShowReportsList(false); goSection(s); }}
           />
@@ -3970,6 +3974,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
       {showReportsList && !selectedReport && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <ReportsListScreen
+            avatarIndex={userData.avatar_index}
+            focusActivo={!!focusSesion}
             onSelect={(r) => { setSelectedReport(r); }}
             onBack={() => setShowReportsList(false)}
           />
@@ -4303,8 +4309,17 @@ const CategoriasMenu: React.FC = () => {
   );
 };
 
-const CardAyudaIA: React.FC<{ onOpenSettings?: () => void }> = ({ onOpenSettings }) => {
+const CardAyudaIA: React.FC<{ onOpenSettings?: () => void; open?: boolean; onClose?: () => void }> = ({ onOpenSettings, open, onClose }) => {
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (open !== undefined) setIsOpen(open);
+  }, [open]);
+
+  const handleClose = () => {
+    setIsOpen(false);
+    onClose?.();
+  };
   const [messages, setMessages] = useState<Array<{ id: string; rol: string; mensaje: string; created_at: string }>>([]);
   const [input, setInput] = useState('');
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
@@ -4728,4 +4743,3 @@ function CalendarWidget(): React.ReactElement {
   </div>
   );
 };
-

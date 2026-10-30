@@ -172,7 +172,7 @@ export default function TribuScreen({ onBack, userName, onNavigate }: { onBack: 
                     <p className="text-[11px] font-bold tracking-widest text-indigo-600 dark:text-indigo-300 flex items-center gap-2">
                       <Users className="w-4 h-4" /> TEMA DE LA SEMANA
                     </p>
-                    <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white mt-2">
+                    <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mt-2">
                       {tema?.titulo || 'Gestión del Tiempo'}
                     </h2>
                     <div className="w-16 h-0.5 bg-indigo-500 my-4" />
@@ -195,7 +195,7 @@ export default function TribuScreen({ onBack, userName, onNavigate }: { onBack: 
                     </span>
                     REFLEXIÓN DE LA SEMANA
                   </p>
-                  <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed mt-3 whitespace-pre-line">
+                  <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed mt-2 whitespace-pre-line">
                     {tema?.reflexion || 'Administrar bien el tiempo no significa hacer más, sino elegir lo que realmente importa y compartirlo con quienes nos rodean.'}
                   </p>
                 </div>

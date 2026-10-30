@@ -21,6 +21,10 @@ TAREAS = (
      Schedule.MINUTES, 15, None),
     ('Recordatorio de Hora de Oro', 'recordar_hora_de_oro',
      Schedule.HOURLY, None, None),
+    # Doc 22 §III: activación proactiva de cumpleaños a las 09:00 del día en
+    # que se alcanza la anticipación configurada por el usuario.
+    ('Recordatorios de cumpleaños', 'recordar_cumpleanos',
+     Schedule.CRON, None, '0 9 * * *'),
     # Doc 27 §4: los reportes se publican a las 21:00 y se actualizan hasta las
     # 00:00; cada corrida decide internamente si hoy cierra el período (domingo /
     # último día del mes / 31 dic). Tres pasadas por noche, igual que el
