@@ -679,6 +679,10 @@ export function ResetPasswordGate({ token, onDone }: { token: string; onDone: ()
   const [ok, setOk] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    window.history.replaceState({}, '', window.location.pathname);
+  }, []);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password.length < 8) {

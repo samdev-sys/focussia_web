@@ -1,41 +1,30 @@
 import i18n from '../i18n';
-import React from 'react';
+import React, { useRef } from 'react';
 // FotoIntro / FotoGuia: pantallas del flujo Rueda de la Vida (shell: RuedaShell v2).
-import {
-  Play, Volume2,
-  Settings, Maximize, ShieldCheck,
-} from 'lucide-react';
-
-function MiniWheel() {
-  return (
-    <img src="/rueda.png" alt={i18n.t('rueda_de_la_vida_5d3k')} className="w-full h-full object-contain" />
-  );
-}
+import { ShieldCheck } from 'lucide-react';
 
 interface FotoIntroProps {
   nombre: string;
   avatarImg: string | null;
-  videoAvance: number;
-  videoSegundos: number;
-  videoListo: boolean;
-  textoVideo: string;
-  onPlay: () => void;
+  videoIniciado: boolean;
+  onStarted: () => void;
+  onEnded?: () => void;
   onComenzar: () => void;
   onSaltar: () => void;
 }
 
 export const FotoIntro: React.FC<FotoIntroProps> = ({
-  nombre, avatarImg, videoAvance, videoSegundos, videoListo, textoVideo, onPlay, onComenzar, onSaltar,
+  nombre, avatarImg, videoIniciado, onStarted, onEnded, onComenzar, onSaltar,
 }) => {
-  const playing = videoAvance > 0 || videoListo;
-  const pct = Math.min(100, (videoAvance / videoSegundos) * 100);
-  const puedeContinuar = playing;
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const puedeContinuar = videoIniciado;
+
   return (
     <div>
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3 sm:p-5 grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] gap-5">
         {/* Coach + burbuja (foto 1 izquierda) */}
         <div className="relative rounded-xl overflow-hidden bg-gradient-to-b from-[#2b3fd4] via-[#4b3fd6] to-[#7a5af8] min-h-[400px] flex items-end">
-          <img src={avatarImg || '/avatars/Sophya.jpeg'} alt={i18n.t('coach_focusia_ghtx')} className="absolute inset-0 w-full h-full object-cover object-top" onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('Sophya.jpeg')) t.src = '/avatars/Sophya.jpeg'; else t.style.display = 'none'; }} />
+          <img src={avatarImg || '/avartars/Sophya.jpeg'} alt={i18n.t('coach_focusia_ghtx')} className="absolute inset-0 w-full h-full object-cover object-top" onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('Sophya.jpeg')) t.src = '/avartars/Sophya.jpeg'; else t.style.display = 'none'; }} />
           <div className="absolute inset-0 bg-gradient-to-t from-[#2b3fd4]/30 via-transparent to-white/10" />
           <div className="absolute top-14 right-2 left-32 sm:left-36 bg-white rounded-xl rounded-bl-none shadow-xl p-4 text-left mt-40">
             <div className="absolute left-[-8px] top-1/2 -translate-y-1/2 w-4 h-4 bg-white rotate-45" />
@@ -59,43 +48,22 @@ export const FotoIntro: React.FC<FotoIntroProps> = ({
                 <span className="text-white font-extrabold tracking-widest text-sm sm:text-lg">{i18n.t('rueda_de_la_vida_4hl1')}</span>
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_180px] gap-3 p-4 items-center min-w-0">
-              <div className="relative mx-auto w-full max-w-[230px] aspect-square sm:max-w-[260px]">
-                <MiniWheel />
-                {!playing ? (
-                  <button onClick={onPlay} aria-label={i18n.t('reproducir_video_13sk')} className="absolute right-0 bottom-8 w-16 h-16 rounded-full bg-[#8b5cf6] hover:bg-[#7c3aed] shadow-[0_8px_30px_rgba(139,92,246,0.6)] flex items-center justify-center transition-all hover:scale-105">
-                    <Play className="w-8 h-8 text-white fill-white ml-1" />
-                  </button>
-                ) : (
-                  <div className="absolute inset-x-2 bottom-1 bg-black/70 rounded-lg px-3 py-2">
-                    <p className="text-[11px] text-purple-100/90 leading-snug line-clamp-3">{textoVideo}</p>
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-col gap-3">
-                {['SALUD', 'FAMILIA', 'DINERO'].map((t) => (
-                  <div key={t} className="rounded-xl border border-white/40 bg-gradient-to-r from-[#fcd9a0] to-[#f78f8f] py-3 text-center shadow">
-                    <span className="font-extrabold tracking-wide text-[#1e1b3a] text-lg">{t}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="bg-black/90 px-4 py-2.5 flex items-center gap-3 text-white">
-              <button onClick={onPlay} className="hover:opacity-80" aria-label={i18n.t('play')}>
-                <Play className="w-5 h-5 fill-white" />
-              </button>
-              <span className="text-xs font-medium whitespace-nowrap">0:{String(videoAvance).padStart(2, '0')} / 0:{videoSegundos}</span>
-              <div className="flex-1 h-1 rounded-full bg-white/20 relative">
-                <div className="absolute left-0 top-0 h-full bg-white/70 rounded-full transition-all" style={{ width: `${pct}%` }} />
-                <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 bg-white rounded-full shadow transition-all" style={{ left: `${pct}%` }} />
-              </div>
-              <Volume2 className="w-5 h-5" />
-              <div className="w-20 h-1 rounded-full bg-white/20 relative hidden sm:block">
-                <div className="absolute left-0 top-0 h-full w-[70%] bg-[#6d5bff] rounded-full" />
-                <div className="absolute left-[70%] top-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white rounded-full" />
-              </div>
-              <Settings className="w-5 h-5 opacity-90" />
-              <Maximize className="w-5 h-5 opacity-90" />
+            <div className="p-3 sm:p-4">
+              <video
+                ref={videoRef}
+                src="/rueda.mp4"
+                controls
+                playsInline
+                preload="metadata"
+                className="w-full rounded-lg bg-black aspect-video"
+                onPlay={(e) => {
+                  const v = e.currentTarget;
+                  v.muted = false;
+                  if (v.volume === 0) v.volume = 1;
+                  onStarted();
+                }}
+                onEnded={onEnded}
+              />
             </div>
           </div>
           <button
@@ -105,7 +73,7 @@ export const FotoIntro: React.FC<FotoIntroProps> = ({
           >
             Comenzar evaluación
           </button>
-          {!playing && <p className="text-xs text-gray-400 text-center -mt-2">Presiona play para ver el video de 0:{videoSegundos} seg. Podrás continuar después de iniciarlo.</p>}
+          {!videoIniciado && <p className="text-xs text-gray-400 text-center -mt-2">Reproduce el video para continuar con la evaluación.</p>}
           <button onClick={onSaltar} className="text-xs text-gray-400 hover:text-gray-600 mx-auto">{i18n.t('saltar_video')}</button>
         </div>
       </div>

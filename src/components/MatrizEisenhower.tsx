@@ -289,19 +289,20 @@ export const MatrizEisenhower: React.FC<MatrizEisenhowerProps> = ({ className = 
                 <video
                   ref={videoRef}
                   className="w-full h-full object-cover"
-                  src="https://cdn.pixabay.com/video/2015/11/09/24-129028718_large.mp4"
-                  poster={liaOk ? avatarImg : undefined}
+                  src="/matriz.mp4"
                   onEnded={handleVideoEnd}
+                  onPlay={(e) => {
+                    const v = e.currentTarget;
+                    v.muted = false;
+                    if (v.volume === 0) v.volume = 1;
+                  }}
                   controls
+                  playsInline
                   preload="metadata"
                 />
-                {!videoEnded && (
-                  <span className="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/60 text-white text-xs font-bold">00:45</span>
-                )}
               </div>
               <div className="flex items-center gap-3 px-4 py-3 bg-[#0b1b3f] text-white text-sm">
                 <Play className="w-4 h-4" />
-                <span className="text-white/70">00:00 / 00:45</span>
                 <span className="ml-auto hidden sm:block text-white/60 text-xs">{i18n.t('priorizar_es_decidir_mejor_hacer_planifi')}</span>
               </div>
             </div>

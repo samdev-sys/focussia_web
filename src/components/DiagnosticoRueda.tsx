@@ -1,5 +1,5 @@
 import i18n from '../i18n';
-﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import {
   Heart, CheckCircle2, Sparkles, ArrowRight, ChevronLeft, X, Brain,
   AlertCircle, Loader2, Send, Check, BookOpen, Sliders, MessageSquare, SkipForward, Play,
@@ -120,9 +120,6 @@ const ORIENTACIONES: Record<string, string> = {
   Contribución: 'Lo que aportas a otros: ayuda, impacto y legado.',
 };
 
-const VIDEO_SEGUNDOS = 25;
-const TEXTO_VIDEO = 'Antes de construir una meta anual, necesitamos mirar tu punto de partida. La Rueda de la Vida te ayudará a evaluar diez áreas importantes de tu vida, reconocer qué está fuerte, detectar qué necesita atención y descubrir dónde conviene poner el foco para recuperar equilibrio. Responde con sinceridad: este diagnóstico será la base para avanzar con dirección real.';
-
 interface DiagnosticoRuedaProps {
   avatarIndex?: number;
   userName?: string;
@@ -149,13 +146,11 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
   const [confirmacion, setConfirmacion] = useState('');
   const [limiteAcciones, setLimiteAcciones] = useState(false);
   const [totalArea, setTotalArea] = useState(0);
-  const [videoAvance, setVideoAvance] = useState(0);
-  const [videoListo, setVideoListo] = useState(false);
+  const [videoIniciado, setVideoIniciado] = useState(false);
   const [reportePaso, setReportePaso] = useState<'rueda' | 'fuertes' | 'focos' | 'resumen' | 'focosFinal'>('rueda');
   const [avatarName, setAvatarName] = useState('');
   const [avatarIdxLocal, setAvatarIdxLocal] = useState(avatarIndex);
   const [userNameLocal, setUserName] = useState('');
-  const videoTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const nombre = userName?.trim() || userNameLocal;
   const avatarImg = avatarIdxLocal > 0 ? AVATAR_FILES[avatarIdxLocal] : null;
@@ -208,24 +203,8 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
     }
   }, []);
 
-  useEffect(() => () => {
-    if (videoTimer.current) clearInterval(videoTimer.current);
-  }, []);
-
-  const iniciarVideo = useCallback(() => {
-    if (videoTimer.current) clearInterval(videoTimer.current);
-    setVideoAvance(0);
-    setVideoListo(false);
-    videoTimer.current = setInterval(() => {
-      setVideoAvance(prev => {
-        if (prev + 1 >= VIDEO_SEGUNDOS) {
-          if (videoTimer.current) clearInterval(videoTimer.current);
-          setVideoListo(true);
-          return VIDEO_SEGUNDOS;
-        }
-        return prev + 1;
-      });
-    }, 1000);
+  const handleVideoStarted = useCallback(() => {
+    setVideoIniciado(true);
   }, []);
 
   useEffect(() => {
@@ -344,32 +323,13 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
     categorias.map(c => ({ id: c.id, nombre: c.nombre, puntaje: puntajes[c.id] ?? 0, icono: c.icono }));
 
   const renderContent = () => {
-    if (screen === 'intro') {
+    if (screen === 'intro' || screen === 'video') {
       return (
         <FotoIntro
           nombre={nombre}
           avatarImg={avatarImg}
-          videoAvance={0}
-          videoSegundos={VIDEO_SEGUNDOS}
-          videoListo={false}
-          textoVideo={TEXTO_VIDEO}
-          onPlay={() => { setScreen('video'); iniciarVideo(); }}
-          onComenzar={() => setScreen('instruccion')}
-          onSaltar={() => setScreen('instruccion')}
-        />
-      );
-    }
-
-    if (screen === 'video') {
-      return (
-        <FotoIntro
-          nombre={nombre}
-          avatarImg={avatarImg}
-          videoAvance={videoAvance}
-          videoSegundos={VIDEO_SEGUNDOS}
-          videoListo={videoListo}
-          textoVideo={TEXTO_VIDEO}
-          onPlay={() => { if (videoAvance === 0 && !videoListo) iniciarVideo(); }}
+          videoIniciado={videoIniciado}
+          onStarted={() => { handleVideoStarted(); if (screen === 'intro') setScreen('video'); }}
           onComenzar={() => setScreen('instruccion')}
           onSaltar={() => setScreen('instruccion')}
         />
