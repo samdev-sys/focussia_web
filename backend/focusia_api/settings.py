@@ -202,6 +202,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 50,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle',
@@ -331,6 +332,21 @@ try:
     }
 except ImportError:
     pass
+
+# OpenAPI (Fase 2) — opcional si el paquete no está instalado.
+try:
+    import drf_spectacular  # noqa: F401
+    INSTALLED_APPS.append('drf_spectacular')
+except ImportError:
+    # Sin drf-spectacular, DRF usa su schema por defecto si se solicita.
+    REST_FRAMEWORK.pop('DEFAULT_SCHEMA_CLASS', None)
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Focusia API',
+    'DESCRIPTION': 'Contrato API v1 para web y móvil.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+}
 
 # Celery
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')

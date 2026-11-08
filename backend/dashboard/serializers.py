@@ -2,6 +2,7 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 from .models import (User, RuedaVida, TimeBlock, KanbanTask, Recordatorio, ObjetivoSemana, KeepNota, MisionHoy, CategoriaRueda, RegistroRueda, MatrixItem, Factura, Workspace, WorkspaceMember, Invitation, Delegation, Notification, MetaAnual, GranMetaAnual, AnnualGoalConversationTurn, ObjetivoMensual, PropuestaIA, ConfiguracionUsuario, MatrizEisenhower, Activacion, InteraccionUsuario, DiagnosticoRueda, AccionSugerida, FocusArea, KanbanAction, AccionKanban, SubaccionKanban, HistorialMovimiento, ObjetivoSemanal, MonthlyPlan, MonthlyGoal, WeeklyPlan, Action, ActionDelegation, AgentConversation, AgentSchedule, AgentConfig, FocusiaReport, ReportDataSource, Avatar, OnboardingProfile, InicioState, InicioEventLog, LearningCategory, LearningModuleRef, GuidedTourBlock, AccompanimentPreferences, NotificationPreference, ScheduleException, AccountChangeLog,     InicioPrivacyPreferences, ProgramMonth, MonthlyTraining, ProgramDay, UserProgramProgress, DailyPhraseViewLog,
+    DeviceToken, GamificationProfile, XpEvent, UserGoal,
     CoachingEntry, TribuTemaSemana, TribuCompromiso, UserTrainingProgress, Juego, Membresia,
     AsignacionContenido, CuentaColumna, CuentaRegistro, CuentaValor, Suplemento, SuplementoToma,
     HoraOroExperiencia, HoraOroAjustes, FocusSession, InspiracionVideo, normalizar_nivel_exigencia)
@@ -90,8 +91,9 @@ class KanbanTaskSerializer(serializers.ModelSerializer):
 class RecordatorioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recordatorio
-        fields = ['id', 'user', 'titulo', 'categoria', 'fecha_hora', 'activo', 'tomado', 'workspace']
-        read_only_fields = ['user']
+        fields = ['id', 'user', 'titulo', 'categoria', 'fecha_hora', 'activo', 'tomado',
+                  'workspace', 'recurrence', 'recurrence_days', 'recurrence_end', 'last_notified_at']
+        read_only_fields = ['user', 'last_notified_at']
 
 class SuplementoTomaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -518,7 +520,12 @@ class DiagnosticoRuedaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DiagnosticoRueda
-        fields = '__all__'
+        fields = [
+            'id', 'user', 'status', 'promedio_general', 'nivel_equilibrio',
+            'pico_alto', 'pico_bajo', 'foco_1', 'foco_2', 'foco_3',
+            'justificacion_focos', 'ai_summary', 'creado', 'actualizado',
+            'focus_areas',
+        ]
         read_only_fields = ['user', 'creado', 'actualizado']
 
 
@@ -600,6 +607,8 @@ class AccionKanbanSerializer(serializers.ModelSerializer):
     historial = HistorialMovimientoSerializer(many=True, read_only=True)
     subacciones = SubaccionKanbanSerializer(many=True, read_only=True)
     responsable = serializers.SerializerMethodField()
+    assigned_to_username = serializers.CharField(
+        source='assigned_to.username', read_only=True, allow_null=True)
 
     class Meta:
         model = AccionKanban
@@ -607,7 +616,8 @@ class AccionKanbanSerializer(serializers.ModelSerializer):
             'id', 'user', 'texto_accion', 'origen', 'clasificacion',
             'estado_actual', 'destino_asignado', 'fecha_seleccionada',
             'hora_seleccionada', 'es_fijo', 'estado', 'subacciones',
-            'responsable', 'creado_en', 'actualizado_en', 'historial',
+            'responsable', 'assigned_to', 'assigned_to_username',
+            'creado_en', 'actualizado_en', 'historial',
         ]
         read_only_fields = ['id', 'user', 'creado_en', 'actualizado_en']
 
@@ -936,7 +946,7 @@ class OnboardingSerializer(serializers.Serializer):
 class ProgramMonthSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProgramMonth
-        fields = '__all__'
+        fields = ['id', 'month_number', 'theme_name', 'training_theme', 'formative_objective']
 
 
 class ProgramDaySerializer(serializers.ModelSerializer):
@@ -1233,3 +1243,46 @@ class AdminInspiracionVideoSerializer(serializers.ModelSerializer):
             return obj.miniatura_file.url
         except Exception:
             return ''
+
+
+class DeviceTokenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeviceToken
+        fields = ['id', 'token', 'platform', 'last_seen', 'created_at', 'is_active']
+        read_only_fields = ['id', 'last_seen', 'created_at']
+
+
+class DeviceTokenRegisterSerializer(serializers.Serializer):
+    token = serializers.CharField(max_length=255)
+    platform = serializers.ChoiceField(choices=['ios', 'android', 'web'], default='android')
+
+
+class XpEventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = XpEvent
+        fields = ['id', 'amount', 'reason', 'source', 'balance', 'created_at']
+        read_only_fields = fields
+
+
+class GamificationProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GamificationProfile
+        fields = ['xp', 'level', 'streak_days', 'last_activity_date', 'badges', 'counters', 'updated_at']
+        read_only_fields = fields
+
+
+class AddXpSerializer(serializers.Serializer):
+    amount = serializers.IntegerField(min_value=1, max_value=100000)
+    reason = serializers.CharField(max_length=255, required=False, allow_blank=True, default='')
+    source = serializers.CharField(max_length=50, required=False, allow_blank=True, default='')
+
+
+class UserGoalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserGoal
+        fields = [
+            'id', 'period', 'title', 'description', 'status', 'progress',
+            'year', 'month', 'week', 'day', 'xp_reward', 'workspace',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']

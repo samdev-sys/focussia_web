@@ -60,6 +60,10 @@ from .admin_api import (
     AdminUsuarioViewSet, AdminMembresiaViewSet, AdminAsignacionViewSet,
     admin_session, admin_overview, admin_asistente_chat,
 )
+from .views import (
+    DeviceTokenViewSet, UserGoalViewSet,
+    GamificationProfileView, GamificationXpView, GamificationEventsView,
+)
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet, basename='users')
@@ -86,6 +90,8 @@ router.register(r'workspaces', WorkspaceViewSet, basename='workspaces')
 router.register(r'invitations', InvitationViewSet, basename='invitations')
 router.register(r'delegations', DelegationViewSet, basename='delegations')
 router.register(r'notifications', NotificationViewSet, basename='notifications')
+router.register(r'device-tokens', DeviceTokenViewSet, basename='device-tokens')
+router.register(r'user-goals', UserGoalViewSet, basename='user-goals')
 router.register(r'metas-anuales', MetaAnualViewSet, basename='metas-anuales')
 router.register(r'gran-meta-anual', GranMetaAnualViewSet, basename='gran-meta-anual')
 router.register(r'monthly-plan', MonthlyPlanViewSet, basename='monthly-plan')
@@ -218,6 +224,9 @@ urlpatterns = [
     path('config/2fa/verify/', two_factor_verify, name='2fa-verify'),
     path('config/2fa/disable/', two_factor_disable, name='2fa-disable'),
     path('notifications/stream/', notifications_stream, name='notifications-stream'),
+    path('gamification/profile/', GamificationProfileView.as_view(), name='gamification-profile'),
+    path('gamification/xp/', GamificationXpView.as_view(), name='gamification-xp'),
+    path('gamification/events/', GamificationEventsView.as_view(), name='gamification-events'),
     # MOTIVACIONAL
     path('motivational/today/', motivational_today, name='motivational-today'),
     path('motivational/current-training/', motivational_current_training, name='motivational-current-training'),
@@ -238,5 +247,9 @@ urlpatterns = [
     path('cumpleanos/<int:pk>/', cumpleanos_detalle, name='cumpleanos-detalle'),
     path('cumpleanos/<int:pk>/accion/', cumpleanos_accion, name='cumpleanos-accion'),
     path('admin/', include(admin_router.urls)),
+    # Contrato legado: GET/POST /api/delegations/<token>/ (retrieve por token + acción).
+    path('delegations/<str:token>/',
+         DelegationViewSet.as_view({'get': 'retrieve', 'post': 'handle_action'}),
+         name='delegation-token-action'),
     path('', include(router.urls)),
 ]

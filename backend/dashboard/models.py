@@ -105,6 +105,11 @@ class Recordatorio(models.Model):
         ('Equipo', 'Equipo'),
         ('Otro', 'Otro'),
     )
+    RECURRENCIAS = (
+        ('none', 'Sin recurrencia'),
+        ('daily', 'Diaria'),
+        ('weekdays', 'Días de la semana'),
+    )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='recordatorios')
     titulo = models.CharField(max_length=255)
     categoria = models.CharField(max_length=50, choices=CATEGORIAS)
@@ -112,6 +117,10 @@ class Recordatorio(models.Model):
     activo = models.BooleanField(default=True)
     tomado = models.BooleanField(default=False)
     workspace = models.ForeignKey('Workspace', on_delete=models.CASCADE, null=True, blank=True, related_name='recordatorios')
+    recurrence = models.CharField(max_length=12, choices=RECURRENCIAS, default='none')
+    recurrence_days = models.JSONField(default=list, blank=True)  # 0=lunes .. 6=domingo (ISO)
+    recurrence_end = models.DateField(null=True, blank=True)
+    last_notified_at = models.DateTimeField(null=True, blank=True)
 
 class Suplemento(models.Model):
     """Suplemento o medicamento con su programación de tomas (Doc 21)."""
@@ -1097,6 +1106,10 @@ class AccionKanban(models.Model):
     revert_data = models.JSONField(
         default=dict, blank=True,
         help_text='IDs laterales creados al clasificar (para DESHACER preciso)',
+    )
+    assigned_to = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='assigned_acciones_kanban',
     )
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
@@ -2342,3 +2355,108 @@ class InspiracionVideo(models.Model):
         if vid:
             return f'https://img.youtube.com/vi/{vid}/hqdefault.jpg'
         return ''
+
+
+class DeviceToken(models.Model):
+    """Token Expo Push de un dispositivo movil (Fase 2/3)."""
+    PLATFORMS = (('ios', 'iOS'), ('android', 'Android'), ('web', 'Web'))
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='device_tokens')
+    token = models.CharField(max_length=255, unique=True)
+    platform = models.CharField(max_length=10, choices=PLATFORMS, default='android')
+    last_seen = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['-last_seen']
+        verbose_name = 'Token de Dispositivo'
+        verbose_name_plural = 'Tokens de Dispositivo'
+
+    def __str__(self):
+        return f'{self.user_id}:{self.platform}:{self.token[:24]}'
+
+
+class GamificationProfile(models.Model):
+    """Perfil de gamificacion persistido en backend (XP, nivel, racha, insignias)."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='gamification_profile')
+    xp = models.PositiveIntegerField(default=0)
+    level = models.PositiveIntegerField(default=1)
+    streak_days = models.PositiveIntegerField(default=0)
+    last_activity_date = models.DateField(null=True, blank=True)
+    badges = models.JSONField(default=list, blank=True)
+    counters = models.JSONField(default=dict, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Perfil de Gamificacion'
+        verbose_name_plural = 'Perfiles de Gamificacion'
+
+    def __str__(self):
+        return f'{self.user_id} xp={self.xp} lvl={self.level}'
+
+    def add_xp(self, amount, reason='', source=''):
+        amount = max(0, int(amount or 0))
+        self.xp += amount
+        # Nivel simple: 100 XP por nivel, minimo 1.
+        self.level = max(1, (self.xp // 100) + 1)
+        counters = self.counters or {}
+        counters['xp_events'] = int(counters.get('xp_events', 0)) + (1 if amount else 0)
+        self.counters = counters
+        self.save(update_fields=['xp', 'level', 'counters', 'updated_at'])
+        XpEvent.objects.create(
+            profile=self, amount=amount, reason=reason or '', source=source or '', balance=self.xp)
+        return self
+
+
+class XpEvent(models.Model):
+    profile = models.ForeignKey(GamificationProfile, on_delete=models.CASCADE, related_name='events')
+    amount = models.IntegerField(default=0)
+    reason = models.CharField(max_length=255, blank=True, default='')
+    source = models.CharField(max_length=50, blank=True, default='')
+    balance = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class UserGoal(models.Model):
+    """Meta anual/mensual/semanal/diaria para contrato movil/web (Fase 2)."""
+    PERIODS = (
+        ('yearly', 'Anual'),
+        ('monthly', 'Mensual'),
+        ('weekly', 'Semanal'),
+        ('daily', 'Diaria'),
+    )
+    STATUS = (
+        ('active', 'Activa'),
+        ('completed', 'Completada'),
+        ('archived', 'Archivada'),
+    )
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_goals')
+    period = models.CharField(max_length=10, choices=PERIODS)
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default='')
+    status = models.CharField(max_length=12, choices=STATUS, default='active')
+    progress = models.PositiveIntegerField(default=0)  # 0-100
+    year = models.PositiveIntegerField(null=True, blank=True)
+    month = models.PositiveSmallIntegerField(null=True, blank=True)
+    week = models.PositiveSmallIntegerField(null=True, blank=True)
+    day = models.DateField(null=True, blank=True)
+    xp_reward = models.PositiveIntegerField(default=0)
+    workspace = models.ForeignKey('Workspace', on_delete=models.CASCADE, null=True, blank=True,
+                                  related_name='user_goals')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'period', 'status']),
+            models.Index(fields=['user', 'year', 'month']),
+        ]
+
+    def __str__(self):
+        return f'{self.period}:{self.title}'

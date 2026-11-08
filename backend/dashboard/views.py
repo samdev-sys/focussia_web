@@ -11,7 +11,14 @@ from django.utils import timezone
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.throttling import ScopedRateThrottle
+from .permissions import HasWorkspaceRole, WORKSPACE_WRITE_ROLES, get_workspace_role
+from .models import DeviceToken, GamificationProfile, XpEvent, UserGoal
+from .serializers import (
+    DeviceTokenSerializer, DeviceTokenRegisterSerializer,
+    GamificationProfileSerializer, XpEventSerializer, AddXpSerializer, UserGoalSerializer,
+)
 from django.db import IntegrityError, models, transaction
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
@@ -196,6 +203,85 @@ class BaseUserViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+
+class WorkspaceScopedMixin:
+    """Scope de workspace para recursos con FK `workspace` (nullable) y `user`.
+
+    - GET ?workspace=<id>: solo datos de ese workspace (requiere membresía).
+    - Sin workspace: datos personales (workspace nulo, propios) + datos de
+      workspaces donde el usuario es miembro.
+    - Escritura: valida membresía/rol (viewer no escribe) y que el workspace
+      indicado pertenezca al usuario como miembro.
+    """
+
+    permission_classes = [HasWorkspaceRole]
+
+    def _requested_workspace_id(self):
+        raw = self.request.query_params.get('workspace')
+        if raw is None:
+            raw = self.request.query_params.get('workspace_id')
+        if raw in (None, '', 'null', 'None'):
+            data = getattr(self.request, 'data', {}) or {}
+            raw = data.get('workspace') or data.get('workspace_id')
+        if raw in (None, '', 'null', 'None'):
+            return None
+        try:
+            return int(raw)
+        except (TypeError, ValueError):
+            return None
+
+    def _member_for(self, workspace_id):
+        if workspace_id is None:
+            return None
+        return WorkspaceMember.objects.filter(
+            user=self.request.user, workspace_id=workspace_id).first()
+
+    def _require_workspace_write(self, workspace_id):
+        if workspace_id is None:
+            return
+        member = self._member_for(workspace_id)
+        if not member:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('No eres miembro de este workspace.')
+        if member.role not in WORKSPACE_WRITE_ROLES:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied('No tienes permisos de escritura en este workspace.')
+
+    def get_queryset(self):
+        qs = self.queryset
+        ws_id = self._requested_workspace_id()
+        if ws_id is not None:
+            # Acceso explícito a un workspace: requiere membresía.
+            if not self._member_for(ws_id):
+                return qs.none()
+            return qs.filter(workspace_id=ws_id)
+        member_ws = WorkspaceMember.objects.filter(
+            user=self.request.user).values_list('workspace_id', flat=True)
+        return qs.filter(
+            models.Q(workspace__isnull=True, user=self.request.user)
+            | models.Q(workspace_id__in=member_ws)
+        ).distinct()
+
+    def perform_create(self, serializer):
+        ws = serializer.validated_data.get('workspace')
+        ws_id = getattr(ws, 'id', ws) if ws is not None else self._requested_workspace_id()
+        self._require_workspace_write(ws_id)
+        serializer.save(user=self.request.user)
+
+    def perform_update(self, serializer):
+        instance = getattr(serializer, 'instance', None)
+        ws = serializer.validated_data.get('workspace', getattr(instance, 'workspace', None))
+        ws_id = getattr(ws, 'id', ws) if ws is not None else getattr(instance, 'workspace_id', None)
+        self._require_workspace_write(ws_id)
+        # Un miembro (no gestor) solo edita lo suyo; gestores pueden operar en el workspace.
+        if ws_id is not None and instance is not None and instance.user_id != self.request.user.id:
+            member = self._member_for(ws_id)
+            role = getattr(member, 'role', None)
+            if role not in ('admin', 'owner'):
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied('Solo puedes modificar tus propios elementos.')
+        serializer.save()
+
 class RuedaVidaViewSet(BaseUserViewSet):
     queryset = RuedaVida.objects.all()
     serializer_class = RuedaVidaSerializer
@@ -223,7 +309,7 @@ class TimeBlockViewSet(BaseUserViewSet):
             return Response(output_serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
         return super().create(request, *args, **kwargs)
 
-class KanbanTaskViewSet(BaseUserViewSet):
+class KanbanTaskViewSet(WorkspaceScopedMixin, viewsets.ModelViewSet):
     queryset = KanbanTask.objects.all()
     serializer_class = KanbanTaskSerializer
 
@@ -330,7 +416,7 @@ class KanbanActionViewSet(BaseUserViewSet):
     def pin_detail(self, request, pk=None):
         return self.pin(request, action_id=pk)
 
-class RecordatorioViewSet(BaseUserViewSet):
+class RecordatorioViewSet(WorkspaceScopedMixin, viewsets.ModelViewSet):
     queryset = Recordatorio.objects.all()
     serializer_class = RecordatorioSerializer
 
@@ -919,11 +1005,11 @@ class RegistroRuedaViewSet(BaseUserViewSet):
     queryset = RegistroRueda.objects.all()
     serializer_class = RegistroRuedaSerializer
 
-class MatrixItemViewSet(BaseUserViewSet):
+class MatrixItemViewSet(WorkspaceScopedMixin, viewsets.ModelViewSet):
     queryset = MatrixItem.objects.all()
     serializer_class = MatrixItemSerializer
 
-class FacturaViewSet(BaseUserViewSet):
+class FacturaViewSet(WorkspaceScopedMixin, viewsets.ModelViewSet):
     queryset = Factura.objects.all()
     serializer_class = FacturaSerializer
 
@@ -2310,10 +2396,8 @@ class DelegationViewSet(IsMineOrReadOnly, viewsets.GenericViewSet):
             token=token,
             expires_at=timezone.now() + timedelta(hours=72),
         )
-        # Vincula el delegado al registrarse con ese email.
-        if not delegate:
-            delegation.data = {}
-        # (sin campo data en Delegation; la vinculación por email se resuelve al actuar)
+        # La vinculación de un delegado registrado (coincidencia por email) se
+        # resuelve al actuar sobre la delegación (handle_action / _is_delegate).
 
         log_security_event(request.user, 'delegation_created', f'task={task_id} email={email}')
 
@@ -2334,8 +2418,9 @@ class DelegationViewSet(IsMineOrReadOnly, viewsets.GenericViewSet):
             'delegation_link': delegation_link
         })
 
-    def retrieve(self, request, pk=None):
-        delegation = Delegation.objects.filter(token=pk).first()
+    def retrieve(self, request, pk=None, token=None):
+        token = token or pk
+        delegation = Delegation.objects.filter(token=token).first()
         if not delegation:
             return Response({'error': 'Delegación no encontrada'}, status=status.HTTP_404_NOT_FOUND)
         if delegation.expires_at and delegation.expires_at < timezone.now():
@@ -2345,8 +2430,8 @@ class DelegationViewSet(IsMineOrReadOnly, viewsets.GenericViewSet):
         serializer = DelegationSerializer(delegation)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['post'], url_path='(?P<token>[^/.]+)')
-    def handle_action(self, request, token=None):
+    def handle_action(self, request, token=None, pk=None):
+        token = token or pk
         delegation = Delegation.objects.filter(token=token).select_related('task').first()
         if not delegation:
             return Response({'error': 'Delegación no encontrada'}, status=status.HTTP_404_NOT_FOUND)
@@ -2369,9 +2454,7 @@ class DelegationViewSet(IsMineOrReadOnly, viewsets.GenericViewSet):
 
         if action == 'accept':
             delegation.status = 'accepted'
-            # Defecto 4 (plan): asignar la tarea delegada al delegado al aceptar.
-            # KanbanTask tiene assigned_to; AccionKanban (modelo actual del FK) no.
-            # Si la tarea origen es/era KanbanTask, se asigna al resolverla por contexto.
+            # Asignar la tarea delegada al delegado al aceptar (KanbanTask y AccionKanban).
             task = delegation.task
             if task and delegation.delegate_id and hasattr(task, 'assigned_to_id'):
                 task.assigned_to_id = delegation.delegate_id
@@ -2409,20 +2492,40 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
         response['Cache-Control'] = 'no-store'
         return response
 
-    @action(detail=True, methods=['post'])
-    def leer(self, request, pk=None):
-        """Marca una notificación como leída."""
+    def _mark_read(self, request, pk):
         notificacion = self.get_object()
         if not notificacion.is_read:
             notificacion.is_read = True
             notificacion.save(update_fields=['is_read'])
-        return Response({'ok': True, 'is_read': True})
+        return Response({'ok': True, 'is_read': True, 'id': notificacion.id})
+
+    @action(detail=True, methods=['post'])
+    def leer(self, request, pk=None):
+        """Marca una notificación como leída."""
+        return self._mark_read(request, pk)
+
+    @action(detail=True, methods=['post'], url_path='mark-read')
+    def mark_read(self, request, pk=None):
+        return self._mark_read(request, pk)
+
+    def _mark_all_read(self, request):
+        actualizadas = self.get_queryset().filter(is_read=False).update(is_read=True)
+        unread = 0
+        return Response({'ok': True, 'actualizadas': actualizadas, 'unread_count': unread})
 
     @action(detail=False, methods=['post'], url_path='leer-todas')
     def leer_todas(self, request):
         """Marca como leídas las del usuario (el panel lo hace al abrirse)."""
-        actualizadas = self.get_queryset().filter(is_read=False).update(is_read=True)
-        return Response({'ok': True, 'actualizadas': actualizadas})
+        return self._mark_all_read(request)
+
+    @action(detail=False, methods=['post', 'patch'], url_path='mark-all-read')
+    def mark_all_read(self, request):
+        return self._mark_all_read(request)
+
+    @action(detail=False, methods=['get'], url_path='unread-count')
+    def unread_count(self, request):
+        count = self.get_queryset().filter(is_read=False).count()
+        return Response({'unread_count': count})
 
     @action(detail=False, methods=['post'], url_path='flush')
     def flush(self, request):
@@ -3220,11 +3323,20 @@ def ai_mission(request):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def delegation_by_token(request, token):
-    delegation = Delegation.objects.filter(token=token).first()
+    delegation = Delegation.objects.filter(token=token).select_related('task').first()
     if not delegation:
         return Response({'error': 'Delegación no encontrada'}, status=status.HTTP_404_NOT_FOUND)
     if delegation.expires_at and delegation.expires_at < timezone.now():
         return Response({'error': 'Delegación expirada'}, status=status.HTTP_410_GONE)
+    user = request.user
+    is_delegator = delegation.delegator_id == getattr(user, 'id', None)
+    is_delegate = (
+        (delegation.delegate_id and delegation.delegate_id == user.id)
+        or (delegation.delegate_email and getattr(user, 'email', None)
+            and delegation.delegate_email.lower() == user.email.lower())
+    )
+    if not (is_delegator or is_delegate):
+        return Response({'error': 'No autorizado'}, status=status.HTTP_403_FORBIDDEN)
     serializer = DelegationSerializer(delegation)
     return Response(serializer.data)
 
@@ -6281,3 +6393,115 @@ def cumpleanos_accion(request, pk):
     return Response(
         {'id': tarea.id, 'titulo': tarea.titulo, 'columna': tarea.columna},
         status=201)
+
+
+# === Fase 2: API v1 / movil ===
+
+class DeviceTokenViewSet(viewsets.ModelViewSet):
+    serializer_class = DeviceTokenSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    http_method_names = ['get', 'post', 'delete', 'head', 'options']
+
+    def get_queryset(self):
+        return DeviceToken.objects.filter(user=self.request.user, is_active=True)
+
+    def create(self, request, *args, **kwargs):
+        ser = DeviceTokenRegisterSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        token = ser.validated_data['token']
+        platform = ser.validated_data.get('platform') or 'android'
+        obj, _created = DeviceToken.objects.update_or_create(
+            token=token,
+            defaults={'user': request.user, 'platform': platform, 'is_active': True},
+        )
+        obj.last_seen = timezone.now()
+        obj.save(update_fields=['last_seen', 'user', 'platform', 'is_active'])
+        return Response(DeviceTokenSerializer(obj).data, status=status.HTTP_200_OK)
+
+    def perform_destroy(self, instance):
+        instance.is_active = False
+        instance.save(update_fields=['is_active'])
+
+    @action(detail=False, methods=['post'], url_path='unregister')
+    def unregister(self, request):
+        token = request.data.get('token')
+        if not token:
+            return Response({'code': 'validation_error', 'message': 'token requerido', 'fields': {'token': ['Requerido.']}},
+                            status=status.HTTP_400_BAD_REQUEST)
+        updated = DeviceToken.objects.filter(user=request.user, token=token).update(is_active=False)
+        return Response({'ok': True, 'deactivated': updated})
+
+
+class GamificationProfileView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        profile, _ = GamificationProfile.objects.get_or_create(user=request.user)
+        return Response(GamificationProfileSerializer(profile).data)
+
+
+class GamificationXpView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        ser = AddXpSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        profile, _ = GamificationProfile.objects.get_or_create(user=request.user)
+        profile.add_xp(
+            ser.validated_data['amount'],
+            reason=ser.validated_data.get('reason', ''),
+            source=ser.validated_data.get('source', ''),
+        )
+        profile.refresh_from_db()
+        return Response({
+            'profile': GamificationProfileSerializer(profile).data,
+            'event': {'amount': ser.validated_data['amount'], 'reason': ser.validated_data.get('reason', '')},
+        }, status=status.HTTP_200_OK)
+
+
+class GamificationEventsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        profile, _ = GamificationProfile.objects.get_or_create(user=request.user)
+        events = profile.events.all()[:50]
+        return Response(XpEventSerializer(events, many=True).data)
+
+
+class UserGoalViewSet(viewsets.ModelViewSet):
+    serializer_class = UserGoalSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        qs = UserGoal.objects.filter(user=self.request.user)
+        period = self.request.query_params.get('period')
+        if period:
+            qs = qs.filter(period=period)
+        status_f = self.request.query_params.get('status')
+        if status_f:
+            qs = qs.filter(status=status_f)
+        ws = self.request.query_params.get('workspace')
+        if ws not in (None, '', 'null'):
+            qs = qs.filter(workspace_id=ws)
+        return qs
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=True, methods=['post'], url_path='add-xp')
+    def add_xp(self, request, pk=None):
+        goal = self.get_object()
+        amount = max(0, int(goal.xp_reward or 0))
+        if amount and goal.status != 'completed':
+            goal.status = 'completed'
+            goal.progress = 100
+            goal.save(update_fields=['status', 'progress', 'updated_at'])
+            profile, _ = GamificationProfile.objects.get_or_create(user=request.user)
+            profile.add_xp(amount, reason=f'Meta: {goal.title}', source='goal')
+            profile.refresh_from_db()
+            return Response({'goal': UserGoalSerializer(goal).data,
+                             'profile': GamificationProfileSerializer(profile).data})
+        goal.status = 'completed'
+        goal.progress = 100
+        goal.save(update_fields=['status', 'progress', 'updated_at'])
+        return Response(UserGoalSerializer(goal).data)
