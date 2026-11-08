@@ -1643,31 +1643,43 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         }}
       />
 
-      {/* TOP HEADER + MAIN — dentro del lienzo escalable (FASE 1) */}
-      <FitStage>
-      {/* MAIN CONTENT AREA — FASE 2: grid de columnas fijas en px sobre el lienzo 1440.
-          Fila 1: franja superior. Fila 2: cinco columnas h-full flex-col con gap constante. */}
-      <div className="w-full h-full z-10 grid grid-rows-[auto_minmax(0,1fr)] grid-cols-[146px_295px_minmax(0,1fr)_268px_299px] gap-2 px-2 pb-2 [&>*]:min-w-0">
+      {/* MAIN CONTENT responsive — el lienzo escalado FitStage queda reemplazado
+          por este grid fluido; MobileOrientationPrompt (envoltorio de la ruta)
+          se encarga de tablet/vertical. */}
+      {/* MAIN CONTENT AREA — responsive fluido: las columnas reparten el
+          ancho real de la ventana con las proporciones del mockup
+          (146/295/432/268/299 sobre 1440). Fila 1: franja superior.
+          Fila 2: columnas con el GAP constante y ALTURA NATURAL — si el
+          contenido es más alto que la ventana, la página scrollea
+          (se acepta scroll; el espacio se distribuye de forma simétrica
+          con el mismo gap en las cinco columnas). 
+          En tablet / ventana < 1024 u orientación vertical, MobileOrientationPrompt
+          muestra la pantalla de rotación antes de llegar aquí. */}
+      <div className="relative z-10 w-full grid grid-rows-[auto_auto] grid-cols-[146fr_295fr_432fr_268fr_299fr] gap-2 px-2 pb-2 pt-1 [&>*]:min-w-0">
 
       {/* FRANJA SUPERIOR · centro: logo Focusia */}
-      <div className="col-start-3 row-start-1 flex justify-center items-center py-1">
+      <div className="col-start-3 row-start-1 flex justify-center items-center py-1 ml-8">
         <div className="flex flex-col items-center justify-center dark:px-3.5 dark:py-1.5 dark:rounded-md dark:shadow-[0_4px_24px_rgba(129,75,141,0.45)] transition-all">
-          <img src="/focussia.png" alt={i18n.t('focusia_logo_47mm')} className="h-[56px] w-[56px] object-contain" />
+          <img src="/focussia.png" alt={i18n.t('focusia_logo_47mm')} className="h-[40px] w-[40px] object-contain" />
           <span className="-mt-1 text-lg font-bold text-focusia-gradient">{i18n.t('Focusia')}</span>
         </div>
       </div>
 
-      {/* FRANJA SUPERIOR · derecha: CURSOS / R.R.S.S. / CUENTAS + avatar con nombre */}
-      <div className="col-start-4 col-span-2 row-start-1 flex items-center justify-end gap-2 z-20">
-    <span id="tour-cursos-btn" className="contents"><ActionButton label={i18n.t('cursos_2jiy')} color="bg-gradient-to-r from-[#000000] to-[#3533cd] text-white py-1 px-3 rounded-md text-[9px] sm:text-xs font-semibold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]" onClick={() => navigate('/app/cursos')} /></span>
-    <span id="tour-rrss-btn" className="contents"><ActionButton label={i18n.t('rrss')} color="bg-gradient-to-r from-[#000000] to-[#3533cd] text-white py-1 px-3 rounded-md text-[10px] sm:text-xs font-semibold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]" onClick={handleOpenRrss} /></span>
-    <span id="tour-cuentas-btn" className="contents"><ActionButton label={i18n.t('cuentas_e8n1')} color="bg-gradient-to-r from-[#000000] to-[#3533cd] text-white py-1 px-3 rounded-md text-[10px] sm:text-xs font-semibold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98]" onClick={() => navigate('/app/cuentas')} /></span>
+      {/* FRANJA SUPERIOR · derecha: CURSOS / R.R.S.S. / CUENTAS alineados sobre
+          el BLOCK DE NOTAS (inicio de la col 4); avatar anclado al borde derecho */}
+      <div className="col-start-4 col-span-2 -mt-6 row-start-1 flex items-center justify-between gap-2 z-20 ml-20 ">
+    <div className="flex items-center gap-2">
+    <span id="tour-cursos-btn" className="contents"><ActionButton label={i18n.t('cursos_2jiy')} color=
+    "bg-gradient-to-r from-[#000000] to-[#3533cd] text-white py-1 px-3 rounded-md text-[9px] sm:text-xs font-semibold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-18 " onClick={() => navigate('/app/cursos')} /></span>
+    <span id="tour-rrss-btn" className="contents"><ActionButton label={i18n.t('rrss')} color="bg-gradient-to-r from-[#000000] to-[#3533cd] text-white py-1 px-3 rounded-md text-[10px] sm:text-xs font-semibold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-18" onClick={handleOpenRrss} /></span>
+    <span id="tour-cuentas-btn" className="contents"><ActionButton label={i18n.t('cuentas_e8n1')} color="bg-gradient-to-r from-[#000000] to-[#3533cd] text-white py-1 px-3 rounded-md text-[10px] sm:text-xs font-semibold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-18" onClick={() => navigate('/app/cuentas')} /></span>
+    </div>
 
     {/* User Menu */}
     <div className="relative shrink-0">
       <CyberButton
         onClick={() => setShowUserMenu(!showUserMenu)}
-        className="flex items-center gap-1.5 bg-[#0a0a0f] bg-opacity-80 dark:bg-[linear-gradient(90deg,#9333ea_0%,#4f46e5_55%,#17153b_100%)] backdrop-blur-md rounded-full px-3 py-1.5 hover:bg-[#0a0a0f] hover:bg-opacity-60 transition-colors shadow-sm active:scale-95 border border-white/5 dark:border-purple-400/40"
+        className="flex items-center gap-1.5 bg-[#0a0a0f] bg-opacity-80 dark:bg-[linear-gradient(90deg,#9333ea_0%,#4f46e5_55%,#17153b_100%)] backdrop-blur-md rounded-full px-3 py-1.5  hover:bg-[#0a0a0f] hover:bg-opacity-60 transition-colors shadow-sm active:scale-95 border border-white/5 dark:border-purple-400/40"
       >
         <div className="w-7 h-7 rounded-full overflow-hidden shadow-sm border-2 border-white/30">
           <img src={userData.avatar_url || undefined} alt={i18n.t('profile_r4x9')} className="w-full h-full object-cover" />
@@ -2087,14 +2099,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
             progress={progresoBarra}
           />
           </div>
-          <div className="bg-white dark:bg-transparent backdrop-blur-sm dark:backdrop-blur-none border border-white/20 dark:border-transparent rounded-md p-1 flex flex-col gap-5 w-full shadow-[0_4px_10px_rgba(0,0,0,0.02)] dark:shadow-none justify-between items-center shrink-0">
-              <span id="tour-suplementos-btn" className="contents"><ActionButton label={i18n.t('suplementos')} color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern"  onClick={() => navigate('/app/suplementos')} /></span>
-              <span id="tour-cumpleanos-btn" className="contents"><ActionButton label={i18n.t('cumpleanos_n7de')} color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"  variant="modern" onClick={() => navigate('/app/cumpleanos')} /></span>
-              <span id="tour-focus-btn" className="contents"><ActionButton label={i18n.t('focus')} color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"  variant="modern" onClick={() => navigate('/app/focus')} /></span>
+          <div className="bg-white dark:bg-transparent backdrop-blur-sm dark:backdrop-blur-none border border-white/20 dark:border-transparent rounded-md p-1 flex flex-col gap-5 w-40 shadow-[0_4px_10px_rgba(0,0,0,0.02)] dark:shadow-none justify-between items-center shrink-0 ml-35">
+              <span id="tour-suplementos-btn" className="contents"><ActionButton label={i18n.t('suplementos')} color="bg-gradient-to-r from-[#3533cd] to-[#040817] dark:from-[#ec4899] dark:via-[#fb923c] dark:to-[#fde047] dark:!text-[#14050c] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern"  onClick={() => navigate('/app/suplementos')} /></span>
+              <span id="tour-cumpleanos-btn" className="contents"><ActionButton label={i18n.t('cumpleanos_n7de')} color="bg-gradient-to-r from-[#3533cd] to-[#040817] dark:from-[#ec4899] dark:via-[#fb923c] dark:to-[#fde047] dark:!text-[#14050c] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"  variant="modern" onClick={() => navigate('/app/cumpleanos')} /></span>
+              <span id="tour-focus-btn" className="contents"><ActionButton label={i18n.t('focus')} color="bg-gradient-to-r from-[#3533cd] to-[#040817] dark:from-[#ec4899] dark:via-[#fb923c] dark:to-[#fde047] dark:!text-[#14050c] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"  variant="modern" onClick={() => navigate('/app/focus')} /></span>
           </div>
 
           {/* Bloque Hora de Oro Familiar */}
-          <div className="flex flex-col flex-1 min-h-0 w-full rounded-md">
+          <div className="shrink-0 w-full rounded-md">
             <HoraDeOroFamiliar
               refreshKey={horaOroKey}
               onOpenModule={() => { setHoraOroSlot(null); navigate('/app/hora-oro'); }}
