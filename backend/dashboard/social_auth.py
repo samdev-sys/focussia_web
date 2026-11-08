@@ -46,6 +46,13 @@ def _set_jwt_cookies(response, user):
         httponly=True, secure=secure, samesite=samesite,
         max_age=604800,
     )
+    # Los navegadores modernos bloquean cookies de terceros (front Netlify ->
+    # API Railway): además de las cookies, devolvemos los tokens en el cuerpo
+    # para que el cliente pueda autenticar por cabecera `Authorization: Bearer`.
+    data = dict(response.data) if isinstance(response.data, dict) else {}
+    data.setdefault('access', str(refresh.access_token))
+    data.setdefault('refresh', str(refresh))
+    response.data = data
     return response
 
 

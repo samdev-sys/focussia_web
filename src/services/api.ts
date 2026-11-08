@@ -245,12 +245,14 @@ export const authService = {
 
   googleLogin: async (idToken: string) => {
     const response = await api.post('/api/auth/google/', { id_token: idToken });
+    tokenStore.setAll(response.data?.access, response.data?.refresh);
     authService.markSession(true);
     return response.data;
   },
 
   microsoftLogin: async (accessToken: string) => {
     const response = await api.post('/api/auth/microsoft/', { access_token: accessToken });
+    tokenStore.setAll(response.data?.access, response.data?.refresh);
     authService.markSession(true);
     return response.data;
   },
