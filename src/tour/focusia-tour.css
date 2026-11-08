@@ -162,6 +162,17 @@
 }
 .focusia-tour-launch:hover { filter: brightness(1.15); }
 
+/* Modo oscuro: REPORTES adopta el gradiente rosa→naranja→amarillo del resto
+   de la franja superior (INICIO/RUEDA/MATRIZ), con texto oscuro legible. */
+.dark .focusia-tour-launch {
+  background: linear-gradient(90deg, #ec4899 0%, #fb923c 55%, #fde047 100%);
+  color: #14050c;
+  border-color: rgba(253, 230, 138, 0.4);
+}
+.dark .focusia-tour-launch svg {
+  color: #14050c;
+}
+
 @media (max-width: 640px) {
   .focusia-tour-card { flex-direction: column; }
   .focusia-tour-card img { width: 72px; height: 72px; }
