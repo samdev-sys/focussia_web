@@ -279,7 +279,20 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
 SECURE_HSTS_PRELOAD = not DEBUG
 
 # CORS
-CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000,http://localhost:3001,http://localhost:3002').split(',')
+# Nunca excluir el frontend de Netlify: aunque el operador fije la variable en
+# Railway sin él (o la olvide), el panel web debe poder autenticar contra la API.
+_cors_origins_env = os.environ.get('CORS_ALLOWED_ORIGINS', '')
+CORS_ALLOWED_ORIGINS = [
+    o.strip() for o in _cors_origins_env.split(',') if o.strip()
+] or [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+]
+for _origin_lote in ('https://focussia.netlify.app', 'https://www.focussia.netlify.app'):
+    if _origin_lote not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(_origin_lote)
 CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
