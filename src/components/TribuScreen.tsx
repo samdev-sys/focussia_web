@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { NAV_ICONS } from './navIcons';
 import { ModuleHeader } from './ModuleHeader';
+import ShellSidebar from './ShellSidebar';
 import {
   tribuService, motivationalService,
   TribuTemaData, TribuCompromisoData,
@@ -117,51 +118,24 @@ export default function TribuScreen({ onBack, userName, onNavigate }: { onBack: 
 
   return (
     <div className="flex h-full overflow-hidden text-slate-800 dark:text-gray-100 bg-[#F8F9FB] dark:bg-[#0A0A26]">
-      {/* Sidebar */}
-      <aside className="w-48 bg-[#0A0A26] h-300 hidden md:flex flex-col z-20 shrink-0">
-        <div className="h-16 flex items-center px-6 pt-4 pb-2">
-          <div className="flex items-center gap-3 text-white">
-           <img src="/focussia.png" alt="" className='w-8 h-8' />
-            <span className="text-xl font-bold tracking-wide">{i18n.t('focusia_6g2i')}</span>
-          </div>
-        </div>
-        <nav className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
-          {NAV_ITEMS.map((item, i) => (
-            <button
-              key={i}
-              onClick={() => { if (item.section !== 'tribu') { if (onNavigate) onNavigate(item.section); else onBack(); } }}
-              className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors w-full text-left ${
-                item.section === 'tribu'
-                  ? 'text-white bg-gradient-to-r from-[#6236FF] to-[#8A2BE2] shadow-md'
-                  : 'text-white/60 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <item.icon className="w-5 h-5 text-center shrink-0" />
-              <span className="truncate">{item.label}</span>
-            </button>
-          ))}
-          
-        </nav>
-        <div className="p-4">
-          <button onClick={onBack} className="flex items-center w-full p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-sm font-bold">
-              {userName?.[0]?.toUpperCase() || 'U'}
-            </div>
-            <div className="ml-3 text-left flex-1">
-              <p className="text-sm font-semibold text-white">{userName || 'Usuario'}</p>
-              <p className="text-xs text-white/50">{i18n.t('ver_perfil_usij')}</p>
-            </div>
-            <ChevronDown className="w-4 h-4 text-white/50" />
-          </button>
-        </div>
-      </aside>
+      {/* Sidebar canónica compartida con todas las pantallas */}
+      <div className="hidden md:flex">
+        <ShellSidebar
+          activeNav="tribu"
+          onNav={(section) => {
+            if (section === 'tribu') return;
+            if (onNavigate) onNavigate(section); else onBack();
+          }}
+          userName={userName}
+        />
+      </div>
 
       {/* Contenido */}
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-[#F8F9FB] dark:bg-[#0A0A26] md:rounded-tl-[2rem] md:border-l border-gray-200 dark:border-white/10">
         <ModuleHeader icon={Users} title={i18n.t('tribu')} subtitle={i18n.t('comparte_tu_aprendizaje_y_multiplica_tu_')} onBack={onBack} userName={userName} />
 
         <div className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-[1200px] mx-auto flex flex-col xl:flex-row gap-6">
+          <div className="w-full flex flex-row gap-6">
             <div className="flex-1 flex flex-col gap-5 min-w-0">
               {/* Hero */}
               <section className="bg-gray-100/70 dark:bg-white/5 rounded-xl p-4 md:p-5 overflow-hidden">

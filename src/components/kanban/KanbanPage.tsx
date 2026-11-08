@@ -30,6 +30,8 @@ function LetterButton({ letter, title, onClick }: { letter: Decision; title: str
 }
 
 export default function KanbanPage({ acciones, papelera, loading, onAdd, onClassify, onPlan, onRestore }: KanbanPageProps) {
+  const safeAcciones = Array.isArray(acciones) ? acciones : [];
+  const safePapelera = Array.isArray(papelera) ? papelera : [];
   const [texto, setTexto] = useState('');
   const [adding, setAdding] = useState(false);
   const [similarWarning, setSimilarWarning] = useState(false);
@@ -95,10 +97,10 @@ export default function KanbanPage({ acciones, papelera, loading, onAdd, onClass
           <div className="px-3 sm:px-4 pb-2">
             {loading ? (
               <p className="text-sm text-gray-400 text-center py-8">{i18n.t('cargando_acciones')}</p>
-            ) : acciones.length === 0 ? (
+            ) : safeAcciones.length === 0 ? (
               <p className="text-sm text-gray-400 text-center py-8">{i18n.t('sin_acciones_pendientes_escribe_una_arri')}</p>
             ) : (
-              acciones.map(a => (
+              safeAcciones.map(a => (
                 <div
                   key={a.id}
                   className="flex items-center gap-3 bg-[#f7f9fe] border border-[#eef1f8] rounded-md px-4 py-3 mb-2"
@@ -138,10 +140,10 @@ export default function KanbanPage({ acciones, papelera, loading, onAdd, onClass
           <p className="text-sm text-[#5b6b8c] mt-1">{i18n.t('puedes_recuperar_estas_acciones_cuando_l')}</p>
           <div className="w-10 h-1 rounded-full bg-gradient-to-r from-[#1f6feb] to-[#a21caf] mt-2 mb-4" />
           <div className="space-y-3">
-            {papelera.length === 0 && (
+            {safePapelera.length === 0 && (
               <p className="text-sm text-gray-400">{i18n.t('sin_ideas_desechadas')}</p>
             )}
-            {papelera.map(a => (
+            {safePapelera.map(a => (
               <div key={a.id} className="border border-[#e3e8f5] rounded-md p-4">
                 <p className="text-[#101433] font-bold text-base">{a.texto_accion}</p>
                 <div className="flex items-center gap-2 mt-3">

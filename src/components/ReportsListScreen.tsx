@@ -25,6 +25,7 @@ import {
   REPORT_BLUE as BLUE,
   REPORT_PURPLE as PURPLE,
   ReportHeroHeader,
+  useResolvedAvatarIndex,
 } from './reportMockups';
 
 type Level = 'weekly' | 'monthly' | 'annual';
@@ -190,6 +191,10 @@ export function ReportsListScreen({
   const [selectedReport, setSelectedReport] = useState<FocusiaReportData | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  // Resuelve SIEMPRE el avatar activo del usuario (el prop puede venir vacío
+  // según la ruta): así lista, historial y notificaciones muestran el avatar
+  // elegido, igual que el detalle.
+  const avatarIdx = useResolvedAvatarIndex(avatarIndex);
 
   useEffect(() => {
     const st = (location.state as { report?: FocusiaReportData } | null);
@@ -204,7 +209,10 @@ export function ReportsListScreen({
         reportService
           .getResumen()
           .then((data) => {
-            if (Array.isArray(data) && data.some((i) => i.report !== null)) {
+            // Usar siempre la respuesta real de la API cuando es válida (incluye el
+            // caso de usuario nuevo sin reportes: report=null + fecha_prevista). Los
+            // datos DEMO solo se usan si la API falla o el usuario elige una vista demo.
+            if (Array.isArray(data) && data.length > 0) {
               setResumenReal(data);
             } else {
               setResumenReal(null);
@@ -220,20 +228,22 @@ export function ReportsListScreen({
     setHistorialLoading(true);
     try {
       const items = await reportService.getAll(level);
-      if (Array.isArray(items) && items.length > 0) {
+      if (Array.isArray(items)) {
         setHistorialItems(items);
       } else {
-        setHistorialItems(DEMO_HISTORIAL_WEEKLY);
+        setHistorialItems([]);
       }
     } catch {
-      setHistorialItems(DEMO_HISTORIAL_WEEKLY);
+      // En caso de error de red, mostrar vacío (no datos demo).
+      setHistorialItems([]);
     } finally {
       setHistorialLoading(false);
     }
   };
 
-  // Barra de acceso rápido a las 12 pantallas digitalizadas
-  const SelectorPantallas = () => (
+  // Barra de acceso rápido a las 12 pantallas digitalizadas (oculta: mockups de diseño)
+  const SelectorPantallas = () => null; /* (
+    !import.meta.env.DEV ? null : (
     <div className="pt-3 pb-1 flex flex-wrap items-center gap-1.5 border-b border-slate-100 text-xs">
       <span className="font-bold text-slate-400 mr-1">{i18n.t('vistas')}</span>
       {[
@@ -312,7 +322,8 @@ export function ReportsListScreen({
         </button>
       ))}
     </div>
-  );
+    )
+  ); */
 
   // ──────────────────────────────────────────────────────────────────────
   // Foto 11 · Pantalla de Notificaciones de Reportes
@@ -320,11 +331,11 @@ export function ReportsListScreen({
   if (!historial && modoLista === 'notificaciones') {
     return (
       <div className="min-h-screen bg-white">
-        <div className="max-w-5xl mx-auto px-5 sm:px-8">
+        <div className="w-full px-5 sm:px-8">
           <SelectorPantallas />
         </div>
         <ReportNotificationsScreen
-          avatarIndex={avatarIndex}
+          avatarIndex={avatarIdx}
           onOpenReport={(r) => setSelectedReport(r)}
           onBack={() => setModoLista('disponibles')}
         />
@@ -339,11 +350,10 @@ export function ReportsListScreen({
     const meta = LEVEL_META[historial];
     return (
       <div className="min-h-screen bg-white">
-        <div className="max-w-5xl mx-auto px-5 sm:px-8 pb-10">
-          <SelectorPantallas />
-          <ReportHeroHeader
+        <div className="w-full px-5 sm:px-8 pb-10">
+          <SelectorPantallas />          <ReportHeroHeader
             pose="tab"
-            avatarIndex={avatarIndex}
+            avatarIndex={avatarIdx}
             backLabel="Volver a Reportes"
             onBack={() => setHistorial(null)}
             title={i18n.t('reportes_anteriores')}
@@ -420,10 +430,18 @@ export function ReportsListScreen({
   // ──────────────────────────────────────────────────────────────────────
   // Fotos 1, 8 y 12 · Primera pantalla de Reportes (Doc 27 §3.2)
   // ──────────────────────────────────────────────────────────────────────
+  const RESUMEN_SIN_DATOS: ReporteResumenItem[] = [
+    { level: 'weekly', has_report: false, report: null, fecha_prevista: null },
+    { level: 'monthly', has_report: false, report: null, fecha_prevista: null },
+    { level: 'annual', has_report: false, report: null, fecha_prevista: null },
+  ];
   const resumen: ReporteResumenItem[] = (() => {
     if (modoLista === 'vacio') return DEMO_RESUMEN_VACIO;
     if (modoLista === 'focus') return DEMO_RESUMEN_FOCUS;
-    return resumenReal || DEMO_RESUMEN_DISPONIBLES;
+    if (resumenReal) return resumenReal;
+    // Si la API falló o aún no respondió con datos reales, no inventar reportes:
+    // mostrar estado sin reportes (nunca datos demo con "reportes disponibles").
+    return RESUMEN_SIN_DATOS;
   })();
 
   const enModoFocus = focusActivo || modoLista === 'focus';
@@ -434,7 +452,7 @@ export function ReportsListScreen({
     return (
       <ReportDetailScreen
         report={selectedReport}
-        avatarIndex={avatarIndex}
+        avatarIndex={avatarIdx}
         onBack={() => setSelectedReport(null)}
         onNavigate={(section: string) => {
           if (section === 'semanal') navigate('/app/kanban?vista=semanal');
@@ -448,12 +466,12 @@ export function ReportsListScreen({
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-5xl mx-auto px-5 sm:px-8 pb-10">
+      <div className="max-w-[1500px] mx-auto px-5 sm:px-8 pb-10">
         <SelectorPantallas />
 
         <ReportHeroHeader
           pose={enModoFocus ? 'book' : 'bottom'}
-          avatarIndex={avatarIndex}
+          avatarIndex={avatarIdx}
           backLabel="Volver al inicio"
           onBack={onBack}
           title={i18n.t('reportes')}

@@ -132,10 +132,10 @@ export const TONE_OPTIONS: { value: AvatarTone; label: string; description: stri
 ];
 
 export const AVATAR_OPTIONS: { id: AvatarId; label: string; gender: 'M' | 'F'; file: string }[] = [
-  { id: 1, label: 'Avatar 1', gender: 'M', file: '/avatars/avatar1.jpg' },
-  { id: 2, label: 'Avatar 2', gender: 'M', file: '/avatars/avatar2.jpg' },
-  { id: 3, label: 'Avatar 3', gender: 'M', file: '/avatars/avatar3.jpg' },
-  { id: 4, label: 'Avatar 4', gender: 'F', file: '/avatars/avatar4.jpg' },
-  { id: 5, label: 'Avatar 5', gender: 'F', file: '/avatars/avatar5.jpg' },
-  { id: 6, label: 'Avatar 6', gender: 'F', file: '/avatars/avatar6.jpg' },
+  { id: 1, label: 'Avatar 1', gender: 'M', file: '/avartars/John.jpeg' },
+  { id: 2, label: 'Avatar 2', gender: 'M', file: '/avartars/conrad.jpeg' },
+  { id: 3, label: 'Avatar 3', gender: 'F', file: '/avartars/Ashley.jpeg' },
+  { id: 4, label: 'Avatar 4', gender: 'F', file: '/avartars/Lia.jpeg' },
+  { id: 5, label: 'Avatar 5', gender: 'M', file: '/avartars/Monroe.jpeg' },
+  { id: 6, label: 'Avatar 6', gender: 'F', file: '/avartars/Sophya.jpeg' },
 ];

@@ -168,7 +168,7 @@ export default function CyberButton({
   return (
     <div
       ref={wrapperRef}
-      className="relative inline-flex"
+      className="relative inline-flex overflow-hidden"
       onMouseEnter={() => { hoverRef.current = true; }}
       onMouseLeave={() => { hoverRef.current = false; }}
     >

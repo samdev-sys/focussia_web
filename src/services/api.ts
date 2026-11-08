@@ -1,6 +1,14 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// En desarrollo usamos rutas relativas y el proxy de Vite (/api -> backend) para
+// evitar problemas CORS/CSRF cross-origin con cookies entre localhost:3000 y :8000.
+const API_BASE_URL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:8000');
+
+const getCookie = (name: string): string | null => {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : null;
+};
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -8,7 +16,23 @@ export const api = axios.create({
     'Content-Type': 'application/json',
   },
   withCredentials: true,
+  xsrfCookieName: 'csrftoken',
+  xsrfHeaderName: 'X-CSRFToken',
 });
+
+api.interceptors.request.use((config) => {
+  const method = (config.method || 'get').toLowerCase();
+  const headers: Record<string, string> = { ...(config.headers as any) };
+  if (!['get', 'head', 'options', 'trace'].includes(method)) {
+    const csrf = getCookie('csrftoken');
+    if (csrf) headers['X-CSRFToken'] = csrf;
+  }
+  config.headers = headers as any;
+  return config;
+});
+
+const asArray = <T = any>(data: any): T[] =>
+  Array.isArray(data) ? data : Array.isArray(data?.results) ? data.results : [];
 
 api.interceptors.response.use(
   (response) => response,
@@ -70,6 +94,7 @@ export interface KanbanTaskData {
   descripcion: string;
   columna: string;
   fecha_hora?: string;
+  responsable?: string;
 }
 
 export interface KanbanActionData {
@@ -197,7 +222,7 @@ export const ruedaVidaService = {
 export const timeBlockService = {
   getAll: async (): Promise<TimeBlockData[]> => {
     const response = await api.get('/api/time-blocks/');
-    return response.data;
+    return asArray<TimeBlockData>(response.data);
   },
   
   update: async (id: number, data: Partial<TimeBlockData>): Promise<TimeBlockData> => {
@@ -217,7 +242,7 @@ export const timeBlockService = {
 export const kanbanService = {
   getAll: async (): Promise<KanbanTaskData[]> => {
     const response = await api.get('/api/kanban-tasks/');
-    return response.data;
+    return asArray<KanbanTaskData>(response.data);
   },
   
   update: async (id: number, data: Partial<KanbanTaskData>): Promise<KanbanTaskData> => {
@@ -333,15 +358,15 @@ export interface RecordatorioData {
 export const recordatorioService = {
   getAll: async (): Promise<RecordatorioData[]> => {
     const response = await api.get('/api/recordatorios/');
-    return response.data;
+    return asArray<RecordatorioData>(response.data);
   },
   getDue: async (): Promise<RecordatorioData[]> => {
     const response = await api.get('/api/recordatorios/due/');
-    return response.data;
+    return asArray<RecordatorioData>(response.data);
   },
   getPendientes: async (): Promise<RecordatorioData[]> => {
     const response = await api.get('/api/recordatorios/pendientes/');
-    return response.data;
+    return asArray<RecordatorioData>(response.data);
   },
   create: async (data: Omit<RecordatorioData, 'id'>): Promise<RecordatorioData> => {
     const response = await api.post('/api/recordatorios/', data);
@@ -926,7 +951,7 @@ export interface DelegationData {
 
 export interface NotificationData {
   type: 'invitation' | 'delegation' | 'reminder' | 'report';
-  id: string;
+  id: number;
   title: string;
   message: string;
   data: any;
@@ -974,7 +999,7 @@ export const delegationService = {
 export const notificationService = {
   getAll: async (): Promise<NotificationData[]> => {
     const response = await api.get('/api/notifications/');
-    return response.data;
+    return asArray<NotificationData>(response.data);
   },
   marcarLeida: async (id: string): Promise<void> => {
     await api.post(`/api/notifications/${id}/leer/`);
@@ -1919,7 +1944,11 @@ export const weeklyPlanService = {
 export const weeklyActionService = {
   list: async (params?: { assigned_calendar_date?: string }): Promise<ActionData[]> => {
     const response = await api.get('/api/actions/', { params });
-    return response.data;
+    return Array.isArray(response.data)
+      ? response.data
+      : Array.isArray(response.data?.results)
+        ? response.data.results
+        : [];
   },
   get: async (id: string): Promise<ActionData> => {
     const response = await api.get(`/api/actions/${id}/`);
@@ -2020,6 +2049,8 @@ export interface ProgresoData {
   porcentaje: number;
   detalle: {
     kanban: { total: number; completadas: number };
+    /** Pipeline unificado AccionKanban (clasificadas; la bandeja pendiente no computa). */
+    acciones_kanban?: { total: number; completadas: number };
     timeblock: { total: number; completadas: number };
     action: { total: number; completadas: number };
   };
@@ -2418,6 +2449,26 @@ export const tribuService = {
   },
   enviarKanban: async (data: { texto: string; tribu: string; tribu_detalle?: string }): Promise<{ status: string; accion_id: string; repetido: boolean }> => {
     const response = await api.post('/api/tribu/enviar-kanban/', data);
+    return response.data;
+  },
+};
+
+/* ── Centro de Inspiración (Doc 26) ── */
+
+export interface InspiracionVideoData {
+  id: number;
+  categoria: 'humor' | 'salud' | 'hobbies' | 'viajes' | 'diversion' | 'reflexion';
+  categoria_label: string;
+  titulo: string;
+  youtube_url: string;
+  youtube_video_id: string;
+  miniatura_resuelta: string;
+  orden: number;
+}
+
+export const inspiracionService = {
+  catalogo: async (categoria?: string): Promise<InspiracionVideoData[]> => {
+    const response = await api.get('/api/inspiracion/', { params: categoria ? { categoria } : {} });
     return response.data;
   },
 };

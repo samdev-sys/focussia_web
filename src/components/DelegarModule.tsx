@@ -150,7 +150,9 @@ function DelegationRow({ deleg, expanded, responsables, onToggle, onChanged }: {
         </span>
         <span className="flex-1 min-w-0">
           <span className="block font-bold text-[#101433] text-sm truncate">{deleg.titulo}</span>
-          <span className="block text-[11px] text-[#8a93b2]">Delegada el {creada || fmtAt(deleg.creado)}</span>
+          <span className="block text-[11px] text-[#8a93b2]">
+            {deleg.responsable ? `Responsable: ${deleg.responsable} · ` : ''}Delegada el {creada || fmtAt(deleg.creado)}
+          </span>
         </span>
         <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0 ${pill.cls}`}>{pill.label}</span>
       </button>

@@ -128,13 +128,14 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
   // Metas mensuales por mes (para semanas que cruzan dos meses)
   const [monthGoals, setMonthGoals] = useState<Record<string, string>>({});
 
+  const safeActions = Array.isArray(actions) ? actions : [];
   const weekDays = useMemo(() => getWeekDays(weekOffset), [weekOffset]);
   const weekKeys = useMemo(() => weekDays.map(formatDateKey), [weekDays]);
   const reviewMode = weekOffset < 0; // Semanas pasadas: solo lectura
   const currentDay = weekDays[selectedDayIdx];
   const currentDayKey = formatDateKey(currentDay);
-  const dayActions = actions.filter(a => a.assigned_calendar_date === currentDayKey && a.status !== 'DELEGADA');
-  const weekHasActions = actions.some(a => weekKeys.includes(a.assigned_calendar_date));
+  const dayActions = safeActions.filter(a => a.assigned_calendar_date === currentDayKey && a.status !== 'DELEGADA');
+  const weekHasActions = safeActions.some(a => weekKeys.includes(a.assigned_calendar_date));
   const crossMonth = weekDays[0].getMonth() !== weekDays[6].getMonth();
 
   const weekLabel = useMemo(() => {
@@ -389,7 +390,7 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
 
   const toggleCompleteAction = async (actionId: string) => {
     if (reviewMode) return;
-    const action = actions.find(a => a.id === actionId);
+    const action = safeActions.find(a => a.id === actionId);
     if (!action) return;
     try {
       if (action.status === 'COMPLETADA') {
@@ -605,7 +606,8 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
   const pendingDerivadas = kanbanPlanificar.filter(k => !derivadaAdded.has(k.id));
 
   // Bloques de una hora del día seleccionado.
-  const dayBlocks = timeBlocks.filter(b => b.fecha === currentDayKey);
+  const safeTimeBlocks = Array.isArray(timeBlocks) ? timeBlocks : [];
+  const dayBlocks = safeTimeBlocks.filter(b => b.fecha === currentDayKey);
   const hoursWithBlocks = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
   // Vista parcial del día: solo se listan las franjas con bloque (más la primera hora vacía de contexto).
   const visibleHours = useMemo(() => {
@@ -633,12 +635,12 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
     );
   }
 
-  const totalWeekActions = actions.filter(a => weekKeys.includes(a.assigned_calendar_date)).length;
-  const completedWeekActions = actions.filter(a => weekKeys.includes(a.assigned_calendar_date) && a.status === 'COMPLETADA').length;
+  const totalWeekActions = safeActions.filter(a => weekKeys.includes(a.assigned_calendar_date)).length;
+  const completedWeekActions = safeActions.filter(a => weekKeys.includes(a.assigned_calendar_date) && a.status === 'COMPLETADA').length;
 
   return (
     <div className="w-full">
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
+      <main className="w-full px-4 sm:px-6 py-4">
         <header className="flex items-start justify-between mb-4">
           <div>
             <h2 className="text-lg font-black text-[#101433] tracking-tight flex items-center gap-2">
@@ -765,7 +767,7 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
           <div className={`grid grid-cols-7 gap-[1px] ${crossMonth ? 'bg-[#eef1f8]' : 'bg-[#eef1f8]'}`}>
             {weekDays.map((day, idx) => {
               const key = formatDateKey(day);
-              const count = actions.filter(a => a.assigned_calendar_date === key).length;
+              const count = safeActions.filter(a => a.assigned_calendar_date === key).length;
               const isSelected = idx === selectedDayIdx;
               const isDragTarget = draggedAction && dragOverDay === key;
               return (

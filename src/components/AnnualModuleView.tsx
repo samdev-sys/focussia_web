@@ -32,7 +32,7 @@ export default function AnnualModuleView({ userName = '', avatarImg, onClose, on
 
   return (
     <AnualShell userName={userName} avatarImg={avatarImg} onClose={onClose} onNavigate={onNavigate} dark hideTopbar onOpenHelp={onOpenHelp} onOpenNotifications={onOpenNotifications} onOpenSettings={onOpenSettings}>
-      <div className="max-w-[1200px] mx-auto relative">
+      <div className="relative w-full">
         <button onClick={onClose} className="absolute -top-1 right-1 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors" title={i18n.t('cerrar_bspu')}>
           <X className="w-5 h-5 text-white" />
         </button>

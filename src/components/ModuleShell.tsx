@@ -8,6 +8,7 @@ import {
   type NotificationData,
 } from '../services/api';
 import { AVATAR_FILES, AVATAR_VARIACIONES } from '../constants/avatars';
+import ShellSidebar from './ShellSidebar';
 import { ConfiguracionPanel } from './ConfiguracionPanel';
 import HelpChat from './HelpChat';
 
@@ -31,55 +32,18 @@ export const NAV_ITEMS: { key: string; label: string }[] = [
   { key: 'suplementos', label: 'Suplementos' },
   { key: 'hora-oro', label: 'Hora de Oro' },
   { key: 'gratitud', label: 'Gratitud' },
+  { key: 'inspiracion', label: 'Inspiración' },
   { key: 'cumple', label: 'Cumpleaños' },
   { key: 'tribu', label: 'Tribu' },
   { key: 'focus', label: 'Focus' },
   { key: 'cursos', label: 'Cursos' },
   { key: 'coaching', label: 'Coaching' },
+  { key: 'redes', label: 'Redes' },
   { key: 'mas', label: 'Más' },
 ];
 
-const ICONO: Record<string, React.ComponentType<{ className?: string }>> = {
-  inicio: NAV_ICONS.inicio,
-  rueda: NAV_ICONS.rueda,
-  matriz: NAV_ICONS.matriz,
-  anual: NAV_ICONS.anual,
-  mensual: NAV_ICONS.mensual,
-  kanban: NAV_ICONS.kanban,
-  semanal: NAV_ICONS.semanal,
-  diaria: NAV_ICONS.diaria,
-  delegar: NAV_ICONS.delegar,
-  mision: NAV_ICONS.mision,
-  fechas: NAV_ICONS.fechas,
-  suplementos: NAV_ICONS.suplementos,
-  'hora-oro': NAV_ICONS.gratitud,
-  gratitud: NAV_ICONS.gratitud,
-  cumple: NAV_ICONS.cumpleanos,
-  tribu: NAV_ICONS.tribu,
-  focus: NAV_ICONS.focus,
-  cursos: NAV_ICONS.cursos,
-  coaching: NAV_ICONS.coaching,
-  mas: NAV_ICONS.mas,
-};
-
-const NavItem = ({ Icon, label, active = false, onClick }: {
-  Icon: React.ComponentType<{ className?: string }>;
-  label: string; active?: boolean; onClick?: () => void;
-}) => (
-  <button
-    onClick={onClick}
-    className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors w-full text-left ${
-      active
-        ? 'text-white bg-gradient-to-r from-[#6236FF] to-[#8A2BE2] shadow-md'
-        : 'text-white/60 hover:text-white hover:bg-white/5'
-    }`}
-  >
-    <Icon className="w-5 h-5 shrink-0" />
-    <span className="truncate">{label}</span>
-  </button>
-);
-
-function ProfileMenu({ profile, userName, onBack, onLogout, onClose }: {
+/** Menú de perfil de la barra superior del Header (distinto al de la sidebar). */
+function HeaderProfileMenu({ profile, userName, onBack, onLogout, onClose }: {
   profile?: { username?: string; email?: string } | null;
   userName?: string; onBack: () => void; onLogout: () => void; onClose: () => void;
 }) {
@@ -108,60 +72,17 @@ const Sidebar = ({ activeNav, onNav, userName, photoUrl, profile, onLogout, onBa
   profile?: { username?: string; email?: string } | null;
   onLogout: () => void; onBack: () => void;
 }) => {
-  const [showProfile, setShowProfile] = useState(false);
+  // Redirige a la Sidebar canónica compartida por todas las pantallas.
+  void profile;
   return (
-    <aside className="w-48 bg-[#0A0A26] h-full flex flex-col shrink-0 z-20">
-      <div className="h-16 flex items-center px-4 pt-2 pb-1">
-        <div className="flex items-center gap-3 text-white">
-          <img src="/focussia.png" alt="Focusia" className="w-8 h-8" />
-          <span className="text-xl font-bold tracking-wide">Focusia</span>
-        </div>
-      </div>
-
-      <nav className="flex-1 overflow-y-auto py-2 px-2 flex flex-col gap-1">
-        {NAV_ITEMS.map(item => (
-          <NavItem
-            key={item.key}
-            Icon={ICONO[item.key] || NAV_ICONS.mas}
-            label={item.label}
-            active={item.key === activeNav}
-            onClick={() => {
-              if (item.key === activeNav || item.key === 'mas') return;
-              onNav(item.key);
-            }}
-          />
-        ))}
-      </nav>
-
-      <div className="p-4 relative">
-        <button onClick={() => setShowProfile(v => !v)} className="flex items-center w-full p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
-          <span className="relative w-10 h-10 shrink-0">
-            <span className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-sm font-bold">
-              {userName?.[0]?.toUpperCase() || 'U'}
-            </span>
-            {photoUrl && (
-              <img src={photoUrl} alt={userName || 'Usuario'} className="absolute inset-0 w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-            )}
-          </span>
-          <div className="ml-3 text-left flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white truncate">{userName || 'Usuario'}</p>
-            <p className="text-xs text-white/50">Ver perfil</p>
-          </div>
-          <ChevronDown className="w-4 h-4 text-white/50" />
-        </button>
-        {showProfile && (
-          <div className="absolute left-4 right-4 bottom-full mb-2">
-            <ProfileMenu
-              profile={profile}
-              userName={userName}
-              onBack={() => { setShowProfile(false); onBack(); }}
-              onLogout={() => { setShowProfile(false); onLogout(); }}
-              onClose={() => setShowProfile(false)}
-            />
-          </div>
-        )}
-      </div>
-    </aside>
+    <ShellSidebar
+      activeNav={activeNav}
+      onNav={onNav}
+      userName={userName}
+      avatarImg={photoUrl}
+      onLogout={onLogout}
+      onBack={onBack}
+    />
   );
 };
 
@@ -280,7 +201,7 @@ const Header = ({ userName, photoUrl, profile, onBack, onLogout, titulo, subtitu
           </div>
           {showProfile && (
             <div className="absolute right-0 top-full mt-2 w-64">
-              <ProfileMenu
+              <HeaderProfileMenu
                 profile={profile}
                 userName={userName}
                 onBack={() => { setShowProfile(false); onBack(); }}
@@ -288,8 +209,7 @@ const Header = ({ userName, photoUrl, profile, onBack, onLogout, titulo, subtitu
                 onClose={() => setShowProfile(false)}
               />
             </div>
-          )}
-        </div>
+          )}        </div>
       </div>
 
       <ConfiguracionPanel isOpen={showConfig} onClose={() => setShowConfig(false)} />

@@ -7,6 +7,7 @@ import LandingPage from './components/LandingPage';
 import OnboardingWizardV2 from './components/OnboardingWizardV2';
 import PostOnboardingHub from './components/PostOnboardingHub';
 import MobileOrientationPrompt from './components/MobileOrientationPrompt';
+import FitGeneral from './components/FitGeneral';
 import { authService, onboardingV2Service } from './services/api';
 import { useAuthStore } from './stores/authStore';
 import KanbanModule from './components/kanban/KanbanModule';
@@ -18,6 +19,7 @@ import SuplementosScreen from './components/SuplementosScreen';
 import CoachingScreen from './components/CoachingScreen';
 import TribuScreen from './components/TribuScreen';
 import CursosScreen from './components/CursosScreen';
+import CentroInspiracionScreen from './components/CentroInspiracionScreen';
 import FocusModeScreen from './components/FocusModeScreen';
 import { ReportsListScreen } from './components/ReportsListScreen';
 import DelegarModule from './components/DelegarModule';
@@ -43,7 +45,7 @@ function KanbanRoute() {
         key={vistaInicial || 'kanban'}
         vistaInicial={vistaInicial}
         onClose={() => navigate('/app')}
-        onNavigate={(key) => {
+        onNavigate={(key: string) => {
           if (key === 'inicio') return navigate('/app');
           if (key === 'rueda') return navigate('/app/rueda');
           if (key === 'matriz') return navigate('/app/matriz');
@@ -71,7 +73,10 @@ function KanbanRoute() {
 function AppContent() {
   const navigate = useNavigate();
   const { isAuthenticated, setAuth, logout } = useAuthStore();
-  const [onboardingComplete, setOnboardingComplete] = useState(false);
+  // Tri-estado: null = aún sin confirmar (evita redirigir a /onboarding por
+  // defecto antes de que responda onboarding_status; el fallo se veía como
+  // "iniciar sesión cae en el onboarding estando completo").
+  const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null);
   const [inHub, setInHub] = useState(false);
   const [checking, setChecking] = useState(true);
   const [userName, setUserName] = useState('');
@@ -88,6 +93,7 @@ function AppContent() {
     if (!authService.hasSession()) {
       logout();
       setChecking(false);
+      setOnboardingComplete(null);
       return;
     }
     authService.getCurrentUser()
@@ -104,6 +110,7 @@ function AppContent() {
       .catch(() => {
         authService.markSession(false);
         logout();
+        setOnboardingComplete(null);
       })
       .finally(() => setChecking(false));
   }, []);
@@ -123,14 +130,24 @@ function AppContent() {
   const handleOnboardingComplete = () => {
     setOnboardingComplete(true);
     setInHub(true);
+    navigate('/hub', { replace: true });
   };
 
-  const handleGoToDashboard = () => { setInHub(false); };
-  const handleBackToHub = () => { setInHub(true); };
+  const handleGoToDashboard = () => {
+    setInHub(false);
+    // Cambiar solo el estado no basta: la URL es /hub y el element de esa ruta
+    // sigue montando el Hub (el <Navigate> condicional vive en la ruta "/").
+    navigate('/app');
+  };
+  const handleBackToHub = () => {
+    setInHub(true);
+    navigate('/hub');
+  };
 
   const handleLogout = () => {
     authService.logout().catch(() => {});
     logout();
+    setOnboardingComplete(null);
   };
 
   return (
@@ -155,12 +172,23 @@ function AppContent() {
         )
       ) : (
         <Routes>
-          <Route path="/" element={onboardingComplete ? (inHub ? <Navigate to="/hub" replace /> : <Navigate to="/app" replace />) : <Navigate to="/onboarding" replace />} />
+          <Route path="/" element={
+            onboardingComplete === null
+              ? (
+                <div className="min-h-screen flex flex-col items-center justify-center bg-[#ffffff]">
+                  <img src="/focusia-logo.png" alt="Focusia Logo" className="w-32 h-32 mb-8 animate-bounce" />
+                  <p className="text-lg text-gray-600 font-medium">Tus metas de hoy construyen tu éxito de mañana.</p>
+                </div>
+              )
+              : onboardingComplete
+                ? (inHub ? <Navigate to="/hub" replace /> : <Navigate to="/app" replace />)
+                : <Navigate to="/onboarding" replace />
+          } />
           <Route path="/onboarding" element={<OnboardingWizardV2 onComplete={handleOnboardingComplete} isAuthenticated={true} userName={userName} onLogin={() => {}} onRegister={() => {}} />} />
-          <Route path="/hub" element={<PostOnboardingHub onGoToDashboard={handleGoToDashboard} onComplete={handleGoToDashboard} />} />
+          <Route path="/hub" element={<FitGeneral permitirScroll><PostOnboardingHub onGoToDashboard={handleGoToDashboard} onComplete={handleGoToDashboard} /></FitGeneral>} />
           <Route path="/app" element={<MobileOrientationPrompt><Dashboard onLogout={handleLogout} onBackToHub={handleBackToHub} onShowOnboarding={() => { setOnboardingComplete(false); navigate('/onboarding'); }} /></MobileOrientationPrompt>} />
           <Route path="/app/kanban" element={<KanbanRoute />} />
-          <Route path="/app/redes" element={<MobileOrientationPrompt><RedesSocialesScreen onBack={() => navigate('/app')} links={{}} irAConfig={false} onNavigate={(s) => {
+          <Route path="/app/redes" element={<MobileOrientationPrompt><FitGeneral><RedesSocialesScreen onBack={() => navigate('/app')} links={{}} irAConfig={false} onNavigate={(s) => {
             if (s === 'inicio') return navigate('/app');
             if (s === 'redes') return navigate('/app/redes');
             if (s === 'rueda') return navigate('/app/rueda');
@@ -176,14 +204,15 @@ function AppContent() {
             if (s === 'hora-oro') return navigate('/app/hora-oro');
             if (s === 'tribu') return navigate('/app/tribu');
             if (s === 'cuentas') return navigate('/app/cuentas');
+            if (s === 'inspiracion') return navigate('/app/inspiracion');
             if (s === 'cursos') return navigate('/app/cursos');
             if (s === 'coaching') return navigate('/app/coaching');
             if (s === 'focus') return navigate('/app/focus');
             if (s === 'gratitud') return navigate('/app/gratitud');
             if (s === 'cumpleanos' || s === 'cumple') return navigate('/app/cumpleanos');
             return navigate(`/app?section=${s}`);
-          }} /></MobileOrientationPrompt>} />
-          <Route path="/app/cuentas" element={<MobileOrientationPrompt><CuentasScreen onBack={() => navigate('/app')} onNavigate={(s) => {
+          }} /></FitGeneral></MobileOrientationPrompt>} />
+          <Route path="/app/cuentas" element={<MobileOrientationPrompt><FitGeneral><CuentasScreen onBack={() => navigate('/app')} onNavigate={(s) => {
             if (s === 'inicio' || s === 'cuentas') return navigate('/app');
             if (s === 'rueda') return navigate('/app/rueda');
             if (s === 'matriz') return navigate('/app/matriz');
@@ -204,8 +233,8 @@ function AppContent() {
             if (s === 'cumpleanos' || s === 'cumple') return navigate('/app/cumpleanos');
             if (s === 'redes' || s === 'rrss') return navigate('/app/redes');
             return navigate(`/app?section=${s}`);
-          }} /></MobileOrientationPrompt>} />
-          <Route path="/app/hora-oro" element={<MobileOrientationPrompt><HoraDeOroScreen onBack={() => navigate('/app')} onNavigate={(s) => {
+          }} /></FitGeneral></MobileOrientationPrompt>} />
+          <Route path="/app/hora-oro" element={<MobileOrientationPrompt><FitGeneral><HoraDeOroScreen onBack={() => navigate('/app')} onNavigate={(s) => {
             if (s === 'inicio' || s === 'hora-oro') return navigate('/app');
             if (s === 'rueda') return navigate('/app/rueda');
             if (s === 'matriz') return navigate('/app/matriz');
@@ -219,6 +248,7 @@ function AppContent() {
             if (s === 'suplementos') return navigate('/app/suplementos');
             if (s === 'tribu') return navigate('/app/tribu');
             if (s === 'cuentas') return navigate('/app/cuentas');
+            if (s === 'inspiracion') return navigate('/app/inspiracion');
             if (s === 'cursos') return navigate('/app/cursos');
             if (s === 'coaching') return navigate('/app/coaching');
             if (s === 'focus') return navigate('/app/focus');
@@ -226,8 +256,8 @@ function AppContent() {
             if (s === 'cumpleanos' || s === 'cumple') return navigate('/app/cumpleanos');
             if (s === 'redes' || s === 'rrss') return navigate('/app/redes');
             return navigate(`/app?section=${s}`);
-          }} /></MobileOrientationPrompt>} />
-          <Route path="/app/suplementos" element={<MobileOrientationPrompt><SuplementosScreen onBack={() => navigate('/app')} userName={userName} onNavigate={(s) => {
+          }} /></FitGeneral></MobileOrientationPrompt>} />
+          <Route path="/app/suplementos" element={<MobileOrientationPrompt><FitGeneral><SuplementosScreen onBack={() => navigate('/app')} userName={userName} onNavigate={(s) => {
             if (s === 'inicio' || s === 'suplementos') return navigate('/app');
             if (s === 'rueda') return navigate('/app/rueda');
             if (s === 'matriz') return navigate('/app/matriz');
@@ -241,6 +271,7 @@ function AppContent() {
             if (s === 'hora-oro') return navigate('/app/hora-oro');
             if (s === 'tribu') return navigate('/app/tribu');
             if (s === 'cuentas') return navigate('/app/cuentas');
+            if (s === 'inspiracion') return navigate('/app/inspiracion');
             if (s === 'cursos') return navigate('/app/cursos');
             if (s === 'coaching') return navigate('/app/coaching');
             if (s === 'focus') return navigate('/app/focus');
@@ -248,8 +279,8 @@ function AppContent() {
             if (s === 'cumpleanos' || s === 'cumple') return navigate('/app/cumpleanos');
             if (s === 'redes' || s === 'rrss') return navigate('/app/redes');
             return navigate(`/app?section=${s}`);
-          }} /></MobileOrientationPrompt>} />
-          <Route path="/app/coaching" element={<MobileOrientationPrompt><CoachingScreen onBack={() => navigate('/app')} onNavigate={(s) => {
+          }} /></FitGeneral></MobileOrientationPrompt>} />
+          <Route path="/app/coaching" element={<MobileOrientationPrompt><FitGeneral><CoachingScreen onBack={() => navigate('/app')} onNavigate={(s) => {
             if (s === 'inicio' || s === 'coaching') return navigate('/app');
             if (s === 'rueda') return navigate('/app/rueda');
             if (s === 'matriz') return navigate('/app/matriz');
@@ -264,14 +295,15 @@ function AppContent() {
             if (s === 'hora-oro') return navigate('/app/hora-oro');
             if (s === 'tribu') return navigate('/app/tribu');
             if (s === 'cuentas') return navigate('/app/cuentas');
+            if (s === 'inspiracion') return navigate('/app/inspiracion');
             if (s === 'cursos') return navigate('/app/cursos');
             if (s === 'focus') return navigate('/app/focus');
             if (s === 'gratitud') return navigate('/app/gratitud');
             if (s === 'cumpleanos' || s === 'cumple') return navigate('/app/cumpleanos');
             if (s === 'redes' || s === 'rrss') return navigate('/app/redes');
             return navigate(`/app?section=${s}`);
-          }} /></MobileOrientationPrompt>} />
-          <Route path="/app/tribu" element={<MobileOrientationPrompt><TribuScreen onBack={() => navigate('/app')} onNavigate={(s) => {
+          }} /></FitGeneral></MobileOrientationPrompt>} />
+          <Route path="/app/tribu" element={<MobileOrientationPrompt><FitGeneral><TribuScreen onBack={() => navigate('/app')} onNavigate={(s) => {
             if (s === 'inicio') return navigate('/app');
             if (s === 'rueda') return navigate('/app/rueda');
             if (s === 'matriz') return navigate('/app/matriz');
@@ -285,6 +317,7 @@ function AppContent() {
             if (s === 'suplementos') return navigate('/app/suplementos');
             if (s === 'hora-oro') return navigate('/app/hora-oro');
             if (s === 'cuentas') return navigate('/app/cuentas');
+            if (s === 'inspiracion') return navigate('/app/inspiracion');
             if (s === 'cursos') return navigate('/app/cursos');
             if (s === 'coaching') return navigate('/app/coaching');
             if (s === 'focus') return navigate('/app/focus');
@@ -292,8 +325,8 @@ function AppContent() {
             if (s === 'cumpleanos' || s === 'cumple') return navigate('/app/cumpleanos');
             if (s === 'redes' || s === 'rrss') return navigate('/app/redes');
             return navigate(`/app?section=${s}`);
-          }} /></MobileOrientationPrompt>} />
-          <Route path="/app/cursos" element={<MobileOrientationPrompt><CursosScreen onBack={() => navigate('/app')} onNavigate={(s) => {
+          }} /></FitGeneral></MobileOrientationPrompt>} />
+          <Route path="/app/cursos" element={<MobileOrientationPrompt><FitGeneral><CursosScreen onBack={() => navigate('/app')} onNavigate={(s) => {
             if (s === 'inicio') return navigate('/app');
             if (s === 'rueda') return navigate('/app/rueda');
             if (s === 'matriz') return navigate('/app/matriz');
@@ -307,6 +340,7 @@ function AppContent() {
             if (s === 'suplementos') return navigate('/app/suplementos');
             if (s === 'hora-oro') return navigate('/app/hora-oro');
             if (s === 'tribu') return navigate('/app/tribu');
+            if (s === 'inspiracion') return navigate('/app/inspiracion');
             if (s === 'cuentas') return navigate('/app/cuentas');
             if (s === 'coaching') return navigate('/app/coaching');
             if (s === 'focus') return navigate('/app/focus');
@@ -314,9 +348,10 @@ function AppContent() {
             if (s === 'cumpleanos' || s === 'cumple') return navigate('/app/cumpleanos');
             if (s === 'redes' || s === 'rrss') return navigate('/app/redes');
             return navigate(`/app?section=${s}`);
-          }} /></MobileOrientationPrompt>} />
-          <Route path="/app/focus" element={<MobileOrientationPrompt><FocusModeScreen onBack={() => navigate('/app')} onNavigate={(s) => {
+          }} /></FitGeneral></MobileOrientationPrompt>} />
+          <Route path="/app/inspiracion" element={<MobileOrientationPrompt><FitGeneral><CentroInspiracionScreen onBack={() => navigate('/app')} userName={userName} onNavigate={(s) => {
             if (s === 'inicio') return navigate('/app');
+            if (s === 'inspiracion') return navigate('/app/inspiracion');
             if (s === 'rueda') return navigate('/app/rueda');
             if (s === 'matriz') return navigate('/app/matriz');
             if (s === 'anual') return navigate('/app/anual');
@@ -330,27 +365,7 @@ function AppContent() {
             if (s === 'hora-oro') return navigate('/app/hora-oro');
             if (s === 'tribu') return navigate('/app/tribu');
             if (s === 'cuentas') return navigate('/app/cuentas');
-            if (s === 'cursos') return navigate('/app/cursos');
-            if (s === 'coaching') return navigate('/app/coaching');
-            if (s === 'gratitud') return navigate('/app/gratitud');
-            if (s === 'cumpleanos' || s === 'cumple') return navigate('/app/cumpleanos');
-            if (s === 'redes' || s === 'rrss') return navigate('/app/redes');
-            return navigate(`/app?section=${s}`);
-          }} onIniciar={async (herramienta, config) => { navigate('/app', { state: { iniciarFocus: { herramienta, config } } }); }} /></MobileOrientationPrompt>} />
-          <Route path="/app/delegar" element={<MobileOrientationPrompt><DelegarModule onClose={() => navigate('/app')} onNavigate={(s) => {
-            if (s === 'inicio') return navigate('/app');
-            if (s === 'rueda') return navigate('/app/rueda');
-            if (s === 'matriz') return navigate('/app/matriz');
-            if (s === 'anual') return navigate('/app/anual');
-            if (s === 'mensual') return navigate('/app/mensual');
-            if (s === 'semanal') return navigate('/app/kanban?vista=semanal');
-            if (s === 'diaria') return navigate('/app/kanban?vista=diaria');
-            if (s === 'kanban') return navigate('/app/kanban');
-            if (s === 'fechas') return navigate('/app');
-            if (s === 'suplementos') return navigate('/app/suplementos');
-            if (s === 'hora-oro') return navigate('/app/hora-oro');
-            if (s === 'tribu') return navigate('/app/tribu');
-            if (s === 'cuentas') return navigate('/app/cuentas');
+            if (s === 'inspiracion') return navigate('/app/inspiracion');
             if (s === 'cursos') return navigate('/app/cursos');
             if (s === 'coaching') return navigate('/app/coaching');
             if (s === 'focus') return navigate('/app/focus');
@@ -358,75 +373,8 @@ function AppContent() {
             if (s === 'cumpleanos' || s === 'cumple') return navigate('/app/cumpleanos');
             if (s === 'redes' || s === 'rrss') return navigate('/app/redes');
             return navigate(`/app?section=${s}`);
-          }} /></MobileOrientationPrompt>} />
-          <Route path="/app/rueda" element={<MobileOrientationPrompt><DiagnosticoRueda onClose={() => navigate('/app')} onNavigate={(s) => {
-            if (s === 'inicio') return navigate('/app');
-            if (s === 'matriz') return navigate('/app/matriz');
-            if (s === 'anual') return navigate('/app/anual');
-            if (s === 'mensual') return navigate('/app/mensual');
-            if (s === 'semanal') return navigate('/app/kanban?vista=semanal');
-            if (s === 'diaria') return navigate('/app/kanban?vista=diaria');
-            if (s === 'kanban') return navigate('/app/kanban');
-            if (s === 'delegar') return navigate('/app/delegar');
-            if (s === 'fechas') return navigate('/app');
-            if (s === 'suplementos') return navigate('/app/suplementos');
-            if (s === 'hora-oro') return navigate('/app/hora-oro');
-            if (s === 'tribu') return navigate('/app/tribu');
-            if (s === 'cuentas') return navigate('/app/cuentas');
-            if (s === 'cursos') return navigate('/app/cursos');
-            if (s === 'coaching') return navigate('/app/coaching');
-            if (s === 'focus') return navigate('/app/focus');
-            if (s === 'gratitud') return navigate('/app/gratitud');
-            if (s === 'cumpleanos' || s === 'cumple') return navigate('/app/cumpleanos');
-            if (s === 'redes' || s === 'rrss') return navigate('/app/redes');
-            return navigate(`/app?section=${s}`);
-          }} /></MobileOrientationPrompt>} />
-          <Route path="/app/matriz" element={<MobileOrientationPrompt><MatrizEisenhower onClose={() => navigate('/app')} onGoKanban={() => navigate('/app/kanban')} /></MobileOrientationPrompt>} />
-          <Route path="/app/anual" element={<MobileOrientationPrompt><AnnualModuleView onClose={() => navigate('/app')} onNavigate={(s) => {
-            if (s === 'inicio') return navigate('/app');
-            if (s === 'rueda') return navigate('/app/rueda');
-            if (s === 'matriz') return navigate('/app/matriz');
-            if (s === 'mensual') return navigate('/app/mensual');
-            if (s === 'semanal') return navigate('/app/kanban?vista=semanal');
-            if (s === 'diaria') return navigate('/app/kanban?vista=diaria');
-            if (s === 'kanban') return navigate('/app/kanban');
-            if (s === 'delegar') return navigate('/app/delegar');
-            if (s === 'fechas') return navigate('/app');
-            if (s === 'suplementos') return navigate('/app/suplementos');
-            if (s === 'hora-oro') return navigate('/app/hora-oro');
-            if (s === 'tribu') return navigate('/app/tribu');
-            if (s === 'cuentas') return navigate('/app/cuentas');
-            if (s === 'cursos') return navigate('/app/cursos');
-            if (s === 'coaching') return navigate('/app/coaching');
-            if (s === 'focus') return navigate('/app/focus');
-            if (s === 'gratitud') return navigate('/app/gratitud');
-            if (s === 'cumpleanos' || s === 'cumple') return navigate('/app/cumpleanos');
-            if (s === 'redes' || s === 'rrss') return navigate('/app/redes');
-            return navigate(`/app?section=${s}`);
-          }} onEdit={() => navigate('/app')} /></MobileOrientationPrompt>} />
-          <Route path="/app/mensual" element={<MobileOrientationPrompt><MonthlyWizard onClose={() => navigate('/app')} onApproved={() => navigate('/app')} onNavigate={(s) => {
-            if (s === 'inicio') return navigate('/app');
-            if (s === 'rueda') return navigate('/app/rueda');
-            if (s === 'matriz') return navigate('/app/matriz');
-            if (s === 'anual') return navigate('/app/anual');
-            if (s === 'semanal') return navigate('/app/kanban?vista=semanal');
-            if (s === 'diaria') return navigate('/app/kanban?vista=diaria');
-            if (s === 'kanban') return navigate('/app/kanban');
-            if (s === 'delegar') return navigate('/app/delegar');
-            if (s === 'fechas') return navigate('/app');
-            if (s === 'suplementos') return navigate('/app/suplementos');
-            if (s === 'hora-oro') return navigate('/app/hora-oro');
-            if (s === 'tribu') return navigate('/app/tribu');
-            if (s === 'cuentas') return navigate('/app/cuentas');
-            if (s === 'cursos') return navigate('/app/cursos');
-            if (s === 'coaching') return navigate('/app/coaching');
-            if (s === 'focus') return navigate('/app/focus');
-            if (s === 'gratitud') return navigate('/app/gratitud');
-            if (s === 'cumpleanos' || s === 'cumple') return navigate('/app/cumpleanos');
-            if (s === 'redes' || s === 'rrss') return navigate('/app/redes');
-            return navigate(`/app?section=${s}`);
-          }} /></MobileOrientationPrompt>} />
-          <Route path="/app/calendario-mensual" element={<MobileOrientationPrompt><MonthlyCalendar onClose={() => navigate('/app')} onNavigate={(s) => {
+          }} /></FitGeneral></MobileOrientationPrompt>} />
+          <Route path="/app/focus" element={<MobileOrientationPrompt><FitGeneral><FocusModeScreen onBack={() => navigate('/app')} onNavigate={(s) => {
             if (s === 'inicio') return navigate('/app');
             if (s === 'rueda') return navigate('/app/rueda');
             if (s === 'matriz') return navigate('/app/matriz');
@@ -441,6 +389,29 @@ function AppContent() {
             if (s === 'hora-oro') return navigate('/app/hora-oro');
             if (s === 'tribu') return navigate('/app/tribu');
             if (s === 'cuentas') return navigate('/app/cuentas');
+            if (s === 'inspiracion') return navigate('/app/inspiracion');
+            if (s === 'cursos') return navigate('/app/cursos');
+            if (s === 'coaching') return navigate('/app/coaching');
+            if (s === 'gratitud') return navigate('/app/gratitud');
+            if (s === 'cumpleanos' || s === 'cumple') return navigate('/app/cumpleanos');
+            if (s === 'redes' || s === 'rrss') return navigate('/app/redes');
+            return navigate(`/app?section=${s}`);
+          }} onIniciar={async (herramienta, config) => { navigate('/app', { state: { iniciarFocus: { herramienta, config } } }); }} /></FitGeneral></MobileOrientationPrompt>} />
+          <Route path="/app/delegar" element={<MobileOrientationPrompt><FitGeneral><DelegarModule onClose={() => navigate('/app')} onNavigate={(s: string) => {
+            if (s === 'inicio') return navigate('/app');
+            if (s === 'rueda') return navigate('/app/rueda');
+            if (s === 'matriz') return navigate('/app/matriz');
+            if (s === 'anual') return navigate('/app/anual');
+            if (s === 'mensual') return navigate('/app/mensual');
+            if (s === 'semanal') return navigate('/app/kanban?vista=semanal');
+            if (s === 'diaria') return navigate('/app/kanban?vista=diaria');
+            if (s === 'kanban') return navigate('/app/kanban');
+            if (s === 'fechas') return navigate('/app');
+            if (s === 'suplementos') return navigate('/app/suplementos');
+            if (s === 'hora-oro') return navigate('/app/hora-oro');
+            if (s === 'tribu') return navigate('/app/tribu');
+            if (s === 'cuentas') return navigate('/app/cuentas');
+            if (s === 'inspiracion') return navigate('/app/inspiracion');
             if (s === 'cursos') return navigate('/app/cursos');
             if (s === 'coaching') return navigate('/app/coaching');
             if (s === 'focus') return navigate('/app/focus');
@@ -448,8 +419,78 @@ function AppContent() {
             if (s === 'cumpleanos' || s === 'cumple') return navigate('/app/cumpleanos');
             if (s === 'redes' || s === 'rrss') return navigate('/app/redes');
             return navigate(`/app?section=${s}`);
-          }} /></MobileOrientationPrompt>} />
-          <Route path="/app/gratitud" element={<MobileOrientationPrompt><GratitudScreen onBack={() => navigate('/app')} onNavigate={(s) => {
+          }} /></FitGeneral></MobileOrientationPrompt>} />
+          <Route path="/app/rueda" element={<MobileOrientationPrompt><FitGeneral><DiagnosticoRueda onClose={() => navigate('/app')} onNavigate={(s) => {
+            if (s === 'inicio') return navigate('/app');
+            if (s === 'matriz') return navigate('/app/matriz');
+            if (s === 'anual') return navigate('/app/anual');
+            if (s === 'mensual') return navigate('/app/mensual');
+            if (s === 'semanal') return navigate('/app/kanban?vista=semanal');
+            if (s === 'diaria') return navigate('/app/kanban?vista=diaria');
+            if (s === 'kanban') return navigate('/app/kanban');
+            if (s === 'delegar') return navigate('/app/delegar');
+            if (s === 'fechas') return navigate('/app');
+            if (s === 'suplementos') return navigate('/app/suplementos');
+            if (s === 'hora-oro') return navigate('/app/hora-oro');
+            if (s === 'tribu') return navigate('/app/tribu');
+            if (s === 'cuentas') return navigate('/app/cuentas');
+            if (s === 'inspiracion') return navigate('/app/inspiracion');
+            if (s === 'cursos') return navigate('/app/cursos');
+            if (s === 'coaching') return navigate('/app/coaching');
+            if (s === 'focus') return navigate('/app/focus');
+            if (s === 'gratitud') return navigate('/app/gratitud');
+            if (s === 'cumpleanos' || s === 'cumple') return navigate('/app/cumpleanos');
+            if (s === 'redes' || s === 'rrss') return navigate('/app/redes');
+            return navigate(`/app?section=${s}`);
+          }} /></FitGeneral></MobileOrientationPrompt>} />
+          <Route path="/app/matriz" element={<MobileOrientationPrompt><FitGeneral><MatrizEisenhower onClose={() => navigate('/app')} onGoKanban={() => navigate('/app/kanban')} /></FitGeneral></MobileOrientationPrompt>} />
+          <Route path="/app/anual" element={<MobileOrientationPrompt><FitGeneral><AnnualModuleView onClose={() => navigate('/app')} onNavigate={(s: string) => {
+            if (s === 'inicio') return navigate('/app');
+            if (s === 'rueda') return navigate('/app/rueda');
+            if (s === 'matriz') return navigate('/app/matriz');
+            if (s === 'mensual') return navigate('/app/mensual');
+            if (s === 'semanal') return navigate('/app/kanban?vista=semanal');
+            if (s === 'diaria') return navigate('/app/kanban?vista=diaria');
+            if (s === 'kanban') return navigate('/app/kanban');
+            if (s === 'delegar') return navigate('/app/delegar');
+            if (s === 'fechas') return navigate('/app');
+            if (s === 'suplementos') return navigate('/app/suplementos');
+            if (s === 'hora-oro') return navigate('/app/hora-oro');
+            if (s === 'tribu') return navigate('/app/tribu');
+            if (s === 'cuentas') return navigate('/app/cuentas');
+            if (s === 'inspiracion') return navigate('/app/inspiracion');
+            if (s === 'cursos') return navigate('/app/cursos');
+            if (s === 'coaching') return navigate('/app/coaching');
+            if (s === 'focus') return navigate('/app/focus');
+            if (s === 'gratitud') return navigate('/app/gratitud');
+            if (s === 'cumpleanos' || s === 'cumple') return navigate('/app/cumpleanos');
+            if (s === 'redes' || s === 'rrss') return navigate('/app/redes');
+            return navigate(`/app?section=${s}`);
+          }} onEdit={() => navigate('/app')} /></FitGeneral></MobileOrientationPrompt>} />
+          <Route path="/app/mensual" element={<MobileOrientationPrompt><FitGeneral><MonthlyWizard onClose={() => navigate('/app')} onApproved={() => navigate('/app')} onNavigate={(s: string) => {
+            if (s === 'inicio') return navigate('/app');
+            if (s === 'rueda') return navigate('/app/rueda');
+            if (s === 'matriz') return navigate('/app/matriz');
+            if (s === 'anual') return navigate('/app/anual');
+            if (s === 'semanal') return navigate('/app/kanban?vista=semanal');
+            if (s === 'diaria') return navigate('/app/kanban?vista=diaria');
+            if (s === 'kanban') return navigate('/app/kanban');
+            if (s === 'delegar') return navigate('/app/delegar');
+            if (s === 'fechas') return navigate('/app');
+            if (s === 'suplementos') return navigate('/app/suplementos');
+            if (s === 'hora-oro') return navigate('/app/hora-oro');
+            if (s === 'tribu') return navigate('/app/tribu');
+            if (s === 'cuentas') return navigate('/app/cuentas');
+            if (s === 'inspiracion') return navigate('/app/inspiracion');
+            if (s === 'cursos') return navigate('/app/cursos');
+            if (s === 'coaching') return navigate('/app/coaching');
+            if (s === 'focus') return navigate('/app/focus');
+            if (s === 'gratitud') return navigate('/app/gratitud');
+            if (s === 'cumpleanos' || s === 'cumple') return navigate('/app/cumpleanos');
+            if (s === 'redes' || s === 'rrss') return navigate('/app/redes');
+            return navigate(`/app?section=${s}`);
+          }} /></FitGeneral></MobileOrientationPrompt>} />
+          <Route path="/app/calendario-mensual" element={<MobileOrientationPrompt><FitGeneral><MonthlyCalendar onClose={() => navigate('/app')} onNavigate={(s: string) => {
             if (s === 'inicio') return navigate('/app');
             if (s === 'rueda') return navigate('/app/rueda');
             if (s === 'matriz') return navigate('/app/matriz');
@@ -464,14 +505,16 @@ function AppContent() {
             if (s === 'hora-oro') return navigate('/app/hora-oro');
             if (s === 'tribu') return navigate('/app/tribu');
             if (s === 'cuentas') return navigate('/app/cuentas');
+            if (s === 'inspiracion') return navigate('/app/inspiracion');
             if (s === 'cursos') return navigate('/app/cursos');
             if (s === 'coaching') return navigate('/app/coaching');
             if (s === 'focus') return navigate('/app/focus');
+            if (s === 'gratitud') return navigate('/app/gratitud');
             if (s === 'cumpleanos' || s === 'cumple') return navigate('/app/cumpleanos');
             if (s === 'redes' || s === 'rrss') return navigate('/app/redes');
             return navigate(`/app?section=${s}`);
-          }} /></MobileOrientationPrompt>} />
-          <Route path="/app/cumpleanos" element={<MobileOrientationPrompt><CumpleanosScreen onBack={() => navigate('/app')} onNavigate={(s) => {
+          }} /></FitGeneral></MobileOrientationPrompt>} />
+          <Route path="/app/gratitud" element={<MobileOrientationPrompt><FitGeneral><GratitudScreen onBack={() => navigate('/app')} onNavigate={(s) => {
             if (s === 'inicio') return navigate('/app');
             if (s === 'rueda') return navigate('/app/rueda');
             if (s === 'matriz') return navigate('/app/matriz');
@@ -486,16 +529,49 @@ function AppContent() {
             if (s === 'hora-oro') return navigate('/app/hora-oro');
             if (s === 'tribu') return navigate('/app/tribu');
             if (s === 'cuentas') return navigate('/app/cuentas');
+            if (s === 'inspiracion') return navigate('/app/inspiracion');
+            if (s === 'cursos') return navigate('/app/cursos');
+            if (s === 'coaching') return navigate('/app/coaching');
+            if (s === 'focus') return navigate('/app/focus');
+            if (s === 'cumpleanos' || s === 'cumple') return navigate('/app/cumpleanos');
+            if (s === 'redes' || s === 'rrss') return navigate('/app/redes');
+            return navigate(`/app?section=${s}`);
+          }} /></FitGeneral></MobileOrientationPrompt>} />
+          <Route path="/app/cumpleanos" element={<MobileOrientationPrompt><FitGeneral><CumpleanosScreen onBack={() => navigate('/app')} onNavigate={(s) => {
+            if (s === 'inicio') return navigate('/app');
+            if (s === 'rueda') return navigate('/app/rueda');
+            if (s === 'matriz') return navigate('/app/matriz');
+            if (s === 'anual') return navigate('/app/anual');
+            if (s === 'mensual') return navigate('/app/mensual');
+            if (s === 'semanal') return navigate('/app/kanban?vista=semanal');
+            if (s === 'diaria') return navigate('/app/kanban?vista=diaria');
+            if (s === 'kanban') return navigate('/app/kanban');
+            if (s === 'delegar') return navigate('/app/delegar');
+            if (s === 'fechas') return navigate('/app');
+            if (s === 'suplementos') return navigate('/app/suplementos');
+            if (s === 'hora-oro') return navigate('/app/hora-oro');
+            if (s === 'tribu') return navigate('/app/tribu');
+            if (s === 'cuentas') return navigate('/app/cuentas');
+            if (s === 'inspiracion') return navigate('/app/inspiracion');
             if (s === 'cursos') return navigate('/app/cursos');
             if (s === 'coaching') return navigate('/app/coaching');
             if (s === 'focus') return navigate('/app/focus');
             if (s === 'gratitud') return navigate('/app/gratitud');
             if (s === 'redes' || s === 'rrss') return navigate('/app/redes');
             return navigate(`/app?section=${s}`);
-          }} /></MobileOrientationPrompt>} />
-          <Route path="/app/reportes" element={<MobileOrientationPrompt><ReportsListScreen onBack={() => navigate('/app')} onSelect={() => {}} /></MobileOrientationPrompt>} />
-          <Route path="/app/configuracion" element={<MobileOrientationPrompt><ConfiguracionModule onClose={() => navigate('/app')} onLogout={handleLogout} /></MobileOrientationPrompt>} />
-          <Route path="*" element={<Navigate to={onboardingComplete ? (inHub ? '/hub' : '/app') : '/onboarding'} replace />} />
+          }} /></FitGeneral></MobileOrientationPrompt>} />
+          <Route path="/app/reportes" element={<MobileOrientationPrompt><FitGeneral permitirScroll><ReportsListScreen onBack={() => navigate('/app')} onSelect={() => {}} /></FitGeneral></MobileOrientationPrompt>} />
+          <Route path="/app/configuracion" element={<MobileOrientationPrompt><FitGeneral><ConfiguracionModule onClose={() => navigate('/app')} onLogout={handleLogout} /></FitGeneral></MobileOrientationPrompt>} />
+          <Route path="*" element={
+            onboardingComplete === null
+              ? (
+                <div className="min-h-screen flex flex-col items-center justify-center bg-[#ffffff]">
+                  <img src="/focusia-logo.png" alt="Focusia Logo" className="w-32 h-32 mb-8 animate-bounce" />
+                  <p className="text-lg text-gray-600 font-medium">Tus metas de hoy construyen tu éxito de mañana.</p>
+                </div>
+              )
+              : <Navigate to={onboardingComplete ? (inHub ? '/hub' : '/app') : '/onboarding'} replace />
+          } />
         </Routes>
       )}
     </>

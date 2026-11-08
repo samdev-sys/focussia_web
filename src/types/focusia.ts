@@ -186,10 +186,10 @@ export const CHANNELS: { value: AllowedChannel; label: string; icon: string }[] 
 ];
 
 export const AVATARS: { id: AvatarId; name: string; gender: 'M' | 'F'; file: string }[] = [
-  { id: 1, name: 'Alex', gender: 'M', file: '/avatars/avatar1.jpg' },
-  { id: 2, name: 'Sam', gender: 'M', file: '/avatars/avatar2.jpg' },
-  { id: 3, name: 'Jordan', gender: 'M', file: '/avatars/avatar3.jpg' },
-  { id: 4, name: 'Taylor', gender: 'F', file: '/avatars/avatar4.jpg' },
-  { id: 5, name: 'Casey', gender: 'F', file: '/avatars/avatar5.jpg' },
-  { id: 6, name: 'Morgan', gender: 'F', file: '/avatars/avatar6.jpg' },
+  { id: 1, name: 'Alex', gender: 'M', file: '/avartars/John.jpeg' },
+  { id: 2, name: 'Sam', gender: 'M', file: '/avartars/conrad.jpeg' },
+  { id: 3, name: 'Jordan', gender: 'F', file: '/avartars/Ashley.jpeg' },
+  { id: 4, name: 'Taylor', gender: 'F', file: '/avartars/Lia.jpeg' },
+  { id: 5, name: 'Casey', gender: 'M', file: '/avartars/Monroe.jpeg' },
+  { id: 6, name: 'Morgan', gender: 'F', file: '/avartars/Sophya.jpeg' },
 ];

@@ -10,6 +10,7 @@ import TribuScreen from './screens/TribuScreen';
 import AprendizajeScreen from './screens/AprendizajeScreen';
 import AvatarsScreen from './screens/AvatarsScreen';
 import GamesScreen from './screens/GamesScreen';
+import InspiracionScreen from './screens/InspiracionScreen';
 
 /**
  * Arranque del panel.
@@ -72,6 +73,7 @@ export default function AdminApp() {
       {seccion === 'programa' && <ProgramaScreen />}
       {seccion === 'tribu' && <TribuScreen />}
       {seccion === 'aprendizaje' && <AprendizajeScreen />}
+      {seccion === 'inspiracion' && <InspiracionScreen />}
       {seccion === 'avatares' && <AvatarsScreen />}
       {seccion === 'juegos' && <GamesScreen />}
     </AdminLayout>

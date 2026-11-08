@@ -1,9 +1,10 @@
 import i18n from '../i18n';
 import React, { useEffect, useRef, useState } from 'react';
 
-const TTS_API_URL = import.meta.env.VITE_API_URL
-  ? `${import.meta.env.VITE_API_URL}/api/tts/`
-  : 'http://localhost:8000/api/tts/';
+// En dev usa ruta relativa (proxy de Vite) para evitar CORS/CSRF cross-origin.
+const TTS_API_URL = import.meta.env.DEV
+  ? '/api/tts/'
+  : `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/tts/`;
 
 const AVATAR_TTS_URL = `${TTS_API_URL}avatar/`;
 

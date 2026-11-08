@@ -15,7 +15,6 @@ import { AVATAR_FILES } from './constants/avatars';
 import { KanbanBoard } from './components/KanbanBoard';
 import { KanbanBacklog } from './components/KanbanBacklog';
 import FocusiaTourLauncher from './components/FocusiaTour';
-import FitStage from './components/FitStage';
 import { NotificationToast } from './components/NotificationToast';
 import { FormularioRueda } from './components/FormularioRueda';
 import DiagnosticoRueda from './components/DiagnosticoRueda';
@@ -70,7 +69,7 @@ import FocusWidget, {
 import { FocusModales } from './components/FocusWidget';
 import { focusService } from './services/api';
 
-import {   X, LogOut, User, Plus, ArrowRight, Calendar, Edit3, CheckCircle2, Play, ChevronRight, Target, TrendingUp, CalendarDays, CheckCircle, CreditCard, Landmark, Receipt, AlertCircle, CheckSquare, Pill, Clock, Edit, Check, Zap, Trophy, Star, Shield, Flame, Users, Settings, Mail, Copy, Crown, ShieldCheck, UserPlus, Trash2, Send, Briefcase, Bell, MessageSquare, Sparkles, RefreshCw, Lightbulb, RotateCcw, LayoutGrid, Upload, BarChart3, Bot, Loader2, CircleHelp } from 'lucide-react';
+import {   X, LogOut, User, Plus, ArrowRight, Calendar, Edit3, CheckCircle2, Play, ChevronRight, Target, TrendingUp, CalendarDays, CheckCircle, CreditCard, Landmark, Receipt, AlertCircle, CheckSquare, Pill, Clock, Edit, Check, Zap, Trophy, Star, Shield, Flame, Users, Settings, Mail, Copy, Crown, ShieldCheck, UserPlus, Trash2, Send, Briefcase, Bell, MessageSquare, Sparkles, RefreshCw, Lightbulb, RotateCcw, LayoutGrid, Upload, BarChart3, Bot, Loader2, CircleHelp, Info } from 'lucide-react';
 
 
 interface DashboardProps {
@@ -250,6 +249,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         break;
       case 'tribu':
         navigate('/app/tribu');
+        break;
+      case 'inspiracion':
+        navigate('/app/inspiracion');
         break;
       case 'cursos':
         navigate('/app/cursos');
@@ -477,6 +479,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
       case 'tribu':
         navigate('/app/tribu');
         break;
+      case 'inspiracion':
+        navigate('/app/inspiracion');
+        break;
       case 'cursos':
         navigate('/app/cursos');
         break;
@@ -532,6 +537,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
       case 'tribu':
         navigate('/app/tribu');
         break;
+      case 'inspiracion':
+        navigate('/app/inspiracion');
+        break;
       case 'cuentas':
         navigate('/app/cuentas');
         break;
@@ -583,6 +591,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
   const [showMonthlyCalendar, setShowMonthlyCalendar] = useState(false);
   const [showKanbanModule, setShowKanbanModule] = useState(false);
   const [kanbanVistaInicial, setKanbanVistaInicial] = useState<KanbanVistaInicial | undefined>(undefined);
+  const [kanbanWidgetRefresh, setKanbanWidgetRefresh] = useState(0);
   const openKanban = (vista?: KanbanVistaInicial) => {
     setKanbanVistaInicial(vista);
     if (vista) {
@@ -802,11 +811,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
     lugar: string;
     loading: boolean;
     error: string;
+    actualizado: number;
+    lat: number | null;
+    lon: number | null;
   }>({
     temp: 0, sensacion: 0, humedad: 0,
     descripcion: '', icono: '🌤️', lugar: '',
-    loading: true, error: ''
+    loading: true, error: '',
+    actualizado: 0, lat: null, lon: null
   });
+  // Modal del pronóstico completo al hacer clic en la tarjeta «Clima en mi comuna».
+  const [showClimaDetalle, setShowClimaDetalle] = useState(false);
   const [currentDate, setCurrentDate] = useState(() => {
     const now = new Date();
     return {
@@ -1048,7 +1063,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
           icono,
           lugar,
           loading: false,
-          error: ''
+          error: '',
+          actualizado: Date.now(),
+          lat,
+          lon,
         });
       } catch (e) {
         setClima((prev: typeof clima) => ({ ...prev, loading: false, error: 'Sin datos' }));
@@ -1243,7 +1261,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
   const fetchSavedRecordatorios = useCallback(async () => {
     try {
       const data = await recordatorioService.getAll();
-      setSavedRecordatorios(data);
+      const list = Array.isArray(data) ? data : Array.isArray((data as any)?.results) ? (data as any).results : [];
+      setSavedRecordatorios(list);
     } catch (err) {
       console.error('Error fetching saved recordatorios:', err);
     }
@@ -1260,6 +1279,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
       refreshTimeBlocks();
       refreshAccionesClasificadas();
       refreshKanbanTasks();
+      setKanbanWidgetRefresh((n) => n + 1);
     };
     window.addEventListener('focusia:datos-actualizados', alActualizar);
     return () => window.removeEventListener('focusia:datos-actualizados', alActualizar);
@@ -1290,10 +1310,26 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
     fetchUserData();
   }, []);
 
+  const seenCallNotificationIds = useRef<Set<string>>(new Set());
+  const [incomingCall, setIncomingCall] = useState<{ id: string; title: string; message: string } | null>(null);
+
   const fetchNotifications = async () => {
     try {
       const data = await notificationService.getAll();
-      useNotificationStore.getState().setNotifications(data as any);
+      const list = Array.isArray(data) ? data : Array.isArray((data as any)?.results) ? (data as any).results : [];
+      useNotificationStore.getState().setNotifications(list as any);
+
+      // Auto-detectar llamadas simuladas nuevas no leídas para mostrar overlay
+      const calls = list.filter((n: any) => !n?.is_read && ((n?.channel === 'calls') || (n?.data?.kind === 'llamada_simulada')));
+      const fresh = calls.find((n: any) => n?.id && !seenCallNotificationIds.current.has(String(n.id)));
+      if (fresh) {
+        seenCallNotificationIds.current.add(String(fresh.id));
+        setIncomingCall({
+          id: String(fresh.id),
+          title: fresh?.data?.titulo || fresh?.title || 'Llamada simulada',
+          message: fresh?.message || '',
+        });
+      }
     } catch (err) {
       console.error('Error fetching notifications:', err);
     }
@@ -1329,6 +1365,29 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
 
   // Doc 27 §3.5: la notificación del reporte abre ese reporte específico.
   const abrirNotificacion = async (n: NotificationData) => {
+    const kind = (n as any)?.data?.kind;
+    const isCallSim = (n as any)?.channel === 'calls' || kind === 'llamada_simulada';
+    const isWhatsAppSim = (n as any)?.channel === 'whatsapp' || kind === 'whatsapp_simulado';
+
+    if (!n.is_read && n.id) {
+      try { await notificationService.marcarLeida(String(n.id)); fetchNotifications(); } catch {}
+    }
+
+    if (isCallSim) {
+      setShowNotifications(false);
+      setIncomingCall({
+        id: String(n.id),
+        title: (n as any)?.data?.titulo || n.title || 'Llamada simulada',
+        message: n.message || '',
+      });
+      return;
+    }
+
+    if (isWhatsAppSim) {
+      setShowNotifications(false);
+      return;
+    }
+
     const reportId = n.data?.report_id;
     if (n.type !== 'report' || !reportId) return;
     try {
@@ -1341,24 +1400,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
   };
 
   const handleUpdateProfile = async () => {
-
     try {
       const updated = await authService.updateProfile({
         username: newUsername,
         avatar_url: newAvatarUrl
       });
-      const avatarIdx = Object.entries(AVATAR_FILES).find(([_, path]) => path === newAvatarUrl)?.[0];
-      if (avatarIdx) {
-        await configuracionService.updateMiConfig({ avatar_index: parseInt(avatarIdx) } as any);
-      } else {
-        await configuracionService.updateMiConfig({ avatar_index: 0 } as any);
-      }
-      setUserData({
-        ...userData,
+      setUserData(prev => ({
+        ...prev,
         username: updated.username,
-        avatar_url: updated.avatar_url || `//api/?name=${updated.username}&background=f4d2d2&color=000`,
-        avatar_index: avatarIdx ? parseInt(avatarIdx) : 0,
-      });
+        avatar_url: updated.avatar_url || `//ui-avatars.com/api/?name=${encodeURIComponent(updated.username || '')}&background=f4d2d2&color=000`,
+      }));
+      setNewAvatarUrl(updated.avatar_url || '');
       setShowUserSettingsModal(false);
       addXP(50, 'Perfil actualizado');
     } catch (err) {
@@ -1522,6 +1574,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         const newBlock = await timeBlockService.create({ fecha: todayStr, hora, tarea: '', estado });
         setTimeBlocks(prev => [...prev, newBlock]);
       }
+      // La barra de progreso también cuenta timeblocks: reflejar el cambio.
+      refreshProgreso();
       showSaving();
       setTbError(null);
     } catch (e) {
@@ -1621,7 +1675,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
   const defaultHours = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
 
   return (
-    <div className="relative w-full h-[100dvh] overflow-hidden bg-[#eef1f6] dark:bg-[#050104] bg-cover bg-center bg-no-repeat bg-blend-soft-light text-[#2d2f33] dark:text-[#f5e9f0] font-montserrat transition-colors duration-300">
+    <div className="relative w-full min-h-[100dvh] bg-[#eef1f6] dark:bg-[#050104] bg-cover bg-center bg-no-repeat bg-blend-soft-light text-[#2d2f33] dark:text-[#f5e9f0] font-montserrat transition-colors duration-300">
+      {/* Salvavidas: driver.js (tour) bloquea el scroll del body mientras está
+          activo; si la clase queda tras cerrarlo, la página quedaría cortada.
+          El scroll de página SIEMPRE queda habilitado. */}
+      <style>{`body.driver-active { overflow-y: auto !important; }`}</style>
       {/* Indicador de Auto-guardado global */}
       {savingStatus && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-black/70 text-white px-4 py-1.5 rounded-full shadow-lg text-xs  z-50 animate-bounce">
@@ -1736,7 +1794,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
   </div>
       
         {/* FRANJA SUPERIOR · izquierda: modo oscuro, ajustes, notificaciones y REPORTES */}
-        <div className="col-start-1 row-start-1 flex items-center gap-2 z-20">
+        <div className="col-start-1 row-start-1 flex items-center gap-2 z-20 -mt-12 ">
     {/* Botón Modo Oscuro */}
     <CyberToggle checked={isDarkMode} onChange={setIsDarkMode} />
 
@@ -1781,24 +1839,43 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
                 <p className="text-[11px] text-gray-500 dark:text-gray-400 text-center py-4">{i18n.t('no_tenes_notificaciones')}</p>
               )}
               {(notificationsState as any[]).map((n: any) => {
-                const Icono = n.type === 'invitation' ? Mail
+                const isWhatsAppSim = n?.channel === 'whatsapp' || n?.data?.kind === 'whatsapp_simulado';
+                const isCallSim = n?.channel === 'calls' || n?.data?.kind === 'llamada_simulada';
+                const Icono = isCallSim ? Bell
+                  : isWhatsAppSim ? MessageSquare
+                  : n.type === 'invitation' ? Mail
                   : n.type === 'delegation' ? Briefcase
                   : n.type === 'report' ? BarChart3
                   : Clock;
+                const cardClass = isCallSim
+                  ? (n.is_read ? 'bg-orange-50/60 dark:bg-orange-900/10 border-orange-200 dark:border-orange-500/20' : 'bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-500/30')
+                  : isWhatsAppSim
+                    ? (n.is_read ? 'bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-500/20' : 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-500/30')
+                    : (n.is_read ? 'bg-white dark:bg-white/5 border-gray-100 dark:border-white/10' : 'bg-indigo-50/70 dark:bg-purple-900/30 border-indigo-100 dark:border-purple-500/30');
+                const iconClass = isCallSim
+                  ? (n.is_read ? 'bg-orange-100 text-orange-500' : 'bg-orange-500/15 text-orange-600')
+                  : isWhatsAppSim
+                    ? (n.is_read ? 'bg-emerald-100 text-emerald-600' : 'bg-emerald-500/15 text-emerald-600')
+                    : (n.is_read ? 'bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400' : 'bg-[#6236FF]/10 text-[#6236FF] dark:text-purple-300');
+                const clickable = (n.type === 'report' && n.data?.report_id) || isCallSim || isWhatsAppSim;
                 return (
                   <button
                     key={n.id}
                     type="button"
                     onClick={() => abrirNotificacion(n)}
-                    className={`flex w-full items-start gap-2 rounded-md border p-2.5 text-left ${n.type === 'report' && n.data?.report_id ? 'cursor-pointer hover:brightness-95' : 'cursor-default'} ${n.is_read ? 'bg-white dark:bg-white/5 border-gray-100 dark:border-white/10' : 'bg-indigo-50/70 dark:bg-purple-900/30 border-indigo-100 dark:border-purple-500/30'}`}
+                    className={`flex w-full items-start gap-2 rounded-md border p-2.5 text-left ${clickable ? 'cursor-pointer hover:brightness-95' : 'cursor-default'} ${cardClass}`}
                   >
-                    <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${n.is_read ? 'bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400' : 'bg-[#6236FF]/10 text-[#6236FF] dark:text-purple-300'}`}>
+                    <span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${iconClass}`}>
                       <Icono className="h-3.5 w-3.5" />
                     </span>
-                    <div className="min-w-0">
-                      <p className="text-[12px] font-semibold leading-tight text-gray-800 dark:text-gray-100">{n.title}</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-[12px] font-semibold leading-tight text-gray-800 dark:text-gray-100">{n.title}</p>
+                        {isCallSim && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 font-semibold shrink-0">Llamada</span>}
+                        {isWhatsAppSim && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-semibold shrink-0">WhatsApp</span>}
+                      </div>
                       {n.message && (
-                        <p className="mt-0.5 text-[11px] leading-snug text-gray-600 dark:text-gray-300">{n.message}</p>
+                        <p className={`mt-0.5 text-[11px] leading-snug ${isWhatsAppSim ? 'text-emerald-900/80 dark:text-emerald-100/80 whitespace-pre-wrap' : 'text-gray-600 dark:text-gray-300 whitespace-pre-wrap'}`}>{n.message}</p>
                       )}
                       <p className="mt-1 text-[10px] text-gray-400">{fechaNotificacion(n.created_at)}</p>
                     </div>
@@ -1809,13 +1886,56 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
           </div>
         </>
       )}
+
+      {incomingCall && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" onClick={() => setIncomingCall(null)} />
+          <div className="relative w-full max-w-sm rounded-3xl bg-gradient-to-b from-slate-900 to-slate-800 text-white shadow-2xl border border-white/10 overflow-hidden">
+            <div className="px-6 pt-8 pb-5 text-center">
+              <div className="mx-auto mb-4 h-20 w-20 rounded-full bg-orange-500/20 border border-orange-400/30 flex items-center justify-center">
+                <Bell className="h-9 w-9 text-orange-300" />
+              </div>
+              <p className="text-xs uppercase tracking-[0.2em] text-orange-300/90 font-semibold">Llamada simulada</p>
+              <h3 className="mt-2 text-xl font-bold">{incomingCall.title}</h3>
+              <p className="mt-3 text-sm text-white/80 whitespace-pre-wrap max-h-40 overflow-y-auto">{incomingCall.message || 'Focusia tiene un recordatorio para ti.'}</p>
+            </div>
+            <div className="px-5 pb-6 flex gap-3">
+              <button
+                type="button"
+                onClick={async () => {
+                  const id = incomingCall.id;
+                  setIncomingCall(null);
+                  try { await notificationService.marcarLeida(id); } catch {}
+                  fetchNotifications();
+                }}
+                className="flex-1 rounded-2xl border border-white/15 bg-white/10 py-3 text-sm font-semibold text-white hover:bg-white/15 transition-colors"
+              >
+                Después
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const id = incomingCall.id;
+                  setIncomingCall(null);
+                  try { await notificationService.marcarLeida(id); } catch {}
+                  fetchNotifications();
+                  try { window.navigator?.vibrate?.(50); } catch {}
+                }}
+                className="flex-1 rounded-2xl bg-emerald-500 py-3 text-sm font-semibold text-white hover:bg-emerald-400 transition-colors"
+              >
+                Atender
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     {/* Visita guiada Focusia (driver.js) */}
     <FocusiaTourLauncher autoStart />
   </div>
 
       {/* FRANJA SUPERIOR · columna 2: INICIO / RUEDA / MATRIZ */}
-      <div className="col-start-2 row-start-1 flex items-center gap-1.5">
+      <div className="col-start-2 row-start-1 flex items-center gap-1.5 w-60 -mt-6 ml-15">
                 <button
                   id="tour-inicio-btn"
                   onClick={onBackToHub}
@@ -1839,8 +1959,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
       </div>
 
         {/* COLUMNA 1 — COACHING / TRIBU / GRATITUD + KANBAN BACKLOG + ACCIONES POR DELEGAR */}
-        <div className="col-start-1 row-start-2 flex flex-col h-full min-h-0 gap-2">
-          <div className="bg-white dark:bg-transparent backdrop-blur-md dark:backdrop-blur-none border border-white/20 dark:border-transparent rounded-md p-1 flex flex-col gap-5 w-full shadow-[0_4px_10px_rgba(0,0,0,0.02)] dark:shadow-none justify-between items-center shrink-0">
+        <div className="col-start-1 row-start-2 flex flex-col gap-2">
+          <div className="bg-white dark:bg-transparent backdrop-blur-md dark:backdrop-blur-none border border-white/20 dark:border-transparent rounded-md p-1 flex flex-col gap-5 w-40 shadow-[0_4px_10px_rgba(0,0,0,0.02)] dark:shadow-none justify-between items-center shrink-0">
     {/* 1. COACHING */}
     <span id="tour-coaching-btn" className="contents">
     <ActionButton 
@@ -1869,9 +1989,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
 
   </div>
 
-        <div ref={kanbanRef} className="flex-1 min-h-0">
-          <div id="tour-kanban" className="h-full min-h-0"><KanbanBacklog onExpand={() => openKanban()} onClassified={async (clasificacion, texto) => {
+        <div ref={kanbanRef} className="shrink-0">
+          <div id="tour-kanban" className="w-60 h-[430px] mt-2"><KanbanBacklog refreshTrigger={kanbanWidgetRefresh} onExpand={() => openKanban()} onClassified={async (clasificacion, texto) => {
           await refreshAccionesClasificadas();
+          setKanbanWidgetRefresh((n) => n + 1);
         }} /></div>
         </div>
 
@@ -1882,8 +2003,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         </div>
 
         {/* COLUMNA 2 — RUEDA DE LA VIDA + OBJETIVO MENSUAL + FECHAS IMPORTANTES */}
-        <div className="col-start-2 row-start-2 flex flex-col h-full min-h-0 gap-2">
-            <div className="bg-white/60 dark:bg-transparent backdrop-blur-sm dark:backdrop-blur-none border border-white/30 dark:border-transparent rounded-md p-2 flex flex-col gap-3 w-full shadow-[0_8px_32px_rgba(31,38,135,0.03)] dark:shadow-none shrink-0">
+        <div className="col-start-2 row-start-2 flex flex-col gap-2">
+             
+
+            <div className="bg-white/60 dark:bg-transparent backdrop-blur-sm dark:backdrop-blur-none border border-white/30 dark:border-transparent rounded-md p-2 flex flex-col gap-3 w-60 h-40 shadow-[0_8px_32px_rgba(31,38,135,0.03)] dark:shadow-none shrink-0 -mt-10 ml-15">
+              
+              
+              
               <div
   onClick={() => navigate('/app/rueda')}
   className="bg-white dark:bg-[linear-gradient(45deg,#143CCC_0%,#581c87_55%,#200013_100%)] rounded-md border border-black-200 dark:border-[#7c3aed]/60 shadow-sm dark:shadow-[0_0_24px_rgba(124,58,237,0.25)] overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
@@ -1894,17 +2020,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
   <div className="p-3 sm:p-4 flex items-center justify-between gap-4 flex-1 bg-white dark:bg-transparent">
     <div className="w-[100px] h-[100px] shrink-0 relative flex items-center justify-center">
       
-        <img src="/rueda.png" alt={i18n.t('rueda_de_la_vida_h3h3')} className="w-full h-full object-contain" />
+        <img src="/rueda.png" alt={i18n.t('rueda_de_la_vida_h3h3')} className="w-full h-full object-contain -ml-4 -mt-5" />
       </div>
 
-    <div className="flex flex-col gap-1 flex-1">
-      <p className="text-[8px] text-gray-400 uppercase tracking-widest font-bold mb-1 -ml-4"></p>
+    <div className="flex flex-col gap-2 flex-1 -mt-8">
+      <p className="text-[8px] text-gray-400 uppercase tracking-widest font-bold -mt-2-ml-6"></p>
       {resumenRueda && resumenRueda.tiene_diagnostico && resumenRueda.foco_1 ? (
         [resumenRueda.foco_1, resumenRueda.foco_2, resumenRueda.foco_3].filter(Boolean).map((foco, i) => (
           <button
             key={i}
             onClick={(e) => { e.stopPropagation(); setSelectedFocusArea(foco ?? null); }}
-            className="text-[9px] sm:text-[10px] py-1 px-3 rounded-md text-center font-bold tracking-widest uppercase shadow-sm transition-all hover:scale-[1.03] hover:shadow-md active:scale-[0.98] w-full cursor-pointer bg-gradient-to-r from-[#ff7c90] to-[#ffe1a4] text-black-800 border border-black/80 dark:bg-none dark:bg-[#070309] dark:text-white dark:border-white/15"
+            className="text-[9px] sm:text-[9px] py-1 px-1 rounded-md text-center font-bold tracking-widest uppercase shadow-sm transition-all hover:scale-[1.03] hover:shadow-md active:scale-[0.98] w-25 cursor-pointer bg-gradient-to-r from-[#ff7c90] to-[#ffe1a4] text-black-800 border border-black/80 dark:bg-none dark:bg-[#070309] dark:text-white dark:border-white/15 -ml-6"
           >
             {foco}
           </button>
@@ -1920,18 +2046,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
             </div>
 
   <div
-    className="backdrop-blur-sm dark:backdrop-blur-none rounded-md flex flex-col w-full shadow-[0_0_0px_rgb(255,255,255)] dark:shadow-none relative overflow-hidden shrink-0"
+    className="backdrop-blur-sm dark:backdrop-blur-none rounded-md flex flex-col w-50 shadow-[0_0_0px_rgb(255,255,255)] dark:shadow-none relative overflow-hidden shrink-0 ml-30 mt-8"
   >
-    <div className="bg-white dark:bg-transparent shadow-[0_2px_4px_rgb(247,243,243)] dark:shadow-none rounded-md overflow-hidden flex flex-col mt-2">
+    <div className="bg-white dark:bg-transparent shadow-[0_2px_4px_rgb(247,243,243)] dark:shadow-none rounded-md overflow-hidden flex flex-col mt-2 w-45 h-40">
       
-      <div className="bg-[linear-gradient(90deg,#000000,#3533cd)] dark:bg-none dark:bg-[#070309] dark:border dark:border-white/10 text-white dark:text-[#fdba74] text-center py-3 rounded-md text-[10px] sm:text-xs font-bold tracking-widest uppercase mx-2 mt-2 select-none shrink-0 h-[35px]">
+      <div className="bg-[linear-gradient(90deg,#000000,#3533cd)] dark:bg-none dark:bg-[#070309] dark:border dark:border-white/10 text-white dark:text-[#fdba74]  text-center px-1 py-1 rounded-md text-[10px] sm:text-[10px]  font-bold tracking-widest uppercase mx-2 mt-2 select-none shrink-0 h-[25px] w-40">
         OBJETIVO MENSUAL
       </div>
       
-      <div className="bg-[linear-gradient(135deg,#200013,#814B8D,#143CCC)] dark:bg-[linear-gradient(135deg,#1d4ed8_0%,#6d28d9_50%,#3b0724_100%)] dark:border dark:border-purple-400/40 text-white text-center p-3 text-[11px] font-medium italic rounded-md mx-2 mt-2 mb-2 flex-1 flex flex-col justify-center relative overflow-hidden min-h-0">
-        <div className="w-full relative z-10 rounded-md">
+      <div className="bg-[linear-gradient(135deg,#200013,#814B8D,#143CCC)] dark:bg-[linear-gradient(135deg,#1d4ed8_0%,#6d28d9_50%,#3b0724_100%)] dark:border dark:border-purple-400/40 text-white text-center p-3 text-[11px] font-medium italic rounded-md mx-2 mt-2 mb-2 flex-1 flex flex-col justify-center relative overflow-hidden w-40 h-35">
+        <div className="w-35 relative z-10 rounded-md">
           <textarea
-          className="w-full flex-1 bg-transparent text-[11px] font-medium text-white italic placeholder:text-slate-300/70 focus:outline-none resize-none leading-relaxed scrollbar-hide"
+          className="w-30 flex-1 bg-transparent text-[11px] font-medium text-white italic placeholder:text-slate-300/70 focus:outline-none resize-none leading-relaxed scrollbar-hide"
             placeholder={i18n.t('escriba_aqui_el_objetivo_primario')}
             rows={6}
             defaultValue={objetivo?.texto1 || ''} 
@@ -1943,7 +2069,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
     </div>
   </div>
 
-        <div id="tour-fechas" className="rounded-md w-full flex-1 min-h-0">
+        <div id="tour-fechas" className="rounded-md w-full shrink-0">
             <FechasImportantesCard
               dayActive={fechasDayActive}
               recordatorios={savedRecordatorios}
@@ -1971,7 +2097,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         </div>
 
         {/* CENTER COLUMN */}
-<div className="col-start-3 row-start-2 flex flex-col h-full min-h-0 gap-3 w-full relative">
+<div className="col-start-3 row-start-2 flex flex-col gap-3 w-full relative ml-9">
           <div className="bg-white/60 dark:bg-[#080206]/90 backdrop-blur-sm border border-white/30 dark:border-[#4c1127] rounded-md p-3 flex flex-col gap-3 w-full shadow-[0_8px_32px_rgba(31,38,135,0.03)] dark:shadow-[0_0_20px_rgba(122,8,38,0.2)]">
             <p className="text-[14px] font-semibold text-[#1e293b] dark:text-[#fce7f3] dark:italic text-center leading-tight">
               {dailyPhrase?.phrase || fraseRespaldo}
@@ -1983,7 +2109,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
             )}
           </div>
           {/* Tabs */}
-<div className="flex justify-between items-center gap-4 w-full mt-2 shrink-0">
+<div className="flex justify-between items-center gap-3 w-full mt-1 shrink-0">
   
   {/* BOTÓN ANUAL → Gran Meta Anual */}
   <button 
@@ -2056,7 +2182,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
 
         </div>
           {/* Time Blocking Table (digitalización fotos Time Blocking) */}
-        <div id="tour-timeblocking" className="p-3 flex flex-col w-full flex-1 min-h-0 shadow-[0_8px_32px_rgba(31,38,135,0.03)] dark:shadow-none overflow-hidden">
+        <div id="tour-timeblocking" className="p-3 flex flex-col w-full shrink-0 shadow-[0_8px_32px_rgba(31,38,135,0.03)] dark:shadow-none overflow-hidden">
           <TimeBlockingCard
             todayStr={todayStr}
             refreshTrigger={accionesClasificadas}
@@ -2072,14 +2198,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
           <div id="tour-humor" className="w-full shrink-0"><span id="tour-inspiracion" className="contents"><CategoriasMenu /></span></div>
         </div>
 
-        {/* COLUMNA 4 — BLOCK DE NOTAS + CALENDARIO + MISIÓN SEMANAL */}
-        <div className="col-start-4 row-start-2 flex flex-col h-full min-h-0 gap-2">
-              <div id="tour-notas" className="bg-white/60 dark:bg-transparent backdrop-blur-sm dark:backdrop-blur-none border border-white/30 dark:border-transparent rounded-md p-2 flex flex-col gap-3 w-full flex-1 min-h-0 shadow-[0_8px_32px_rgba(31,38,135,0.03)] dark:shadow-none">
+        {/* COLUMNA 4 — BLOCK DE NOTAS (borde izquierdo alineado con CURSOS/RRSS/CUENTAS de la franja superior) */}
+        <div className="col-start-4 row-start-2 flex flex-col gap-2">
+              <div id="tour-notas" className="bg-white/60 dark:bg-transparent backdrop-blur-sm dark:backdrop-blur-none border border-white/30 dark:border-transparent rounded-md p-2 flex flex-col gap-3 w-60 h-40 shadow-[0_8px_32px_rgba(31,38,135,0.03)] dark:shadow-none -mt-9 ml-19">
                 <BlockDeNotas />
               </div>
 
           {/* Bloque Calendario */}
-          <div className="shrink-0 flex flex-col items-center w-full">
+          <div className="shrink-0 flex flex-col items-center w-full mt-6">
             <CalendarWidget />
           </div>
 
@@ -2090,8 +2216,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         </div>
 
         {/* COLUMNA 5 — PROGRESO XP + SUPLEMENTOS/CUMPLEAÑOS/FOCUS + HORA DE ORO + CLIMA */}
-        <div className="col-start-5 row-start-2 flex flex-col h-full min-h-0 gap-2">
-          <div className="w-full shrink-0">
+        <div className="col-start-5 row-start-2 flex flex-col gap-2">
+          <div className="w-40 shrink-0 ml-35 -mt-8">
           <CyberProgressBar
             level={nivelXP.level}
             currentXP={nivelXP.currentXP}
@@ -2125,11 +2251,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
               icono={clima.icono}
               humedad={clima.humedad}
               sensacion={clima.sensacion}
+              onAbrir={() => setShowClimaDetalle(true)}
             />
           </div>
    </div>
       </div>
-      </FitStage>
 
       {/* Modal: Acciones por Delegar */}
       {showDelegarModal && (
@@ -3774,6 +3900,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         avatarIndex={userData.avatar_index}
       />
 
+      {/* Pronóstico completo del clima (clic en la tarjeta de Clima en mi comuna) */}
+      {showClimaDetalle && (
+        <ClimaDetalleModal
+          clima={clima}
+          onClose={() => setShowClimaDetalle(false)}
+        />
+      )}
+
       {/* Ayuda de IA global: se abre desde la cabecera de cualquier módulo */}
       <HelpChat
         open={showAyuda}
@@ -3900,16 +4034,21 @@ export const FechasImportantesCard: React.FC<FechasImportantesProps> = ({ dayAct
 
   const recordatoriosPorDia = useMemo(() => {
     const map: Record<number, RecordatorioData[]> = {};
-    if (recordatorios) {
-      recordatorios.forEach(r => {
-        const d = new Date(r.fecha_hora);
-        if (d.getMonth() === mesActual && d.getFullYear() === añoActual) {
-          const dia = d.getDate();
-          if (!map[dia]) map[dia] = [];
-          map[dia].push(r);
-        }
-      });
-    }
+    const list = Array.isArray(recordatorios)
+      ? recordatorios
+      : Array.isArray((recordatorios as any)?.results)
+        ? (recordatorios as any).results
+        : [];
+    list.forEach((r: any) => {
+      if (!r?.fecha_hora) return;
+      const d = new Date(r.fecha_hora);
+      if (Number.isNaN(d.getTime())) return;
+      if (d.getMonth() === mesActual && d.getFullYear() === añoActual) {
+        const dia = d.getDate();
+        if (!map[dia]) map[dia] = [];
+        map[dia].push(r);
+      }
+    });
     return map;
   }, [recordatorios, mesActual, añoActual]);
 
@@ -3921,14 +4060,14 @@ export const FechasImportantesCard: React.FC<FechasImportantesProps> = ({ dayAct
   const selectedRecordatorios = selectedDay ? recordatoriosPorDia[selectedDay] || [] : [];
 
   return (
-  <div className="flex flex-col h-full min-h-0 w-full rounded-md items-center overflow-hidden">
+  <div className="flex flex-col h-55 w-50 mt-2 ml-28 rounded-md items-center overflow-hidden">
       <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] dark:bg-none dark:bg-[#070309] dark:border dark:border-white/10 text-white dark:text-[#fdba74] text-center py-1 text-[11px] font-bold tracking-[0.2em] uppercase mt-1.5 mx-2 w-[186px] rounded-sm select-none shrink-0">
         FECHAS IMPORTANTES
       </div>
        <div className="bg-[#fff2ef] p-1 flex flex-col mt-1.5 mb-1.5 rounded-sm border border-[#b56fdc] dark:border-2 dark:border-[#8b5cf6] dark:shadow-[0_0_15px_rgba(139,92,246,0.25)] w-[186px] h-[200px] flex-1 min-h-0">
         
         <div className="flex items-center justify-between w-full mb-1 shrink-0">
-          <span className="bg-[#f7a5a5] text-[#1a2a4f] text-[10px] font-bold px-1.5 py-0.5 rounded-md  w-[45px] h-[20px]">{añoActual}</span>
+          <span className="bg-[#f7a5a5] text-[#1a2a4f] text-[10px] font-bold px-1.5 py-0.5 rounded-md  w-[35px] h-[20px]">{añoActual}</span>
           <span className="text-[#1a2a4f] text-[12px] font-bold tracking-wide uppercase">{nombreMeses[mesActual]}</span>
         </div>
 
@@ -4037,8 +4176,12 @@ const AccionesPorDelegarInline: React.FC<AccionesPorDelegarInlineProps> = ({ kan
   };
 
   return (
-    <div className="bg-white dark:bg-transparent rounded-md border border-gray-100 dark:border-transparent shadow-md dark:shadow-none overflow-hidden w-full flex flex-col">
-      <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] dark:bg-none dark:bg-transparent text-white dark:text-[#fda4af] text-center py-1.5 text-[10px] sm:text-xs font-bold tracking-widest uppercase rounded-lg mt-2 mx-2 select-none shrink-0">
+    <div
+      onClick={() => onOpenModule?.()}
+      className="bg-white dark:bg-transparent rounded-md border border-gray-100 dark:border-transparent shadow-md dark:shadow-none overflow-hidden w-70 h-35 mt-2 flex flex-col cursor-pointer hover:shadow-lg transition-shadow "
+      title={i18n.t('acciones_por_delegar')}
+    >
+      <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] dark:bg-none dark:bg-transparent text-white dark:text-[#fda4af] text-center py-1.5 text-[10px] sm:text-xs font-bold tracking-widest uppercase rounded-md mt-2 mx-2 select-none shrink-0">
         ACCIONES POR DELEGAR
       </div>
       <div className="mx-2 mt-2 mb-2 rounded-md flex-1 flex flex-col overflow-hidden">
@@ -4054,7 +4197,7 @@ const AccionesPorDelegarInline: React.FC<AccionesPorDelegarInlineProps> = ({ kan
             </tr>
           </thead>
         </table>
-        <div className="overflow-y-auto px-2 pb-2 pt-1 flex flex-col gap-1.5 flex-1 min-h-0 custom-scrollbar">
+        <div className="px-2 pb-2 pt-1 flex flex-col gap-1.5 custom-scrollbar">
           {delegarTasks.length === 0 && (
             <p className="text-[9px] text-gray-400 italic text-center py-2">Sin acciones por delegar</p>
           )}
@@ -4065,6 +4208,7 @@ const AccionesPorDelegarInline: React.FC<AccionesPorDelegarInlineProps> = ({ kan
                   <input
                     type="text"
                     value={editText}
+                    onClick={(e) => e.stopPropagation()}
                     onChange={(e) => setEditText(e.target.value)}
                     className="w-full bg-transparent border-none outline-none focus:ring-0 text-slate-700 dark:text-slate-800 text-[9px] px-1.5"
                     autoFocus
@@ -4077,25 +4221,27 @@ const AccionesPorDelegarInline: React.FC<AccionesPorDelegarInlineProps> = ({ kan
                 ) : (
                   <span
                     className="w-full text-slate-700 dark:text-slate-800 text-[9px] px-1.5 truncate cursor-pointer"
-                    onClick={() => handleEdit(task)}
+                    onClick={(e) => { e.stopPropagation(); handleEdit(task); }}
                     title={task.titulo}
                   >
                     {task.titulo}
                   </span>
                 )}
               </div>
-              <div className="w-[70px] bg-[#f4f5f8] dark:bg-white rounded-md h-5 flex items-center justify-between px-1.5">
-                <span className="text-[8px] text-slate-600 dark:text-slate-700 italic truncate flex-1">-</span>
+              <div className="w-[70px] bg-[#f4f5f8] dark:bg-white rounded-md h-5 flex items-center justify-between px-1.5" title={task.responsable || 'Sin responsable'}>
+                <span className={`text-[8px] truncate flex-1 ${task.responsable ? 'text-slate-700 dark:text-slate-800 not-italic font-medium' : 'text-slate-600 dark:text-slate-700 italic'}`}>
+                  {task.responsable || '-'}
+                </span>
                 <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100">
                   <button
-                    onClick={() => onOpenDelegation(task)}
+                    onClick={(e) => { e.stopPropagation(); onOpenDelegation(task); }}
                     className="text-blue-600 hover:text-blue-800"
                     title="Delegar"
                   >
                     <Send className="w-2.5 h-2.5" />
                   </button>
                   <button
-                    onClick={() => handleDelete(task)}
+                    onClick={(e) => { e.stopPropagation(); handleDelete(task); }}
                     className="text-red-500 hover:text-red-700"
                     title="Eliminar"
                   >
@@ -4106,37 +4252,32 @@ const AccionesPorDelegarInline: React.FC<AccionesPorDelegarInlineProps> = ({ kan
             </div>
           ))}
         </div>
-        {onOpenModule && (
-          <button
-            onClick={onOpenModule}
-            className="mx-2 mb-2 py-1.5 rounded-md bg-[#eef3ff] dark:bg-white/10 text-[#1d4ed8] dark:text-pink-200 text-[10px] font-bold tracking-widest uppercase hover:bg-[#e0ebff] dark:hover:bg-white/20 transition-colors"
-          >
-            Abrir módulo →
-          </button>
-        )}
       </div>
     </div>
   );
 };
 
 const CategoriasMenu: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('SALUD');
+  const navigate = useNavigate();
 
   const categorias = [
     { id: 'humor', label: 'HUMOR', esPrimario: false },
     { id: 'salud', label: 'SALUD', esPrimario: true },
-    { id: 'hobbyes', label: 'HOBBYES', esPrimario: false },
+    { id: 'hobbies', label: 'HOBBIES', esPrimario: false },
     { id: 'viajes', label: 'VIAJES', esPrimario: false },
     { id: 'diversion', label: 'DIVERSIÓN', esPrimario: true },
     { id: 'reflexion', label: 'REFLEXIÓN', esPrimario: false },
-  ];
+  ] as const;
+
+  const abrir = (id: string) => navigate(`/app/inspiracion?categoria=${id}`);
 
   return (
-    <div className="flex justify-between items-center gap-1.5 w-full">
+    <div className="flex justify-between items-center gap-1.5 w-150 -ml-19">
       {categorias.slice(0, 3).map((cat) => (
         <button
           key={cat.id}
-          onClick={() => setActiveTab(cat.label)}
+          type="button"
+          onClick={() => abrir(cat.id)}
           className={`text-[9px] px-1.5 py-2 rounded-md font-bold uppercase whitespace-nowrap transition-colors duration-200 dark:bg-[linear-gradient(90deg,#1d4ed8_0%,#17153b_55%,#060309_100%)] dark:border dark:border-blue-500/30 ${
             cat.esPrimario
               ? 'bg-[linear-gradient(90deg,#000000,#3533cd)] text-white'
@@ -4147,16 +4288,25 @@ const CategoriasMenu: React.FC = () => {
         </button>
       ))}
       <div className="flex-shrink-0 flex items-center justify-center">
-        <img
-          src='public/focusia-logo2.png'
-          alt={i18n.t('focus_jk9t')}
-          className="w-6 h-6"
-        />
+        <button
+          type="button"
+          onClick={() => navigate('/app/inspiracion')}
+          title="Centro de Inspiración"
+          className="px-1.5 py-2 rounded-full hover:scale-110 active:scale-95 transition-transform"
+        >
+          <img
+            src="/focussia.png"
+            alt={i18n.t('focus_jk9t')}
+            className="w-6 h-6"
+            onError={e => { (e.target as HTMLImageElement).style.opacity = '0.3'; }}
+          />
+        </button>
       </div>
       {categorias.slice(3).map((cat) => (
         <button
           key={cat.id}
-          onClick={() => setActiveTab(cat.label)}
+          type="button"
+          onClick={() => abrir(cat.id)}
           className={`text-[9px] px-1.5 py-2 rounded-md font-bold uppercase whitespace-nowrap transition-colors duration-200 dark:bg-[linear-gradient(90deg,#1d4ed8_0%,#17153b_55%,#060309_100%)] dark:border dark:border-blue-500/30 ${
             cat.esPrimario
               ? 'bg-[linear-gradient(90deg,#000000,#3533cd)] text-white'
@@ -4245,10 +4395,10 @@ const CardAyudaIA: React.FC<{ onOpenSettings?: () => void; open?: boolean; onClo
   };
 
   return (
-    <div className="p-2 rounded-md border border-purple-500/40 bg-white dark:bg-[linear-gradient(90deg,#f472b6_0%,#fb923c_50%,#fef08a_100%)] dark:border-pink-400/50 shadow-[0_18px_40px_rgba(27,20,64,0.18)] flex flex-col w-full">
+    <div className="p-2 rounded-md border border-purple-500/40 bg-white dark:bg-[linear-gradient(90deg,#f472b6_0%,#fb923c_50%,#fef08a_100%)] dark:border-pink-400/50 shadow-[0_18px_40px_rgba(27,20,64,0.18)] flex flex-col w-150 -ml-20">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-center gap-2 text-[11px] font-black uppercase text-gray-800 dark:text-[#14050c] select-none mb-2"
+        className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase text-gray-800 dark:text-[#14050c] select-none mb-2"
       >
         <Bot className="w-4 h-4 text-[#3533cd] dark:text-[#14050c]" />
         ¿Necesitas Ayuda?
@@ -4372,15 +4522,15 @@ const BlockDeNotas: React.FC = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-[linear-gradient(135deg,#2e1065_0%,#6b21a8_50%,#a855f7_100%)] rounded-md border border-black-200 dark:border-2 dark:border-[#c084fc]/80 shadow-sm dark:shadow-[0_0_20px_rgba(168,85,247,0.3)] overflow-hidden cursor-pointer hover:shadow-md transition-shadow w-full flex-1 min-h-0">
+    <div className="bg-white dark:bg-[linear-gradient(135deg,#2e1065_0%,#6b21a8_50%,#a855f7_100%)] rounded-md border border-black-200 dark:border-2 dark:border-[#c084fc]/80 shadow-sm dark:shadow-[0_0_20px_rgba(168,85,247,0.3)] overflow-hidden cursor-pointer hover:shadow-md transition-shadow w-56 flex-1 h-25 ">
       <div className="bg-gradient-to-r from-[#000000] to-[#3533cd] dark:bg-none dark:bg-[#070309] text-white dark:text-[#fde047] text-center py-1.5 rounded-lg text-[10px] sm:text-xs font-bold tracking-widest uppercase mt-2 mx-2 select-none shrink-0">
         BLOCK DE NOTAS
       </div>
-      <div className="px-2 pb-2 pt-1.5 space-y-1 relative">
-        {[0, 1, 2, 3, 4,5].map((index) => (
+      <div className="px-2 pb-1 pt-1.5 space-y-1.5 relative h-30">
+        {[0, 1, 2, 3, 4].map((index) => (
           <div
             key={index}
-            className="w-full bg-[#f4f5f8] dark:bg-white/95 rounded-md h-4 flex items-center border border-transparent focus-within:border-slate-200 transition-all shrink-0"
+            className="w-full bg-[#f4f5f8] dark:bg-white/95 rounded-md h-3 flex items-center border border-transparent focus-within:border-slate-200 transition-all shrink-0"
           >
             <input
               type="text"
@@ -4395,7 +4545,7 @@ const BlockDeNotas: React.FC = () => {
           <img
             alt={i18n.t('bulb')}
             src="public/foco.png"
-            className="w-[200px] h-[200px] object-contain select-none filter drop-shadow-sm"
+            className="w-[200px] h-[200px] object-contain select-none filter drop-shadow-sm -mt-18"
           />
         </div>
       </div>
@@ -4433,7 +4583,7 @@ function HoraDeOroFamiliar({ refreshKey, onOpenSlot, onOpenModule }: {
     dias.find(d => d.dia === dia)?.experiencias[posicion];
 
   return (
-    <div className="bg-white dark:bg-transparent border-2 border-gray-100 dark:border-transparent card-shadow dark:shadow-none overflow-hidden w-full h-full min-h-0 flex flex-col select-none rounded-md">
+    <div className="bg-white dark:bg-transparent border-2 border-gray-100 dark:border-transparent card-shadow dark:shadow-none overflow-hidden w-full flex flex-col select-none rounded-md mt-2">
       <button
         type="button"
         onClick={onOpenModule}
@@ -4453,7 +4603,7 @@ function HoraDeOroFamiliar({ refreshKey, onOpenSlot, onOpenModule }: {
   </div>
 
 </div>
-      <div className="px-2 pb-2 pt-1 space-y-2 flex-1 min-h-0 flex flex-col justify-between overflow-y-auto">
+      <div className="px-2 pb-2 pt-1 space-y-1 flex-1 flex flex-col justify-between">
         {goldHours.map((day, index) => {
           const posicion = index % 2;
           const experiencia = experienciaDe(day.dia, posicion);
@@ -4463,7 +4613,7 @@ function HoraDeOroFamiliar({ refreshKey, onOpenSlot, onOpenModule }: {
                 type="button"
                 onClick={() => onOpenSlot(day.dia, posicion)}
                 title={experiencia ? `Cambiar «${experiencia.actividad}»` : 'Elegir una experiencia'}
-                className={`flex-1 min-w-0 border rounded-md text-[9px] px-2 h-6 text-left truncate focus:ring-0 outline-none font-medium transition-colors ${
+                className={`flex-1 min-w-0 border rounded-md text-[9px] px-2 h-5 text-left truncate focus:ring-0 outline-none font-medium transition-colors ${
                   experiencia
                     ? 'border-[#c7bcff] bg-[#f4f1ff] text-slate-700 hover:border-[#8b7bff] dark:bg-white dark:text-slate-800 dark:border-white/80'
                     : 'border-gray-200 text-gray-400 hover:border-indigo-300 dark:bg-white dark:text-slate-600 dark:border-white/80 dark:italic'
@@ -4471,7 +4621,7 @@ function HoraDeOroFamiliar({ refreshKey, onOpenSlot, onOpenModule }: {
               >
                 {experiencia ? experiencia.actividad : 'Elegir experiencia'}
               </button>
-              <span className="text-[7px] font-bold border border-gray-300 dark:border-white/80 bg-slate-50 dark:bg-white text-slate-600 dark:text-slate-900 rounded-md h-6 px-1 w-[60px] flex items-center justify-center uppercase shrink-0 tracking-tighter leading-none">
+              <span className="text-[7px] font-bold border border-gray-300 dark:border-white/80 bg-slate-50 dark:bg-white text-slate-600 dark:text-slate-900 rounded-md h-5 px-1 w-[60px] flex items-center justify-center uppercase shrink-0 tracking-tighter leading-none">
                 {day.label}
               </span>
             </div>
@@ -4482,14 +4632,19 @@ function HoraDeOroFamiliar({ refreshKey, onOpenSlot, onOpenModule }: {
   );
 }
 
-function ClimaComuna({ temp, descripcion, lugar, loading, error, icono, humedad, sensacion }: {
+function ClimaComuna({ temp, descripcion, lugar, loading, error, icono, humedad, sensacion, onAbrir }: {
   temp: number; descripcion: string; lugar: string;
   loading: boolean; error: string; icono: string;
   humedad: number; sensacion: number;
+  onAbrir: () => void;
 }): React.ReactElement {
   return (
-  <div className="bg-white dark:bg-transparent rounded-md border-2 border-gray-100 dark:border-transparent shadow-md dark:shadow-none overflow-hidden w-full h-auto mx-0">
-    <div className="bg-white dark:bg-transparent rounded-md border-2 border-gray-100 dark:border-transparent card-shadow dark:shadow-none overflow-hidden w-full max-w-sm select-none gap-2 flex flex-col"> 
+  <div
+    className="bg-white dark:bg-transparent rounded-md border-2 border-gray-100 dark:border-transparent shadow-md dark:shadow-none overflow-hidden w-full h-auto mx-0 cursor-pointer hover:shadow-lg transition-shadow"
+    onClick={onAbrir}
+    title="Ver pronóstico completo"
+  >
+    <div className="bg-white dark:bg-transparent rounded-md border-2 border-gray-100 dark:border-transparent card-shadow dark:shadow-none overflow-hidden w-full max-w-sm select-none gap-2 flex flex-col mt-2">
       <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] dark:bg-none dark:bg-transparent text-white dark:text-[#fda4af] text-center py-1.5 text-[10px] sm:text-xs font-bold tracking-widest uppercase rounded-md select-none w-full">
         CLIMA EN MI COMUNA
       </div>
@@ -4544,6 +4699,227 @@ function ClimaComuna({ temp, descripcion, lugar, loading, error, icono, humedad,
   );
 }
 
+/** Mapa compacto weather_code de Open-Meteo → emoji + descripción. */
+function infoDeCode(code: number): { icono: string; descripcion: string } {
+  if (code === 0) return { icono: '☀️', descripcion: 'Soleado' };
+  if (code <= 2) return { icono: '🌤️', descripcion: 'Parcialmente nublado' };
+  if (code === 3) return { icono: '☁️', descripcion: 'Nublado' };
+  if (code <= 49) return { icono: '🌫️', descripcion: 'Niebla' };
+  if (code <= 57) return { icono: '🌦️', descripcion: 'Llovizna' };
+  if (code <= 67) return { icono: '🌧️', descripcion: 'Lluvia' };
+  if (code <= 77) return { icono: '🌨️', descripcion: 'Nieve' };
+  if (code <= 82) return { icono: '🌧️', descripcion: 'Chubascos' };
+  if (code <= 86) return { icono: '🌨️', descripcion: 'Nieve intensa' };
+  return { icono: '⛈️', descripcion: 'Tormenta' };
+}
+
+/** Modal del pronóstico completo (mockup): actual, próximas horas, semana y sugerencia. */
+function ClimaDetalleModal({ clima, onClose }: {
+  clima: { temp: number; descripcion: string; lugar: string; icono: string;
+           humedad: number; sensacion: number; loading: boolean; error: string;
+           actualizado: number; lat: number | null; lon: number | null };
+  onClose: () => void;
+}): React.ReactElement {
+  type HoraPrev = { hora: string; icono: string; temp: number; descripcion: string };
+  type DiaPrev = { etiqueta: string; icono: string; max: number; min: number; descripcion: string };
+  const [tab, setTab] = useState<'hoy' | 'semana'>('hoy');
+  const [horas, setHoras] = useState<HoraPrev[] | null>(null);
+  const [dias, setDias] = useState<DiaPrev[] | null>(null);
+  const [cargando, setCargando] = useState(true);
+  const [fallo, setFallo] = useState(false);
+  const [recargado, setRecargado] = useState<number>(clima.actualizado);
+
+  const haceMin = (ms: number) => {
+    const min = Math.floor((Date.now() - ms) / 60000);
+    if (min <= 0) return 'hace un momento';
+    if (min < 60) return `hace ${min} min`;
+    return `hace ${Math.floor(min / 60)} h`;
+  };
+
+  const cargar = useCallback(async (pLat: number, pLon: number) => {
+    setCargando(true);
+    setFallo(false);
+    try {
+      const res = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${pLat}&longitude=${pLon}` +
+        `&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min` +
+        `&timezone=auto&forecast_hours=12&forecast_days=7`
+      );
+      const data = await res.json();
+      const tiempos: string[] = data.hourly?.time || [];
+      // Primera franja horaria a futuro (timezone=auto devuelve horas locales).
+      const ahoraHH = new Date().getHours();
+      let base = 0;
+      for (let i = 0; i < tiempos.length; i++) {
+        const hh = Number(tiempos[i].slice(11, 13));
+        if (hh >= ahoraHH) { base = i; break; }
+      }
+      const proximas: HoraPrev[] = tiempos.slice(base, base + 3).map((t: string, i: number) => {
+        const code: number = data.hourly.weather_code[base + i] ?? 0;
+        const info = infoDeCode(code);
+        return {
+          hora: t.slice(11, 16),
+          icono: info.icono,
+          temp: Math.round(data.hourly.temperature_2m[base + i]),
+          descripcion: info.descripcion,
+        };
+      });
+      setHoras(proximas);
+      const diasData: DiaPrev[] = (data.daily?.time as string[] || []).slice(0, 7).map((t: string, i: number) => {
+        const code: number = data.daily.weather_code[i] ?? 0;
+        const info = infoDeCode(code);
+        return {
+          etiqueta: new Date(t + 'T12:00:00').toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric' }),
+          icono: info.icono,
+          max: Math.round(data.daily.temperature_2m_max[i]),
+          min: Math.round(data.daily.temperature_2m_min[i]),
+          descripcion: info.descripcion,
+        };
+      });
+      setDias(diasData);
+      setRecargado(Date.now());
+    } catch {
+      setFallo(true);
+    } finally {
+      setCargando(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (clima.lat !== null && clima.lon !== null) cargar(clima.lat, clima.lon);
+    else setCargando(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const refrescar = () => {
+    if (clima.lat !== null && clima.lon !== null) cargar(clima.lat, clima.lon);
+  };
+
+  // Sugerencia de FocusIA según lo que viene: lluvia hoy/mañana o tiempo bueno.
+  const sugerencia = useMemo(() => {
+    const textoHoy = clima.descripcion.toLowerCase();
+    const llueveHoy = /lluv|chubas|tormenta|llovizn/.test(textoHoy);
+    const manana = (dias || [])[1];
+    const llueveManana = !!manana && /nublado|lluvia|chubas|tormenta|llovizn/i.test(manana.descripcion);
+    if (llueveHoy) {
+      return 'Está lloviendo en tu zona: si tenías actividades al aire libre, considera alternativas en casa o bajo techo.';
+    }
+    if (llueveManana && manana) {
+      return `Mañana se espera ${manana.descripcion.toLowerCase()}: considera adelantar hoy tus actividades al aire libre.`;
+    }
+    return 'El clima acompaña: hoy es un buen momento para una actividad al aire libre con tu familia.';
+  }, [clima.descripcion, dias]);
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Clima en mi comuna">
+      <button type="button" className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} tabIndex={-1} aria-label="Cerrar" />
+      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+        {/* Cabecera (mockup) */}
+        <div className="bg-[#3533cd] text-white px-5 py-3 flex items-center justify-between">
+          <span className="flex items-center gap-2 text-sm font-black tracking-widest uppercase">
+            ☁️ Clima en mi comuna
+          </span>
+          <button type="button" onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/10 text-white/80 hover:text-white" aria-label="Cerrar">×</button>
+        </div>
+
+        {clima.loading ? (
+          <div className="py-14 flex items-center justify-center text-slate-400">
+            <div className="w-6 h-6 border-2 border-[#3533cd] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : clima.error ? (
+          <div className="p-8 text-center">
+            <p className="text-sm text-red-500 font-semibold">{clima.error}</p>
+            <p className="text-xs text-slate-400 mt-2">No hay ubicación disponible para calcular el pronóstico.</p>
+          </div>
+        ) : (
+          <>
+            {/* Ubicación + actualización */}
+            <div className="px-5 pt-3.5 pb-2 flex items-center justify-between gap-3">
+              <p className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                <span>📍</span> {clima.lugar}
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-slate-400">Actualizado {haceMin(recargado || clima.actualizado)}</span>
+                <button
+                  type="button"
+                  onClick={refrescar}
+                  disabled={cargando}
+                  title="Actualizar"
+                  className="w-7 h-7 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 disabled:opacity-40"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${cargando ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+            </div>
+
+            {/* Contenido: próximas horas / semana */}
+            {cargando || !horas ? (
+              fallo ? (
+                <p className="px-5 py-6 text-center text-xs text-slate-400">No se pudo cargar el pronóstico. Intenta actualizar.</p>
+              ) : (
+                <div className="py-8 flex items-center justify-center text-slate-400">
+                  <div className="w-5 h-5 border-2 border-[#3533cd] border-t-transparent rounded-full animate-spin" />
+                </div>
+              )
+            ) : tab === 'hoy' ? (
+              <div className="px-4 pb-1 grid grid-cols-3 gap-2">
+                {horas.map((h, i) => (
+                  <div
+                    key={h.hora}
+                    className={`rounded-2xl flex flex-col items-center gap-1 py-3 ${i === 0 ? 'bg-[#FFF8E1] shadow-sm' : 'bg-slate-50'}`}
+                  >
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">{h.hora}</span>
+                    <span className="text-2xl leading-none">{h.icono}</span>
+                    <span className="text-lg font-black text-slate-800 leading-none">{h.temp}°</span>
+                    <span className="text-[9px] text-slate-500 text-center px-1 leading-tight">{h.descripcion}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="px-4 pb-1 flex flex-col gap-1.5">
+                {(dias || []).map(d => (
+                  <div key={d.etiqueta} className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2">
+                    <span className="w-16 text-xs font-bold text-slate-600 capitalize">{d.etiqueta}</span>
+                    <span className="text-xl leading-none">{d.icono}</span>
+                    <span className="text-xs text-slate-500 flex-1 min-w-0 truncate">{d.descripcion}</span>
+                    <span className="text-xs font-black text-slate-700">{d.max}°</span>
+                    <span className="text-xs text-slate-400">{d.min}°</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Botón alternador de vista */}
+            <div className="px-4 py-3">
+              <button
+                type="button"
+                onClick={() => setTab(tab === 'hoy' ? 'semana' : 'hoy')}
+                disabled={fallo || !dias}
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#F3F0FF] text-[#3533cd] text-sm font-bold py-2.5 hover:bg-[#E8E1FF] disabled:opacity-40 transition"
+              >
+                📅 {tab === 'hoy' ? 'Ver pronóstico semanal' : 'Volver al pronóstico de hoy'}
+              </button>
+            </div>
+
+            {/* Sugerencia de FocusIA */}
+            <div className="mx-4 mb-2 rounded-xl bg-[#F3F0FF] border border-[#DDD6FE] p-3">
+              <p className="flex items-center gap-1.5 text-[11px] font-extrabold text-[#6236FF] uppercase tracking-wide">
+                <Sparkles className="w-3.5 h-3.5" /> Sugerencia FocusIA
+              </p>
+              <p className="text-xs text-slate-600 mt-1 leading-relaxed">{sugerencia}</p>
+            </div>
+
+            {/* Pie */}
+            <p className="px-5 pb-3 pt-1 text-[9px] text-slate-400 flex items-center gap-1.5">
+              <Info className="w-3 h-3 shrink-0" /> La información se actualiza al abrir la app y puedes refrescarla con el botón.
+            </p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function CalendarWidget(): React.ReactElement {
   const ahora = new Date();
   const [hora, setHora] = useState(ahora.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }));
@@ -4560,18 +4936,18 @@ function CalendarWidget(): React.ReactElement {
   }, []); 
 
   return (
-  <div className="bg-white dark:bg-transparent rounded-md border-2 border-gray-100 dark:border-transparent shadow-md dark:shadow-none overflow-hidden w-[175px] h-[180px]">
-    <div className="bg-white dark:bg-transparent rounded-md border border-slate-200 dark:border-transparent shadow-[0_4px_20px_rgba(0,0,0,0.05)] dark:shadow-none overflow-hidden w-[170px] h-[170px] select-none flex flex-col">
-      <div className="bg-gradient-to-r from-[#000000] to-[#3533cd] dark:bg-none dark:bg-[#070309] dark:border dark:border-white/10 px-3 py-2 flex items-center justify-center gap-6 border-b border-white/5 shrink-0 rounded-md">
+  <div className="bg-white dark:bg-transparent rounded-md border-2 border-gray-100 dark:border-transparent shadow-md dark:shadow-none overflow-hidden w-40 h-45 ml-15 mt-2">
+    <div className="bg-white dark:bg-transparent rounded-md  dark:border-transparent shadow-[0_4px_20px_rgba(0,0,0,0.05)] dark:shadow-none overflow-hidden w-[170px] h-[170px] select-none flex flex-col">
+      <div className="bg-gradient-to-r from-[#000000] to-[#3533cd] dark:bg-none dark:bg-[#070309] dark:border dark:border-white/10 px-2 py-2 flex items-center justify-center gap-6 border-b border-white/5 shrink-0 rounded-md ml-2 mt-1 w-35">
                  <img
             alt={i18n.t('calendar2')}
             src="public/calendar2.png"
             className="w-[20px] h-full object-contain select-none filter drop-shadow-sm"
-          /><span className="text-white dark:text-[#fde047] font-bold text-[15px] tracking-wide">{hora}</span>
+          /><span className="text-white dark:text-[#fde047] font-bold text-[13px] tracking-wide">{hora}</span>
                
       </div>
       
-      <div className="bg-[linear-gradient(135deg,#200013,#814B8D,#143CCC)] dark:border dark:border-purple-500/40 p-3 flex flex-col items-center justify-center flex-1 h-[175px] mt-2 rounded-md">
+      <div className="bg-[linear-gradient(135deg,#200013,#814B8D,#143CCC)] dark:border dark:border-purple-500/40 p-3 flex flex-col items-center justify-center flex-1 w-35 h-30 mt-2 ml-2 rounded-md">
         <div className="relative flex flex-col items-center justify-center -mt-3">
           <svg viewBox="0 0 90 100" className="w-[80px] h-[90px]" xmlns="http://www.w3.org/2000/svg">
             {/* Hooks */}

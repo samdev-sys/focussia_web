@@ -68,7 +68,7 @@ export function GranMetaAnualModal({
   const [error, setError] = useState('');
   const chatRef = useRef<HTMLDivElement>(null);
 
-  const avatarSrc = avatarUrl || '/avatars/Sophya.jpeg';
+  const avatarSrc = avatarUrl || '/avartars/Sophya.jpeg';
 
   // Tres focos = áreas con puntaje más bajo (foto 4: chips con icono)
   const focosTop = useMemo(() => {
@@ -245,7 +245,7 @@ export function GranMetaAnualModal({
         src={avatarSrc}
         alt={i18n.t('avatar_hbx8')}
         className="absolute inset-0 w-full h-full object-cover object-top"
-        onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('Sophya.jpeg')) t.src = '/avatars/Sophya.jpeg'; }}
+        onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('Sophya.jpeg')) t.src = '/avartars/Sophya.jpeg'; }}
       />
     </div>
   );
@@ -435,7 +435,7 @@ export function GranMetaAnualModal({
                 src={avatarSrc}
                 alt={i18n.t('avatar_hbx8')}
                 className="absolute inset-0 w-full h-full object-cover object-top"
-                onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('Sophya.jpeg')) t.src = '/avatars/Sophya.jpeg'; }}
+                onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('Sophya.jpeg')) t.src = '/avartars/Sophya.jpeg'; }}
               />
             </div>
             <div>

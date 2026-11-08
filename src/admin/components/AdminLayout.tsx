@@ -2,7 +2,7 @@ import i18n from '../../i18n';
 import { useState } from 'react';
 import {
   LayoutDashboard, GraduationCap, Users2, BookOpen, Sparkles,
-  Gamepad2, LogOut, Menu, X, ChevronDown,
+  Gamepad2, LogOut, Menu, X, ChevronDown, Lightbulb,
 } from 'lucide-react';
 import type { AdminUser } from '../lib/adminApi';
 
@@ -12,13 +12,15 @@ export type Seccion =
   | 'tribu'
   | 'aprendizaje'
   | 'avatares'
-  | 'juegos';
+  | 'juegos'
+  | 'inspiracion';
 
 const NAV: { id: Seccion; label: string; icon: typeof LayoutDashboard; grupo: string }[] = [
   { id: 'resumen', label: 'Resumen', icon: LayoutDashboard, grupo: 'General' },
   { id: 'programa', label: 'Tabla maestra', icon: GraduationCap, grupo: 'Contenido' },
   { id: 'tribu', label: 'Tribu', icon: Users2, grupo: 'Contenido' },
   { id: 'aprendizaje', label: 'Aprendizaje', icon: BookOpen, grupo: 'Contenido' },
+  { id: 'inspiracion', label: 'Centro de Inspiración', icon: Lightbulb, grupo: 'Contenido' },
   { id: 'avatares', label: 'Avatares', icon: Sparkles, grupo: 'Contenido' },
   { id: 'juegos', label: 'Juegos y retos', icon: Gamepad2, grupo: 'Contenido' },
 ];

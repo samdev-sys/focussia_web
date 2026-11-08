@@ -424,7 +424,7 @@ export default function HoraDeOroScreen({ onBack, userName, onNavigate, slotInic
   return (
     <ModuleShell activeNav="hora-oro" userName={userName} onBack={onBack} onNavigate={onNavigate}>
       <div className="p-5 lg:p-8">
-        <div className="max-w-[1650px] mx-auto">
+        <div className="w-full">
 
           {/* Encabezado (§II.1, §II.2) */}
           <header className="flex items-start gap-4 mb-6">

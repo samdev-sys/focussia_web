@@ -1,11 +1,13 @@
 import i18n from '../i18n';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Play, SkipForward, Check, ArrowRight, RotateCcw, Smartphone, Monitor, ShieldCheck } from 'lucide-react';
 import { onboardingV2Service, configService } from '../services/api';
 import type { AvatarDataV2, OnboardingProfileData } from '../services/api';
 import { useDeviceType } from '../hooks/useDeviceType';
 import { AVATARS } from '../constants/avatars';
 import HelpChat from './HelpChat';
+import { requestTourAutostart } from './FocusiaTour';
 
 interface Props {
   onComplete: () => void;
@@ -90,6 +92,9 @@ export default function OnboardingWizardV2({ onComplete, isAuthenticated, userNa
   const [audioDuration, setAudioDuration] = useState(0);
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
   const [helpChatKey, setHelpChatKey] = useState<string | null>(null);
+  // Salida del wizard: sin navigate (estado + URL juntos), tras completar el
+  // onboarding la pantalla 11 se quedaba pegada (el <Navigate> vive en "/").
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -130,9 +135,21 @@ const AVATAR_SCREENS = [3, 4, 5, 6, 7, 8, 9, 10];
   useEffect(() => {
     if (!isAuthenticated) return;
     onboardingV2Service.getSummary()
-      .then(p => setProfile(p))
+      .then(p => {
+        setProfile(p);
+        setUserName(p.user_first_name || p.user_full_name || propUserName || '');
+        setConfigIntensity(p.intensity || 'equilibrada');
+        setConfigApp(p.activations_app ?? true);
+        setConfigPush(p.activations_push ?? true);
+        setConfigWhatsapp(p.activations_whatsapp ?? true);
+        setConfigCalls(p.activations_calls ?? false);
+        setConfigSchedule(p.schedule_type || 'manana_tarde');
+        setConfigScheduleStart(p.custom_schedule_start || '07:00');
+        setConfigScheduleEnd(p.custom_schedule_end || '15:00');
+        setConfigTone(p.tone || 'adaptativo');
+      })
       .catch(() => {});
-  }, [isAuthenticated]);
+  }, [isAuthenticated, propUserName]);
 
   useEffect(() => {
     if (!AVATAR_SCREENS.includes(screen) || avatars.length > 0) return;
@@ -406,20 +423,27 @@ const AVATAR_SCREENS = [3, 4, 5, 6, 7, 8, 9, 10];
     try {
       await onboardingV2Service.deferGuidedTour();
       onComplete();
+      // "Más tarde" no abre el tour: va al Hub, donde el usuario puede
+      // lanzarlo cuando quiera desde el tutorial.
+      navigate('/hub');
     } catch (e: any) {
-      setError(e.response?.data?.error || 'Error');
+      setError(e.response?.data?.error || e?.message || 'Error');
     } finally { setSaving(false); }
-  }, [onComplete]);
+  }, [onComplete, navigate]);
 
   const handleStartTour = useCallback(async () => {
     setSaving(true);
     try {
       await onboardingV2Service.startGuidedTour();
       onComplete();
+      // El tour corre sobre el dashboard real: marca el arranque automático y
+      // navega a /app, donde FocusiaTourLauncher (autoStart) lo inicia.
+      requestTourAutostart();
+      navigate('/app');
     } catch (e: any) {
-      setError(e.response?.data?.error || 'Error');
+      setError(e.response?.data?.error || e?.message || 'Error');
     } finally { setSaving(false); }
-  }, [onComplete]);
+  }, [onComplete, navigate]);
 
   if (loading) {
     return (
@@ -464,7 +488,7 @@ const AVATAR_SCREENS = [3, 4, 5, 6, 7, 8, 9, 10];
                 <div className="absolute -left-16 bottom-0 w-[60%] h-[90%] rounded-[50%] border border-[#7c3aed]/20" style={{ transform: 'rotate(12deg)' }} />
                 <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 70% 40%, rgba(124,58,237,0.22) 0%, transparent 60%), radial-gradient(ellipse at 20% 80%, rgba(37,99,235,0.15) 0%, transparent 55%)' }} />
               </div>
-              <video ref={videoRef} src="/flow_focussia.mp4" className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${isPlaying ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} playsInline preload="none" onClick={(e) => { const v = e.currentTarget; if (v.paused) v.play().catch(()=>{}); else v.pause(); }} onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} onError={(e) => { (e.target as HTMLVideoElement).style.display = 'none'; }} />
+              <video ref={videoRef} src="/focusia_intro.mp4" className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${isPlaying ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} playsInline preload="metadata" onClick={(e) => { const v = e.currentTarget; if (v.paused) v.play().catch(()=>{}); else v.pause(); }} onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} onError={(e) => { (e.target as HTMLVideoElement).style.display = 'none'; }} />
               <div className={`absolute inset-0 flex flex-col items-center justify-center ${isPlaying ? 'pointer-events-none opacity-0' : 'opacity-100'} transition-opacity duration-300`}>
                 <div className="flex items-center gap-3">
                   <img src="/focussia.png" alt="" className="w-11 h-11 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
@@ -548,20 +572,20 @@ const AVATAR_SCREENS = [3, 4, 5, 6, 7, 8, 9, 10];
   // Screen 3: Avatar Selection
   if (screen === 3) {
     const avatarImages: Record<string, string> = {
-      Ashley: '/avatars/Ashley.jpeg',
-      Conrad: '/avatars/conrad.jpeg',
-      John: '/avatars/John.jpeg',
-      Lia: '/avatars/Lia.jpeg',
-      Monroe: '/avatars/Monroe.jpeg',
-      Sophya: '/avatars/Sophya.jpeg',
+      Ashley: '/avartars/Ashley.jpeg',
+      Conrad: '/avartars/conrad.jpeg',
+      John: '/avartars/John.jpeg',
+      Lia: '/avartars/Lia.jpeg',
+      Monroe: '/avartars/Monroe.jpeg',
+      Sophya: '/avartars/Sophya.jpeg',
     };
     const otherAvatarImages: Record<string, string> = {
-      Ashley: '/avatars/Ashley.jpeg',
-      Conrad: '/avatars/conrad.jpeg',
-      John: '/avatars/John.jpeg',
-      Lia: '/avatars/Lia.jpeg',
-      Monroe: '/avatars/Monroe.jpeg',
-      Sophya: '/avatars/Sophya.jpeg',
+      Ashley: '/avartars/Ashley.jpeg',
+      Conrad: '/avartars/conrad.jpeg',
+      John: '/avartars/John.jpeg',
+      Lia: '/avartars/Lia.jpeg',
+      Monroe: '/avartars/Monroe.jpeg',
+      Sophya: '/avartars/Sophya.jpeg',
     };
     const getAvatarImage = (name: string) => avatarImages[name] || '/avatar_lavanda/lia (2).jpeg';
     const getOtherAvatarImage = (name: string) => otherAvatarImages[name] || '/avatar_lavanda/lia (2).jpeg';
@@ -831,11 +855,8 @@ const AVATAR_SCREENS = [3, 4, 5, 6, 7, 8, 9, 10];
       monroe: '/avatar_lavanda/Monroe.jpeg',
       sophya: '/avatar_lavanda/sophya.jpeg',
     };
-    const avatarName = avatar?.name || profile?.avatar_name || '';
-    const avatarImage = avatarName
-      ? (avatarImageMap[avatarName.toLowerCase()] || AVATARS.find(a => a.name.toLowerCase() === avatarName.toLowerCase())?.file || '/avatar_lavanda/lia (2).jpeg')
-      : '/avatar_lavanda/lia (2).jpeg';
-
+    const avatarName = avatar?.name || profile?.avatar_name || 'Lía';
+    const avatarImage = avatarImageMap[avatarName.toLowerCase()] || AVATARS.find(a => a.name.toLowerCase() === avatarName.toLowerCase())?.file || '/avatar_lavanda/lia (2).jpeg';
     const configItems = [
       {
         id: 'intensidad',
@@ -1226,15 +1247,15 @@ const AVATAR_SCREENS = [3, 4, 5, 6, 7, 8, 9, 10];
 
     // Sub-screen: Intensity Selection — pixel-faithful to mockup (dark navy, 3-column layout)
     const avatarImages: Record<string, string> = {
-      ashley: '/avatars/Ashley.jpeg',
-      conrad: '/avatars/conrad.jpeg',
-      john: '/avatars/John.jpeg',
-      lia: '/avatars/Lia.jpeg',
-      monroe: '/avatars/Monroe.jpeg',
-      sophya: '/avatars/Sophya.jpeg',
+      ashley: '/avartars/Ashley.jpeg',
+      conrad: '/avartars/conrad.jpeg',
+      john: '/avartars/John.jpeg',
+      lia: '/avartars/Lia.jpeg',
+      monroe: '/avartars/Monroe.jpeg',
+      sophya: '/avartars/Sophya.jpeg',
     };
-    const avatarName = avatar?.name || profile?.avatar_name || '';
-    const avatarImage = avatarImages[avatarName.toLowerCase()] || AVATARS.find(a => a.name.toLowerCase() === avatarName.toLowerCase())?.file || '/avatar_lavanda/lia (2).jpeg';
+    const avatarName = avatar?.name || profile?.avatar_name || 'Lía';
+    const avatarImage = avatarImages[avatarName.toLowerCase()] || AVATARS.find(a => a.name.toLowerCase() === avatarName.toLowerCase())?.file || '/avartars/Lia.jpeg';
     const liaLabel = (avatarName || profile?.avatar_name || 'Lía').toLowerCase() === 'lia' ? 'LÍA' : (avatarName || profile?.avatar_name || 'Lía').toUpperCase();
 
     const customizationSteps = [
@@ -1557,13 +1578,13 @@ const AVATAR_SCREENS = [3, 4, 5, 6, 7, 8, 9, 10];
     const avatarImageMap6: Record<string, string> = {
       ashley: '/Avatars_ciber/Ashley.jpeg',
       conrad: '/Avatars_ciber/Conrad.jpeg',
-      john: '/Avatars_ciber/John.jpeg',
+      john: '/Avatars_ciber/John (2).jpeg',
       lia: '/Avatars_ciber/Lia (3).jpeg',
       monroe: '/Avatars_ciber/Monroe (2).jpeg',
       sophya: '/Avatars_ciber/Sophya (2).jpeg',
     };
     const avatarImg6 = avatarName6
-      ? (avatarImageMap6[avatarName6.toLowerCase()] || AVATARS.find(a => a.name.toLowerCase() === avatarName6.toLowerCase())?.file || '/avatars_ciber/lia (2).jpeg')
+      ? (avatarImageMap6[avatarName6.toLowerCase()] || AVATARS.find(a => a.name.toLowerCase() === avatarName6.toLowerCase())?.file || '/Avatars_ciber/Lia (3).jpeg')
       : '/Avatars_ciber/Lia (3).jpeg';
 
     const customizationSteps = [
@@ -1635,11 +1656,11 @@ const AVATAR_SCREENS = [3, 4, 5, 6, 7, 8, 9, 10];
         {/* CENTRAL PHOTO PANEL 360px */}
         <div className="hidden lg:flex w-[230px] h-[700px] shrink-0  relative overflow-hidden flex-col">
           <img
-            src={avatarImg6 || '/avatars_ciber/lia (2).jpeg'}
+            src={avatarImg6 || '/Avatars_ciber/Lia (3).jpeg'}
             alt={avatarDisplayName6}
             className="absolute inset-0 w-full h-full object-cover"
             style={{ objectPosition: 'center top' }}
-            onError={(e) => { (e.target as HTMLImageElement).src = '/avatars/lia (2).jpeg'; }}
+            onError={(e) => { (e.target as HTMLImageElement).src = '/avartars/Lia.jpeg'; }}
           />
           <div className="absolute inset-0 pointer-events-none"  />
           <div className="absolute top-[12%] right-[14%] w-[2px] h-[2px] bg-white rounded-full shadow-[0_0_8px_1px_rgba(255,255,255,0.9)] opacity-80" />
@@ -1663,7 +1684,7 @@ const AVATAR_SCREENS = [3, 4, 5, 6, 7, 8, 9, 10];
           {/* Mobile photo - visible only on mobile, hidden on desktop where central 360px panel is shown */}
          <div className="lg:hidden bg-[#020216] relative overflow-visible h-[360px] shrink-0">
   <img 
-    src={avatarImg6 || '/avatar_lavanda/lia (2).jpeg'} 
+    src={avatarImg6 || '/Avatars_ciber/Lia (3).jpeg'}
     alt={avatarDisplayName6} 
     className="absolute inset-0 w-full h-full object-cover object-top" 
     onError={(e) => { (e.target as HTMLVideoElement).style.display = 'none'; }} 
@@ -1730,7 +1751,7 @@ const AVATAR_SCREENS = [3, 4, 5, 6, 7, 8, 9, 10];
                     </div>
                   </div>
 
-                  <div className={`flex items-center gap-4 px-5 py-4 rounded-2xl border transition-all ${configPush ? 'bg-white/[0.06] border-[#3b82f6]/20' : 'bg-white/[0.03] border-white/[0.06]'}`}>
+                  <div onClick={() => setConfigPush(!configPush)} className={`group flex items-center gap-4 px-5 py-4 rounded-2xl border cursor-pointer transition-all ${configPush ? 'bg-white/[0.06] border-[#3b82f6]/20' : 'bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.05] hover:border-white/10'}`}>
                     <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#3b82f6]/20 to-[#06b6d4]/20 border border-[#3b82f6]/15 flex items-center justify-center shrink-0">
                       <img src="/ring-1.png" alt="" className="w-16 h-12 object-contain" />
                     </div>
@@ -1739,12 +1760,15 @@ const AVATAR_SCREENS = [3, 4, 5, 6, 7, 8, 9, 10];
                       <p className="text-[12px] text-white/40 leading-relaxed mt-0.5">{i18n.t('avisos_enviados_directamente_a_tu_dispos')}</p>
                     </div>
                     <div className="flex flex-col items-center gap-1.5 shrink-0 ml-2">
-                      <select value="Intensidad moderada" onClick={(e) => e.stopPropagation()} onChange={() => {}} className="bg-[#1D032E] border border-white/10 text-white/80 text-[12px] font-medium rounded-full px-3.5 py-1.5 outline-none focus:border-[#7c3aed]/40 cursor-pointer">
+                      <select value="Intensidad moderada" onChange={() => {}} onClick={(e) => e.stopPropagation()} className="bg-[#1D032E] border border-white/10 text-white/80 text-[12px] font-medium rounded-full px-3.5 py-1.5 outline-none focus:border-[#7c3aed]/40 cursor-pointer">
                         <option>{i18n.t('intensidad_moderada')}</option>
                         <option>{i18n.t('solo_urgentes')}</option>
                         <option>{i18n.t('maxima_intensidad')}</option>
                       </select>
-                      <span className="text-[11px] font-medium text-[#93c5fd]">{i18n.t('activado')}</span>
+                      <button onClick={(e) => { e.stopPropagation(); setConfigPush(!configPush); }} className={`relative w-[46px] h-[26px] rounded-full transition-colors duration-200 ${configPush ? 'bg-gradient-to-r from-[#3b82f6] to-[#06b6d4]' : 'bg-white/15'}`}>
+                        <span className={`absolute top-[3px] w-[20px] h-[20px] rounded-full bg-white shadow-md transition-all duration-200 ${configPush ? 'left-[23px]' : 'left-[3px]'}`} />
+                      </button>
+                      <span className={`text-[11px] font-medium ${configPush ? 'text-[#93c5fd]' : 'text-white/25'}`}>{configPush ? 'Activado' : 'Desactivado'}</span>
                     </div>
                   </div>
 
@@ -1900,8 +1924,8 @@ const AVATAR_SCREENS = [3, 4, 5, 6, 7, 8, 9, 10];
       sophya: '/Avatar_Schedule/Sophya.jpeg',
     };
     const avatarLavandaImg7 = avatarName7
-      ? (avatarLavandaMap7[avatarName7.toLowerCase()] || AVATARS.find(a => a.name.toLowerCase() === avatarName7.toLowerCase())?.file || '/Avatar_Schedule/lia (2).jpeg')
-      : '/Avatar_Schedule/lia (1).jpeg';
+      ? (avatarLavandaMap7[avatarName7.toLowerCase()] || AVATARS.find(a => a.name.toLowerCase() === avatarName7.toLowerCase())?.file || '/Avatar_Schedule/Lia (1).jpeg')
+      : '/Avatar_Schedule/Lia (1).jpeg';
 
        const customizationSteps = [
       { num: 1, label: 'Intensidad del acompañamiento' },
@@ -2327,12 +2351,12 @@ const AVATAR_SCREENS = [3, 4, 5, 6, 7, 8, 9, 10];
     const avatarMap8: Record<string, string> = {
       ashley: '/Avatars_tone/Ashley.jpeg',
       conrad: '/Avatars_tone/Conrad.jpeg',
-      john: '/Avatars_tone/John(2).jpeg',
-      lia: '/Avatars_tone/Lia(3).jpeg',
-      monroe: '/Avatars_tone/Monroe(2).jpeg',
+      john: '/Avatars_tone/john (2).jpeg',
+      lia: '/Avatars_tone/Lia (3).jpeg',
+      monroe: '/Avatars_tone/Monroe (2).jpeg',
       sophya: '/Avatars_tone/Sophya (2).jpeg',
     };
-    const avatarImg8 = avatarMap8[avatarName8.toLowerCase()] || AVATARS.find(a => a.name.toLowerCase() === avatarName8.toLowerCase())?.file || '/avatar_lavanda/lia (2).jpeg';
+    const avatarImg8 = avatarMap8[avatarName8.toLowerCase()] || AVATARS.find(a => a.name.toLowerCase() === avatarName8.toLowerCase())?.file || '/Avatars_tone/Lia (3).jpeg';
 
     const toneOptions = [
       {
@@ -2592,14 +2616,14 @@ const AVATAR_SCREENS = [3, 4, 5, 6, 7, 8, 9, 10];
     const displayName = (userName || profile?.user_first_name || 'Don Roberto').trim() || 'Don Roberto';
     const avatarName9 = avatar?.name || profile?.avatar_name || 'Lía';
     const avatarMap9: Record<string, string> = {
-      ashley: '/avatars/Ashley.jpeg',
-      conrad: '/avatars/conrad.jpeg',
-      john: '/avatars/John.jpeg',
-      lia: '/avatars/Lia.jpeg',
-      monroe: '/avatars/Monroe.jpeg',
-      sophya: '/avatars/Sophya.jpeg',
+      ashley: '/avartars/Ashley.jpeg',
+      conrad: '/avartars/conrad.jpeg',
+      john: '/avartars/John.jpeg',
+      lia: '/avartars/Lia.jpeg',
+      monroe: '/avartars/Monroe.jpeg',
+      sophya: '/avartars/Sophya.jpeg',
     };
-    const avatarImg9 = avatarMap9[avatarName9.toLowerCase()] || AVATARS.find(a => a.name.toLowerCase() === avatarName9.toLowerCase())?.file || '/avatar_lavanda/lia (2).jpeg';
+    const avatarImg9 = avatarMap9[avatarName9.toLowerCase()] || AVATARS.find(a => a.name.toLowerCase() === avatarName9.toLowerCase())?.file || '/avartars/Lia.jpeg';
     const horasLabel = configSchedule === 'todo_el_dia' ? 'Todo el día' : configSchedule === 'horario_laboral' ? 'Horario laboral' : configSchedule === 'personalizado' ? `Personalizado ${configScheduleStart} - ${configScheduleEnd}` : 'Mañana y tarde';
 
     return (
@@ -2826,7 +2850,7 @@ const AVATAR_SCREENS = [3, 4, 5, 6, 7, 8, 9, 10];
                     <div className="absolute -right-6 top-10 w-[55%] h-[120%] rounded-[50%] border border-[#2563eb]/25" style={{ transform: 'rotate(-18deg)' }} />
                     <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 70% 40%, rgba(124,58,237,0.22) 0%, transparent 60%)' }} />
                   </div>
-                  <video ref={videoRef} src="/flow_focussia.mp4" className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${isPlaying ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} playsInline preload="none" onClick={(e) => { const v = e.currentTarget; if (v.paused) v.play().catch(()=>{}); else v.pause(); }} onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} onError={(e) => { (e.target as HTMLVideoElement).style.display = 'none'; }} />
+                  <video ref={videoRef} src="/focusia_intro.mp4" className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${isPlaying ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} playsInline preload="metadata" onClick={(e) => { const v = e.currentTarget; if (v.paused) v.play().catch(()=>{}); else v.pause(); }} onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} onError={(e) => { (e.target as HTMLVideoElement).style.display = 'none'; }} />
                   <div className={`absolute inset-0 flex flex-col items-center justify-center ${isPlaying ? 'pointer-events-none opacity-0' : 'opacity-100'} transition-opacity duration-300`} style={{ background: 'radial-gradient(ellipse at 50% 60%, rgba(30,27,255,0.25) 0%, transparent 70%)' }}>
                     <div className="flex items-center gap-3">
                       <img src="/focussia.png" alt="" className="w-12 h-12 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />

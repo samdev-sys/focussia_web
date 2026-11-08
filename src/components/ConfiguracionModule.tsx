@@ -42,11 +42,24 @@ const AVATAR_TONE: Record<number, string> = {
 };
 
 const TONOS = [
-  { id: 'cercano', titulo: 'CERCANO Y MOTIVADOR', desc: 'Mensajes positivos y alentadores que te impulsan a avanzar con energía y confianza.', img: '/smile.png', color: '#4ade80', nivel: 4 },
-  { id: 'claro', titulo: 'CLARO Y ESTRATÉGICO', desc: 'Mensajes directos, organizados y orientados a la toma de decisiones efectivas.',  img: '/archer.png', color: '#60a5fa', nivel: 5 },
-  { id: 'firme', titulo: 'FIRME Y EXIGENTE', desc: 'Mensajes con mayor nivel de compromiso y presión estratégica para mantener el foco en tus objetivos.', img: '/safeOrange.png', color: '#fb923c', nivel: 6 },
+  { id: 'cercano_motivador', titulo: 'CERCANO Y MOTIVADOR', desc: 'Mensajes positivos y alentadores que te impulsan a avanzar con energía y confianza.', img: '/smile.png', color: '#4ade80', nivel: 4 },
+  { id: 'claro_estrategico', titulo: 'CLARO Y ESTRATÉGICO', desc: 'Mensajes directos, organizados y orientados a la toma de decisiones efectivas.', img: '/archer.png', color: '#60a5fa', nivel: 5 },
+  { id: 'firme_exigente', titulo: 'FIRME Y EXIGENTE', desc: 'Mensajes con mayor nivel de compromiso y presión estratégica para mantener el foco en tus objetivos.', img: '/safeOrange.png', color: '#fb923c', nivel: 6 },
   { id: 'adaptativo', titulo: 'ADAPTATIVO', desc: 'El sistema ajusta automáticamente el tono según tu comportamiento y evolución.', img: '/stars.png', color: '#a855f7', nivel: 7, recomendado: true },
 ];
+const TONO_CANONICO: Record<string, string> = {
+  cercano_motivador: 'cercano_motivador',
+  claro_estrategico: 'claro_estrategico',
+  firme_exigente: 'firme_exigente',
+  adaptativo: 'adaptativo',
+  // compatibilidad con ids cortos antiguos
+  cercano: 'cercano_motivador',
+  claro: 'claro_estrategico',
+  directo: 'claro_estrategico',
+  firme: 'firme_exigente',
+  equilibrado: 'claro_estrategico',
+};
+const normalizarTono = (v: string | null | undefined) => TONO_CANONICO[v || ''] || 'adaptativo';
 
 const APOYOS = [
   { id: 'organizar', titulo: 'APOYO PARA ORGANIZARME MEJOR', img: '/tabList.png', color: '#60a5fa' },
@@ -253,7 +266,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
           const elegido = confirmado || indiceProp || 4;
           setAvatarId(elegido); setAvatarDraft(elegido);
           if (perfil.intensity) setIntensidad(perfil.intensity);
-          if (perfil.tone) setTono(perfil.tone);
+          if (perfil.tone) setTono(normalizarTono(perfil.tone));
           if (perfil.support_types) setApoyos(perfil.support_types);
           if (perfil.schedule_type) setHorarioGen(perfil.schedule_type);
         }
@@ -356,7 +369,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
     setSaving(true); setError('');
     try {
       await configService.updateAccompaniment({ intensity: intensidad, support_types: apoyos });
-      await configService.updateTone(tono);
+      await configService.updateTone(normalizarTono(tono));
       flashGuardado();
     } catch { setError('No se pudo guardar el acompañamiento.'); }
     finally { setSaving(false); }
@@ -713,7 +726,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
           </div>
           )}
         </aside>
-        <main className="p-6 lg:p-10 max-w-6xl w-full">
+        <main className="p-6 lg:p-10 w-full">
           <div className="flex items-center justify-between">
             <Volver dark onClick={irMenu} />
             <span />

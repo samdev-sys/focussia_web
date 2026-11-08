@@ -192,6 +192,23 @@ export interface Juego {
   actualizado: string;
 }
 
+export interface InspiracionRecurso {
+  id: number;
+  categoria: 'humor' | 'salud' | 'hobbies' | 'viajes' | 'diversion' | 'reflexion';
+  categoria_label: string;
+  titulo: string;
+  miniatura_url: string;
+  miniatura_file: string | null;
+  miniatura_file_url: string;
+  miniatura_resuelta: string;
+  youtube_url: string;
+  youtube_video_id: string;
+  orden: number;
+  activo: boolean;
+  creado: string;
+  actualizado: string;
+}
+
 export interface Overview {
   programa: {
     meses: number;
@@ -204,6 +221,7 @@ export interface Overview {
   aprendizaje: { categorias: number; modulos: number; bloques_guia: number };
   avatares: { total: number; activos: number };
   juegos: { total: number; activos: number };
+  inspiracion: { total: number; activos: number };
   usuarios: { total: number; completaron_mes_actual: number };
 }
 
@@ -293,6 +311,15 @@ export const adminService = {
   editarJuego: (id: number, datos: Partial<Juego>) =>
     adminApi.patch<Juego>(`${R}/juegos/${id}/`, datos).then((r) => r.data),
   borrarJuego: (id: number) => adminApi.delete(`${R}/juegos/${id}/`),
+
+  // Centro de Inspiración (Doc 26)
+  listarInspiracion: (params?: { categoria?: string; activo?: boolean }) =>
+    adminApi.get<InspiracionRecurso[]>(`${R}/inspiracion/`, { params }).then((r) => r.data),
+  crearInspiracion: (datos: FormData | Partial<InspiracionRecurso>) =>
+    adminApi.post<InspiracionRecurso>(`${R}/inspiracion/`, datos).then((r) => r.data),
+  editarInspiracion: (id: number, datos: FormData | Partial<InspiracionRecurso>) =>
+    adminApi.patch<InspiracionRecurso>(`${R}/inspiracion/${id}/`, datos).then((r) => r.data),
+  borrarInspiracion: (id: number) => adminApi.delete(`${R}/inspiracion/${id}/`),
 };
 
 /** Login del panel. Usa el mismo endpoint que la app; el permiso se valida después. */

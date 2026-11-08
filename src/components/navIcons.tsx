@@ -3,7 +3,7 @@ import {
   Home, CircleDot, Calendar, CalendarDays, LayoutGrid, Kanban,
   CalendarRange, CalendarCheck, UserPlus, Target, Clock, Pill, Cake,
   HeartHandshake, Wallet, GraduationCap, MessageSquare, Crosshair,
-  Smile, Share2, MoreHorizontal,
+  Smile, Share2, MoreHorizontal, Sparkles,
 } from 'lucide-react';
 
 export type NavIconComp = ComponentType<{ className?: string }>;
@@ -60,6 +60,7 @@ export const NAV_ICONS: Record<string, NavIconComp> = {
   coaching: MessageSquare,
   focus: Crosshair,
   gratitud: Smile,
+  inspiracion: Sparkles,
   redes: Share2,
   mas: MoreHorizontal,
 };

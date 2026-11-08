@@ -238,7 +238,7 @@ export default function WeeklyMissionWidget({
       onMouseEnter={() => { hexHoverRef.current = true; }}
       onMouseLeave={() => { hexHoverRef.current = false; }}
     >
-      <div className="relative rounded-md overflow-hidden w-full">
+      <div className="relative rounded-md overflow-hidden w-40 h-50 ml-20">
         <canvas
           ref={hexCanvasRef}
           className="absolute -inset-6 rounded-md pointer-events-none z-0"

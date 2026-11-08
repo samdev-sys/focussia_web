@@ -326,7 +326,7 @@ export default function FocusModeScreen({ userName, sesionActiva, onIniciar, onB
   return (
     <>
       <ModuleShell activeNav="focus" userName={userName} onBack={onBack} onNavigate={onNavigate} titulo="ENFÓCATE" subtitulo="Herramientas para proteger tu concentración y lograr más." iconoTitulo={() => <img src="/archer.png" alt={i18n.t('archer')} className="w-8 h-8" />}>
-        <div className="mx-auto max-w-7xl px-6 py-8">
+        <div className="w-full px-6 py-8">
           <div className="mt-6 grid items-start gap-6 xl:grid-cols-[1fr_310px]">
             {/* Columna principal */}
             <div>

@@ -1,11 +1,14 @@
 import i18n from '../i18n';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  X, ChevronDown,
+  X,
   Bell, Settings, Moon, Sparkles, Crosshair, Smile,
-  CircleHelp,
+  Sun,
 } from 'lucide-react';
+import { notificationService, NotificationData } from '../services/api';
 import { NAV_ICONS } from './navIcons';
+import ShellSidebar from './ShellSidebar';
 
 export type MonthlyNavKey =
   | 'inicio' | 'rueda' | 'matriz' | 'anual' | 'mensual' | 'kanban'
@@ -36,17 +39,6 @@ export const NAV_ITEMS: { key: MonthlyNavKey; label: string; Icon: React.Compone
   { key: 'mas', label: 'Más', Icon: NAV_ICONS.mas },
 ];
 
-function UserAvatar({ src, name }: { src?: string; name: string }) {
-  if (src) {
-    return <img src={src} alt={name} className="w-10 h-10 rounded-full object-cover" />;
-  }
-  return (
-    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#2b44ff] to-[#a21caf] text-white font-black flex items-center justify-center">
-      {(name || 'F').charAt(0).toUpperCase()}
-    </div>
-  );
-}
-
 export default function AppShell({ activeNav, title, subtitle, username, avatarUrl, onNavigate, onClose, decorated, onOpenHelp, onOpenNotifications, onOpenSettings, children }: {
   activeNav: MonthlyNavKey;
   title: React.ReactNode;
@@ -61,59 +53,60 @@ export default function AppShell({ activeNav, title, subtitle, username, avatarU
   decorated?: boolean;
   children: React.ReactNode;
 }) {
-  const displayName = username?.trim() || 'Usuario';
+  // Modo oscuro compartido con los demás shells ('focusia-theme' en
+  // localStorage): activa la clase `dark` en <html> para todas las pantallas.
+  const [dark, setDark] = useState(() =>
+    typeof window !== 'undefined' && localStorage.getItem('focusia-theme') === 'dark');
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark);
+    try { localStorage.setItem('focusia-theme', dark ? 'dark' : 'light'); } catch { /* noop */ }
+  }, [dark]);
+
+  /* Notificaciones y configuración funcionan aunque el caller no pase
+     callbacks (las rutas de módulo no los pasan): la campana abre un panel
+     propio y el engranaje va a Configuración (o a lo que defina el caller). */
+  const navigate = useNavigate();
+  const [showNotif, setShowNotif] = useState(false);
+  const [notifs, setNotifs] = useState<NotificationData[]>([]);
+  const unread = notifs.filter(n => !n.is_read).length;
+
+  const toggleNotif = async () => {
+    if (!showNotif) {
+      try {
+        const data = await notificationService.getAll();
+        setNotifs(Array.isArray(data) ? data : Array.isArray((data as any)?.results) ? (data as any).results : []);
+      } catch { /* noop: el panel igual se abre, vacío */ }
+    }
+    setShowNotif(v => !v);
+  };
+
+  const marcarTodas = async () => {
+    setNotifs(prev => prev.map(n => ({ ...n, is_read: true })));
+    try { await notificationService.marcarTodasLeidas(); } catch { /* noop */ }
+  };
+
+  const abrirNotificaciones = () => {
+    if (onOpenNotifications) { onOpenNotifications(); return; }
+    void toggleNotif();
+  };
+
+  const abrirConfiguracion = () => {
+    if (onOpenSettings) { onOpenSettings(); return; }
+    navigate('/app/configuracion');
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex bg-[#070b22]" onClick={onClose}>
-      {/* Sidebar */}
-      <aside
-        className="hidden md:flex w-48 shrink-0 flex-col bg-[#080f2e] px-3 py-4"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex items-center gap-3 text-white">
-         <img src="/focussia.png" alt={i18n.t('focusia_dty1')} className='w-8 h-8' />
-          <span className="text-xl font-bold tracking-wide">{i18n.t('focusia_dty1')}</span>
-        </div>
-        <nav className="flex-1 overflow-y-auto space-y-0.5 pr-0.5">
-          {NAV_ITEMS.map(({ key, label, Icon }) => {
-            const active = key === activeNav;
-            return (
-              <React.Fragment key={key}>
-                <button
-                  onClick={() => onNavigate?.(key)}
-                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-semibold transition-colors ${
-                    active
-                      ? 'bg-gradient-to-r from-[#1f6feb] to-[#a21caf] text-white shadow-lg'
-                      : 'text-white/70 hover:bg-white/10 hover:text-white'
-                  }`}
-                >
-                  <Icon className="w-5 h-5 shrink-0" />
-                  <span className="truncate">{label}</span>
-                </button>
-                {key === 'delegar' && (
-                  <button
-                    onClick={() => { if (activeNav !== 'delegar') onNavigate?.('delegar'); }}
-                    className={`w-full flex items-center gap-2 pl-11 pr-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors text-left ${
-                      activeNav === 'delegar'
-                        ? 'bg-gradient-to-r from-[#1f6feb] to-[#a21caf] text-white shadow'
-                        : 'text-white/55 hover:bg-white/10 hover:text-white'
-                    }`}
-                  >
-                    <span className="truncate">{i18n.t('acciones_por_delegar')}</span>
-                  </button>
-                )}
-              </React.Fragment>
-            );
-          })}
-        </nav>
-        <div className="mt-3 bg-[#101a45] rounded-md p-2.5 flex items-center gap-2.5">
-          <UserAvatar src={avatarUrl} name={displayName} />
-          <div className="flex-1 min-w-0">
-            <p className="text-white text-sm font-bold truncate">{displayName}</p>
-            <p className="text-white/50 text-[11px]">{i18n.t('ver_perfil_v4ky')}</p>
-          </div>
-          <ChevronDown className="w-4 h-4 text-white/60" />
-        </div>
-      </aside>
+      {/* Sidebar canónica compartida con todas las pantallas */}
+      <div className="hidden md:flex" onClick={e => e.stopPropagation()}>
+        <ShellSidebar
+          activeNav={activeNav}
+          onNav={(key) => onNavigate?.(key as MonthlyNavKey)}
+          userName={username}
+          avatarImg={avatarUrl}
+        />
+      </div>
 
       {/* Main */}
       <div
@@ -128,25 +121,53 @@ export default function AppShell({ activeNav, title, subtitle, username, avatarU
           </div>
         )}
 
-        <div className="relative z-10 px-4 sm:px-8 pt-6 pb-10 max-w-6xl mx-auto">
+        <div className="relative z-10 px-4 sm:px-8 pt-6 pb-10 w-full">
           <div className="flex items-start gap-3 mb-5">
             <div className="flex-1 min-w-0">
               <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-[#101433]">{title}</h1>
               {subtitle && <p className="text-[#5b6b8c] text-base sm:text-xl mt-1">{subtitle}</p>}
             </div>
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              <button onClick={() => onOpenNotifications?.()} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow flex items-center justify-center" title={i18n.t('notificaciones_3t7w')}>
-                <Bell className="w-5 h-5 text-[#101433]" fill="currentColor" />
+            <div className="relative flex items-center gap-2 sm:gap-3 shrink-0">
+              <button onClick={abrirNotificaciones} className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white dark:bg-[#14142e] shadow flex items-center justify-center" title={i18n.t('notificaciones_3t7w')}>
+                <Bell className="w-5 h-5 text-[#101433] dark:text-white" fill="currentColor" />
+                {unread > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 bg-[#6236FF] text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white dark:border-[#14142e]">
+                    {unread > 9 ? '9+' : unread}
+                  </span>
+                )}
               </button>
-              <button onClick={() => onOpenSettings?.()} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow hidden sm:flex items-center justify-center" title={i18n.t('ajustes')}>
-                <Settings className="w-5 h-5 text-[#101433]" />
+              <button onClick={abrirConfiguracion} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white dark:bg-[#14142e] shadow hidden sm:flex items-center justify-center" title={i18n.t('ajustes')}>
+                <Settings className="w-5 h-5 text-[#101433] dark:text-white" />
               </button>
-              <button onClick={() => onOpenHelp?.()} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow hidden sm:flex items-center justify-center" title={i18n.t('ayuda')}>
-                <CircleHelp className="w-5 h-5 text-[#101433]" />
+              <button onClick={() => setDark((v) => !v)} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white dark:bg-[#14142e] shadow hidden sm:flex items-center justify-center" title={dark ? 'Modo claro' : 'Modo oscuro'}>
+                {dark ? <Sun className="w-5 h-5 text-[#101433] dark:text-white" /> : <Moon className="w-5 h-5 text-[#101433] dark:text-white" />}
               </button>
               <button onClick={onClose} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow flex md:hidden items-center justify-center">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
+
+              {/* Panel de notificaciones */}
+              {showNotif && (
+                <div className="absolute top-full right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white dark:bg-[#14142e] border border-gray-100 dark:border-white/10 rounded-2xl shadow-xl z-30 overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-white/10">
+                    <span className="text-sm font-bold text-[#101433] dark:text-white">{i18n.t('notificaciones_3t7w')}</span>
+                    <button onClick={marcarTodas} className="text-xs font-semibold text-[#2563EB] hover:underline">Marcar todas como leídas</button>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {notifs.length === 0 ? (
+                      <p className="text-xs text-slate-400 text-center py-6">No tienes notificaciones nuevas</p>
+                    ) : (
+                      notifs.slice(0, 15).map((n) => (
+                        <div key={String(n.id)} className={`px-4 py-3 border-b border-gray-50 dark:border-white/5 ${!n.is_read ? 'bg-[#f0edff]/60 dark:bg-white/5' : ''}`}>
+                          <p className="text-[13px] font-semibold text-[#101433] dark:text-white leading-snug">{n.title}</p>
+                          <p className="text-xs text-slate-500 dark:text-white/50 mt-0.5 leading-snug line-clamp-2">{n.message}</p>
+                          <p className="text-[10px] text-slate-400 dark:text-white/30 mt-1">{n.created_at ? new Date(n.created_at).toLocaleString() : ''}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           {children}

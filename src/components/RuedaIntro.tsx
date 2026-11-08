@@ -110,7 +110,7 @@ export const RuedaIntroVideo: React.FC<IntroVideoProps> = ({ userName = 'Don Rob
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] gap-5">
           {/* Coach */}
           <div className="relative rounded-2xl overflow-hidden bg-gradient-to-b from-[#2b3fd4] via-[#4b3fd6] to-[#7a5af8] min-h-[420px] flex items-end">
-            <img src="/avatars/Sophya.jpeg" alt={i18n.t('coach_focusia')} className="absolute inset-0 w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+            <img src="/avartars/Sophya.jpeg" alt={i18n.t('coach_focusia')} className="absolute inset-0 w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             <div className="absolute inset-0 bg-gradient-to-t from-[#2b3fd4]/30 via-transparent to-white/10" />
             {/* Speech bubble */}
             <div className="absolute top-16 right-2 left-32 sm:left-36 bg-white rounded-2xl rounded-bl-none shadow-xl p-4 text-left">

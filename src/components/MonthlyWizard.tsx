@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { monthlyService, MonthlyPlanData, MonthlyGoalData } from '../services/api';
 import MonthlyShell, { MonthlyNavKey } from './MonthlyShell';
+import { AVATAR_FILES } from '../constants/avatars';
+import { useResolvedAvatarIndex } from './reportMockups';
 
 interface MonthlyWizardProps {
   onClose: () => void;
@@ -48,6 +50,11 @@ export default function MonthlyWizard({ onClose, onApproved, username, avatarUrl
   const [returnTo, setReturnTo] = useState<'blocks' | 'summary'>('blocks');
   const [editInstruction, setEditInstruction] = useState('');
   const [saving, setSaving] = useState(false);
+  // La foto del avatar viene de la elección del onboarding (public/avatars):
+  // usa el prop si el caller lo pasa; si no, resuelve el índice activo desde
+  // la configuración del usuario.
+  const resolvedAvatarIdx = useResolvedAvatarIndex();
+  const avatarPhoto = (avatarUrl?.trim() || (resolvedAvatarIdx > 0 ? AVATAR_FILES[resolvedAvatarIdx] : '')) || undefined;
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
   const [blockedNoAnnual, setBlockedNoAnnual] = useState(false);
@@ -216,7 +223,7 @@ export default function MonthlyWizard({ onClose, onApproved, username, avatarUrl
                   </div>
                 </div>
                 <div className="bg-white rounded-3xl p-2 shadow-lg">
-                  <AvatarImg src={avatarUrl} name={displayName} className="w-full h-full min-h-[280px] max-h-[420px] object-cover rounded-2xl" />
+                  <AvatarImg src={avatarPhoto} name={displayName} className="w-full h-full min-h-[280px] max-h-[420px] object-cover rounded-2xl" />
                 </div>
               </div>
             </Panel>
@@ -354,7 +361,7 @@ export default function MonthlyWizard({ onClose, onApproved, username, avatarUrl
                 <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-lg">
                   <div className="flex items-start gap-3">
                     <div className="w-24 shrink-0 rounded-2xl overflow-hidden">
-                      <AvatarImg src={avatarUrl} name={displayName} className="w-full aspect-[3/4] object-cover" />
+                      <AvatarImg src={avatarPhoto} name={displayName} className="w-full aspect-[3/4] object-cover" />
                     </div>
                     <div className="relative flex-1 border border-[#b9b3f5] rounded-2xl rounded-bl-none p-4">
                       <span className="inline-flex w-8 h-8 rounded-full bg-[#efeafe] items-center justify-center mb-1">
@@ -447,7 +454,7 @@ export default function MonthlyWizard({ onClose, onApproved, username, avatarUrl
                   </div>
                 </div>
                 <div className="bg-white rounded-3xl p-2 shadow-lg">
-                  <AvatarImg src={avatarUrl} name={displayName} className="w-full h-full min-h-[280px] max-h-[480px] object-cover rounded-2xl" />
+                  <AvatarImg src={avatarPhoto} name={displayName} className="w-full h-full min-h-[280px] max-h-[480px] object-cover rounded-2xl" />
                 </div>
               </div>
             </Panel>
@@ -557,3 +564,4 @@ function chunkGoals(goals: MonthlyGoalData[], size: number): MonthlyGoalData[][]
   }
   return chunks;
 }
+

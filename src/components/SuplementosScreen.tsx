@@ -111,7 +111,7 @@ function Tarjeta({ s, marcando, onTomado, onEliminar }: {
       : 'Hoy';
 
   return (
-    <div className={`relative flex flex-col sm:flex-row sm:items-center gap-3 rounded-md border border-gray-100 dark:border-white/10 border-l-4 ${est.borde} bg-white dark:bg-[#14142e] p-3.5 shadow-sm`}>
+    <div className={`relative flex flex-col sm:flex-row sm:items-center gap-3 rounded-md border border-gray-100 dark:border-white/10 border-l-4 ${est.borde} bg-white dark:bg-[#14142e] p-3.5 shadow-sm flex-1`}>
       <div className={`w-14 h-14 rounded-xl shrink-0 flex items-center justify-center bg-gradient-to-br ${est.thumb}`}>
         <Pill className="w-6 h-6" />
       </div>
@@ -589,11 +589,11 @@ export default function SuplementosScreen({ onBack, userName, onNavigate }: {
       
       iconoTitulo={IconoFocussia}
     >
-      <div className="p-6">
-        <div className="max-w-[1500px] mx-auto flex flex-col xl:flex-row gap-6">
+      <div className="p-6 h-full">
+        <div className="w-full h-full flex flex-row gap-6">
             {/* Columna principal */}
             <div className="flex-1 min-w-0 flex flex-col gap-6">
-              <section className="bg-white dark:bg-[#14142e] rounded-xl border border-gray-100 dark:border-white/10 shadow-sm p-6">
+              <section className="bg-white dark:bg-[#14142e] rounded-xl border border-gray-100 dark:border-white/10 shadow-sm p-6 flex-1 flex flex-col">
                 {/* Encabezado */}
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                   <div className="flex items-start gap-3 min-w-0">
@@ -691,7 +691,7 @@ export default function SuplementosScreen({ onBack, userName, onNavigate }: {
                     </p>
                   </div>
                 ) : (
-                  <div className="mt-5 flex flex-col gap-3">
+                  <div className="mt-5 flex flex-col gap-3 flex-1">
                     {visibles.map(s => (
                       <Tarjeta
                         key={s.id}
@@ -752,7 +752,7 @@ export default function SuplementosScreen({ onBack, userName, onNavigate }: {
             </div>
 
             {/* Panel ¿Cómo funciona? */}
-            <aside className="w-full xl:w-[340px] shrink-0 bg-white dark:bg-[#14142e] rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-6 self-start">
+            <aside className="w-[25%] min-w-0 shrink-0 bg-white dark:bg-[#14142e] rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-6">
               <h2 className="text-lg font-bold text-[#101433] dark:text-white">{i18n.t('como_funciona_u73u')}</h2>
               <div className="mt-5 flex flex-col gap-5">
                 {COMO_FUNCIONA.map(({ Icon, title, desc }) => (

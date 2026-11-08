@@ -261,16 +261,16 @@ function Estadisticas({ report, placeholder }: { report: FocusiaReportData; plac
       {ESTADISTICAS.map((s, i) => (
         <div
           key={s.key}
-          className={`flex flex-col gap-1 py-4 ${i > 0 ? 'sm:border-l sm:border-[#e2e8f0] sm:pl-6' : ''}`}
+          className={`flex flex-col gap-1.5 py-5 ${i > 0 ? 'sm:border-l sm:border-[#e2e8f0] sm:pl-6' : ''}`}
         >
           {placeholder ? (
             <span className="block w-9 h-1.5 rounded-full my-3" style={{ background: s.color }} />
           ) : (
-            <span className="text-4xl font-black tracking-tight" style={{ color: s.color }}>
+            <span className="text-5xl font-black tracking-tight" style={{ color: s.color }}>
               {valores[s.key]}
             </span>
           )}
-          <span className="text-sm text-slate-600">{s.label}</span>
+          <span className="text-sm sm:text-base text-slate-600">{s.label}</span>
         </div>
       ))}
     </div>
@@ -285,28 +285,28 @@ function Donut({ porcentaje, completadas, sinCompletar, pendiente }: {
 }) {
   const deg = Math.max(0, Math.min(100, porcentaje)) * 3.6;
   return (
-    <div className="flex flex-wrap items-center gap-6 mb-4">
+    <div className="flex flex-wrap items-center gap-7 mb-5">
       <div
-        className="relative w-36 h-36 rounded-full shrink-0"
+        className="relative w-44 h-44 rounded-full shrink-0"
         style={{
           background: pendiente
             ? GRAY_LINE
             : `conic-gradient(${PURPLE} 0deg ${deg}deg, ${GRAY_LINE} ${deg}deg 360deg)`,
         }}
       >
-        <div className="absolute inset-[20px] rounded-full bg-white flex items-center justify-center">
-          <span className="text-2xl font-black text-slate-900">
+        <div className="absolute inset-[24px] rounded-full bg-white flex items-center justify-center">
+          <span className="text-3xl font-black text-slate-900">
             {pendiente ? '— %' : `${Math.round(porcentaje)} %`}
           </span>
         </div>
       </div>
-      <div className="space-y-2.5 text-[15px] text-slate-700">
+      <div className="space-y-2.5 text-base text-slate-700">
         <div className="flex items-center gap-2.5">
-          <span className="w-3.5 h-3.5 rounded-full shrink-0" style={{ background: PURPLE }} />
+          <span className="w-4 h-4 rounded-full shrink-0" style={{ background: PURPLE }} />
           <span><strong className="font-bold text-slate-900">{completadas}</strong> completadas</span>
         </div>
         <div className="flex items-center gap-2.5">
-          <span className="w-3.5 h-3.5 rounded-full bg-slate-300 shrink-0" />
+          <span className="w-4 h-4 rounded-full bg-slate-300 shrink-0" />
           <span><strong className="font-bold text-slate-900">{sinCompletar}</strong> sin completar</span>
         </div>
       </div>
@@ -576,62 +576,64 @@ export function ReportDetailScreen({
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-6xl mx-auto px-5 sm:px-8 pb-10">
-        {/* Selector rápido entre las vistas de detalle digitalizadas */}
-        <div className="pt-3 pb-1 flex flex-wrap items-center gap-1.5 border-b border-slate-100 text-xs">
-          <span className="font-bold text-slate-400 mr-1">Vistas de reporte:</span>
-          {[
-            { label: '‹ Lista / Historial / Notificaciones', active: false, onClick: onBack },
-            {
-              label: '2. Semanal',
-              active: report.id === DEMO_REPORT_WEEKLY_CLOSED.id,
-              onClick: () => { setReport(DEMO_REPORT_WEEKLY_CLOSED); setActionTaken(null); },
-            },
-            {
-              label: '3. Mensual',
-              active: report.id === DEMO_REPORT_MONTHLY.id,
-              onClick: () => { setReport(DEMO_REPORT_MONTHLY); setActionTaken(null); },
-            },
-            {
-              label: '4. Anual',
-              active: report.id === DEMO_REPORT_ANNUAL.id,
-              onClick: () => { setReport(DEMO_REPORT_ANNUAL); setActionTaken(null); },
-            },
-            {
-              label: '6. Sin acciones (0/0)',
-              active: report.id === DEMO_REPORT_WEEKLY_EMPTY.id,
-              onClick: () => { setReport(DEMO_REPORT_WEEKLY_EMPTY); setActionTaken(null); },
-            },
-            {
-              label: '7. En actualización',
-              active: report.id === DEMO_REPORT_WEEKLY_LIVE.id,
-              onClick: () => { setReport(DEMO_REPORT_WEEKLY_LIVE); setActionTaken(null); },
-            },
-            {
-              label: '9. Análisis pendiente',
-              active: report.id === DEMO_REPORT_WEEKLY_PENDING_ANALYSIS.id,
-              onClick: () => { setReport(DEMO_REPORT_WEEKLY_PENDING_ANALYSIS); setActionTaken(null); },
-            },
-            {
-              label: '10. Estado de error',
-              active: report.id === DEMO_REPORT_WEEKLY_FAILED.id,
-              onClick: () => { setReport(DEMO_REPORT_WEEKLY_FAILED); setActionTaken(null); },
-            },
-          ].map((btn) => (
-            <button
-              key={btn.label}
-              type="button"
-              onClick={btn.onClick}
-              className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
-                btn.active
-                  ? 'bg-[#E8F1FF] text-[#2563EB]'
-                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
-              }`}
-            >
-              {btn.label}
-            </button>
-          ))}
-        </div>
+      <div className="max-w-[1500px] mx-auto w-full px-5 sm:px-8 pb-10">
+        {/* Selector rápido entre las vistas de detalle digitalizadas (oculto: mockups de diseño) */}
+        {false && (
+          <div className="pt-3 pb-1 flex flex-wrap items-center gap-1.5 border-b border-slate-100 text-xs">
+            <span className="font-bold text-slate-400 mr-1">Vistas de reporte:</span>
+            {[
+              { label: '‹ Lista / Historial / Notificaciones', active: false, onClick: onBack },
+              {
+                label: '2. Semanal',
+                active: report.id === DEMO_REPORT_WEEKLY_CLOSED.id,
+                onClick: () => { setReport(DEMO_REPORT_WEEKLY_CLOSED); setActionTaken(null); },
+              },
+              {
+                label: '3. Mensual',
+                active: report.id === DEMO_REPORT_MONTHLY.id,
+                onClick: () => { setReport(DEMO_REPORT_MONTHLY); setActionTaken(null); },
+              },
+              {
+                label: '4. Anual',
+                active: report.id === DEMO_REPORT_ANNUAL.id,
+                onClick: () => { setReport(DEMO_REPORT_ANNUAL); setActionTaken(null); },
+              },
+              {
+                label: '6. Sin acciones (0/0)',
+                active: report.id === DEMO_REPORT_WEEKLY_EMPTY.id,
+                onClick: () => { setReport(DEMO_REPORT_WEEKLY_EMPTY); setActionTaken(null); },
+              },
+              {
+                label: '7. En actualización',
+                active: report.id === DEMO_REPORT_WEEKLY_LIVE.id,
+                onClick: () => { setReport(DEMO_REPORT_WEEKLY_LIVE); setActionTaken(null); },
+              },
+              {
+                label: '9. Análisis pendiente',
+                active: report.id === DEMO_REPORT_WEEKLY_PENDING_ANALYSIS.id,
+                onClick: () => { setReport(DEMO_REPORT_WEEKLY_PENDING_ANALYSIS); setActionTaken(null); },
+              },
+              {
+                label: '10. Estado de error',
+                active: report.id === DEMO_REPORT_WEEKLY_FAILED.id,
+                onClick: () => { setReport(DEMO_REPORT_WEEKLY_FAILED); setActionTaken(null); },
+              },
+            ].map((btn) => (
+              <button
+                key={btn.label}
+                type="button"
+                onClick={btn.onClick}
+                className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
+                  btn.active
+                    ? 'bg-[#E8F1FF] text-[#2563EB]'
+                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+                }`}
+              >
+                {btn.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         <ReportHeroHeader
           pose={heroPose}
@@ -667,7 +669,7 @@ export function ReportDetailScreen({
                     </p>
                   ) : (
                      <p className="text-xs text-red-500 mt-2 max-w-xs break-words">
-                       Error de generaci�n pendiente. Revis� los logs del backend (reconciliaci�n).
+                       Error de generaci�n pendiente. Revis� los logs del backend (reconciliaci�n).
                      </p>
                    )}
                   <p className="text-sm text-slate-400 mt-1.5 max-w-xs">
@@ -743,7 +745,7 @@ export function ReportDetailScreen({
         ) : (
           <>
             {/* Mensaje principal */}
-            <h2 className="text-2xl sm:text-[28px] font-bold text-slate-900 mt-7">
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-7">
               {report.level === 'annual' && !sinDatos ? (
                 <>
                   Cerraste el período con el{' '}
@@ -761,15 +763,15 @@ export function ReportDetailScreen({
               )}
             </h2>
             {report.level === 'monthly' && meta?.texto && (
-              <p className="text-base text-slate-700 mt-1.5">Tu meta: {meta.texto}.</p>
+              <p className="text-lg text-slate-700 mt-2">Tu meta: {meta.texto}.</p>
             )}
 
             <Estadisticas report={report} />
 
             {/* Tarjetas de gráfico (Donut + Serie) */}
             <div className="grid md:grid-cols-5 gap-6 mt-5">
-              <div className="border border-[#e2e8f0] rounded-xl p-6 md:col-span-2 flex flex-col">
-                <h3 className="text-xl font-bold text-slate-900 mb-5">
+              <div className="border border-[#e2e8f0] rounded-xl p-7 sm:p-8 md:col-span-2 flex flex-col">
+                <h3 className="text-2xl font-bold text-slate-900 mb-6">
                   {DONUT_TITULO[report.level]}
                 </h3>
                 <Donut
@@ -796,15 +798,15 @@ export function ReportDetailScreen({
                 )}
               </div>
 
-              <div className="border border-[#e2e8f0] rounded-xl p-6 md:col-span-3 flex flex-col justify-between">
+              <div className="border border-[#e2e8f0] rounded-xl p-7 sm:p-8 md:col-span-3 flex flex-col justify-between">
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-4">
+                  <h3 className="text-2xl font-bold text-slate-900 mb-5">
                     {CHART_TITULO[report.level]}
                   </h3>
                   <BarraSerie
                     report={report}
                     data={serie}
-                    height={report.level === 'annual' && granMeta?.texto ? 220 : 255}
+                    height={report.level === 'annual' && granMeta?.texto ? 290 : 330}
                   />
                 </div>
 
@@ -827,15 +829,15 @@ export function ReportDetailScreen({
             </div>
 
             {/* Tarjeta inferior: Avatar · Balance + ¿Cómo quieres continuar? */}
-            <div className="border border-[#e2e8f0] rounded-xl p-5 sm:p-6 mt-6 flex flex-col lg:flex-row lg:items-center gap-6">
+            <div className="border border-[#e2e8f0] rounded-xl p-6 sm:p-8 mt-6 flex flex-col lg:flex-row lg:items-center gap-6">
               <div className="flex items-center gap-4 flex-1 min-w-0">
                 <img
                   src={avatarThumb}
                   alt={avatarNombre}
-                  className="w-16 h-16 rounded-full object-cover border-2 border-purple-100 shrink-0"
+                  className="w-20 h-20 rounded-full object-cover border-2 border-purple-100 shrink-0"
                 />
                 <div className="min-w-0">
-                  <h3 className="text-xl font-bold text-slate-900">
+                  <h3 className="text-2xl font-bold text-slate-900">
                     {avatarNombre} ·{' '}
                     {pendienteAnalisis ? (
                       <span style={{ color: BLUE }}>Análisis pendiente</span>
@@ -845,15 +847,15 @@ export function ReportDetailScreen({
                   </h3>
                   {pendienteAnalisis ? (
                     <>
-                      <p className="text-sm text-slate-700 mt-1">
+                      <p className="text-[15px] text-slate-700 mt-1.5">
                         Los datos del período están disponibles.
                       </p>
-                      <p className="text-sm text-slate-700">
+                      <p className="text-[15px] text-slate-700">
                         La interpretación se completará aquí automáticamente.
                       </p>
                     </>
                   ) : (
-                    <p className="text-sm text-slate-700 mt-1 whitespace-pre-line leading-relaxed">
+                    <p className="text-[15px] text-slate-700 mt-1.5 whitespace-pre-line leading-relaxed">
                       {report.ai_interpretation || 'Sin interpretación disponible para este período.'}
                     </p>
                   )}
@@ -861,7 +863,7 @@ export function ReportDetailScreen({
               </div>
 
               <div className="lg:border-l lg:border-[#e2e8f0] lg:pl-6 shrink-0">
-                <h4 className="text-lg font-bold text-slate-900 mb-3">¿Cómo quieres continuar?</h4>
+                <h4 className="text-xl font-bold text-slate-900 mb-4">¿Cómo quieres continuar?</h4>
                 {actionTaken ? (
                   <div className="flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-3">
                     <span className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
@@ -885,7 +887,7 @@ export function ReportDetailScreen({
                         handleAction(cta.action, cta.section);
                       }}
                       disabled={loading}
-                      className="text-white rounded-lg px-5 py-2.5 text-[15px] font-semibold hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 whitespace-nowrap"
+                      className="text-white rounded-xl px-6 py-3 text-base font-semibold hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 whitespace-nowrap"
                       style={{ background: `linear-gradient(135deg, #8B5CF6, ${PURPLE})` }}
                     >
                       {CTA_NIVEL[report.level]?.label}
@@ -893,7 +895,7 @@ export function ReportDetailScreen({
                     <button
                       onClick={() => handleAction('keep_plan', null)}
                       disabled={loading}
-                      className="border-2 rounded-lg px-5 py-2.5 text-[15px] font-semibold hover:shadow transition-all active:scale-95 disabled:opacity-50 whitespace-nowrap"
+                      className="border-2 rounded-xl px-6 py-3 text-base font-semibold hover:shadow transition-all active:scale-95 disabled:opacity-50 whitespace-nowrap"
                       style={{ borderColor: PURPLE, color: '#7C3AED' }}
                     >
                       Mantener plan
@@ -901,7 +903,7 @@ export function ReportDetailScreen({
                     <button
                       onClick={() => handleAction('review_later', null, true)}
                       disabled={loading}
-                      className="text-[15px] underline hover:opacity-80 disabled:opacity-50 whitespace-nowrap ml-1"
+                      className="text-base underline hover:opacity-80 disabled:opacity-50 whitespace-nowrap ml-1"
                       style={{ color: BLUE }}
                     >
                       Revisar más tarde

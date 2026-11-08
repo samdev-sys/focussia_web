@@ -19,10 +19,17 @@ interface NotificationState {
 export const useNotificationStore = create<NotificationState>((set) => ({
   notifications: [],
   unreadCount: 0,
-  setNotifications: (notifications) => set({
-    notifications,
-    unreadCount: notifications.filter((n) => !n.leida).length,
-  }),
+  setNotifications: (notifications) => {
+    const list = Array.isArray(notifications)
+      ? notifications
+      : Array.isArray((notifications as any)?.results)
+        ? (notifications as any).results
+        : [];
+    set({
+      notifications: list,
+      unreadCount: list.filter((n: any) => !(n.leida ?? n.is_read)).length,
+    });
+  },
   markAllRead: () => set((state) => ({
     notifications: state.notifications.map((n) => ({ ...n, leida: true })),
     unreadCount: 0,

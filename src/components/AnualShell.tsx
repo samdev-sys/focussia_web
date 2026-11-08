@@ -5,6 +5,7 @@ import {
   Calendar as CalendarIcon,
 } from 'lucide-react';
 import { NAV_ICONS } from './navIcons';
+import ShellSidebar from './ShellSidebar';
 import { notificationService, type NotificationData } from '../services/api';
 import { ConfiguracionPanel } from './ConfiguracionPanel';
 import HelpChat from './HelpChat';
@@ -76,55 +77,27 @@ export const AnualShell: React.FC<AnualShellProps> = ({
     setShowNotificationsLocal(v => !v);
   };
 
-  const handleNav = (item: NavItem) => {
-    if (item.action === 'inicio') {
+  const handleNavItem = (section: string) => {
+    if (section === 'inicio') {
       onClose();
-    } else if (item.action === 'app') {
+    } else if (section === 'anual') {
       // ya estamos aquí
     } else if (onNavigate) {
-      onNavigate(item.id);
+      onNavigate(section);
     }
   };
 
   return (
     <div className="fixed inset-0 z-[95] flex bg-[#0a0a18]">
-      {/* Sidebar */}
-      <aside className="hidden lg:flex w-60 shrink-0 flex-col bg-gradient-to-b from-[#0b0b22] to-[#060614] text-white py-5 px-4 overflow-y-auto">
-        <div className="flex items-center gap-2 px-2 mb-6">
-          <img src="/focusia-logo.png" alt={i18n.t('focusia_odm1')} className="w-8 h-8 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-          <span className="text-xl font-extrabold tracking-tight">{i18n.t('focusia_odm1')}</span>
-        </div>
-        <nav className="flex flex-col gap-0.5 flex-1">
-          {NAV_ITEMS.map(item => (
-            <button
-              key={item.id}
-              onClick={() => handleNav(item)}
-              className={`flex items-center gap-3 px-3 py-2 rounded-xl text-[14px] font-medium transition-all text-left ${
-                item.action === 'app'
-                  ? 'bg-gradient-to-r from-[#2b5cff] to-[#7c3aed] text-white shadow-lg'
-                  : 'text-white/70 hover:bg-white/10 hover:text-white'
-              }`}
-            >
-              <item.Icon className="w-5 h-5 shrink-0" />
-              {item.label}
-            </button>
-          ))}
-        </nav>
-        <div className="mt-4 flex items-center gap-2.5 bg-white/5 hover:bg-white/10 transition-colors rounded-2xl p-2.5 cursor-pointer">
-          {avatarImg ? (
-            <img src={avatarImg} alt={userName} className="w-10 h-10 rounded-full object-cover border border-white/20" />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#2b5cff] to-[#7c3aed] flex items-center justify-center font-bold">
-              {(userName || 'U').slice(0, 1).toUpperCase()}
-            </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold truncate">{userName || 'Usuario'}</p>
-            <p className="text-[11px] text-white/50">{i18n.t('ver_perfil')}</p>
-          </div>
-          <ChevronDown className="w-4 h-4 text-white/40" />
-        </div>
-      </aside>
+      {/* Sidebar canónica compartida con todas las pantallas */}
+      <div className="hidden lg:flex" onClick={e => e.stopPropagation()}>
+        <ShellSidebar
+          activeNav="anual"
+          onNav={handleNavItem}
+          userName={userName}
+          avatarImg={avatarImg ?? null}
+        />
+      </div>
 
       {/* Contenido */}
       <div className={`flex-1 min-w-0 ${dark ? 'bg-[#070718]' : 'bg-[#f2f4f7]'} lg:rounded-l-[28px] flex flex-col overflow-hidden`}>

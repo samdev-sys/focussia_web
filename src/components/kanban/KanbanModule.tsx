@@ -61,8 +61,10 @@ export default function KanbanModule({ username, avatarUrl, onNavigate, onClose,
         api.get('/api/acciones-kanban/'),
         api.get('/api/acciones-kanban/papelera/'),
       ]);
-      setAcciones(activeRes.data || []);
-      setPapelera(papeleraRes.data || []);
+      const toArray = (data: unknown) =>
+        Array.isArray(data) ? data : Array.isArray((data as any)?.results) ? (data as any).results : [];
+      setAcciones(toArray(activeRes.data) as AccionKanban[]);
+      setPapelera(toArray(papeleraRes.data) as AccionKanban[]);
     } catch (err) {
       console.error('Error refreshing kanban:', err);
     }

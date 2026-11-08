@@ -15,6 +15,7 @@ export interface AccionKanban {
   fecha_seleccionada: string | null;
   hora_seleccionada: string | null;
   es_fijo: boolean;
+  responsable?: string;
   estado_actual?: string;
   creado_en: string;
   actualizado_en: string;

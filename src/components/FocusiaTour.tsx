@@ -196,7 +196,7 @@ export function FocusiaTourLauncher({ autoStart = false }: { autoStart?: boolean
     <>
       <button
         type="button"
-        className="focusia-tour-launch mt-25 -ml-38 w-40 h-6 rounded-md"
+        className="focusia-tour-launch mt-25 -ml-35 w-40 h-6 rounded-md"
         onClick={() => navigate('/app/reportes')}
         title="Ver reportes"
       >

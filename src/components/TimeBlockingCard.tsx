@@ -433,7 +433,7 @@ export const TimeBlockingCard: React.FC<TimeBlockingCardProps> = ({
   };
 
   return (
-    <div className="w-full h-full min-h-0 flex flex-col overflow-hidden rounded-md border border-slate-200/80 bg-white dark:bg-transparent dark:border-transparent shadow-sm dark:shadow-none font-montserrat">
+    <div className="w-100 flex flex-col overflow-hidden rounded-md border border-slate-200/80 bg-white dark:bg-transparent dark:border-transparent shadow-sm dark:shadow-none font-montserrat ml-1 mt-4">
       {/* BARRA HEADER DEL TIME BLOCKING */}
       <div className="bg-[linear-gradient(90deg,#0044e8_0%,#19227c_55%,#26021e_100%)] dark:bg-none dark:bg-[#060208] dark:border dark:border-white/10 rounded-md text-white text-center py-1 text-[15px] font-extrabold tracking-wider uppercase select-none">
         <span className="dark:bg-[linear-gradient(90deg,#f472b6_0%,#fb923c_45%,#fde047_100%)] dark:bg-clip-text dark:text-transparent">
@@ -451,19 +451,19 @@ export const TimeBlockingCard: React.FC<TimeBlockingCardProps> = ({
         id="tour-wip-status"
         className="flex items-center gap-1.5 px-2 pb-0.5 bg-white dark:bg-transparent select-none"
       >
-        <div className="w-[98px] shrink-0 bg-[linear-gradient(90deg,#ffe39f_0%,#fda68c_55%,#f6789c_100%)] dark:bg-[linear-gradient(90deg,#fb923c_0%,#f472b6_55%,#d946ef_100%)] border border-[#d68594] dark:border-pink-400/50 rounded-md py-1 text-[10px] font-extrabold tracking-wider uppercase text-[#1e1b2e] dark:text-[#14050c] text-center shadow-2xs">
+        <div className="w-[72px] xl:w-[98px] shrink-0 bg-[linear-gradient(90deg,#ffe39f_0%,#fda68c_55%,#f6789c_100%)] dark:bg-[linear-gradient(90deg,#fb923c_0%,#f472b6_55%,#d946ef_100%)] border border-[#d68594] dark:border-pink-400/50 rounded-md py-1 text-[10px] font-extrabold tracking-wider uppercase text-[#1e1b2e] dark:text-[#14050c] text-center shadow-2xs">
           HORA
         </div>
         <div className="flex-1 min-w-0 bg-[linear-gradient(90deg,#ffe39f_0%,#fda68c_55%,#f6789c_100%)] dark:bg-[linear-gradient(90deg,#fb923c_0%,#f472b6_55%,#d946ef_100%)] border border-[#d68594] dark:border-pink-400/50 rounded-md py-1 text-[10px] font-extrabold tracking-wider uppercase text-[#1e1b2e] dark:text-[#14050c] text-center shadow-2xs">
           ACCIÓN
         </div>
-        <div className="w-[132px] shrink-0 bg-[linear-gradient(90deg,#ffe39f_0%,#fda68c_55%,#f6789c_100%)] dark:bg-[linear-gradient(90deg,#fb923c_0%,#f472b6_55%,#d946ef_100%)] border border-[#d68594] dark:border-pink-400/50 rounded-md py-1 text-[10px] font-extrabold tracking-wider uppercase text-[#1e1b2e] dark:text-[#14050c] text-center shadow-2xs">
+        <div className="w-[96px] xl:w-[132px] shrink-0 bg-[linear-gradient(90deg,#ffe39f_0%,#fda68c_55%,#f6789c_100%)] dark:bg-[linear-gradient(90deg,#fb923c_0%,#f472b6_55%,#d946ef_100%)] border border-[#d68594] dark:border-pink-400/50 rounded-md py-1 text-[10px] font-extrabold tracking-wider uppercase text-[#1e1b2e] dark:text-[#14050c] text-center shadow-2xs">
           ESTADO
         </div>
       </div>
 
       {/* FILAS DE HORARIOS */}
-      <div className="overflow-y-auto flex-1 min-h-0 px-2 py-0.5 space-y-0.5 bg-[#f9fafc] dark:bg-transparent">
+      <div className="px-2 py-0.5 space-y-0.5 bg-[#f9fafc] dark:bg-transparent">
         {HOURS.map(h => {
           const label = `${pad(h)}:00 – ${pad((h + 1) % 24)}:00`;
           const accion = placed.get(h) || null;
@@ -528,7 +528,7 @@ export const TimeBlockingCard: React.FC<TimeBlockingCardProps> = ({
                   setDragAccionId(null);
                   setDragOverHour(null);
                 }}
-                className={`w-[98px] shrink-0 rounded-md border border-slate-100 px-1 py-0.5 flex items-center gap-1 select-none ${
+                className={`w-[72px] xl:w-[98px] shrink-0 rounded-md border border-slate-100 px-1 py-0 flex items-center gap-1 select-none ${
                   highlightLavender ? 'bg-[#efeaff]' : 'bg-white'
                 } ${showRedLeftBar ? 'border-l-[3px] border-l-[#dc2626]' : ''}`}
               >
@@ -539,7 +539,7 @@ export const TimeBlockingCard: React.FC<TimeBlockingCardProps> = ({
                     />
                   )}
                 </span>
-                <span className="text-[11px] font-bold text-[#1e293b] whitespace-nowrap tracking-tight">
+                <span className="text-[10px] xl:text-[11px] font-bold text-[#1e293b] whitespace-nowrap tracking-tight">
                   {label}
                 </span>
               </div>
@@ -583,7 +583,7 @@ export const TimeBlockingCard: React.FC<TimeBlockingCardProps> = ({
                         setDragAccionId(null);
                         setDragOverHour(null);
                       }}
-                      className={`flex-1 min-w-0 rounded-md border border-slate-100 px-2 py-0.5 flex flex-col justify-center ${
+                      className={`flex-1 min-w-0 rounded-md border border-slate-100 px-2 py-0 flex flex-col justify-center ${
                         highlightLavender ? 'bg-[#efeaff]' : 'bg-white'
                       }`}
                     >
@@ -712,7 +712,7 @@ export const TimeBlockingCard: React.FC<TimeBlockingCardProps> = ({
 
                     {/* CELDA ESTADO */}
                     <div
-                      className={`w-[132px] shrink-0 rounded-md border border-slate-100 px-1 py-0.5 flex items-center justify-between gap-1 ${
+                      className={`w-[96px] xl:w-[132px] shrink-0 rounded-md border border-slate-100 px-1 py-0 flex items-center justify-between gap-1 ${
                         highlightLavender ? 'bg-[#efeaff]' : 'bg-white'
                       }`}
                     >

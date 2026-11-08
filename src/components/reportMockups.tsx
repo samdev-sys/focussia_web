@@ -66,22 +66,24 @@ export function ReportHeroHeader({
   const heroSrc = getReportAvatarHero(pose, idx);
 
   return (
-    <div className="relative overflow-hidden border-b border-slate-200 min-h-[210px] sm:min-h-[235px] flex items-end pb-7 pt-5">
-      {/* Imagen del avatar a la derecha con fundido suave hacia la izquierda */}
+    <div className="relative overflow-hidden border-b border-slate-200 min-h-[240px] sm:min-h-[280px] flex items-end pb-7 pt-5">
+      {/* Foto del avatar a la derecha, completa (no recortada). Las fotos de
+          avatar son verticales: con `object-contain` anclada a la derecha se ve
+          el personaje entero y el fundido la integra al fondo blanco. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-y-0 right-0 w-full sm:w-[64%] md:w-[60%]"
+        className="pointer-events-none absolute inset-y-0 right-0 w-[52%] sm:w-[400px] md:w-[460px]"
       >
         <img
           src={heroSrc}
           alt=""
-          className="h-full w-full object-cover object-[center_18%]"
+          className="h-full w-full object-contain object-right object-bottom"
         />
         <div
           className="absolute inset-0"
           style={{
             background:
-              'linear-gradient(90deg, #FFFFFF 0%, rgba(255,255,255,0.96) 18%, rgba(255,255,255,0.55) 42%, rgba(255,255,255,0) 72%)',
+              'linear-gradient(90deg, #FFFFFF 0%, rgba(255,255,255,0.96) 22%, rgba(255,255,255,0.5) 45%, rgba(255,255,255,0) 75%)',
           }}
         />
         <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-white/70 to-transparent" />

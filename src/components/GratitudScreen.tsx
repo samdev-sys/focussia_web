@@ -151,7 +151,7 @@ export default function GratitudScreen({ userName, onBack, onNavigate }: {
       iconoTitulo={Heart}
     >
       <div className="px-4 pb-4 md:px-4 lg:pb-4 pt-6">
-        <div className="max-w-6xl mx-auto">
+        <div className="w-full">
           {cargando && (
             <div className="bg-white dark:bg-[#1a1a3a] rounded-2xl border border-[#ECE7F8] dark:border-white/10 p-8 flex items-center gap-3 text-slate-500">
               <Loader2 className="w-5 h-5 animate-spin" /> Preparando la frase de hoy…

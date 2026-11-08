@@ -529,7 +529,7 @@ export function TutorialScreen({ userName, avatarIndex, avatarName, onShowVideo,
             <p className="text-xs text-gray-500 mt-2 leading-relaxed flex-1">
               Consultá tu último reporte semanal, mensual o anual y revisá los datos del período.
             </p>
-            <button onClick={() => navigate('/app/reportes')} className="mt-4 w-full py-2.5 border border-purple-500 text-purple-600 font-semibold text-sm rounded-lg hover:bg-purple-50 transition-colors flex items-center justify-center gap-2">
+            <button onClick={() => { window.location.href = '/app/reportes'; }} className="mt-4 w-full py-2.5 border border-purple-500 text-purple-600 font-semibold text-sm rounded-lg hover:bg-purple-50 transition-colors flex items-center justify-center gap-2">
               <BarChart3 className="w-5 h-5" />
               Ver reportes
             </button>

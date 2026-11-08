@@ -81,7 +81,7 @@ const ICONOS_FOTO: Record<string, string> = {
   pareja: '/love.png',
   entorno: '/home.png',
   espiritualidad: '/zen2.png',
-  diversion: 'party.png',
+  diversion: '/party.png',
 };
 
 type IconComp = React.ComponentType<{ className?: string; strokeWidth?: number | string; fill?: string }> | string;
@@ -151,7 +151,7 @@ const RuedaSVG: React.FC<RuedaSVGProps> = ({
   const paso = 360 / n;
 
   return (
-    <svg width="100%" height="auto" viewBox={etiquetasExternas ? '-100 -60 400 320' : '0 0 200 200'} style={{ maxWidth: size, display: 'block', margin: '0 auto' }} className={interactiva ? 'select-none' : ''}>
+    <svg width="100%" viewBox={etiquetasExternas ? '-100 -60 400 320' : '0 0 200 200'} style={{ maxWidth: size, height: 'auto', display: 'block', margin: '0 auto' }} className={interactiva ? 'select-none' : ''}>
       {interactiva && (
         <style>{`.rueda-seg { transition: filter 0.15s ease; } .rueda-seg:hover path { filter: brightness(1.12); }`}</style>
       )}

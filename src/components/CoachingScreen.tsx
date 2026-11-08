@@ -11,89 +11,20 @@ import { NAV_ICONS } from './navIcons';
 import { coachingService, CoachingEntryData, CoachingQuestionData, notificationService, NotificationData, authService, configService } from '../services/api';
 import { AVATAR_FILES, AVATAR_VARIACIONES } from '../constants/avatars';
 import { ConfiguracionPanel } from './ConfiguracionPanel';
+import ShellSidebar from './ShellSidebar';
 
-const NavItem = ({ icon: Icon, label, active = false, onClick }: { icon: any; label: string; active?: boolean; onClick?: () => void }) => (
-  <button
-    onClick={onClick}
-    className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors w-full text-left ${
-      active
-        ? 'text-white bg-gradient-to-r from-[#6236FF] to-[#8A2BE2] shadow-md'
-        : 'text-white/60 hover:text-white hover:bg-white/5'
-    }`}
-  >
-    <Icon className="w-5 h-5 text-center shrink-0" />
-    <span className="truncate">{label}</span>
-  </button>
-);
-
+/** Reemplazo directo de la sidebar local: mismo modelo en todas las pantallas. */
 const Sidebar = ({ onNav, userName, photoUrl, profile, onLogout, onBack }: { onNav: (section: string) => void; userName?: string; photoUrl?: string | null; profile?: { username?: string; email?: string } | null; onLogout: () => void; onBack: () => void }) => {
-  const [showProfile, setShowProfile] = useState(false);
-  const navItems = [
-    { icon: Home, label: 'Inicio', section: 'inicio' },
-    { icon: CircleDot, label: 'Rueda', section: 'rueda' },
-    { icon: LayoutGrid, label: 'Matriz', section: 'matriz' },
-    { icon: Calendar, label: 'Anual', section: 'anual' },
-    { icon: CalendarDays, label: 'Mensual', section: 'mensual' },
-    { icon: Kanban, label: 'Kanban', section: 'kanban' },
-    { icon: CalendarRange, label: 'Semanal', section: 'semanal' },
-    { icon: CalendarCheck, label: 'Diaria', section: 'diaria' },
-    { icon: NAV_ICONS.delegar, label: 'Delegar', section: 'delegar' },
-    { icon: Target, label: 'Misión', section: 'mision' },
-    { icon: Clock, label: 'Fechas', section: 'fechas' },
-    { icon: Pill, label: 'Suplementos', section: 'suplementos' },
-    { icon: Cake, label: 'Cumpleaños', section: 'cumple' },
-    { icon: UserCheck, label: 'Tribu', section: 'tribu' },
-    { icon: MessageSquare, label: 'Coaching', active: true, section: 'coaching' },
-    { icon: Heart, label: 'Gratitud', section: 'gratitud' },
-    { icon: Smile, label: 'Focus', section: 'focus' },
-    { icon: GraduationCap, label: 'Cursos', section: 'cursos' },
-  ];
-
+  void profile;
   return (
-    <aside className="w-48 bg-[#0A0A26] h-300 flex flex-col transition-all duration-300 z-20 shrink-0">
-      <div className="h-16 flex items-center px-6 pt-4 pb-2">
-        <div className="flex items-center gap-3 text-white">
-         <img src="/focussia.png" alt={i18n.t('focusia_vxbw')} className='w-8 h-8' />
-          <span className="text-xl font-bold tracking-wide">{i18n.t('focusia_vxbw')}</span>
-        </div>
-      </div>
-
-      <nav className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
-        {navItems.map((item, index) => (
-          <NavItem key={index} {...item} onClick={() => onNav(item.section)} />
-        ))}
-        <NavItem icon={MoreHorizontal} label={i18n.t('mas')} onClick={() => {}} />
-      </nav>
-
-      <div className="p-4 relative">
-        <button onClick={() => setShowProfile(v => !v)} className="flex items-center w-full p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
-          <span className="relative w-10 h-10 shrink-0">
-            <span className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-sm font-bold">
-              {userName?.[0]?.toUpperCase() || 'U'}
-            </span>
-            {photoUrl && (
-              <img src={photoUrl} alt={userName || 'Usuario'} className="absolute inset-0 w-full h-full rounded-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-            )}
-          </span>
-          <div className="ml-3 text-left flex-1">
-            <p className="text-sm font-semibold text-white">{userName || 'Usuario'}</p>
-            <p className="text-xs text-white/50">{i18n.t('ver_perfil_1sm0')}</p>
-          </div>
-          <ChevronDown className="w-4 h-4 text-white/50" />
-        </button>
-        {showProfile && (
-          <div className="absolute left-4 right-4 bottom-full mb-2">
-            <ProfileMenu
-              profile={profile}
-              userName={userName}
-              onBack={() => { setShowProfile(false); onBack(); }}
-              onLogout={() => { setShowProfile(false); onLogout(); }}
-              onClose={() => setShowProfile(false)}
-            />
-          </div>
-        )}
-      </div>
-    </aside>
+    <ShellSidebar
+      activeNav="coaching"
+      onNav={onNav}
+      userName={userName}
+      avatarImg={photoUrl}
+      onLogout={onLogout}
+      onBack={onBack}
+    />
   );
 };
 
@@ -396,7 +327,7 @@ export default function CoachingScreen({ onBack, userName, onNavigate, onOpenHel
         <Header onBack={onBack} userName={userName} photoUrl={photoUrl} profile={profile} onLogout={handleLogout} onOpenHelp={onOpenHelp} onOpenNotifications={onOpenNotifications} onOpenSettings={onOpenSettings} />
 
         <div className="flex-1 overflow-y-auto p-8">
-          <div className="max-w-[1400px] mx-auto flex flex-col gap-8">
+          <div className="w-full flex flex-col gap-8">
             <div className="flex flex-col xl:flex-row items-start gap-8">
             {/* Columna Izquierda */}
             <div className="flex-1 flex flex-col gap-6">

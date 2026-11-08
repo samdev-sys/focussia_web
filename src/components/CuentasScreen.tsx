@@ -18,6 +18,7 @@ import {
 } from '../services/api';
 import { ConfiguracionPanel } from './ConfiguracionPanel';
 import HelpChat from './HelpChat';
+import ShellSidebar from './ShellSidebar';
 
 const NAV_ITEMS = [
   { icon: Home, label: 'Inicio', section: 'inicio' },
@@ -443,47 +444,14 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
 
   return (
     <div className="flex h-full overflow-hidden text-slate-800 bg-[#F8F9FB]">
-      {/* Sidebar */}
-      <aside className="w-48 bg-[#0A0A26] h-full hidden md:flex flex-col z-20 shrink-0">
-        <div className="h-16 flex items-center px-6 pt-4 pb-2">
-          <div className="flex items-center gap-3 text-white">
-            <img src="/focussia.png" alt={i18n.t('focusia_jft3')} className="w-4 h-4 text-white" />
-            <span className="text-xl font-bold tracking-wide">{i18n.t('focusia_jft3')}</span>
-          </div>
-        </div>
-        <nav className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
-          {NAV_ITEMS.map((item, i) => (
-            <button
-              key={i}
-              onClick={() => nav(item.section)}
-              className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors w-full text-left ${
-                item.section === 'cuentas'
-                  ? 'text-white bg-gradient-to-r from-[#6236FF] to-[#8A2BE2] shadow-md'
-                  : 'text-white/60 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <item.icon className="w-5 h-5 text-center shrink-0" />
-              <span className="truncate">{item.label}</span>
-            </button>
-          ))}
-          <button className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors w-full text-left text-white/60 hover:text-white hover:bg-white/5">
-            <MoreHorizontal className="w-5 h-5 text-center shrink-0" />
-            <span className="truncate">{i18n.t('mas_svbh')}</span>
-          </button>
-        </nav>
-        <div className="p-4">
-          <button onClick={onBack} className="flex items-center w-full p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-sm font-bold">
-              {userName?.[0]?.toUpperCase() || 'U'}
-            </div>
-            <div className="ml-3 text-left flex-1">
-              <p className="text-sm font-semibold text-white">{userName || 'Usuario'}</p>
-              <p className="text-xs text-white/50">{i18n.t('ver_perfil_gqh9')}</p>
-            </div>
-            <ChevronDown className="w-4 h-4 text-white/50" />
-          </button>
-        </div>
-      </aside>
+      {/* Sidebar canónica compartida con todas las pantallas */}
+      <div className="hidden md:flex">
+        <ShellSidebar
+          activeNav="cuentas"
+          onNav={nav}
+          userName={userName}
+        />
+      </div>
 
       {/* Contenido */}
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-[#F8F9FB] md:rounded-tl-[2rem]">
@@ -540,7 +508,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 pb-6">
-          <div className="max-w-[1200px] flex flex-col xl:flex-row gap-5">
+          <div className="max-w-[1200px] flex flex-row gap-5">
             <div className="flex-1 flex flex-col gap-5 min-w-0">
               {/* Barra de acciones */}
               <div className="flex items-center gap-2 flex-wrap">
@@ -717,7 +685,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
             </div>
 
             {/* Columna derecha */}
-            <div className="w-full xl:w-[320px] shrink-0 flex flex-col gap-5">
+            <div className="w-[25%] min-w-0 shrink-0 flex flex-col gap-5">
               <section className="rounded-md bg-gradient-to-br from-[#2b3df0] via-[#6236FF] to-[#a21caf] text-white p-5 shadow-md">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold">{i18n.t('resumen_del_mes')}</h3>

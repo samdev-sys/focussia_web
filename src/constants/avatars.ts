@@ -1,10 +1,10 @@
 export const AVATAR_FILES: Record<number, string> = {
-  1: '/avatars/John.jpeg',
-  2: '/avatars/conrad.jpeg',
-  3: '/avatars/Ashley.jpeg',
-  4: '/avatars/Lia.jpeg',
-  5: '/avatars/Monroe.jpeg',
-  6: '/avatars/Sophya.jpeg',
+  1: '/avartars/John.jpeg',
+  2: '/avartars/conrad.jpeg',
+  3: '/avartars/Ashley.jpeg',
+  4: '/avartars/Lia.jpeg',
+  5: '/avartars/Monroe.jpeg',
+  6: '/avartars/Sophya.jpeg',
 };
 
 // Fotos de los avatares (carpeta public/Variaciones) para pantallas de presentación
@@ -38,12 +38,12 @@ export const AVATARS = [
   { index: 6, name: 'Sophya', file: '/avatar_en_blanco/Sophya.jpeg', genero: 'femenino', voz: '/voces avatar/sophya-mejorado.mp3' },
 ];
 export const AVATARS_DARK = [
-  { index: 1, name: 'John', file: '/avatars/John.jpeg', genero: 'masculino', },
-  { index: 2, name: 'Conrad', file: '/avatars/conrad.jpeg', genero: 'masculino',  },
-  { index: 3, name: 'Ashley', file: '/avatars/Ashley.jpeg', genero: 'femenino',  },
-  { index: 4, name: 'Lia', file: '/avatars/Lia.jpeg', genero: 'femenino' },
-  { index: 5, name: 'Monroe', file: '/avatars/Monroe.jpeg', genero: 'masculino',  },
-  { index: 6, name: 'Sophya', file: '/avatars/Sophya.jpeg', genero: 'femenino',},
+  { index: 1, name: 'John', file: '/avartars/John.jpeg', genero: 'masculino', },
+  { index: 2, name: 'Conrad', file: '/avartars/conrad.jpeg', genero: 'masculino',  },
+  { index: 3, name: 'Ashley', file: '/avartars/Ashley.jpeg', genero: 'femenino',  },
+  { index: 4, name: 'Lia', file: '/avartars/Lia.jpeg', genero: 'femenino' },
+  { index: 5, name: 'Monroe', file: '/avartars/Monroe.jpeg', genero: 'masculino',  },
+  { index: 6, name: 'Sophya', file: '/avartars/Sophya.jpeg', genero: 'femenino',},
 ]
 
 // Fotos de estilo "ciber" (carpeta public/Avatars_ciber) para las pantallas
@@ -60,60 +60,64 @@ export const AVATARS_CIBER: Record<number, string> = {
 // ── Fotos de avatares para el módulo de Reportes (Doc 27) ──────────────────
 export type ReportAvatarPose = 'bottom' | 'tab2' | 'person' | 'tab' | 'pc' | 'book';
 
+/* Fotos por avatar y pose, recortes oficiales del diseño en
+   `public/Avatars_reports/` (serialized: cada grupo `Captura_de_pantalla…`
+   corresponde a una pose; el recorte de cada avatar se identificó revisando
+   el rostro de cada imagen). */
 export const AVATARS_REPORT_POSES: Record<ReportAvatarPose, Record<number, string>> = {
-  // Lista principal de Reportes y Reporte semanal cerrado / sin acciones
+  // Lista principal de Reportes y Reporte semanal cerrado / sin acciones (202348)
   bottom: {
-    1: '/Avatars_bottom/Captura_de_pantalla_2026-10-26_202348.png_49d3190a.jpg',
-    2: '/Avatars_bottom/Captura_de_pantalla_2026-10-26_202348.png_82c1b1f7.jpg',
-    3: '/Avatars_bottom/Captura_de_pantalla_2026-10-26_202348.png_a39f63c5.jpg',
-    4: '/Avatars_bottom/Captura_de_pantalla_2026-10-26_202348.png_61f069a5.jpg',
-    5: '/Avatars_bottom/Captura_de_pantalla_2026-10-26_202348.png_b7b92c8a.jpg',
-    6: '/Avatars_bottom/Captura_de_pantalla_2026-10-26_202348.png_5f2c7ddc.jpg',
+    1: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202348.png_49d3190a.jpg',
+    2: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202348.png_82c1b1f7.jpg',
+    3: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202348.png_a39f63c5.jpg',
+    4: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202348.png_61f069a5.jpg',
+    5: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202348.png_b7b92c8a.jpg',
+    6: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202348.png_5f2c7ddc.jpg',
   },
-  // Reporte mensual (tablet con lápiz sobre el escritorio)
+  // Reporte mensual (tablet sobre el escritorio) (202426)
   tab2: {
-    1: '/Avatars_tab2/Captura_de_pantalla_2026-10-26_202426.png_85fba29e.jpg',
-    2: '/Avatars_tab2/Captura_de_pantalla_2026-10-26_202426.png_3f7ae67c.jpg',
-    3: '/Avatars_tab2/Captura_de_pantalla_2026-10-26_202426.png_182240b5.jpg',
-    4: '/Avatars_tab2/Captura_de_pantalla_2026-10-26_202426.png_34872584.jpg',
-    5: '/Avatars_tab2/Captura_de_pantalla_2026-10-26_202426.png_615047c6.jpg',
-    6: '/Avatars_tab2/Captura_de_pantalla_2026-10-26_202426.png_27250f75.jpg',
+    1: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202426.png_85fba29e.jpg',
+    2: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202426.png_3f7ae67c.jpg',
+    3: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202426.png_182240b5.jpg',
+    4: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202426.png_34872584.jpg',
+    5: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202426.png_615047c6.jpg',
+    6: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202426.png_27250f75.jpg',
   },
-  // Reporte anual (frente al escritorio)
+  // Reporte anual (frente al escritorio) (202434)
   person: {
-    1: '/Avatars_rep-person/Captura_de_pantalla_2026-10-26_202434.png_9465d66c.jpg',
-    2: '/Avatars_rep-person/Captura_de_pantalla_2026-10-26_202434.png_f23fcb79.jpg',
-    3: '/Avatars_rep-person/Captura_de_pantalla_2026-10-26_202434.png_154c0f65.jpg',
-    4: '/Avatars_rep-person/Captura_de_pantalla_2026-10-26_202434.png_1880f9f7.jpg',
-    5: '/Avatars_rep-person/Captura_de_pantalla_2026-10-26_202434.png_2c1056ec.jpg',
-    6: '/Avatars_rep-person/Captura_de_pantalla_2026-10-26_202434.png_dd135e77.jpg',
+    1: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202434.png_154c0f65.jpg',
+    2: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202434.png_9465d66c.jpg',
+    3: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202434.png_dd135e77.jpg',
+    4: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202434.png_2c1056ec.jpg',
+    5: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202434.png_1880f9f7.jpg',
+    6: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202434.png_f23fcb79.jpg',
   },
-  // Historial de reportes anteriores (de pie con tablet)
+  // Historial de reportes anteriores (de pie con tablet) (202355)
   tab: {
-    1: '/Avatars_tab/Captura_de_pantalla_2026-10-26_202355.png_74fb50e7.jpg',
-    2: '/Avatars_tab/Captura_de_pantalla_2026-10-26_202355.png_0e3c0ea9.jpg',
-    3: '/Avatars_tab/Captura_de_pantalla_2026-10-26_202355.png_751b6fc7.jpg',
-    4: '/Avatars_tab/Captura_de_pantalla_2026-10-26_202355.png_9988f2ad.jpg',
-    5: '/Avatars_tab/Captura_de_pantalla_2026-10-26_202355.png_3c643d1d.jpg',
-    6: '/Avatars_tab/Captura_de_pantalla_2026-10-26_202355.png_f2236135.jpg',
+    1: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202355.png_74fb50e7.jpg',
+    2: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202355.png_0e3c0ea9.jpg',
+    3: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202355.png_751b6fc7.jpg',
+    4: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202355.png_9988f2ad.jpg',
+    5: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202355.png_3c643d1d.jpg',
+    6: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202355.png_f2236135.jpg',
   },
-  // Reporte en actualización (frente al computador)
+  // Reporte en actualización (frente al computador) (202335)
   pc: {
-    1: '/Avatars_pc/Captura_de_pantalla_2026-10-26_202335.png_6e5607ad.jpg',
-    2: '/Avatars_pc/Captura_de_pantalla_2026-10-26_202335.png_3bf32998.jpg',
-    3: '/Avatars_pc/Captura_de_pantalla_2026-10-26_202335.png_16897061.jpg',
-    4: '/Avatars_pc/Captura_de_pantalla_2026-10-26_202335.png_aa797534.jpg',
-    5: '/Avatars_pc/Captura_de_pantalla_2026-10-26_202335.png_030c2bb1.jpg',
-    6: '/Avatars_pc/Captura_de_pantalla_2026-10-26_202335.png_84b66c3b.jpg',
+    1: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202335.png_6e5607ad.jpg',
+    2: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202335.png_3bf32998.jpg',
+    3: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202335.png_16897061.jpg',
+    4: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202335.png_aa797534.jpg',
+    5: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202335.png_030c2bb1.jpg',
+    6: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202335.png_84b66c3b.jpg',
   },
-  // Análisis pendiente, error, Focus activo y Notificaciones (escribiendo en cuaderno)
+  // Análisis pendiente, error, Focus activo y Notificaciones (cuaderno) (202443)
   book: {
-    1: '/Avatars_book/Captura_de_pantalla_2026-10-26_202443.png_8aba668a.jpg',
-    2: '/Avatars_book/Captura_de_pantalla_2026-10-26_202443.png_06f0665a.jpg',
-    3: '/Avatars_book/Captura_de_pantalla_2026-10-26_202443.png_4ae19daf.jpg',
-    4: '/Avatars_book/Captura_de_pantalla_2026-10-26_202443.png_ab712343.jpg',
-    5: '/Avatars_book/Captura_de_pantalla_2026-10-26_202443.png_50ab1b45.jpg',
-    6: '/Avatars_book/Captura_de_pantalla_2026-10-26_202443.png_2a3015df.jpg',
+    1: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202443.png_8aba668a.jpg',
+    2: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202443.png_06f0665a.jpg',
+    3: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202443.png_4ae19daf.jpg',
+    4: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202443.png_ab712343.jpg',
+    5: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202443.png_50ab1b45.jpg',
+    6: '/Avatars_reports/Captura_de_pantalla_2026-10-26_202443.png_2a3015df.jpg',
   },
 };
 
