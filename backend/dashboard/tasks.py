@@ -506,7 +506,9 @@ def _call_groq(messages, temperature=0.7, max_tokens=300):
                 'User-Agent': 'focusia/1.0',
             },
         )
-        with urlopen(req, timeout=30) as resp:
+        if req.full_url.lower().startswith(('http://', 'file:', 'ftp:')):
+            return None
+        with urlopen(req, timeout=30) as resp:  # nosec B310 - scheme validated, fixed https endpoint
             data = json.loads(resp.read().decode('utf-8'))
             return data['choices'][0]['message']['content']
     except Exception as e:
@@ -583,7 +585,7 @@ def _generate_ai_content(level, data, tono=None):
         {'role': 'system', 'content': 'Sos un coach estratégico de productividad. Respondés en JSON.'},
         {'role': 'user', 'content': prompt},
     ]
-    raw = _call_groq(messages, temperature=0.7, max_tokens=300)
+    raw = _call_groq(messages, temperature=0.7, max_tokens=700)
     if not raw:
         return None, None
 
@@ -675,16 +677,34 @@ def _notify_report_ready(user, report):
         logger.warning(f'[REPORTS] aviso falló user={user.id} report={report.id}: {e}')
 
 
-def _generate_report_for_user(user, level, force=False):
-    """Crea o actualiza el reporte del período que cierra hoy (Doc 27 §4, §4.4)."""
+def _generate_report_for_user(user, level, force=False, periodo=None):
+    """Crea o actualiza el reporte del período que cierra hoy (Doc 27 §4, §4.4).
+
+    Con `periodo=(start, end)` se regenera un reporte anterior concreto: lo usa
+    `reconciliar_reportes` para el reintento de un reporte en fallo o análisis
+    pendiente, cuyo período ya no es «el que cierra hoy». Conserva la identidad
+    del reporte (period, label y parcialidad originales).
+    """
     from django.db import IntegrityError
     from dashboard.models import ConfiguracionUsuario, FocusiaReport, ReportDataSource
 
-    period_start, period_end, is_partial, label = _get_period_range(level, user)
-    if not period_start:
-        return None
-
-    existing = FocusiaReport.objects.filter(user=user, level=level, period_start=period_start).first()
+    if periodo is not None:
+        period_start, period_end = periodo
+        existing = FocusiaReport.objects.filter(
+            user=user, level=level, period_start=period_start
+        ).first()
+        if not existing:
+            # Solo tiene sentido reintentar un reporte creado; sin reporte previo
+            # no hay período conocido al que regenerar.
+            return None
+        is_partial, label = existing.is_partial, existing.cycle_label
+    else:
+        period_start, period_end, is_partial, label = _get_period_range(level, user)
+        if not period_start:
+            return None
+        existing = FocusiaReport.objects.filter(
+            user=user, level=level, period_start=period_start
+        ).first()
 
     # Período ya cerrado: no se reabre ni se recalcula (§4.1).
     if existing and existing.closed_at and not force:
@@ -755,6 +775,21 @@ def _generate_report_for_user(user, level, force=False):
         for key, value in campos.items():
             setattr(existing, key, value)
         existing.save()
+        # En un reintento que resuelve un fallo previo, sí corresponde un aviso:
+        # el intento fallido nunca avisó (Doc 27 §7.2, un único aviso por reporte;
+        # el dedupe del motor evita duplicados). No se avisa si el usuario ya
+        # abrió el reporte fallido.
+        if (
+            periodo is not None
+            and estado == FocusiaReport.GenerationState.READY
+            and existing.status not in (
+                FocusiaReport.ReportStatus.NOTIFIED,
+                FocusiaReport.ReportStatus.OPENED,
+                FocusiaReport.ReportStatus.ACTION_TAKEN,
+            )
+        ):
+            _notify_report_ready(user, existing)
+            _marcar_notificado(existing)
         return existing
 
     if not datos_ok:
@@ -812,7 +847,12 @@ def reconciliar_reportes(user=None):
     resultados = []
     for report in qs:
         try:
-            nuevo = _generate_report_for_user(report.user, report.level, force=True)
+            nuevo = _generate_report_for_user(
+                report.user,
+                report.level,
+                force=True,
+                periodo=(report.period_start, report.period_end),
+            )
             resultados.append({'level': report.level, 'state': nuevo.generation_state if nuevo else 'none'})
         except Exception as e:
             logger.exception(f'[REPORTS] reconciliar falló user={report.user_id} level={report.level}: {e}')

@@ -18,20 +18,27 @@ class Command(BaseCommand):
 
         created = 0
         for r in due:
-            _, was_created = Notification.objects.get_or_create(
+            # Un recordatorio repetido puede compartir título; la identidad es el
+            # recordatorio y su ocurrencia programada (evita re-notificar lo mismo).
+            ya_notificado = Notification.objects.filter(
+                user=r.user,
+                type='reminder',
+                data__recordatorio_id=r.id,
+                data__fecha_hora=r.fecha_hora.isoformat(),
+            ).exists()
+            if ya_notificado:
+                continue
+            Notification.objects.create(
                 user=r.user,
                 type='reminder',
                 title=r.titulo,
-                defaults={
-                    'message': f'{r.categoria} — {r.titulo}',
-                    'data': {
-                        'recordatorio_id': r.id,
-                        'categoria': r.categoria,
-                        'fecha_hora': r.fecha_hora.isoformat(),
-                    },
+                message=f'{r.categoria} — {r.titulo}',
+                data={
+                    'recordatorio_id': r.id,
+                    'categoria': r.categoria,
+                    'fecha_hora': r.fecha_hora.isoformat(),
                 },
             )
-            if was_created:
-                created += 1
+            created += 1
 
         self.stdout.write(self.style.SUCCESS(f'{created} notificaciones creadas'))

@@ -73,7 +73,9 @@ def generar_propuesta(user, tipo_impacto, situacion):
             },
             method='POST',
         )
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        if req.full_url.lower().startswith(('http://', 'file:', 'ftp:')):
+            return _crear_propuesta_default(user, tipo_impacto, situacion)
+        with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310 - scheme validated, fixed https endpoint
             data = json.loads(resp.read())
         text = data['choices'][0]['message']['content']
 
@@ -191,7 +193,9 @@ def generar_payload_coach(user, tipo_impacto, tipo_alerta, meta_anual=None, metr
                 },
                 method='POST',
             )
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            if req.full_url.lower().startswith(('http://', 'file:', 'ftp:')):
+                return _build_default_payload(tipo_alerta, d)
+            with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310 - scheme validated, fixed https endpoint
                 data = json.loads(resp.read())
             text = data['choices'][0]['message']['content']
             import re

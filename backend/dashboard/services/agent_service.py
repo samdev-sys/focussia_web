@@ -137,9 +137,11 @@ class AgentService:
             },
             method="POST",
         )
+        if req.full_url.lower().startswith(('http://', 'file:', 'ftp:')):
+            return "Estoy teniendo problemas para pensar ahora. ¿Puedes intentarlo de nuevo en un momento?"
 
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310 - scheme validated, fixed https endpoint
                 data = json.loads(resp.read().decode('utf-8'))
                 return data['choices'][0]['message']['content']
         except Exception as e:

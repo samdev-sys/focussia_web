@@ -32,8 +32,10 @@ def _enviar_twilio(telefono: str, mensaje: str) -> dict:
             'Content-Type': 'application/x-www-form-urlencoded',
         },
     )
+    if req.full_url.lower().startswith(('http://', 'file:', 'ftp:')):
+        return {'success': False, 'error': 'URL no permitida'}
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with urllib.request.urlopen(req, timeout=15) as resp:  # nosec B310 - scheme validated, fixed https endpoint
             result = json.loads(resp.read().decode('utf-8'))
             logger.info(f'WhatsApp sent to {telefono}: sid={result.get("sid")}')
             return {'success': True, 'sid': result.get('sid')}

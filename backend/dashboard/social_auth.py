@@ -13,7 +13,26 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
+def cancelar_focus_activas(user):
+    """Al iniciar sesión no debe quedar ninguna sesión de Focus activa (evita 409 al iniciar)."""
+    try:
+        from dashboard.models import FocusSession
+        ahora = timezone.now()
+        activas = FocusSession.objects.filter(user=user, estado='activa')
+        for sesion in activas:
+            sesion.estado = 'cancelada'
+            sesion.ended_at = ahora
+            if sesion.started_at and not sesion.focused_minutes:
+                segundos = (ahora - sesion.started_at).total_seconds()
+                sesion.focused_minutes = max(0, int(segundos // 60))
+            sesion.save(update_fields=['estado', 'ended_at', 'focused_minutes'])
+    except Exception:
+        logger.exception('No se pudieron cancelar sesiones Focus activas al iniciar sesión (user=%s)', getattr(user, 'id', None))
+
+
 def _set_jwt_cookies(response, user):
+    # Limpieza de estado efímero de UI/sesión: Focus no debe quedar activo entre logins.
+    cancelar_focus_activas(user)
     refresh = RefreshToken.for_user(user)
     secure = not settings.DEBUG
     samesite = 'None' if not settings.DEBUG else 'Lax'

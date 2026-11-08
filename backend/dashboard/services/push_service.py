@@ -105,8 +105,10 @@ class MetaWhatsAppService:
             },
             method='POST',
         )
+        if req.full_url.lower().startswith(('http://', 'file:', 'ftp:')):
+            return {'success': False, 'error': 'URL no permitida'}
         try:
-            with urllib.request.urlopen(req, timeout=15) as resp:
+            with urllib.request.urlopen(req, timeout=15) as resp:  # nosec B310 - scheme validated, fixed https endpoint
                 result = json.loads(resp.read().decode('utf-8'))
                 wm_id = (result.get('messages') or [{}])[0].get('id')
                 logger.info(f'Meta WhatsApp enviado a {numero}: {wm_id}')
