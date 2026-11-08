@@ -1,0 +1,25 @@
+FROM alpine:3.20
+
+# Nota: crond en Alpine se ejecuta como root (excepción operativa). Los scripts
+# de backup/restore se ejecutan en este contenedor aislado.
+
+RUN apk add --no-cache \
+    postgresql-client \
+    bash \
+    tar \
+    gzip \
+    gnupg \
+    curl \
+    aws-cli \
+    tzdata \
+    coreutils
+
+WORKDIR /scripts
+COPY backend/scripts/backup_full.sh /scripts/backup_full.sh
+COPY backend/scripts/restore_full.sh /scripts/restore_full.sh
+RUN chmod +x /scripts/backup_full.sh /scripts/restore_full.sh
+
+# Cron: ejecutar backup diario a las 2:00 AM (log en volumen /backups cuando aplique)
+RUN echo "0 2 * * * /scripts/backup_full.sh >> /var/log/backup.log 2>&1" > /etc/crontabs/root
+
+CMD ["crond", "-f", "-l", "2"]
