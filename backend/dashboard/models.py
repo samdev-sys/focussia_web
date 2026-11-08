@@ -77,7 +77,7 @@ class RuedaVida(models.Model):
 
 class TimeBlock(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='time_blocks')
-    fecha = models.DateField(default=date.today)
+    fecha = models.DateField(default=date.today, null=True, blank=True)
     hora = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(23)])
     tarea = models.CharField(max_length=255, blank=True)
     estado = models.CharField(max_length=10, default='pending')
