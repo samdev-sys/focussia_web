@@ -425,7 +425,7 @@ function BotonGoogle({ onListo, fallback }: { onListo: () => void; fallback: Rea
         },
       });
       if (btnRef.current) {
-        btnRef.current.innerHTML = '';
+        btnRef.current.replaceChildren();
         window.google.accounts.id.renderButton(btnRef.current, {
           theme: 'outline',
           size: 'large',

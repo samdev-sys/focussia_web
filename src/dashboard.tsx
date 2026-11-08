@@ -1833,7 +1833,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
     <span id="tour-coaching-btn" className="contents">
     <ActionButton 
       label={i18n.t('coaching_os1m')} 
-      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
+      color="bg-gradient-to-r from-[#3533cd] to-[#040817] dark:from-[#ec4899] dark:via-[#fb923c] dark:to-[#fde047] dark:!text-[#14050c] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
       onClick={() => navigate('/app/coaching')}
     />
     </span>
@@ -1841,7 +1841,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
     <span id="tour-tribu-btn" className="contents">
     <ActionButton 
       label={i18n.t('tribu_nyvh')} 
-      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
+      color="bg-gradient-to-r from-[#3533cd] to-[#040817] dark:from-[#ec4899] dark:via-[#fb923c] dark:to-[#fde047] dark:!text-[#14050c] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
       onClick={() => navigate('/app/tribu')}
     />
     </span>
@@ -1849,7 +1849,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
     <span id="tour-gratitud-btn" className="contents">
     <ActionButton 
       label={i18n.t('gratitud')} 
-      color="bg-gradient-to-r from-[#3533cd] to-[#040817] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
+      color="bg-gradient-to-r from-[#3533cd] to-[#040817] dark:from-[#ec4899] dark:via-[#fb923c] dark:to-[#fde047] dark:!text-[#14050c] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" 
       onClick={() => navigate('/app/gratitud')}
     />
     </span>
