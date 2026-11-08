@@ -1,0 +1,24 @@
+# Overlay LOCAL de desarrollo: publica el puerto 8000 de `web` directo.
+# El compose de prod no publica puertos (diseñado para ir detrás de Caddy);
+# en la máquina del developer no hay proxy, así que este overlay repone el
+# acceso directo que tenía el stack antes.
+#
+#   docker compose --env-file <tu-env> -p focusia \
+#     -f docker-compose.prod.yml -f docker-compose.local.yml up -d web worker
+#
+# El `--env-file` debe contener al menos DB_PASSWORD (interpolación).
+
+services:
+  web:
+    ports:
+      - "8000:8000"
+    # Sin proxy TLS delante (desarrollo directo por http), el redirect global a
+    # https rompería toda la API salvo /api/health/. En producción con Caddy
+    # el redirect queda activo (docker-compose.prod.yml intacto).
+    environment:
+      SECURE_SSL_REDIRECT: "False"
+      # En desarrollo directo por http el JWT va en cookie; con DEBUG=False
+      # Django la marca Secure=True y el navegador (http://localhost:3000)
+      # la descarta -> login 200 pero todas las llamadas devuelven 401.
+      DEBUG: "True"
+

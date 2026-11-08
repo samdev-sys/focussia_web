@@ -1,0 +1,4 @@
+# Railway usa NIXPACKS por defecto. requirements.txt + Procfile se autodetectan;
+# aquí solo se fija la versión de Python (3.11 LTS, misma del entorno local).
+[phases.setup]
+nixPkgs = ["python311"]

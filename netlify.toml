@@ -6,17 +6,31 @@ publish = "dist"
 NODE_ENV = "production"
 # Netlify lee la versión de Node de NODE_VERSION; Node 20 está EOL desde marzo 2026.
 NODE_VERSION = "22"
-# URL del API que se hornea en el bundle en build time (Vite).
-# REEMPLAZAR por el dominio real del backend una vez desplegado en el servidor.
-VITE_API_URL = "https://api.pendiente-de-definir.com"
+# ┌───────────────────────────────────────────────────────────────────────────┐
+# │ IMPORTANTE · VITE_API_URL                                                 │
+# │ La URL real del API (ej. https://backend-…up.railway.app) se define como   │
+# │ VARIABLE DE ENTORNO en el panel de Netlify (Site configuration →           │
+# │ Environment variables), no aquí: Vite la hornea en el bundle en build      │
+# │ time y cada cambio obliga a un redeploy de todos modos. Mientras no se     │
+# │ defina, esta línea pone un placeholder INÚTIL de forma intencional para    │
+# │ que el fallo sea evidente y no un silencioso http://localhost:8000.        │
+# └───────────────────────────────────────────────────────────────────────────┘
+VITE_API_URL = "REEMPLAZAR-POR-DOMINIO-DEL-BACKEND"
 
-# Redirects para manejar las rutas del frontend (SPA)
+# Panel de administración del frontend (index-admin.html del build).
+[[redirects]]
+from = "/admin"
+to = "/index-admin.html"
+status = 200
+
+# Rutas del frontend que resuelven al SPA (react-router con BrowserRouter):
+# /app/*, /hub, /onboarding, etc. caen acá.
 [[redirects]]
 from = "/*"
 to = "/index.html"
 status = 200
 
-# Headers de seguridad y CORS
+# Headers de seguridad
 [[headers]]
 for = "/*"
 [headers.values]
@@ -25,7 +39,7 @@ X-Frame-Options = "DENY"
 X-XSS-Protection = "1; mode=block"
 Referrer-Policy = "strict-origin-when-cross-origin"
 
-# Headers para archivos estáticos (cache)
+# Headers para assets con hash (cache inmutable)
 [[headers]]
 for = "/assets/*"
 [headers.values]

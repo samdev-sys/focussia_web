@@ -34,8 +34,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    # Puerto no publicado: solo accesible dentro de la red de compose (hardening staging).
     restart: unless-stopped
   
   db:

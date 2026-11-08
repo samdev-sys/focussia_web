@@ -101,6 +101,33 @@ services:
         limits:
           memory: 512M
 
+  backup:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.backup
+    environment:
+      DATABASE_URL: postgres://focusia:${DB_PASSWORD}@db:5432/focusia_production
+      BACKUP_DIR: /backups
+      MEDIA_DIR: /media
+      RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+      BACKUP_PASSPHRASE: ${BACKUP_PASSPHRASE:-}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_PREFIX: ${S3_PREFIX:-focussia/backups}
+      WEBHOOK_URL: ${BACKUP_WEBHOOK_URL:-}
+      TZ: ${TZ:-America/Bogota}
+    volumes:
+      - ./backups:/backups
+      - media_data:/media:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 256M
+
 volumes:
   postgres_data:
   # Contenido subido desde el panel: sensible y persistente.

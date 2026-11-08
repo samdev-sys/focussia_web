@@ -4,6 +4,7 @@ dist/
 build/
 coverage/
 .coverage
+.esbuild/
 
 # Carpeta efímera de los tests de media
 backend/.test_media/
@@ -12,6 +13,7 @@ backend/.test_media/
 .env
 .env.local
 .env.*.local
+backend/.env
 backend/.env.production
 backend/.env.staging
 
@@ -34,6 +36,7 @@ pnpm-debug.log*
 
 # Local tooling (capturas y artefactos de verificación local)
 .openchamber/
+.tmp-esbuild/
 
 # Backend Python
 venv/
