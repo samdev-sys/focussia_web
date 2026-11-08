@@ -27,7 +27,10 @@ class SecurityHeadersMiddleware:
                 "img-src 'self' data: https:; "
                 "font-src 'self' https://fonts.gstatic.com; "
                 "connect-src 'self' https://api.open-meteo.com https://nominatim.openstreetmap.org; "
-                "frame-ancestors 'none'"
+                "frame-ancestors 'none'; "
+                "object-src 'none'; "
+                "base-uri 'self'; "
+                "upgrade-insecure-requests"
             )
         else:
             response['X-Robots-Tag'] = 'noindex, nofollow'

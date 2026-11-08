@@ -32,6 +32,12 @@ def _emitido_antes_del_cierre(user, validated_token) -> bool:
 
 class CookieJWTAuthentication(JWTAuthentication):
     def _validar_csrf(self, request):
+        # En desarrollo local (DEBUG) el frontend puede ir por proxy o directo;
+        # relajamos CSRF para evitar bloqueos por cookies cross-origin/port.
+        # En producción se mantiene la validación estricta.
+        if settings.DEBUG:
+            return
+
         def dummy_get_response(_request):
             return None
 

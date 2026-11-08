@@ -23,6 +23,14 @@ User = get_user_model()
 class LoginRateThrottle(AnonRateThrottle):
     rate = '5/minute'
 
+
+class PasswordResetRequestThrottle(AnonRateThrottle):
+    scope = 'password_reset_request'
+
+
+class PasswordResetConfirmThrottle(AnonRateThrottle):
+    scope = 'password_reset_confirm'
+
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         username = attrs.get('username')
@@ -38,22 +46,56 @@ class EmailTokenObtainPairView(TokenObtainPairView):
 
     def post(self, request, *args, **kwargs):
         try:
+            # Verificación básica de intentos fallidos (bloqueo simple)
+            from dashboard.models import LoginAttempt
+            username = request.data.get('username') or request.data.get('email') or ''
+            ip = request.META.get('REMOTE_ADDR')
+            # Contar intentos fallidos en los últimos 15 minutos
+            from django.utils import timezone
+            from datetime import timedelta
+            recent_failures = LoginAttempt.objects.filter(
+                username=username,
+                success=False,
+                timestamp__gte=timezone.now() - timedelta(minutes=15)
+            ).count()
+            if recent_failures >= 5:
+                LoginAttempt.objects.create(username=username, ip_address=ip, success=False)
+                return Response({'error': 'Demasiados intentos fallidos. Intenta de nuevo en 15 minutos.'}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+            
             response = super().post(request, *args, **kwargs)
             if response.status_code == 200:
+                LoginAttempt.objects.create(username=username, ip_address=ip, success=True)
                 access = response.data.get('access')
                 refresh = response.data.get('refresh')
                 secure = not settings.DEBUG
                 samesite = 'None' if not settings.DEBUG else 'Lax'
+                access_max_age = int(settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds())
+                refresh_max_age = int(settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds())
                 response.set_cookie(
                     'access_token', access,
                     httponly=True, secure=secure, samesite=samesite,
-                    max_age=86400,
+                    max_age=access_max_age,
                 )
                 response.set_cookie(
                     'refresh_token', refresh,
                     httponly=True, secure=secure, samesite=samesite,
-                    max_age=604800,
+                    max_age=refresh_max_age,
                 )
+                # Al iniciar sesión no debe quedar ninguna sesión de Focus activa.
+                try:
+                    from dashboard.social_auth import cancelar_focus_activas
+                    # TokenObtainPairView guarda el serializer validado en
+                    # self.serializer; su atributo `user` es quien acaba de
+                    # autenticarse (username ya normalizado por email).
+                    user_login = getattr(getattr(self, 'serializer', None), 'user', None)
+                    if user_login is None:
+                        user_login = User.objects.filter(username__iexact=username).first() or User.objects.filter(email__iexact=username).first()
+                    if user_login:
+                        cancelar_focus_activas(user_login)
+                except Exception:
+                    logger.exception('No se pudo limpiar Focus activo tras login (username=%s)', username)
+            else:
+                LoginAttempt.objects.create(username=username, ip_address=ip, success=False)
             return response
         except DatabaseError as e:
             logger.exception('Error de base de datos en login')
@@ -80,15 +122,17 @@ class CookieTokenRefreshView(TokenRefreshView):
         response = Response(serializer.validated_data, status=status.HTTP_200_OK)
         secure = not settings.DEBUG
         samesite = 'None' if not settings.DEBUG else 'Lax'
+        access_max_age = int(settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds())
+        refresh_max_age = int(settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds())
         response.set_cookie(
             'access_token', serializer.validated_data.get('access'),
             httponly=True, secure=secure, samesite=samesite,
-            max_age=86400,
+            max_age=access_max_age,
         )
         response.set_cookie(
             'refresh_token', serializer.validated_data.get('refresh'),
             httponly=True, secure=secure, samesite=samesite,
-            max_age=604800,
+            max_age=refresh_max_age,
         )
         return response
 
@@ -114,6 +158,7 @@ def logout_view(request):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([PasswordResetRequestThrottle])
 def password_reset_request(request):
     email = request.data.get('email', '')
     # Respuesta genérica siempre: no revelar si el email existe.
@@ -129,41 +174,35 @@ def password_reset_request(request):
     uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
     reset_token = f'{uidb64}.{default_token_generator.make_token(user)}'
     base = os.environ.get('FRONTEND_RESET_URL', 'http://localhost:3000/reset-password')
+    if not settings.DEBUG and base.startswith('http://localhost'):
+        logger.warning('FRONTEND_RESET_URL usa el valor por defecto localhost; configura la URL pública en producción.')
     link = f'{base}?token={reset_token}'
+    if settings.DEBUG:
+        logger.info('Enlace de recuperación (solo DEBUG) user=%s: %s', user.id, link)
     try:
         from django.core.mail import send_mail
-        from django.conf import settings as dj_settings
         send_mail(
             'Restablece tu contraseña de Focusia',
             f'Hola {user.username},\n\nSolicitaste restablecer tu contraseña. '
             f'Entra aquí (válido por 60 minutos):\n{link}\n\n'
             f'Si no fuiste tú, ignora este mensaje.',
-            dj_settings.DEFAULT_FROM_EMAIL,
+            settings.DEFAULT_FROM_EMAIL,
             [user.email],
             fail_silently=False,
         )
     except Exception:
-        pass
+        logger.exception('No se pudo enviar el correo de recuperación de contraseña a user=%s', user.id)
     return Response(generic.data)
 
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@throttle_classes([PasswordResetConfirmThrottle])
 def password_reset_confirm(request):
     token = request.data.get('token', '')
     new_password = request.data.get('new_password', '')
     if not token or not new_password:
         return Response({'error': 'Token y nueva contraseña requeridos'}, status=400)
-    if len(new_password) < 8:
-        return Response({'error': 'La contraseña debe tener al menos 8 caracteres'}, status=400)
-
-    from django.contrib.auth.password_validation import validate_password
-    from django.core.exceptions import ValidationError
-
-    try:
-        validate_password(new_password)
-    except ValidationError as e:
-        return Response({'error': ' '.join(e.messages)}, status=400)
 
     # Formato del enlace: `<uidb64>.<token>`. Se usa un punto porque el token de
     # Django ya incluye un guion (`<timestamp>-<hash>`) y el uidb64 puede
@@ -177,6 +216,18 @@ def password_reset_confirm(request):
         return Response({'error': 'Token inválido o expirado'}, status=400)
 
     user = User.objects.filter(pk=user_id).first()
+
+    if len(new_password) < 8:
+        return Response({'error': 'La contraseña debe tener al menos 8 caracteres'}, status=400)
+
+    from django.contrib.auth.password_validation import validate_password
+    from django.core.exceptions import ValidationError
+
+    try:
+        validate_password(new_password, user=user)
+    except ValidationError as e:
+        return Response({'error': ' '.join(e.messages)}, status=400)
+
     # check_token valida caducidad (PASSWORD_RESET_TIMEOUT) y que la contraseña
     # no haya cambiado desde que se emitió: es de un solo uso de facto.
     if user is None or not default_token_generator.check_token(user, token_puro):

@@ -4,7 +4,7 @@ from rest_framework.validators import UniqueTogetherValidator
 from .models import (User, RuedaVida, TimeBlock, KanbanTask, Recordatorio, ObjetivoSemana, KeepNota, MisionHoy, CategoriaRueda, RegistroRueda, MatrixItem, Factura, Workspace, WorkspaceMember, Invitation, Delegation, Notification, MetaAnual, GranMetaAnual, AnnualGoalConversationTurn, ObjetivoMensual, PropuestaIA, ConfiguracionUsuario, MatrizEisenhower, Activacion, InteraccionUsuario, DiagnosticoRueda, AccionSugerida, FocusArea, KanbanAction, AccionKanban, SubaccionKanban, HistorialMovimiento, ObjetivoSemanal, MonthlyPlan, MonthlyGoal, WeeklyPlan, Action, ActionDelegation, AgentConversation, AgentSchedule, AgentConfig, FocusiaReport, ReportDataSource, Avatar, OnboardingProfile, InicioState, InicioEventLog, LearningCategory, LearningModuleRef, GuidedTourBlock, AccompanimentPreferences, NotificationPreference, ScheduleException, AccountChangeLog,     InicioPrivacyPreferences, ProgramMonth, MonthlyTraining, ProgramDay, UserProgramProgress, DailyPhraseViewLog,
     CoachingEntry, TribuTemaSemana, TribuCompromiso, UserTrainingProgress, Juego, Membresia,
     AsignacionContenido, CuentaColumna, CuentaRegistro, CuentaValor, Suplemento, SuplementoToma,
-    HoraOroExperiencia, HoraOroAjustes, FocusSession, normalizar_nivel_exigencia)
+    HoraOroExperiencia, HoraOroAjustes, FocusSession, InspiracionVideo, normalizar_nivel_exigencia)
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -16,6 +16,21 @@ class UserSerializer(serializers.ModelSerializer):
         validate_password(value)
         return value
 
+    def validate_avatar_url(self, value):
+        if not value:
+            return value
+        from urllib.parse import urlparse
+        parsed = urlparse(value)
+        # Permitir URLs relativas, http/https, y data:image (base64)
+        if not parsed.scheme:
+            return value  # relativa
+        if parsed.scheme in ['http', 'https']:
+            return value
+        if parsed.scheme == 'data' and value.startswith('data:image/'):
+            return value
+        raise serializers.ValidationError('Solo se permiten URLs http/https, rutas relativas o imágenes data:image')
+
+
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
         return user
@@ -24,6 +39,21 @@ class UserDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'avatar_url', 'bio']
+
+    def validate_avatar_url(self, value):
+        if not value:
+            return value
+        from urllib.parse import urlparse
+        parsed = urlparse(value)
+        # Permitir URLs relativas, http/https, y data:image (base64)
+        if not parsed.scheme:
+            return value  # relativa
+        if parsed.scheme in ['http', 'https']:
+            return value
+        if parsed.scheme == 'data' and value.startswith('data:image/'):
+            return value
+        raise serializers.ValidationError('Solo se permiten URLs http/https, rutas relativas o imágenes data:image')
+
 
 class RuedaVidaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -38,10 +68,24 @@ class TimeBlockSerializer(serializers.ModelSerializer):
         read_only_fields = ['user']
 
 class KanbanTaskSerializer(serializers.ModelSerializer):
+    responsable = serializers.SerializerMethodField()
+
     class Meta:
         model = KanbanTask
-        fields = ['id', 'user', 'titulo', 'descripcion', 'columna', 'fecha_hora', 'assigned_to', 'workspace', 'uuid']
+        fields = ['id', 'user', 'titulo', 'descripcion', 'columna', 'fecha_hora', 'assigned_to', 'workspace', 'uuid', 'responsable']
         read_only_fields = ['user']
+
+    def get_responsable(self, obj):
+        try:
+            deleg = ActionDelegation.objects.filter(
+                user=obj.user,
+                titulo=obj.titulo,
+            ).exclude(
+                estado__in=[ActionDelegation.Estado.COMPLETADA, ActionDelegation.Estado.RECUPERADA],
+            ).order_by('-actualizado').first()
+            return (deleg.responsable or '') if deleg else ''
+        except Exception:
+            return ''
 
 class RecordatorioSerializer(serializers.ModelSerializer):
     class Meta:
@@ -264,14 +308,20 @@ class InvitationSerializer(serializers.ModelSerializer):
         read_only_fields = ['token', 'status', 'invited_by', 'created_at']
 
 class DelegationSerializer(serializers.ModelSerializer):
-    task_title = serializers.CharField(source='task.titulo', read_only=True)
+    task_title = serializers.SerializerMethodField()
     delegator_username = serializers.CharField(source='delegator.username', read_only=True)
-    delegate_username = serializers.CharField(source='delegate.username', read_only=True)
+    delegate_username = serializers.CharField(source='delegate.username', read_only=True, allow_null=True)
 
     class Meta:
         model = Delegation
         fields = ['id', 'task', 'task_title', 'delegator', 'delegator_username', 'delegate', 'delegate_username', 'delegate_email', 'message', 'status', 'token', 'created_at']
         read_only_fields = ['token', 'created_at', 'updated_at']
+
+    def get_task_title(self, obj):
+        task = getattr(obj, 'task', None)
+        if not task:
+            return ''
+        return getattr(task, 'titulo', None) or getattr(task, 'texto_accion', '') or ''
 
 class AiMissionSerializer(serializers.Serializer):
     prompt = serializers.CharField()
@@ -549,6 +599,7 @@ class SubaccionKanbanSerializer(serializers.ModelSerializer):
 class AccionKanbanSerializer(serializers.ModelSerializer):
     historial = HistorialMovimientoSerializer(many=True, read_only=True)
     subacciones = SubaccionKanbanSerializer(many=True, read_only=True)
+    responsable = serializers.SerializerMethodField()
 
     class Meta:
         model = AccionKanban
@@ -556,9 +607,22 @@ class AccionKanbanSerializer(serializers.ModelSerializer):
             'id', 'user', 'texto_accion', 'origen', 'clasificacion',
             'estado_actual', 'destino_asignado', 'fecha_seleccionada',
             'hora_seleccionada', 'es_fijo', 'estado', 'subacciones',
-            'creado_en', 'actualizado_en', 'historial',
+            'responsable', 'creado_en', 'actualizado_en', 'historial',
         ]
         read_only_fields = ['id', 'user', 'creado_en', 'actualizado_en']
+
+    def get_responsable(self, obj):
+        try:
+            deleg = ActionDelegation.objects.filter(
+                user=obj.user,
+                source_ref__kind='accion_kanban',
+                source_ref__id=str(obj.pk),
+            ).exclude(
+                estado__in=[ActionDelegation.Estado.COMPLETADA, ActionDelegation.Estado.RECUPERADA],
+            ).order_by('-actualizado').first()
+            return (deleg.responsable or '') if deleg else ''
+        except Exception:
+            return ''
 
 
 class AccionKanbanCreateSerializer(serializers.ModelSerializer):
@@ -1132,3 +1196,40 @@ class AdminAsignacionSerializer(serializers.ModelSerializer):
             if hasattr(inst, campo):
                 return str(getattr(inst, campo))
         return f'#{obj.objeto_id}'
+
+# ── Centro de Inspiración (Doc 26) ────────────────────────────────────────────
+
+class InspiracionVideoSerializer(serializers.ModelSerializer):
+    """Catálogo público: solo recursos activos, con datos para reproducir y mostrar."""
+
+    categoria_label = serializers.CharField(source='get_categoria_display', read_only=True)
+    miniatura_resuelta = serializers.CharField(read_only=True)
+    youtube_video_id = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = InspiracionVideo
+        fields = ['id', 'categoria', 'categoria_label', 'titulo', 'youtube_url',
+                  'youtube_video_id', 'miniatura_resuelta', 'orden']
+
+
+class AdminInspiracionVideoSerializer(serializers.ModelSerializer):
+    categoria_label = serializers.CharField(source='get_categoria_display', read_only=True)
+    miniatura_file_url = serializers.SerializerMethodField()
+    miniatura_resuelta = serializers.CharField(read_only=True)
+    youtube_video_id = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = InspiracionVideo
+        fields = ['id', 'categoria', 'categoria_label', 'titulo',
+                  'miniatura_url', 'miniatura_file', 'miniatura_file_url', 'miniatura_resuelta',
+                  'youtube_url', 'youtube_video_id', 'orden', 'activo',
+                  'creado', 'actualizado']
+        read_only_fields = ['id', 'creado', 'actualizado']
+
+    def get_miniatura_file_url(self, obj):
+        if not obj.miniatura_file:
+            return ''
+        try:
+            return obj.miniatura_file.url
+        except Exception:
+            return ''

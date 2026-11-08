@@ -31,6 +31,10 @@ def juego_imagen_path(instance, filename):
     return _upload_path('juegos', filename)
 
 
+def inspiracion_miniatura_path(instance, filename):
+    return _upload_path('inspiracion', filename)
+
+
 def avatar_imagen_path(instance, filename):
     return _upload_path('avatares/imagenes', filename)
 
@@ -47,6 +51,12 @@ class User(AbstractUser):
     # cualquier token emitido antes de ese instante. Sin esto, quemar solo los
     # refresh dejaba el access vigente hasta 24 h.
     sessions_invalidated_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta(AbstractUser.Meta):
+        indexes = [
+            models.Index(fields=['email']),
+            models.Index(fields=['username']),
+        ]
 
 class LoginAttempt(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='login_attempts')
@@ -447,7 +457,7 @@ class Delegation(models.Model):
     )
     task = models.ForeignKey('AccionKanban', on_delete=models.CASCADE, related_name='delegations', null=True, blank=True)
     delegator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='delegations_sent')
-    delegate = models.ForeignKey(User, on_delete=models.CASCADE, related_name='delegations_received')
+    delegate = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='delegations_received')
     delegate_email = models.EmailField()
     message = models.TextField(blank=True, default='')
     status = models.CharField(max_length=20, choices=STATUSES, default='pending')
@@ -507,6 +517,12 @@ class Notification(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'is_read', 'in_bell', 'cancelled_at']),
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['scheduled_for']),
+            models.Index(fields=['dedupe_key']),
+        ]
 
     def __str__(self):
         return f'[{self.priority}] {self.title} - {self.user.username}'
@@ -1662,6 +1678,21 @@ class AccountChangeLog(models.Model):
     metadata = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+
+class TOTPDevice(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='totp_device')
+    secret = models.CharField(max_length=32)
+    confirmed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Dispositivo TOTP'
+        verbose_name_plural = 'Dispositivos TOTP'
+
+    def __str__(self):
+        return f'TOTP - {self.user.username}'
+
     class Meta:
         verbose_name = 'Registro de Cambio de Cuenta'
         verbose_name_plural = 'Registros de Cambios de Cuenta'
@@ -2032,6 +2063,7 @@ class AsignacionContenido(models.Model):
         BLOQUE = 'bloque', 'Bloque de visita guiada'
         JUEGO = 'juego', 'Juego'
         AVATAR = 'avatar', 'Avatar'
+        INSPIRACION = 'inspiracion', 'Inspiración'
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='asignaciones')
     tipo = models.CharField(max_length=20, choices=Tipo.choices)
@@ -2057,6 +2089,7 @@ class AsignacionContenido(models.Model):
             'bloque': GuidedTourBlock,
             'juego': Juego,
             'avatar': Avatar,
+            'inspiracion': InspiracionVideo,
         }[tipo]
 
     def clean(self):
@@ -2220,3 +2253,92 @@ class Cumpleanos(models.Model):
 
     def __str__(self):
         return f'{self.nombre} · {self.fecha:%d/%m} · {self.user.username}'
+
+
+# ── Centro de Inspiración (Doc 26) ────────────────────────────────────────────
+
+def _youtube_video_id(url: str) -> str:
+    """Extrae el ID de un video de YouTube desde distintos formatos de URL.
+
+    Soporta watch?v=, youtu.be/, /embed/ y /shorts/. Devuelve cadena vacía si
+    no puede determinarlo; la reproducción depende de un ID válido, así que el
+    admin debe registrar enlaces oficiales reconocibles.
+    """
+    if not url:
+        return ''
+    from urllib.parse import urlparse, parse_qs
+    try:
+        parsed = urlparse(url.strip())
+    except Exception:
+        return ''
+    host = (parsed.netloc or '').lower().replace('www.', '')
+    path = parsed.path or ''
+    if host == 'youtu.be':
+        return path.lstrip('/').split('/')[0]
+    if host.endswith('youtube.com') or host.endswith('youtube-nocookie.com'):
+        if path.startswith('/embed/') or path.startswith('/shorts/') or path.startswith('/v/'):
+            parts = [p for p in path.split('/') if p]
+            return parts[1] if len(parts) > 1 else ''
+        qs = parse_qs(parsed.query or '')
+        vid = (qs.get('v') or [''])[0]
+        if vid:
+            return vid
+    # Último recurso: un parámetro v suelto.
+    qs = parse_qs((urlparse(url).query or ''))
+    return (qs.get('v') or [''])[0]
+
+
+class InspiracionVideo(models.Model):
+    """Recurso audiovisual del Centro de Inspiración (catálogo en YouTube).
+
+    El archivo de video nunca se almacena en Focusia: solo se guarda la
+    referencia al contenido alojado en el canal oficial de YouTube y se
+    reproduce mediante el reproductor oficial incrustado.
+    """
+
+    class Categoria(models.TextChoices):
+        HUMOR = 'humor', 'Humor'
+        SALUD = 'salud', 'Salud'
+        HOBBIES = 'hobbies', 'Hobbies'
+        VIAJES = 'viajes', 'Viajes'
+        DIVERSION = 'diversion', 'Diversión'
+        REFLEXION = 'reflexion', 'Reflexión'
+
+    categoria = models.CharField(max_length=20, choices=Categoria.choices, db_index=True)
+    titulo = models.CharField(max_length=200)
+    miniatura_url = models.URLField(blank=True, default='', help_text='URL externa de la miniatura (opcional)')
+    miniatura_file = models.ImageField(
+        upload_to=inspiracion_miniatura_path, blank=True, null=True,
+        help_text='Miniatura subida desde el panel. Se usa si no hay miniatura_url.')
+    youtube_url = models.URLField(help_text='Link oficial del video en YouTube')
+    orden = models.PositiveSmallIntegerField(default=0, db_index=True)
+    activo = models.BooleanField(default=True, db_index=True)
+    creado = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['orden', 'id']
+        verbose_name = 'Recurso de Inspiración'
+        verbose_name_plural = 'Recursos de Inspiración'
+
+    def __str__(self):
+        return f'{self.get_categoria_display()} · {self.titulo}'
+
+    @property
+    def youtube_video_id(self):
+        return _youtube_video_id(self.youtube_url)
+
+    @property
+    def miniatura_resuelta(self):
+        """Miniatura a mostrar: URL externa, archivo subido o thumbnail de YouTube."""
+        if self.miniatura_url:
+            return self.miniatura_url
+        if self.miniatura_file:
+            try:
+                return self.miniatura_file.url
+            except Exception:
+                return ''
+        vid = self.youtube_video_id
+        if vid:
+            return f'https://img.youtube.com/vi/{vid}/hqdefault.jpg'
+        return ''

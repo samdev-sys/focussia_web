@@ -11,6 +11,7 @@ from django.utils import timezone
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from django.db import IntegrityError, models, transaction
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
@@ -23,7 +24,7 @@ from .models import (
     MetaAnual, GranMetaAnual, AnnualGoalConversationTurn, ObjetivoMensual, PropuestaIA, ConfiguracionUsuario, MatrizEisenhower, Activacion,
     InteraccionUsuario, DiagnosticoRueda, AccionSugerida, FocusArea, KanbanAction,
     AccionKanban, SubaccionKanban, EventoAccion, HistorialMovimiento, ObjetivoSemanal, MonthlyPlan, MonthlyGoal,
-    TribuTemaSemana, TribuCompromiso,
+    TribuTemaSemana, TribuCompromiso, InspiracionVideo,
     WeeklyPlan, Action, ActionDelegation, AgentConversation, AgentSchedule, AgentConfig,
     PushSubscription,
     FocusiaReport, ReportDataSource, Avatar, OnboardingProfile, InicioState, InicioEventLog,
@@ -58,7 +59,7 @@ from .serializers import (
     KanbanActionSerializer, KanbanActionClassifySerializer,
     AccionKanbanSerializer, AccionKanbanCreateSerializer, ClasificarAccionSerializer,
     SubaccionKanbanSerializer,
-    TribuTemaSemanaSerializer, TribuCompromisoSerializer, JuegoSerializer,
+    TribuTemaSemanaSerializer, TribuCompromisoSerializer, JuegoSerializer, InspiracionVideoSerializer,
     HistorialMovimientoSerializer, ObjetivoSemanalSerializer,
     WeeklyPlanSerializer, WeeklyPlanListSerializer, ActionSerializer,
     ActionMoveSerializer, ActionRepeatSerializer, ActionDelegateSerializer,
@@ -116,6 +117,13 @@ class UserViewSet(viewsets.ModelViewSet):
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
 
+    def get_throttles(self):
+        if self.action == 'create':
+            throttle = ScopedRateThrottle()
+            throttle.scope = 'register'
+            return [throttle]
+        return super().get_throttles()
+
     def get_serializer_class(self):
         if self.action in ['retrieve', 'update', 'partial_update', 'me']:
             return UserDetailSerializer
@@ -143,6 +151,11 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data)
         elif request.method == 'DELETE':
+            password = request.data.get('password') or request.data.get('current_password')
+            if not password:
+                return Response({'error': 'Se requiere contraseña para eliminar la cuenta'}, status=status.HTTP_400_BAD_REQUEST)
+            if not request.user.check_password(password):
+                return Response({'error': 'Contraseña incorrecta'}, status=status.HTTP_400_BAD_REQUEST)
             request.user.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -1092,6 +1105,13 @@ class WorkspaceViewSet(viewsets.ModelViewSet):
         role = request.data.get('role', 'member')
         if not email:
             return Response({'error': 'Email requerido'}, status=status.HTTP_400_BAD_REQUEST)
+        # Validar roles permitidos - no permitir asignar owner
+        allowed_roles = ['admin', 'member', 'viewer']
+        if role not in allowed_roles:
+            return Response({'error': 'Rol no permitido'}, status=status.HTTP_400_BAD_REQUEST)
+        # Solo owner puede invitar como admin
+        if role == 'admin' and member.role != 'owner':
+            return Response({'error': 'Solo el propietario puede invitar como administrador'}, status=status.HTTP_403_FORBIDDEN)
 
         token = secrets.token_urlsafe(32)
         invitation = Invitation.objects.create(
@@ -1103,13 +1123,15 @@ class WorkspaceViewSet(viewsets.ModelViewSet):
             expires_at=timezone.now() + timedelta(hours=48)
         )
 
-        Notification.objects.create(
-            user=workspace.owner,
-            type='invitation',
-            title=f'Nueva invitación a {workspace.name}',
-            message=f'Se invitó a {email} al workspace {workspace.name}',
-            data={'invitation_id': invitation.id, 'workspace_id': workspace.id}
-        )
+        invited_user = User.objects.filter(email__iexact=email).first()
+        if invited_user and invited_user != workspace.owner:
+            Notification.objects.create(
+                user=invited_user,
+                type='invitation',
+                title=f'Te invitaron a {workspace.name}',
+                message=f'{request.user.username} te invitó al workspace {workspace.name}',
+                data={'invitation_id': invitation.id, 'workspace_id': workspace.id, 'token': token}
+            )
 
         return Response({'token': token, 'email': email})
 
@@ -1138,11 +1160,20 @@ class WorkspaceViewSet(viewsets.ModelViewSet):
 
         user_id = request.data.get('user_id')
         new_role = request.data.get('role')
+        allowed_roles = ['admin', 'member', 'viewer']
+        if new_role not in allowed_roles:
+            return Response({'error': 'Rol no permitido'}, status=status.HTTP_400_BAD_REQUEST)
         target = workspace.members.filter(user_id=user_id).first()
         if not target:
             return Response({'error': 'Miembro no encontrado'}, status=status.HTTP_404_NOT_FOUND)
         if target.role == 'owner':
             return Response({'error': 'No puedes cambiar el rol del propietario'}, status=status.HTTP_400_BAD_REQUEST)
+        # Solo owner puede asignar admin
+        if new_role == 'admin' and member.role != 'owner':
+            return Response({'error': 'Solo el propietario puede asignar rol de administrador'}, status=status.HTTP_403_FORBIDDEN)
+        # Admin no puede modificar a otros admin
+        if member.role == 'admin' and target.role == 'admin':
+            return Response({'error': 'No tienes permisos para modificar a otro administrador'}, status=status.HTTP_403_FORBIDDEN)
         target.role = new_role
         target.save()
         return Response({'status': 'ok'})
@@ -1226,9 +1257,52 @@ def decline_invitation(request):
     except Invitation.DoesNotExist:
         return Response({'error': 'Invitación no encontrada'}, status=status.HTTP_404_NOT_FOUND)
 
+    if invitation.email != request.user.email:
+        return Response({'error': 'Esta invitación no es para tu email'}, status=status.HTTP_403_FORBIDDEN)
+
     invitation.status = 'declined'
     invitation.save()
     return Response({'status': 'ok'})
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def notifications_stream(request):
+    from django.http import StreamingHttpResponse
+    import json
+    import time
+    
+    def event_stream():
+        last_check = time.time()
+        while True:
+            try:
+                from .models import Notification
+                # Enviar notificaciones no leídas
+                notifs = Notification.objects.filter(
+                    user=request.user,
+                    is_read=False,
+                    in_bell=True,
+                    cancelled_at__isnull=True
+                ).order_by('-created_at')[:10]
+                data = []
+                for n in notifs:
+                    data.append({
+                        'id': n.id,
+                        'type': n.type,
+                        'title': n.title,
+                        'message': n.message,
+                        'created_at': n.created_at.isoformat()
+                    })
+                yield f"data: {json.dumps(data)}\n\n"
+                time.sleep(30)  # Actualizar cada 30 segundos
+            except Exception as e:
+                yield f"data: []\n\n"
+                time.sleep(30)
+    
+    response = StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+    response['Cache-Control'] = 'no-cache'
+    response['X-Accel-Buffering'] = 'no'
+    return response
 
 
 @api_view(['GET', 'POST'])
@@ -1339,7 +1413,9 @@ def _generar_sumario_ia(items, promedio, nivel_equilibrio, focos):
                 "User-Agent": "focusia/1.0",
             },
         )
-        with urlopen(req, timeout=30) as resp:
+        if req.full_url.lower().startswith(('http://', 'file:', 'ftp:')):
+            return None
+        with urlopen(req, timeout=30) as resp:  # nosec B310 - scheme validated, fixed https endpoint
             data = json.loads(resp.read().decode('utf-8'))
             return data['choices'][0]['message']['content']
     except Exception as e:
@@ -1373,98 +1449,133 @@ def _reporte_sintetico_local(items, promedio, nivel_equilibrio, focos):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def generar_diagnostico_rueda(request):
-    serializer = GenerarDiagnosticoInputSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    puntajes = serializer.validated_data.get('puntajes')
-    comentarios = serializer.validated_data.get('comentarios', {})
-    if puntajes is None:
-        registros = RegistroRueda.objects.filter(user=request.user).select_related('categoria')
-        puntajes = {}
-        for r in registros:
-            puntajes[str(r.categoria.id)] = r.puntaje
-        comentarios = {}
+    try:
+        serializer = GenerarDiagnosticoInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        puntajes = serializer.validated_data.get('puntajes')
+        comentarios = serializer.validated_data.get('comentarios') or {}
+        if puntajes is None:
+            registros = RegistroRueda.objects.filter(user=request.user).select_related('categoria')
+            puntajes = {}
+            comentarios = {}
+            for r in registros:
+                puntajes[str(r.categoria.id)] = r.puntaje
+                if getattr(r, 'comentario', None):
+                    comentarios[str(r.categoria.id)] = r.comentario
+        if not isinstance(comentarios, dict):
+            comentarios = {}
 
-    categorias = CategoriaRueda.objects.filter(activo=True).order_by('orden')
-    items = []
-    for cat in categorias:
-        pts = puntajes.get(str(cat.id), puntajes.get(cat.id, 5))
-        cmt = comentarios.get(str(cat.id), '')
-        items.append({'nombre': cat.nombre, 'puntaje': int(pts), 'comentario': cmt})
+        categorias = CategoriaRueda.objects.filter(activo=True).order_by('orden')
+        items = []
+        for cat in categorias:
+            raw_pts = puntajes.get(str(cat.id), puntajes.get(cat.id, 5))
+            try:
+                pts = max(0, min(10, int(raw_pts)))
+            except (TypeError, ValueError):
+                pts = 5
+            raw_cmt = comentarios.get(str(cat.id), comentarios.get(cat.id, ''))
+            cmt = '' if raw_cmt is None else str(raw_cmt)
+            items.append({'nombre': cat.nombre, 'puntaje': pts, 'comentario': cmt})
 
-    if not items:
-        return Response({'error': 'No hay categorías activas'}, status=400)
+        if not items:
+            return Response({'error': 'No hay categorías activas'}, status=400)
 
-    promedio = sum(i['puntaje'] for i in items) / len(items)
-    pico_alto = max(items, key=lambda x: x['puntaje'])
-    pico_bajo = min(items, key=lambda x: x['puntaje'])
-    nivel_equilibrio = _calcular_nivel_equilibrio(promedio)
+        promedio = sum(i['puntaje'] for i in items) / len(items)
+        pico_alto = max(items, key=lambda x: x['puntaje'])
+        pico_bajo = min(items, key=lambda x: x['puntaje'])
+        nivel_equilibrio = _calcular_nivel_equilibrio(promedio)
 
-    # Criterio doc 2: puntaje bajo + comentario del usuario + efecto colateral.
-    # Un comentario resta peso (más prioridad): el usuario ya señaló tensión
-    # en esa área, así que conviene trabajarla aunque no sea la más baja.
-    def peso_foco(item):
-        peso_base = item['puntaje']
-        comentario = (item['comentario'] or '').strip()
-        bonus = min(len(comentario) / 50, 2.0) if comentario else 0
-        return peso_base - bonus
+        # Criterio doc 2: puntaje bajo + comentario del usuario + efecto colateral.
+        # Un comentario resta peso (más prioridad): el usuario ya señaló tensión
+        # en esa área, así que conviene trabajarla aunque no sea la más baja.
+        def peso_foco(item):
+            peso_base = item['puntaje']
+            comentario = (item['comentario'] or '').strip()
+            bonus = min(len(comentario) / 50, 2.0) if comentario else 0
+            return peso_base - bonus
 
-    sorted_items = sorted(items, key=peso_foco)
-    focos = sorted_items[:3]
+        sorted_items = sorted(items, key=peso_foco)
+        focos = [f for f in sorted_items[:3] if f.get('nombre')]
+        foco_nombres = [f['nombre'] for f in focos]
+        foco_1 = foco_nombres[0] if len(foco_nombres) > 0 else ''
+        foco_2 = foco_nombres[1] if len(foco_nombres) > 1 else ''
+        foco_3 = foco_nombres[2] if len(foco_nombres) > 2 else ''
 
-    foco_1, foco_2, foco_3 = focos[0]['nombre'], focos[1]['nombre'], focos[2]['nombre']
-
-    detalle_focos = '; '.join(
-        f"{f['nombre']} ({f['puntaje']}/10"
-        + (f" — señalaste: {(f['comentario'] or '').strip()[:80]}" if (f['comentario'] or '').strip()
-           else ' — elegida por puntaje bajo')
-        + ')'
-        for f in focos
-    )
-    justificacion = (
-        f"Según tu diagnóstico, las áreas {foco_1}, {foco_2} y {foco_3} "
-        f"presentan el mayor potencial de mejora estratégica. "
-        f"Trabajarlas generará un efecto colateral positivo que elevará "
-        f"orgánicamente el equilibrio de las demás áreas de tu vida. "
-        f"Detalle: {detalle_focos}."
-    )
-
-    # Generate AI summary (con fallback local garantizado por spec)
-    ai_summary = _generar_sumario_ia(items, promedio, nivel_equilibrio, focos)
-    if not ai_summary:
-        ai_summary = _reporte_sintetico_local(items, promedio, nivel_equilibrio, focos)
-
-    diag, _ = DiagnosticoRueda.objects.update_or_create(
-        user=request.user,
-        defaults={
-            'status': DiagnosticoRueda.Status.COMPLETED,
-            'promedio_general': round(promedio, 1),
-            'nivel_equilibrio': nivel_equilibrio,
-            'pico_alto': f"{pico_alto['nombre']} ({pico_alto['puntaje']}/10)",
-            'pico_bajo': f"{pico_bajo['nombre']} ({pico_bajo['puntaje']}/10)",
-            'foco_1': foco_1,
-            'foco_2': foco_2,
-            'foco_3': foco_3,
-            'justificacion_focos': justificacion,
-            'ai_summary': ai_summary or '',
-        }
-    )
-
-    # Populate FocusArea model
-    from django.utils import timezone as tz
-    for i, item in enumerate(focos, start=1):
-        FocusArea.objects.update_or_create(
-            diagnostico=diag,
-            area=item['nombre'],
-            defaults={
-                'score': item['puntaje'],
-                'reason': f"Seleccionada como #{i} por su puntaje de {item['puntaje']}/10 y potencial de mejora."
-                           if not item.get('comentario')
-                           else f"Seleccionada como #{i}. Puntaje: {item['puntaje']}/10. Comentario: {item['comentario'][:100]}",
-                'priority_order': i,
-            }
+        detalle_focos = '; '.join(
+            f"{f['nombre']} ({f['puntaje']}/10"
+            + (f" — señalaste: {(f['comentario'] or '').strip()[:80]}" if (f['comentario'] or '').strip()
+               else ' — elegida por puntaje bajo')
+            + ')'
+            for f in focos
         )
+        if focos:
+            justificacion = (
+                f"Según tu diagnóstico, las áreas {', '.join(foco_nombres)} "
+                f"presentan el mayor potencial de mejora estratégica. "
+                f"Trabajarlas generará un efecto colateral positivo que elevará "
+                f"orgánicamente el equilibrio de las demás áreas de tu vida. "
+                f"Detalle: {detalle_focos}."
+            )
+        else:
+            justificacion = ''
 
-    return Response(DiagnosticoRuedaSerializer(diag).data)
+        # Generate AI summary (con fallback local garantizado por spec)
+        try:
+            ai_summary = _generar_sumario_ia(items, promedio, nivel_equilibrio, focos)
+        except Exception:
+            logging.getLogger(__name__).exception('Error generando sumario IA en diagnóstico de rueda')
+            ai_summary = None
+        if not ai_summary:
+            try:
+                ai_summary = _reporte_sintetico_local(items, promedio, nivel_equilibrio, focos)
+            except Exception:
+                logging.getLogger(__name__).exception('Error generando reporte sintético local en diagnóstico de rueda')
+                ai_summary = ''
+
+        with transaction.atomic():
+            diag, _ = DiagnosticoRueda.objects.update_or_create(
+                user=request.user,
+                defaults={
+                    'status': DiagnosticoRueda.Status.COMPLETED,
+                    'promedio_general': round(float(promedio), 1),
+                    'nivel_equilibrio': nivel_equilibrio,
+                    'pico_alto': f"{pico_alto['nombre']} ({int(pico_alto['puntaje'])}/10)",
+                    'pico_bajo': f"{pico_bajo['nombre']} ({int(pico_bajo['puntaje'])}/10)",
+                    'foco_1': foco_1[:100],
+                    'foco_2': foco_2[:100],
+                    'foco_3': foco_3[:100],
+                    'justificacion_focos': justificacion,
+                    'ai_summary': ai_summary or '',
+                }
+            )
+
+            # Reemplazar FocusArea model (evita filas obsoletas de diagnósticos previos)
+            selected_areas = {item['nombre'] for item in focos}
+            diag.focus_areas.exclude(area__in=selected_areas).delete()
+            for i, item in enumerate(focos, start=1):
+                FocusArea.objects.update_or_create(
+                    diagnostico=diag,
+                    area=item['nombre'][:100],
+                    defaults={
+                        'score': int(item['puntaje']),
+                        'reason': (f"Seleccionada como #{i} por su puntaje de {int(item['puntaje'])}/10 y potencial de mejora."
+                                   if not (item.get('comentario') or '').strip()
+                                   else f"Seleccionada como #{i}. Puntaje: {int(item['puntaje'])}/10. Comentario: {(item.get('comentario') or '')[:100]}"),
+                        'priority_order': i,
+                    }
+                )
+
+        diag.refresh_from_db()
+        return Response(DiagnosticoRuedaSerializer(diag).data)
+    except Exception:
+        logging.getLogger(__name__).exception(
+            'Error en generar_diagnostico_rueda para user_id=%s',
+            getattr(request.user, 'id', None),
+        )
+        return Response(
+            {'error': 'No se pudo generar el diagnóstico. Intenta de nuevo.'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
 @api_view(['GET'])
@@ -2136,6 +2247,44 @@ class DelegationViewSet(IsMineOrReadOnly, viewsets.GenericViewSet):
             'received': DelegationSerializer(received, many=True).data,
         })
 
+    def _resolve_task(self, request, task_id):
+        # Delegation.task (FK a AccionKanban) evolucionó respecto al flujo legacy
+        # que enviaba KanbanTask. Aceptamos ambos para no romper clientes.
+        try:
+            return AccionKanban.objects.get(id=task_id, user=request.user), getattr
+        except (AccionKanban.DoesNotExist, ValueError, TypeError, DjangoValidationError):
+            pass
+        try:
+            kt = KanbanTask.objects.get(id=task_id, user=request.user)
+        except (KanbanTask.DoesNotExist, ValueError, TypeError):
+            return None, None
+        accion = AccionKanban.objects.filter(
+            user=request.user, texto_accion=kt.titulo
+        ).order_by('-creado_en').first()
+        if not accion:
+            accion = AccionKanban.objects.create(
+                user=request.user,
+                texto_accion=kt.titulo,
+                origen=AccionKanban.OrigenChoices.OTRO,
+                estado_actual=AccionKanban.EstadoChoices.KANBAN_ACTIVO,
+                fecha_seleccionada=kt.fecha_hora.date() if kt.fecha_hora else None,
+            )
+        return accion, kt
+
+    def _is_delegate(self, delegation, user):
+        if not user or not getattr(user, 'is_authenticated', False):
+            return False
+        if delegation.delegate_id and delegation.delegate_id == user.id:
+            return True
+        if delegation.delegate_email and getattr(user, 'email', None):
+            return delegation.delegate_email.lower() == user.email.lower()
+        return False
+
+    def _can_view(self, delegation, user):
+        if not user or not getattr(user, 'is_authenticated', False):
+            return False
+        return delegation.delegator_id == user.id or self._is_delegate(delegation, user)
+
     def create(self, request):
         task_id = request.data.get('task_id')
         email = request.data.get('email')
@@ -2144,23 +2293,27 @@ class DelegationViewSet(IsMineOrReadOnly, viewsets.GenericViewSet):
         if not task_id or not email:
             return Response({'error': 'task_id y email requeridos'}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            task = KanbanTask.objects.get(id=task_id, user=request.user)
-        except KanbanTask.DoesNotExist:
+        resolved = self._resolve_task(request, task_id)
+        if not resolved or resolved[0] is None:
             return Response({'error': 'Tarea no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+        task, legacy_task = resolved
 
-        delegate = User.objects.filter(email=email).first()
+        delegate = User.objects.filter(email__iexact=email).first()
         token = secrets.token_urlsafe(32)
 
         delegation = Delegation.objects.create(
             task=task,
             delegator=request.user,
-            delegate=delegate if delegate else request.user,
+            delegate=delegate,  # null si el delegado aún no está registrado
             delegate_email=email,
             message=message,
             token=token,
             expires_at=timezone.now() + timedelta(hours=72),
         )
+        # Vincula el delegado al registrarse con ese email.
+        if not delegate:
+            delegation.data = {}
+        # (sin campo data en Delegation; la vinculación por email se resuelve al actuar)
 
         log_security_event(request.user, 'delegation_created', f'task={task_id} email={email}')
 
@@ -2169,7 +2322,7 @@ class DelegationViewSet(IsMineOrReadOnly, viewsets.GenericViewSet):
                 user=delegate,
                 type='delegation',
                 title=f'{request.user.username} te delegó una tarea',
-                message=task.titulo,
+                message=getattr(task, 'texto_accion', '') or getattr(task, 'titulo', ''),
                 data={'delegation_id': delegation.id, 'token': token}
             )
 
@@ -2187,26 +2340,48 @@ class DelegationViewSet(IsMineOrReadOnly, viewsets.GenericViewSet):
             return Response({'error': 'Delegación no encontrada'}, status=status.HTTP_404_NOT_FOUND)
         if delegation.expires_at and delegation.expires_at < timezone.now():
             return Response({'error': 'Delegación expirada'}, status=status.HTTP_410_GONE)
+        if not self._can_view(delegation, request.user):
+            return Response({'error': 'No autorizado'}, status=status.HTTP_403_FORBIDDEN)
         serializer = DelegationSerializer(delegation)
         return Response(serializer.data)
 
     @action(detail=False, methods=['post'], url_path='(?P<token>[^/.]+)')
     def handle_action(self, request, token=None):
-        delegation = Delegation.objects.filter(token=token).first()
+        delegation = Delegation.objects.filter(token=token).select_related('task').first()
         if not delegation:
             return Response({'error': 'Delegación no encontrada'}, status=status.HTTP_404_NOT_FOUND)
         if delegation.expires_at and delegation.expires_at < timezone.now():
             return Response({'error': 'Delegación expirada'}, status=status.HTTP_410_GONE)
 
         action = request.data.get('action')
+        user = request.user
+        if action in ('accept', 'reject', 'complete'):
+            if not self._is_delegate(delegation, user):
+                return Response({'error': 'Solo el delegado puede realizar esta acción'}, status=status.HTTP_403_FORBIDDEN)
+            # Vincula el delegado registrado que coincide por email.
+            if delegation.delegate_id is None and getattr(user, 'is_authenticated', False):
+                delegation.delegate = user
+        elif action == 'cancel':
+            if delegation.delegator_id != getattr(user, 'id', None):
+                return Response({'error': 'Solo el delegador puede cancelar'}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            return Response({'error': 'Acción no válida'}, status=status.HTTP_400_BAD_REQUEST)
+
         if action == 'accept':
             delegation.status = 'accepted'
+            # Defecto 4 (plan): asignar la tarea delegada al delegado al aceptar.
+            # KanbanTask tiene assigned_to; AccionKanban (modelo actual del FK) no.
+            # Si la tarea origen es/era KanbanTask, se asigna al resolverla por contexto.
+            task = delegation.task
+            if task and delegation.delegate_id and hasattr(task, 'assigned_to_id'):
+                task.assigned_to_id = delegation.delegate_id
+                task.save(update_fields=['assigned_to'])
         elif action == 'reject':
             delegation.status = 'rejected'
         elif action == 'complete':
             delegation.status = 'completed'
-        else:
-            return Response({'error': 'Acción no válida'}, status=status.HTTP_400_BAD_REQUEST)
+        elif action == 'cancel':
+            delegation.status = 'rejected'
 
         delegation.save()
         log_security_event(request.user, f'delegation_{action}', f'token={token}')
@@ -2419,7 +2594,9 @@ Responde EXACTAMENTE en este formato JSON (sin markdown, sin ```):
                         'User-Agent': 'curl/8.4.0',
                     },
                 )
-                with urllib.request.urlopen(req, timeout=30) as resp:
+                if req.full_url.lower().startswith(('http://', 'file:', 'ftp:')):
+                    raise ValueError('URL no permitida')
+                with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310 - scheme validated, fixed https endpoint
                     result = json.loads(resp.read().decode('utf-8'))
                     content = result['choices'][0]['message']['content']
                     smart_result = json.loads(content)
@@ -2501,7 +2678,9 @@ Reconstruye la meta SMART aplicando este cambio."""
                         'User-Agent': 'curl/8.4.0',
                     },
                 )
-                with urllib.request.urlopen(req, timeout=30) as resp:
+                if req.full_url.lower().startswith(('http://', 'file:', 'ftp:')):
+                    raise ValueError('URL no permitida')
+                with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310 - scheme validated, fixed https endpoint
                     result = json.loads(resp.read().decode('utf-8'))
                     content = result['choices'][0]['message']['content']
                     smart_result = json.loads(content)
@@ -3027,7 +3206,9 @@ def ai_mission(request):
             },
             method='POST',
         )
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        if req.full_url.lower().startswith(('http://', 'file:', 'ftp:')):
+            return Response({'error': 'URL no permitida'}, status=status.HTTP_400_BAD_REQUEST)
+        with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310 - scheme validated, fixed https endpoint
             data = json.loads(resp.read())
         text = data['choices'][0]['message']['content']
         return Response({'text': text})
@@ -3051,31 +3232,48 @@ def delegation_by_token(request, token):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def progreso_actividades(request):
+    from django.db.models import Q
+
     user = request.user
     today = timezone.localdate()
 
+    # 1) Kanban mescla (tabla legacy del tablero que aún conserva filas).
     kanban_qs = KanbanTask.objects.filter(user=user)
     kanban_legacy_total = kanban_qs.count()
     kanban_completadas = kanban_qs.filter(columna='Hecho').count()
 
-    # Bandeja visible del Kanban Backlog (AccionKanban en KANBAN_ACTIVO).
-    # Se suma al total para que el % coincida con lo que el agente reporta
-    # y con lo que el usuario ve en la bandeja.
-    backlog_total = AccionKanban.objects.filter(
-        user=user, estado_actual=AccionKanban.EstadoChoices.KANBAN_ACTIVO
+    # 2) AccionKanban (pipeline unificado, criterio Doc 27 §5):
+    #    en el avance entran solo acciones YA CLASIFICADAS (agenda diaria,
+    #    planificada semanal/mensual/anual, por delegar, histórica) — lo que
+    #    sigue en la bandeja (KANBAN_ACTIVO) o fue eliminado no computa.
+    #    Completada si su ejecución quedó completada o el estado de cierre.
+    accion_qs = AccionKanban.objects.filter(user=user).exclude(
+        estado_actual__in=[
+            AccionKanban.EstadoChoices.KANBAN_ACTIVO,
+            AccionKanban.EstadoChoices.ELIMINADA,
+        ]
+    )
+    accion_total = accion_qs.count()
+    accion_completadas = accion_qs.filter(
+        Q(estado=AccionKanban.EstadoEjecucionChoices.COMPLETADA)
+        | Q(estado_actual=AccionKanban.EstadoChoices.COMPLETADA)
     ).count()
-    kanban_total = kanban_legacy_total + backlog_total
 
-    timeblock_qs = TimeBlock.objects.filter(user=user, fecha=today)
-    timeblock_total = timeblock_qs.exclude(tarea='').count()
-    timeblock_completadas = timeblock_qs.filter(estado='done').exclude(tarea='').count()
+    # 3) TimeBlocks: mismo alcance histórico que las acciones (todo lo
+    #    planificado con tarea cuenta hasta completarse). Antes solo HOY
+    #    entraba en el total: al pasar de medianoche el % saltaba solo.
+    timeblock_qs = TimeBlock.objects.filter(user=user).exclude(tarea='')
+    timeblock_total = timeblock_qs.count()
+    timeblock_completadas = timeblock_qs.filter(estado='done').count()
 
+    # 4) Acciones del planificador semanal (histórico).
     action_qs = Action.objects.filter(weekly_plan__user=user)
     action_total = action_qs.count()
     action_completadas = action_qs.filter(status=Action.ActionStatus.COMPLETADA).count()
 
-    total = kanban_total + timeblock_total + action_total
-    completadas = kanban_completadas + timeblock_completadas + action_completadas
+    total = kanban_legacy_total + accion_total + timeblock_total + action_total
+    completadas = (kanban_completadas + accion_completadas
+                   + timeblock_completadas + action_completadas)
     porcentaje = round((completadas / total) * 100) if total > 0 else 0
 
     return Response({
@@ -3083,7 +3281,8 @@ def progreso_actividades(request):
         'total': total,
         'porcentaje': porcentaje,
         'detalle': {
-            'kanban': {'total': kanban_total, 'completadas': kanban_completadas, 'backlog_bandeja': backlog_total},
+            'kanban': {'total': kanban_legacy_total, 'completadas': kanban_completadas},
+            'acciones_kanban': {'total': accion_total, 'completadas': accion_completadas},
             'timeblock': {'total': timeblock_total, 'completadas': timeblock_completadas},
             'action': {'total': action_total, 'completadas': action_completadas},
         },
@@ -4607,6 +4806,27 @@ def _get_or_create_onboarding(user):
     return profile
 
 
+def _sync_notification_preferences_from_profile(user, profile):
+    """Sincroniza las activaciones del onboarding con NotificationPreference,
+    que es la fuente que usa el dispatcher para autorizar cada canal."""
+    try:
+        mapping = {
+            'app': bool(getattr(profile, 'activations_app', True)),
+            'push': bool(getattr(profile, 'activations_push', True)),
+            'whatsapp': bool(getattr(profile, 'activations_whatsapp', True)),
+            'calls': bool(getattr(profile, 'activations_calls', False)),
+        }
+        for channel, enabled in mapping.items():
+            NotificationPreference.objects.update_or_create(
+                user=user,
+                channel=channel,
+                defaults={'state': 'active' if enabled else 'inactive'},
+            )
+    except Exception:
+        # No bloquear el flujo de onboarding por un fallo de sync.
+        pass
+
+
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def onboarding_avatars(request):
@@ -4648,6 +4868,7 @@ def onboarding_accept_recommended(request):
     profile.used_recommended_config = True
     profile.status = OnboardingProfile.Status.CONFIG_RECOMENDADA_ACEPTADA
     profile.save()
+    _sync_notification_preferences_from_profile(request.user, profile)
     return Response(OnboardingProfileSerializer(profile).data)
 
 
@@ -4674,7 +4895,10 @@ def onboarding_customize_activations(request):
     profile.activations_push = serializer.validated_data['activations_push']
     profile.activations_whatsapp = serializer.validated_data['activations_whatsapp']
     profile.activations_calls = serializer.validated_data['activations_calls']
-    profile.save(update_fields=['activations_app', 'activations_push', 'activations_whatsapp', 'activations_calls'])
+    if profile.status == OnboardingProfile.Status.AVATAR_SELECCIONADO:
+        profile.status = OnboardingProfile.Status.PERSONALIZACION_INICIADA
+    profile.save(update_fields=['activations_app', 'activations_push', 'activations_whatsapp', 'activations_calls', 'status'])
+    _sync_notification_preferences_from_profile(request.user, profile)
     return Response(OnboardingProfileSerializer(profile).data)
 
 
@@ -4687,7 +4911,9 @@ def onboarding_customize_schedule(request):
     profile.schedule_type = serializer.validated_data['schedule_type']
     profile.custom_schedule_start = serializer.validated_data.get('custom_schedule_start')
     profile.custom_schedule_end = serializer.validated_data.get('custom_schedule_end')
-    profile.save(update_fields=['schedule_type', 'custom_schedule_start', 'custom_schedule_end'])
+    if profile.status == OnboardingProfile.Status.AVATAR_SELECCIONADO:
+        profile.status = OnboardingProfile.Status.PERSONALIZACION_INICIADA
+    profile.save(update_fields=['schedule_type', 'custom_schedule_start', 'custom_schedule_end', 'status'])
     return Response(OnboardingProfileSerializer(profile).data)
 
 
@@ -4717,6 +4943,7 @@ def onboarding_confirm(request):
     profile.status = OnboardingProfile.Status.CONFIGURACION_CONFIRMADA
     profile.confirmed_at = timezone.now()
     profile.save(update_fields=['status', 'confirmed_at'])
+    _sync_notification_preferences_from_profile(request.user, profile)
     return Response({'status': 'configuracion_confirmada', 'confirmed_at': profile.confirmed_at})
 
 
@@ -4758,6 +4985,7 @@ def onboarding_complete(request):
     except Exception as e:
         import logging
         logging.getLogger(__name__).exception("Error syncing legacy config on onboarding complete: %s", e)
+    _sync_notification_preferences_from_profile(request.user, profile)
     return Response({'status': 'onboarding_finalizado'})
 
 
@@ -4842,6 +5070,7 @@ def onboarding_reset(request):
         'custom_schedule_end', 'tone', 'used_recommended_config',
         'guided_tour_status',
     ])
+    _sync_notification_preferences_from_profile(request.user, profile)
     # Reset de la configuración de usuario relacionada al onboarding
     try:
         config = request.user.configuracion
@@ -5611,6 +5840,82 @@ def config_devices_logout_all(request):
     return response
 
 
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def two_factor_setup(request):
+    import pyotp
+    import base64
+    from io import BytesIO
+    try:
+        import qrcode
+    except Exception:
+        qrcode = None
+    
+    from .models import TOTPDevice
+    user = request.user
+    device, created = TOTPDevice.objects.get_or_create(user=user)
+    if not device.secret or created:
+        device.secret = pyotp.random_base32()
+        device.confirmed = False
+        device.save()
+    
+    totp = pyotp.TOTP(device.secret)
+    uri = totp.provisioning_uri(name=user.email, issuer_name="Focusia")
+    
+    qr_code = None
+    if qrcode:
+        qr = qrcode.QRCode(version=1, box_size=10, border=5)
+        qr.add_data(uri)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        buffered = BytesIO()
+        img.save(buffered, format="PNG")
+        qr_code = base64.b64encode(buffered.getvalue()).decode()
+    
+    return Response({
+        'secret': device.secret,
+        'uri': uri,
+        'qr_code': f'data:image/png;base64,{qr_code}' if qr_code else None
+    })
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def two_factor_verify(request):
+    import pyotp
+    from .models import TOTPDevice
+    from django.utils import timezone
+    
+    user = request.user
+    code = request.data.get('code', '')
+    
+    try:
+        device = user.totp_device
+    except Exception:
+        return Response({'error': 'Configura 2FA primero'}, status=400)
+    
+    totp = pyotp.TOTP(device.secret)
+    if totp.verify(code):
+        device.confirmed = True
+        device.last_used_at = timezone.now()
+        device.save()
+        return Response({'status': 'ok', 'enabled': True})
+    return Response({'error': 'Código inválido'}, status=400)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def two_factor_disable(request):
+    from .models import TOTPDevice
+    user = request.user
+    try:
+        device = user.totp_device
+        device.delete()
+        return Response({'status': 'ok'})
+    except Exception:
+        return Response({'status': 'ok'})
+
+
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def config_plan(request):
@@ -5835,6 +6140,23 @@ def juegos_catalogo(request):
         qs = qs.filter(tipo=tipo)
     qs = filtrar_queryset(qs, request.user, 'juego')
     return Response(JuegoSerializer(qs, many=True).data)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def inspiracion_catalogo(request):
+    """Catálogo público del Centro de Inspiración (Doc 26).
+
+    Devuelve solo recursos activos, ordenados para su presentación. El
+    contenido audiovisual se reproduce desde YouTube mediante el reproductor
+    oficial incrustado; Focusia no almacena los videos.
+    """
+    qs = InspiracionVideo.objects.filter(activo=True)
+    categoria = (request.query_params.get('categoria') or '').strip().lower()
+    if categoria:
+        qs = qs.filter(categoria=categoria)
+    qs = qs.order_by('categoria', 'orden', 'id')
+    return Response(InspiracionVideoSerializer(qs, many=True).data)
 
 
 @api_view(['POST'])

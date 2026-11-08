@@ -309,11 +309,34 @@ def _enviar_externos(user, titulo: str, mensaje: str, canales, critica: bool) ->
             resultado['email'] = {'success': False, 'error': str(e)}
 
     if 'whatsapp' in canales and puede_enviar(user, 'whatsapp', critica):
-        phone = (agent_cfg.whatsapp_phone if agent_cfg else '') or ''
-        if agent_cfg and agent_cfg.notificar_whatsapp and phone:
-            resultado['whatsapp'] = WhatsAppService.enviar_mensaje(phone, f'{titulo}\n{mensaje}')
+        # Mensaje tipo WhatsApp simulado (in-app, estilo conversacional). Siempre se crea
+        # cuando el canal está habilitado; si hay configuración real, también se envía por API.
+        if puede_enviar(user, 'app', critica):
+            wa_dedupe = f'whatsapp:{titulo[:80]}:{timezone.localtime():%Y%m%d%H%M}'
+            Notification.objects.get_or_create(
+                user=user,
+                dedupe_key=wa_dedupe,
+                defaults={
+                    'type': 'reminder',
+                    'title': '💬 Mensaje de Focusia',
+                    'message': f'{titulo}\n{mensaje}'.strip(),
+                    'priority': 'critica' if critica else 'informativa',
+                    'channel': 'whatsapp',
+                    'data': {'kind': 'whatsapp_simulado', 'critica': critica, 'titulo': titulo},
+                },
+            )
+            resultado['whatsapp_simulado'] = {'success': True, 'simulada': True}
         else:
-            resultado['whatsapp'] = {'success': False, 'error': 'WhatsApp no habilitado'}
+            resultado['whatsapp_simulado'] = {'success': False, 'error': 'Canal in-app desactivado'}
+
+        # Envío real opcional (Twilio/Meta) si está configurado explícitamente.
+        phone = (agent_cfg.whatsapp_phone if agent_cfg else '') or ''
+        if agent_cfg and getattr(agent_cfg, 'notificar_whatsapp', False) and phone:
+            try:
+                resultado['whatsapp'] = WhatsAppService.enviar_mensaje(phone, f'{titulo}\n{mensaje}')
+            except Exception as e:
+                logger.error(f'WhatsApp real falló para {user.id}: {e}')
+                resultado['whatsapp'] = {'success': False, 'error': str(e)}
 
     if 'calls' in canales and puede_enviar(user, 'calls', critica):
         # Llamada simulada: vive dentro de la app, nunca marca teléfonos reales.
@@ -327,7 +350,7 @@ def _enviar_externos(user, titulo: str, mensaje: str, canales, critica: bool) ->
                     'message': f'{titulo}. {mensaje}',
                     'priority': 'critica' if critica else 'informativa',
                     'channel': 'calls',
-                    'data': {'kind': 'llamada_simulada', 'critica': critica},
+                    'data': {'kind': 'llamada_simulada', 'critica': critica, 'titulo': titulo},
                 },
             )
             resultado['calls'] = {'success': True, 'simulada': True}

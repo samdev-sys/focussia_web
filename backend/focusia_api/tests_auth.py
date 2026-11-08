@@ -28,7 +28,7 @@ class AuthRecuperacionTests(TestCase):
         self.assertIn('rec@example.com', mail.outbox[0].to)
 
     def _token_para(self):
-        """Token opaco `<uidb64>-<token>` como el que va en el enlace del correo."""
+        """Token opaco `<uidb64>.<token>` como el que va en el enlace del correo."""
         from django.contrib.auth.tokens import default_token_generator
         from django.utils.encoding import force_bytes
         from django.utils.http import urlsafe_base64_encode

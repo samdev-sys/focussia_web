@@ -6,6 +6,14 @@ import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Whitenoise usa el mismo orden que SecurityMiddleware; se resuelve aquí (y no
+# en la lista) para que el arranque falle rápido y claro si falta el paquete.
+try:
+    import whitenoise  # noqa: F401
+    WHITENOISE_CONFIGURADO = True
+except ImportError:
+    WHITENOISE_CONFIGURADO = False
+
 def load_env(env_path):
     if not env_path.exists():
         return
@@ -88,9 +96,15 @@ INSTALLED_APPS = [
     'dashboard.apps.DashboardConfig',
 ]
 
+# Whitenoise (opcional en dev, requerido en prod): entrega /static/ del
+# panel admin sin nginx ni Caddy; gunicorn no sirve estáticos por sí solo.
+# Debe ir inmediatamente después de SecurityMiddleware (orden recomendado).
+_whitenoise = ['whitenoise.middleware.WhiteNoiseMiddleware'] if WHITENOISE_CONFIGURADO else []
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    *_whitenoise,
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -122,7 +136,9 @@ WSGI_APPLICATION = 'focusia_api.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default=f"postgres://{os.environ.get('DB_USER', 'postgres')}:{os.environ.get('DB_PASSWORD', '')}@{os.environ.get('DB_HOST', 'localhost')}:{os.environ.get('DB_PORT', '5432')}/{os.environ.get('DB_NAME', 'focusia_db')}"
+        default=f"postgres://{os.environ.get('DB_USER', 'postgres')}:{os.environ.get('DB_PASSWORD', '')}@{os.environ.get('DB_HOST', 'localhost')}:{os.environ.get('DB_PORT', '5432')}/{os.environ.get('DB_NAME', 'focusia_db')}",
+        conn_max_age=int(os.environ.get('DB_CONN_MAX_AGE', '60')),
+        conn_health_checks=True,
     )
 }
 
@@ -184,6 +200,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 50,
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle',
@@ -194,6 +212,12 @@ REST_FRAMEWORK = {
         # Producción conserva límites estrictos. Sobre-escribible por env.
         'anon': os.environ.get('THROTTLE_RATE_ANON', '120/minute' if DEBUG else '30/minute'),
         'user': os.environ.get('THROTTLE_RATE_USER', '2000/minute' if DEBUG else '300/minute'),
+        'login': os.environ.get('THROTTLE_RATE_LOGIN', '20/minute' if DEBUG else '5/minute'),
+        'register': os.environ.get('THROTTLE_RATE_REGISTER', '20/hour' if DEBUG else '5/hour'),
+        'password_reset_request': os.environ.get(
+            'THROTTLE_RATE_PASSWORD_RESET_REQUEST', '20/hour' if DEBUG else '5/hour'),
+        'password_reset_confirm': os.environ.get(
+            'THROTTLE_RATE_PASSWORD_RESET_CONFIRM', '30/hour' if DEBUG else '10/hour'),
     },
     'EXCEPTION_THROTTLE_CLASSES': [],
     'EXCEPTION_HANDLER': 'focusia_api.exceptions.custom_exception_handler',
@@ -204,8 +228,9 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    # Móvil + web: access corto (15-30 min) y refresh largo con rotación.
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.environ.get('ACCESS_TOKEN_MINUTES', '20'))),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.environ.get('REFRESH_TOKEN_DAYS', '30'))),
     # Al refrescar se emite un refresh nuevo y se quema el anterior: si uno se
     # filtra, deja de servir en cuanto el usuario legítimo refresque.
     'ROTATE_REFRESH_TOKENS': True,

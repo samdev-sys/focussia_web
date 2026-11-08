@@ -46,13 +46,17 @@ from .views import (
     gratitud_hoy,
     cumpleanos_lista, cumpleanos_detalle, cumpleanos_accion,
     push_public_key, push_subscribe, push_unsubscribe,
-    cursos_mes_actual, cursos_mes, cursos_completar, juegos_catalogo,
+    cursos_mes_actual, cursos_mes, cursos_completar, juegos_catalogo, inspiracion_catalogo,
     motivational_master_table, motivational_master_months, motivational_master_days,
+    notifications_stream,
+    two_factor_setup,
+    two_factor_verify,
+    two_factor_disable,
 )
 from .admin_api import (
     AdminProgramMonthViewSet, AdminTrainingViewSet, AdminProgramDayViewSet,
     AdminTribuTemaViewSet, AdminLearningCategoryViewSet, AdminLearningModuleViewSet,
-    AdminGuidedTourBlockViewSet, AdminAvatarViewSet, AdminJuegoViewSet,
+    AdminGuidedTourBlockViewSet, AdminAvatarViewSet, AdminJuegoViewSet, AdminInspiracionViewSet,
     AdminUsuarioViewSet, AdminMembresiaViewSet, AdminAsignacionViewSet,
     admin_session, admin_overview, admin_asistente_chat,
 )
@@ -113,6 +117,7 @@ admin_router.register(r'learning-modules', AdminLearningModuleViewSet, basename=
 admin_router.register(r'guided-tour-blocks', AdminGuidedTourBlockViewSet, basename='admin-guided-tour-blocks')
 admin_router.register(r'avatars', AdminAvatarViewSet, basename='admin-avatars')
 admin_router.register(r'juegos', AdminJuegoViewSet, basename='admin-juegos')
+admin_router.register(r'inspiracion', AdminInspiracionViewSet, basename='admin-inspiracion')
 admin_router.register(r'usuarios', AdminUsuarioViewSet, basename='admin-usuarios')
 admin_router.register(r'membresias', AdminMembresiaViewSet, basename='admin-membresias')
 admin_router.register(r'asignaciones', AdminAsignacionViewSet, basename='admin-asignaciones')
@@ -148,6 +153,7 @@ urlpatterns = [
     path('cursos/mes/', cursos_mes, name='cursos-mes'),
     path('cursos/completar/', cursos_completar, name='cursos-completar'),
     path('juegos/', juegos_catalogo, name='juegos-catalogo'),
+    path('inspiracion/', inspiracion_catalogo, name='inspiracion-catalogo'),
     path('agent/chat/', agent_chat, name='agent-chat'),
     path('agent/evaluate/', agent_evaluate, name='agent-evaluate'),
     path('tts/', tts, name='tts'),
@@ -208,6 +214,10 @@ urlpatterns = [
     path('config/devices/logout-all/', config_devices_logout_all, name='config-devices-logout-all'),
     path('config/plan/', config_plan, name='config-plan'),
     path('config/modify-plan/availability/', config_modify_plan_availability, name='config-modify-plan-availability'),
+    path('config/2fa/setup/', two_factor_setup, name='2fa-setup'),
+    path('config/2fa/verify/', two_factor_verify, name='2fa-verify'),
+    path('config/2fa/disable/', two_factor_disable, name='2fa-disable'),
+    path('notifications/stream/', notifications_stream, name='notifications-stream'),
     # MOTIVACIONAL
     path('motivational/today/', motivational_today, name='motivational-today'),
     path('motivational/current-training/', motivational_current_training, name='motivational-current-training'),

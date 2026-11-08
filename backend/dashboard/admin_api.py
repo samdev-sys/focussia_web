@@ -34,6 +34,7 @@ from .models import (
     AsignacionContenido,
     Avatar,
     GuidedTourBlock,
+    InspiracionVideo,
     Juego,
     LearningCategory,
     LearningModuleRef,
@@ -49,6 +50,7 @@ from .serializers import (
     AdminAsignacionSerializer,
     AdminAvatarSerializer,
     AdminGuidedTourBlockSerializer,
+    AdminInspiracionVideoSerializer,
     AdminJuegoSerializer,
     AdminLearningCategorySerializer,
     AdminLearningModuleRefSerializer,
@@ -275,6 +277,32 @@ class AdminJuegoViewSet(AdminContentViewSet):
         return Response(self.get_serializer(juegos, many=True).data)
 
 
+class AdminInspiracionViewSet(AdminContentViewSet):
+    """Catálogo del Centro de Inspiración (Doc 26).
+
+    Solo administra referencias a videos alojados en YouTube: Focusia nunca
+    almacena el archivo audiovisual. Nuevos recursos se incorporan desde el
+    panel, sin cambios de código.
+    """
+
+    serializer_class = AdminInspiracionVideoSerializer
+    queryset = InspiracionVideo.objects.all()
+
+    def get_queryset(self):
+        qs = InspiracionVideo.objects.all().order_by('categoria', 'orden', 'id')
+        activo = self.request.query_params.get('activo')
+        if activo in ('true', 'false'):
+            qs = qs.filter(activo=(activo == 'true'))
+        categoria = self.request.query_params.get('categoria')
+        if categoria:
+            qs = qs.filter(categoria=categoria)
+        return qs
+
+    def _en_uso(self, instance):
+        # Catálogo de referencia sin registros de usuario asociados: se puede borrar.
+        return False
+
+
 # ── Usuarios, niveles, membresías y asistente IA ──
 
 class AdminUsuarioViewSet(viewsets.ReadOnlyModelViewSet):
@@ -490,6 +518,10 @@ def admin_overview(request):
         'juegos': {
             'total': Juego.objects.count(),
             'activos': Juego.objects.filter(activo=True).count(),
+        },
+        'inspiracion': {
+            'total': InspiracionVideo.objects.count(),
+            'activos': InspiracionVideo.objects.filter(activo=True).count(),
         },
         'usuarios': {
             'total': User.objects.count(),
