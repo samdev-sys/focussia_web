@@ -118,5 +118,5 @@ Con credenciales (cookies JWT HttpOnly), CORS no puede ser `*`: el origen exacto
 - [ ] Crons: en los logs del `worker` aparecen las 7 tareas al arrancar
       (`docker compose ... logs worker | grep -E 'min|hora|cron'`). Si falta
       `croniter` en la imagen, las 3 tareas de tipo cron salen como "FALLÓ".
-- [ ] `crontab`/respaldos server.
+- [ ] Servicio `backup` activo (`docker compose ... up -d backup`) y primer backup verificado. Ver `docs/BACKUPS.md`.
 - [ ] `SECRET_KEY` etc. NO versionadas: check `git status` limpio de archivos `.env*`.
