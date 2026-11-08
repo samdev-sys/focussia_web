@@ -8,14 +8,13 @@ NODE_ENV = "production"
 NODE_VERSION = "22"
 # ┌───────────────────────────────────────────────────────────────────────────┐
 # │ IMPORTANTE · VITE_API_URL                                                 │
-# │ La URL real del API (ej. https://backend-…up.railway.app) se define como   │
-# │ VARIABLE DE ENTORNO en el panel de Netlify (Site configuration →           │
-# │ Environment variables), no aquí: Vite la hornea en el bundle en build      │
-# │ time y cada cambio obliga a un redeploy de todos modos. Mientras no se     │
-# │ defina, esta línea pone un placeholder INÚTIL de forma intencional para    │
-# │ que el fallo sea evidente y no un silencioso http://localhost:8000.        │
+# │ La URL real del API (ej. https://backend-…up.railway.app) se define SOLO   │
+# │ como VARIABLE DE ENTORNO en el panel de Netlify (Site configuration →      │
+# │ Environment variables). Vite la hornea en el bundle en build time y cada   │
+# │ cambio obliga a un redeploy (Clear cache and deploy).                      │
+# │ NO se.define aquí a propósito: un valor en netlify.toml puede pisar el     │
+# │ de la UI y dejar el placeholder horneado en producción.                    │
 # └───────────────────────────────────────────────────────────────────────────┘
-VITE_API_URL = "REEMPLAZAR-POR-DOMINIO-DEL-BACKEND"
 
 # Panel de administración del frontend (index-admin.html del build).
 [[redirects]]
