@@ -480,8 +480,16 @@ export function RegistroCuenta({ onExito, onIrLogin, onRecuperar, paso }: {
       await authService.login(email.trim(), password);
       onExito({ nombre: nombre.trim(), email: email.trim() });
     } catch (err: any) {
-      const msg = err.response?.data?.password?.[0] || err.response?.data?.email?.[0]
-        || err.response?.data?.username?.[0] || err.response?.data?.detail || 'Error al crear cuenta';
+      const d = err.response?.data || {};
+      const fields = (d.fields || {}) as Record<string, any>;
+      const first = (v: any): string | null =>
+        Array.isArray(v) ? v[0] : (typeof v === 'string' ? v : null);
+      // Contenido específico primero (backend: {code, message, fields, detail}).
+      const msg = first(fields.username) || first(fields.email) || first(fields.password)
+        || first(d?.username) || first(d?.email) || first(d?.password)
+        || (typeof d?.detail === 'string' && d.detail !== 'Datos inválidos.' ? d.detail : null)
+        || (typeof d?.message === 'string' && d.message !== 'Datos inválidos.' ? d.message : null)
+        || 'Error al crear cuenta. Verifica tus datos.';
       setError(msg);
     } finally {
       setLoading(false);
