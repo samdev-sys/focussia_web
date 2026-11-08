@@ -20,12 +20,49 @@ export const api = axios.create({
   xsrfHeaderName: 'X-CSRFToken',
 });
 
+// ---------------------------------------------------------------------------
+// Autenticación por cabecera (respaldo de las cookies httpOnly).
+// Cuando el navegador bloquea cookies de terceros (netlify -> railway), las
+// peticiones llegan anónimas y el API responde 403. Guardamos access/refresh
+// en localStorage y enviamos `Authorization: Bearer` en cada llamada: las
+// cabeceras no dependen del policy de cookies y el backend ya las acepta
+// (SimpleJWT). Las cookies siguen como camino primario cuando existen.
+// ---------------------------------------------------------------------------
+const ACCESS_TOKEN_KEY = 'focussia_access_token';
+const REFRESH_TOKEN_KEY = 'focussia_refresh_token';
+
+export const tokenStore = {
+  get: (): string | null => {
+    try {
+      return localStorage.getItem(ACCESS_TOKEN_KEY);
+    } catch {
+      return null;
+    }
+  },
+  setAll: (access?: string, refresh?: string) => {
+    try {
+      if (access) localStorage.setItem(ACCESS_TOKEN_KEY, access);
+      if (refresh) localStorage.setItem(REFRESH_TOKEN_KEY, refresh);
+    } catch {}
+  },
+  clear: () => {
+    try {
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+    } catch {}
+  },
+};
+
 api.interceptors.request.use((config) => {
   const method = (config.method || 'get').toLowerCase();
   const headers: Record<string, string> = { ...(config.headers as any) };
   if (!['get', 'head', 'options', 'trace'].includes(method)) {
     const csrf = getCookie('csrftoken');
     if (csrf) headers['X-CSRFToken'] = csrf;
+  }
+  if (!headers.Authorization) {
+    const token = tokenStore.get();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
   }
   config.headers = headers as any;
   return config;
@@ -55,10 +92,30 @@ api.interceptors.response.use(
     ) {
       originalRequest._retry = true;
 
+      // Sin token de refresh guardado no hay nada que refrescar: reintentar solo
+      // genera una tormenta de 401/429 contra /token/refresh/.
+      let storedRefresh: string | null = null;
       try {
-        await axios.post(`${API_BASE_URL}/api/token/refresh/`, {}, { withCredentials: true });
+        storedRefresh = localStorage.getItem(REFRESH_TOKEN_KEY);
+      } catch {
+        storedRefresh = null;
+      }
+      if (!storedRefresh) {
+        return Promise.reject(error);
+      }
+
+      try {
+        // El refresh acepta el token en el cuerpo: imprescindible cuando el
+        // navegador bloquea la cookie de terceros.
+        await axios.post(`${API_BASE_URL}/api/token/refresh/`, {
+          refresh: storedRefresh,
+        }, { withCredentials: true }).then((refreshResponse) => {
+          tokenStore.setAll(refreshResponse.data?.access, refreshResponse.data?.refresh);
+        });
         return api(originalRequest);
       } catch {
+        // El refresh caduco: limpiamos para no volver a intentar en bucle.
+        tokenStore.clear();
         return Promise.reject(error);
       }
     }
@@ -154,6 +211,7 @@ export const authService = {
   },
   login: async (username: string, password: string) => {
     const response = await api.post('/api/token/', { username, password });
+    tokenStore.setAll(response.data?.access, response.data?.refresh);
     authService.markSession(true);
     return response.data;
   },
@@ -165,6 +223,7 @@ export const authService = {
   
   register: async (username: string, email: string, password: string) => {
     const response = await api.post('/api/users/', { username, email, password });
+    tokenStore.setAll(response.data?.access, response.data?.refresh);
     authService.markSession(true);
     return response.data;
   },
@@ -179,6 +238,7 @@ export const authService = {
     try {
       await api.post('/api/token/logout/');
     } finally {
+      tokenStore.clear();
       authService.markSession(false);
     }
   },
