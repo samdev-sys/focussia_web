@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useMemo } from 'react';
 import { useWheelOfLife } from '../hooks/useWheelOfLife';
 import { Save, RotateCcw, AlertCircle, CheckCircle, Target, TrendingUp, Briefcase, DollarSign, Heart, Users, Sparkles, Smile, Home, BookOpen, HandHeart } from 'lucide-react';
@@ -148,31 +149,31 @@ export const WheelOfLifeChart: React.FC<WheelOfLifeChartProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 p-6">
           <section>
             <div className="aspect-square max-w-[360px] mx-auto relative">
-              <img src="/rueda.png" alt="Rueda de la Vida" className="w-full h-full object-contain" />
+              <img src="/rueda.png" alt={i18n.t('rueda_de_la_vida_1bjg')} className="w-full h-full object-contain" />
             </div>
 
             <div className="mt-6 grid grid-cols-2 md:grid-cols-5 gap-3">
               <div className="bg-gray-50 rounded-xl p-4 text-center col-span-2 md:col-span-1">
                 <p className="text-3xl font-bold text-purple-600">{averageScore.toFixed(1)}</p>
-                <p className="text-xs text-gray-500 mt-1">Promedio Global</p>
+                <p className="text-xs text-gray-500 mt-1">{i18n.t('promedio_global')}</p>
               </div>
               <div className="bg-gray-50 rounded-xl p-4 text-center">
                 <p className="text-2xl font-bold text-gray-900">{Object.values(scores).filter(v => v > 0).length}/10</p>
-                <p className="text-xs text-gray-500 mt-1">Áreas Evaluadas</p>
+                <p className="text-xs text-gray-500 mt-1">{i18n.t('areas_evaluadas')}</p>
               </div>
               <div className="bg-gray-50 rounded-xl p-4 text-center">
                 <p className="text-2xl font-bold text-green-600">{focusAreas.length}/3</p>
-                <p className="text-xs text-gray-500 mt-1">Focos Seleccionados</p>
+                <p className="text-xs text-gray-500 mt-1">{i18n.t('focos_seleccionados')}</p>
               </div>
               {diagnostic && (
                 <>
                   <div className="bg-gray-50 rounded-xl p-4 text-center">
                     <p className="text-2xl font-bold text-blue-600">{diagnostic.nivel_equilibrio}</p>
-                    <p className="text-xs text-gray-500 mt-1">Nivel Equilibrio</p>
+                    <p className="text-xs text-gray-500 mt-1">{i18n.t('nivel_equilibrio')}</p>
                   </div>
                   <div className="bg-gray-50 rounded-xl p-4 text-center">
                     <p className="text-2xl font-bold text-orange-600">{diagnostic.promedio_general.toFixed(1)}</p>
-                    <p className="text-xs text-gray-500 mt-1">Promedio Diagnóstico</p>
+                    <p className="text-xs text-gray-500 mt-1">{i18n.t('promedio_diagnostico')}</p>
                   </div>
                 </>
               )}
@@ -293,7 +294,7 @@ export const WheelOfLifeChart: React.FC<WheelOfLifeChartProps> = ({
 
           {diagnostic && showControls && (
             <div className="lg:col-span-2 mt-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
-              <h4 className="font-semibold text-gray-900 mb-3">Diagnóstico IA</h4>
+              <h4 className="font-semibold text-gray-900 mb-3">{i18n.t('diagnostico_ia')}</h4>
               <p className="text-sm text-gray-600 mb-4">{diagnostic.justificacion_focos}</p>
               <div className="flex flex-wrap gap-2">
                 {diagnostic.foco_1 && <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">{diagnostic.foco_1}</span>}
@@ -305,7 +306,7 @@ export const WheelOfLifeChart: React.FC<WheelOfLifeChartProps> = ({
 
           {suggestedActions.length > 0 && showControls && (
             <div className="lg:col-span-2 mt-6">
-              <h4 className="font-semibold text-gray-900 mb-3">Acciones Sugeridas por IA</h4>
+              <h4 className="font-semibold text-gray-900 mb-3">{i18n.t('acciones_sugeridas_por_ia')}</h4>
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {suggestedActions.map(action => (
                   <div key={action.id} className="p-3 bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-between gap-2">
@@ -321,7 +322,7 @@ export const WheelOfLifeChart: React.FC<WheelOfLifeChartProps> = ({
                         Enviar a Kanban
                       </button>
                     ) : (
-                      <span className="px-3 py-1.5 text-xs font-medium text-green-600 bg-green-50 rounded-lg">Enviado ✓</span>
+                      <span className="px-3 py-1.5 text-xs font-medium text-green-600 bg-green-50 rounded-lg">{i18n.t('enviado')}</span>
                     )}
                   </div>
                 ))}

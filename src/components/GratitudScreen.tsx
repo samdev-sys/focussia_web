@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Heart, Loader2, Check, AlertCircle, Quote, Sunrise, Clock, Lock,
@@ -33,19 +34,19 @@ function fechaLarga(iso: string): string {
 /** Tarjetas de la columna «Tu práctica diaria» del mockup. */
 const PRACTICAS = [
   {
-    img: './Up-3.png',
+    img: '/Up-3.png',
     fondo: '#F1EBFF',
     titulo: 'Tu respuesta se guarda automáticamente',
     detalle: 'No tienes que hacer nada más.',
   },
   {
-    img: './book-2.png',
+    img: '/book-2.png',
     fondo: '#FDEBDD',
     titulo: 'Cada día recibirás una nueva frase',
     detalle: 'Una frase distinta para descubrir cada mañana.',
   },
   {
-    img: './hoja.png',
+    img: '/hoja.png',
     fondo: '#E9F7EC',
     titulo: 'Un minuto al día fortalece tu bienestar',
     detalle: 'Pequeños hábitos, grandes cambios.',
@@ -175,7 +176,7 @@ export default function GratitudScreen({ userName, onBack, onNavigate }: {
                   {/* Atardecer de respaldo (se ve si no hay foto cargada) */}
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_82%,#FFD79A_0%,#F4A573_16%,#C9635F_38%,#6B2F5E_64%,#2A1745_100%)]" />
                   <img
-                    src="./gratitud.jpg"
+                    src="/gratitud.jpg"
                     alt=""
                     className="absolute inset-0 w-full h-full object-cover object-center"
                     onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
@@ -184,7 +185,7 @@ export default function GratitudScreen({ userName, onBack, onNavigate }: {
 
                   <div className="relative p-6 sm:p-8 max-w-[34rem]">
                     <div className="bg-white dark:bg-[#1a1a3a] rounded-xl border border-[#ECE7F8] dark:border-white/10 p-8 min-h-[9.5rem] flex items-start gap-2 shadow-[0_1px_2px_rgba(27,20,64,0.04)]">
-                      <img src="./apostrofe.png" alt="" className="w-6 h-6 shrink-0" />
+                      <img src="/apostrofe.png" alt="" className="w-6 h-6 shrink-0" />
                       <div className="min-w-0">
                         <blockquote className="font-serif italic text-xl sm:text-[26px] leading-snug text-[#1B1440] dark:text-white">
                           {datos?.frase?.texto || 'Hoy no hay una frase cargada en el catálogo.'}
@@ -215,7 +216,7 @@ export default function GratitudScreen({ userName, onBack, onNavigate }: {
                     className="block text-base sm:text-lg font-bold text-[#1B1440] dark:text-white"
                   >
                    <span> 
-                    <img src="./hearth.png" alt="" className='w-5 h-5' />{datos?.pregunta || '¿Por qué debieras estar agradecido hoy?'}</span> 
+                    <img src="/hearth.png" alt="" className='w-5 h-5' />{datos?.pregunta || '¿Por qué debieras estar agradecido hoy?'}</span> 
                   </label>
 
                   <div className="relative mt-4">
@@ -225,7 +226,7 @@ export default function GratitudScreen({ userName, onBack, onNavigate }: {
                       onChange={e => cambiar(e.target.value)}
                       rows={7}
                       maxLength={LIMITE_TEXTO}
-                      placeholder="Escribe aquí tu respuesta…"
+                      placeholder={i18n.t('escribe_aqui_tu_respuesta_pxuo')}
                       className="w-full resize-y rounded-xl border border-[#E4DEF5] dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 pb-9 text-[15px] leading-relaxed text-[#1B1440] dark:text-white placeholder:text-slate-400 outline-none transition focus:border-[#6236FF] focus:ring-2 focus:ring-[#6236FF]/15"
                     />
                     <span className="pointer-events-none absolute bottom-3 right-4 text-[11px] tabular-nums text-slate-400">
@@ -245,7 +246,7 @@ export default function GratitudScreen({ userName, onBack, onNavigate }: {
                 {/* Reaseguro del cierre (igual que el mockup) */}
                 <section className="mt-4 rounded-2xl border border-[#ECE7F8] dark:border-white/10 bg-[#FBFAFF] dark:bg-white/5 px-5 py-4 flex items-center gap-3">
                   <span className="w-9 h-9 rounded-full bg-[#EFE8FF] text-[#6236FF] flex items-center justify-center shrink-0">
-                    <img src="./stars.png" alt="" />
+                    <img src="/stars.png" alt="" />
                   </span>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-[#6C17BD] dark:text-white">
@@ -255,7 +256,7 @@ export default function GratitudScreen({ userName, onBack, onNavigate }: {
                       Gracias por reconocer lo positivo de ti vida cada día.
                     </p>
                   </div>
-                  <img src="./olivo.png" alt="" className="w-50 h-16 " />
+                  <img src="/olivo.png" alt="" className="w-50 h-16 " />
                 </section>
               </div>
 

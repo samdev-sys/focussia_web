@@ -1,3 +1,4 @@
+import i18n from '../../i18n';
 import { useState } from 'react';
 import { Lock, Mail, LogIn, ShieldAlert } from 'lucide-react';
 import { adminAuth, adminService, leerError, type AdminUser } from '../lib/adminApi';
@@ -62,10 +63,10 @@ export default function AdminLogin({
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2.5 mb-4">
-            <img src="./focussia.png" alt="" className="w-6 h-6" />
-            <span className="text-lg font-bold text-white tracking-wide">Focusia</span>
+            <img src="/focussia.png" alt="" className="w-6 h-6" />
+            <span className="text-lg font-bold text-white tracking-wide">{i18n.t('focusia_e5xy')}</span>
           </div>
-          <h1 className="text-xl font-extrabold text-white">Panel de contenido</h1>
+          <h1 className="text-xl font-extrabold text-white">{i18n.t('panel_de_contenido_tpd6')}</h1>
           <p className="text-xs text-white/50 mt-2">
             Entrá con una cuenta de administrador para gestionar cursos, tribù, juegos y avatares.
           </p>
@@ -84,7 +85,7 @@ export default function AdminLogin({
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="admin@focusia.co"
+                placeholder={i18n.t('admin_focusia_co')}
                 className="pl-9"
                 autoComplete="username"
               />
@@ -118,7 +119,7 @@ export default function AdminLogin({
           </Button>
 
           <p className="text-[10px] text-gray-400 text-center leading-relaxed">
-            Esta cuenta necesita <code className="text-gray-500">is_staff</code> activa. Si no la
+            Esta cuenta necesita <code className="text-gray-500">{i18n.t('is_staff')}</code> activa. Si no la
             tenés, pedí que te la activen desde el admin de Django.
           </p>
         </form>
@@ -144,11 +145,11 @@ export function SinPermisos({ onSalir }: { onSalir: () => void }) {
         <div className="w-14 h-14 rounded-full bg-amber-100 dark:bg-amber-500/15 flex items-center justify-center mx-auto mb-4">
           <ShieldAlert className="w-7 h-7 text-amber-600 dark:text-amber-400" />
         </div>
-        <h1 className="text-base font-bold text-slate-900 dark:text-white">Cuenta sin permisos</h1>
+        <h1 className="text-base font-bold text-slate-900 dark:text-white">{i18n.t('cuenta_sin_permisos')}</h1>
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 leading-relaxed">
           Iniciaste sesión correctamente, pero tu usuario no tiene el permiso de administrador.
           Para entrar al panel de contenido hace falta que alguien active
-          <code className="text-gray-600 dark:text-gray-300 mx-1">is_staff</code>
+          <code className="text-gray-600 dark:text-gray-300 mx-1">{i18n.t('is_staff')}</code>
           en tu cuenta.
         </p>
         <Button variant="ghost" onClick={onSalir} className="mt-6">

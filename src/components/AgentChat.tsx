@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { MessageCircle, X, Send, Bot, User, Sparkles, Loader2 } from 'lucide-react';
 import { agentService, AgentMessageData } from '../services/api';
@@ -137,15 +138,15 @@ const AgentChat: React.FC<Props> = ({ onOpenSettings }) => {
                 <Bot className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-sm font-bold leading-tight">FocusIA</p>
-                <p className="text-[10px] text-white/70 leading-tight">Asistente de productividad</p>
+                <p className="text-sm font-bold leading-tight">{i18n.t('focusia_vt94')}</p>
+                <p className="text-[10px] text-white/70 leading-tight">{i18n.t('asistente_de_productividad')}</p>
               </div>
             </div>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => { onOpenSettings?.(); setIsOpen(false); }}
                 className="p-1.5 rounded-full hover:bg-white/20 transition-colors"
-                title="Configuración"
+                title={i18n.t('configuracion')}
               >
                 <Sparkles className="w-4 h-4" />
               </button>
@@ -210,7 +211,7 @@ const AgentChat: React.FC<Props> = ({ onOpenSettings }) => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Escribe tu mensaje..."
+                placeholder={i18n.t('escribe_tu_mensaje')}
                 className="flex-1 bg-transparent outline-none text-[12px] placeholder:text-gray-400"
                 disabled={loading}
               />

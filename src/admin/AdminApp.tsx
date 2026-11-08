@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import { useCallback, useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { adminAuth, adminService, type AdminUser } from './lib/adminApi';
@@ -51,7 +52,7 @@ export default function AdminApp() {
       <div className="min-h-screen bg-[#0A0A26] flex items-center justify-center">
         <div className="flex items-center gap-2.5 text-white/60">
           <Loader2 className="w-5 h-5 animate-spin" />
-          <span className="text-sm">Comprobando la sesión…</span>
+          <span className="text-sm">{i18n.t('comprobando_la_sesion')}</span>
         </div>
       </div>
     );

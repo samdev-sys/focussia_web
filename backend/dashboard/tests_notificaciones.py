@@ -69,3 +69,102 @@ class NotificacionesTests(TestCase):
         resp = self.client.get('/api/push/public-key/')
         self.assertEqual(resp.status_code, 200)
         self.assertIn('publicKey', resp.data)
+
+
+class AvisosDosisTests(TestCase):
+    """Doc 21 §III: la campana debe reflejar las dosis pendientes de ahora."""
+
+    def setUp(self):
+        from datetime import time as dtime, timedelta
+
+        from django.utils import timezone
+
+        from .models import Suplemento, SuplementoToma
+
+        self.user = User.objects.create_user(
+            username='dosis', password='testpass123', email='d@example.com')
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+        self.suplemento = Suplemento.objects.create(
+            user=self.user,
+            nombre='AZEC',
+            tipo='Medicamento',
+            frecuencia_horas=8,
+            # Hora futura a propósito: así el generador no crea dosis pasadas
+            # propias y las únicas vencidas son las de este test.
+            hora_primera=dtime(23, 59),
+            fecha_inicio=timezone.localdate(),
+        )
+        ahora = timezone.now()
+        self.tomas = [
+            SuplementoToma.objects.create(
+                suplemento=self.suplemento, programada=ahora - timedelta(hours=h))
+            for h in (18, 10, 2)
+        ]
+
+    def _avisar(self):
+        from .tasks import avisar_dosis_pendientes
+        avisar_dosis_pendientes()
+
+    def test_avisa_todas_las_dosis_pendientes_de_la_ventana(self):
+        self._avisar()
+        avisos = Notification.objects.filter(
+            user=self.user, dedupe_key__startswith='toma:')
+        self.assertEqual(avisos.count(), 3)
+        self.assertTrue(all(n.in_bell for n in avisos))
+
+    def test_es_idempotente_entre_corridas(self):
+        self._avisar()
+        self._avisar()
+        self.assertEqual(
+            Notification.objects.filter(
+                user=self.user, dedupe_key__startswith='toma:').count(),
+            3,
+        )
+
+    def test_marcar_tomado_retira_el_aviso_de_la_campana(self):
+        self._avisar()
+        vieja = self.tomas[0]
+        self.assertTrue(Notification.objects.filter(
+            user=self.user, dedupe_key=f'toma:{vieja.id}',
+            cancelled_at__isnull=True).exists())
+
+        resp = self.client.post(f'/api/suplementos/{self.suplemento.id}/marcar_tomado/')
+
+        self.assertEqual(resp.status_code, 200, resp.data)
+        vieja.refresh_from_db()
+        self.assertTrue(vieja.tomado)
+        self.assertFalse(Notification.objects.filter(
+            user=self.user, dedupe_key=f'toma:{vieja.id}',
+            cancelled_at__isnull=True).exists())
+
+
+class CampanaActualTests(TestCase):
+    """La campana debe mostrar siempre lo más reciente y no cachearse."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='campana', password='testpass123', email='c@example.com')
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+    def test_lo_mas_reciente_primero_y_sin_cache(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        notificar(self.user, 'Aviso viejo', 'hace días', canales=['app'])
+        vieja = Notification.objects.get(user=self.user, title='Aviso viejo')
+        # Se envejece explícitamente: creadas en el mismo segundo, el orden
+        # sería ambiguo.
+        Notification.objects.filter(pk=vieja.pk).update(
+            created_at=timezone.now() - timedelta(days=4))
+        notificar(self.user, 'Aviso nuevo', 'ahora', canales=['app'])
+
+        resp = self.client.get('/api/notifications/')
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp['Cache-Control'], 'no-store')
+        titulos = [n['title'] for n in resp.data]
+        self.assertEqual(titulos[:2], ['Aviso nuevo', 'Aviso viejo'])

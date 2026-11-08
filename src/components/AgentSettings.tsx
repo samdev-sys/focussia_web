@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useState, useEffect } from 'react';
 import { X, Bot, Smartphone, Bell, Clock, Save, RefreshCw, MessageCircle } from 'lucide-react';
 import { agentService, pushService, AgentConfigData } from '../services/api';
@@ -109,7 +110,7 @@ const AgentSettings: React.FC<Props> = ({ onClose }) => {
     return (
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
         <div className="bg-white/95 backdrop-blur-xl rounded-md shadow-2xl border border-white/50 w-[650px] flex items-center justify-center h-40">
-          <p className="text-sm text-gray-400">Cargando configuración...</p>
+          <p className="text-sm text-gray-400">{i18n.t('cargando_configuracion')}</p>
         </div>
       </div>
     );
@@ -122,7 +123,7 @@ const AgentSettings: React.FC<Props> = ({ onClose }) => {
         <div className="flex items-center justify-between p-4 bg-gradient-to-r from-[#3533cd] to-[#040817] text-white">
           <div className="flex items-center gap-2">
             <Bot className="w-5 h-5" />
-            <h2 className="text-base font-bold">FocusIA - Configuración</h2>
+            <h2 className="text-base font-bold">{i18n.t('focusia_configuracion')}</h2>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-full hover:bg-white/20 transition-colors">
             <X className="w-4 h-4" />
@@ -135,7 +136,7 @@ const AgentSettings: React.FC<Props> = ({ onClose }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <RefreshCw className="w-4 h-4 text-[#3533cd]" />
-              <span className="text-sm font-semibold text-gray-800">Activar Asistente</span>
+              <span className="text-sm font-semibold text-gray-800">{i18n.t('activar_asistente')}</span>
             </div>
             <button
               onClick={() => update('activo', !config.activo)}
@@ -155,7 +156,7 @@ const AgentSettings: React.FC<Props> = ({ onClose }) => {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <MessageCircle className="w-4 h-4 text-[#3533cd]" />
-              <span className="text-sm font-semibold text-gray-800">Tono de Comunicación</span>
+              <span className="text-sm font-semibold text-gray-800">{i18n.t('tono_de_comunicacion')}</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {TONOS.map((t) => (
@@ -178,7 +179,7 @@ const AgentSettings: React.FC<Props> = ({ onClose }) => {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Clock className="w-4 h-4 text-[#3533cd]" />
-              <span className="text-sm font-semibold text-gray-800">Frecuencia de Check-in</span>
+              <span className="text-sm font-semibold text-gray-800">{i18n.t('frecuencia_de_check_in')}</span>
             </div>
             <select
               value={config.frecuencia_checkin}
@@ -195,11 +196,11 @@ const AgentSettings: React.FC<Props> = ({ onClose }) => {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Bell className="w-4 h-4 text-[#3533cd]" />
-              <span className="text-sm font-semibold text-gray-800">Notificaciones</span>
+              <span className="text-sm font-semibold text-gray-800">{i18n.t('notificaciones')}</span>
             </div>
 
             <div className="flex items-center justify-between pl-6">
-              <span className="text-[12px] text-gray-600">Notificaciones in-app</span>
+              <span className="text-[12px] text-gray-600">{i18n.t('notificaciones_in_app')}</span>
               <button
                 onClick={() => update('notificar_in_app', !config.notificar_in_app)}
                 className={`relative w-10 h-5 rounded-full transition-colors ${
@@ -217,7 +218,7 @@ const AgentSettings: React.FC<Props> = ({ onClose }) => {
             <div className="flex items-center justify-between pl-6">
               <div className="flex items-center gap-1.5">
                 <Smartphone className="w-3.5 h-3.5 text-gray-500" />
-                <span className="text-[12px] text-gray-600">WhatsApp</span>
+                <span className="text-[12px] text-gray-600">{i18n.t('whatsapp')}</span>
               </div>
               <button
                 onClick={() => update('notificar_whatsapp', !config.notificar_whatsapp)}
@@ -242,14 +243,14 @@ const AgentSettings: React.FC<Props> = ({ onClose }) => {
                   placeholder="+573001234567"
                   className="w-full py-2 px-3 rounded-md border border-gray-200 text-[12px] bg-white"
                 />
-                <p className="text-[10px] text-gray-400 mt-1">Número con código de país, sin espacios</p>
+                <p className="text-[10px] text-gray-400 mt-1">{i18n.t('numero_con_codigo_de_pais_sin_espacios')}</p>
               </div>
             )}
 
             <div className="flex items-center justify-between pl-6">
               <div className="flex items-center gap-1.5">
                 <Smartphone className="w-3.5 h-3.5 text-gray-500" />
-                <span className="text-[12px] text-gray-600">Push en este dispositivo</span>
+                <span className="text-[12px] text-gray-600">{i18n.t('push_en_este_dispositivo')}</span>
               </div>
               <button
                 onClick={() => togglePush(!pushOn)}
@@ -273,11 +274,11 @@ const AgentSettings: React.FC<Props> = ({ onClose }) => {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Clock className="w-4 h-4 text-[#3533cd]" />
-              <span className="text-sm font-semibold text-gray-800">Horario Activo</span>
+              <span className="text-sm font-semibold text-gray-800">{i18n.t('horario_activo')}</span>
             </div>
             <div className="flex gap-3 pl-6">
               <div>
-                <label className="text-[10px] text-gray-500">Desde</label>
+                <label className="text-[10px] text-gray-500">{i18n.t('desde')}</label>
                 <input
                   type="time"
                   value={config.horario_inicio}
@@ -286,7 +287,7 @@ const AgentSettings: React.FC<Props> = ({ onClose }) => {
                 />
               </div>
               <div>
-                <label className="text-[10px] text-gray-500">Hasta</label>
+                <label className="text-[10px] text-gray-500">{i18n.t('hasta')}</label>
                 <input
                   type="time"
                   value={config.horario_fin}

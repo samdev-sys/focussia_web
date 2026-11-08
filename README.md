@@ -1,5 +1,13 @@
 ## Focusia (Frontend) — Informe y guía del proyecto
 
+> ⚠️ **Documento histórico.** Este README describe el MVP inicial (abril 2026) y
+> no refleja el producto actual ni el modo de trabajo del equipo. Para levantar
+> el proyecto hoy —venv, worker de recordatorios, `croniter`, Postgres local—
+> sigue **[docs/ENTORNO_LOCAL.md](docs/ENTORNO_LOCAL.md)**. El estado técnico
+> completo está en **[docs/INFORME_EXPLORACION.md](docs/INFORME_EXPLORACION.md)**
+> y lo que falta por resolver, priorizado, en
+> **[docs/PENDIENTES.md](docs/PENDIENTES.md)**.
+
 Dashboard personal orientado a productividad y bienestar: rueda de la vida, matriz de prioridades, time blocking, agenda/kanban, recordatorios, metas, notas y una capa colaborativa (workspaces, miembros, invitaciones y delegación). Incluye gamificación (XP, niveles, rachas y badges).
 
 ---

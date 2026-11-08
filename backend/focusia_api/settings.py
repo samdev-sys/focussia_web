@@ -22,8 +22,15 @@ def load_env(env_path):
                 value = value[1:-1]
             os.environ.setdefault(key.strip(), value)
 
-load_env(BASE_DIR / '.env')
-load_env(BASE_DIR.parent / '.env')
+# Los .env son una comodidad de desarrollo local. En el contenedor no deben
+# existir —`.dockerignore` los excluye— ni servir de respaldo: si faltaba una
+# variable, el proceso caía al .env de desarrollo y arrancaba con la
+# GROQ_API_KEY y la clave privada VAPID de la máquina del developer dentro de
+# la imagen de producción. Los compose de staging/producción fijan
+# DJANGO_SKIP_DOTENV=1 para no depender de que el archivo no exista.
+if os.environ.get('DJANGO_SKIP_DOTENV') != '1':
+    load_env(BASE_DIR / '.env')
+    load_env(BASE_DIR.parent / '.env')
 
 def _require_env(key):
     val = os.environ.get(key)
@@ -34,11 +41,33 @@ def _require_env(key):
 SECRET_KEY = _require_env('SECRET_KEY')
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',') if os.environ.get('ALLOWED_HOSTS') else ['*']
+# Un SECRET_KEY de ejemplo permite firmar JWT arbitrarios: con DEBUG=False el
+# arranque debe fallar en vez de aceptarlo.
+_SECRET_DE_EJEMPLO = ('CHANGE_THIS', 'CHANGE_ME', 'YOUR_SECRET_KEY', 'DJANGO-INSECURE')
+if not DEBUG and SECRET_KEY.upper().startswith(_SECRET_DE_EJEMPLO):
+    raise ImproperlyConfigured(
+        'SECRET_KEY tiene un valor de ejemplo y DEBUG=False. Genera una clave '
+        'real con: python -c "from django.core.management.utils import '
+        'get_random_secret_key as g; print(g())"'
+    )
+
+# ALLOWED_HOSTS: con DEBUG=True se permite cualquiera (comodidad local). En
+# producción es obligatoria: antes caía a ['*'] en silencio si faltaba, lo que
+# hace que el servidor acepte cualquier cabecera Host.
+_allowed_hosts = [
+    h.strip() for h in os.environ.get('ALLOWED_HOSTS', '').split(',') if h.strip()
+]
+if _allowed_hosts:
+    ALLOWED_HOSTS = _allowed_hosts
+elif DEBUG:
+    ALLOWED_HOSTS = ['*']
+else:
+    raise ImproperlyConfigured(
+        'ALLOWED_HOSTS es obligatoria con DEBUG=False (lista separada por comas).'
+    )
 
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
 GROQ_AGENT_MODEL = os.environ.get('GROQ_AGENT_MODEL', 'openai/gpt-oss-120b')
-COQUI_TTS_URL = os.environ.get('COQUI_TTS_URL', 'http://localhost:8760')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -51,6 +80,8 @@ INSTALLED_APPS = [
     # Third party apps
     'rest_framework',
     'rest_framework_simplejwt',
+    # Permite quemar refresh tokens (logout real y rotación al refrescar).
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     
     # Local apps
@@ -107,7 +138,7 @@ TIME_ZONE = 'America/Bogota'
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 # Destino de `collectstatic`; el Dockerfile lo ejecuta al construir la imagen.
 STATIC_ROOT = Path(os.environ.get('STATIC_ROOT') or (BASE_DIR / 'staticfiles'))
 
@@ -166,11 +197,19 @@ REST_FRAMEWORK = {
     },
     'EXCEPTION_THROTTLE_CLASSES': [],
     'EXCEPTION_HANDLER': 'focusia_api.exceptions.custom_exception_handler',
+    # Nº de proxies de confianza delante de Django (Caddy). Sin esto DRF usa
+    # REMOTE_ADDR, que en producción es la IP del proxy: todos los clientes
+    # comparten el mismo cubo de throttling (5 logins/min para todo el mundo).
+    'NUM_PROXIES': int(os.environ.get('NUM_PROXIES', '0' if DEBUG else '1')),
 }
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    # Al refrescar se emite un refresh nuevo y se quema el anterior: si uno se
+    # filtra, deja de servir en cuanto el usuario legítimo refresque.
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_COOKIE': 'access_token',
     'AUTH_COOKIE_REFRESH': 'refresh_token',
@@ -180,10 +219,38 @@ SIMPLE_JWT = {
 }
 
 SESSION_COOKIE_SAMESITE = 'None' if not DEBUG else 'Lax'
-SESSION_COOKIE_SECURE = not DEBUG
 
 CSRF_COOKIE_SAMESITE = 'None' if not DEBUG else 'Lax'
-CSRF_COOKIE_SECURE = not DEBUG
+
+# El enlace de restablecimiento vale 60 minutos (Django usa 3 días por defecto).
+PASSWORD_RESET_TIMEOUT = int(os.environ.get('PASSWORD_RESET_TIMEOUT', '3600'))
+
+# ── TLS y proxy (Caddy delante de gunicorn) ──
+# Sin SECURE_PROXY_SSL_HEADER Django no ve que la petición llegó por HTTPS:
+# `request.is_secure()` es False, el CSRF de /admin/ responde 403 y las URLs
+# absolutas se generan en http://.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+
+# Estas tres se declaraban en `.env.production` pero settings nunca las leía:
+# eran configuración muerta. Ahora son efectivas y por defecto siguen a DEBUG.
+SECURE_SSL_REDIRECT = os.environ.get(
+    'SECURE_SSL_REDIRECT', str(not DEBUG)).lower() == 'true'
+SESSION_COOKIE_SECURE = os.environ.get(
+    'SESSION_COOKIE_SECURE', str(not DEBUG)).lower() == 'true'
+CSRF_COOKIE_SECURE = os.environ.get(
+    'CSRF_COOKIE_SECURE', str(not DEBUG)).lower() == 'true'
+
+# El healthcheck del compose entra por http://localhost:8000 dentro del
+# contenedor; sin esta excepción el 301 a https lo dejaría marcando "unhealthy".
+SECURE_REDIRECT_EXEMPT = [r'^api/health/$']
+
+# HSTS: el middleware propio también lo emite. Se declara aquí para que
+# SecurityMiddleware lo aplique y `check --deploy` no lo reporte como ausente.
+SECURE_HSTS_SECONDS = int(
+    os.environ.get('SECURE_HSTS_SECONDS', '0' if DEBUG else '31536000'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_HSTS_PRELOAD = not DEBUG
 
 # CORS
 CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000,http://localhost:3001,http://localhost:3002').split(',')
@@ -242,6 +309,25 @@ except ImportError:
 
 # Celery
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+
+# Cache: Redis en producción/staging (consistente entre workers de gunicorn),
+# LocMemCache en desarrollo (sin Redis). El estado conversacional del agente
+# (cache.set/delete en agent_service) requiere un backend compartido.
+_redis_url = os.environ.get('REDIS_URL') or os.environ.get('CELERY_BROKER_URL')
+if _redis_url and _redis_url.startswith('redis://'):
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': _redis_url,
+        }
+    }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'focusia-dev',
+        }
+    }
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'

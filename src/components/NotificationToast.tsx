@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useEffect, useState } from 'react';
 import { X, Bell, Pill, Cake, Star, Check, CheckCheck } from 'lucide-react';
 import { RecordatorioData } from '../services/api';
@@ -91,7 +92,7 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({
               <Check className="w-6 h-6" />
               <div>
                 <h3 className="font-bold text-lg">{recordatorio.titulo}</h3>
-                <p className="text-sm text-emerald-600">Marcado como tomado ✓</p>
+                <p className="text-sm text-emerald-600">{i18n.t('marcado_como_tomado')}</p>
               </div>
             </div>
           ) : (

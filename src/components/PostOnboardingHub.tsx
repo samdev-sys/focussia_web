@@ -1,4 +1,6 @@
+import i18n from '../i18n';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, BookOpen, Settings, Sparkles, Play, ArrowRight,
   ChevronRight, ChevronLeft, X, Heart, Target, CheckSquare,
@@ -27,6 +29,7 @@ export default function PostOnboardingHub({ onGoToDashboard, onComplete }: PostO
   const [videoOrigin, setVideoOrigin] = useState<'inicio' | 'tutorial'>('inicio');
   const [guidedTourBlocks, setGuidedTourBlocks] = useState<GuidedTourBlockData[]>([]);
   const [learnCategories, setLearnCategories] = useState<LearningCategoryData[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     Promise.all([
@@ -223,17 +226,17 @@ export function PantallaDecision({ userName, avatarIndex, avatarName, onGoDashbo
     <main className="relative z-10 px-6 pb-10 overflow-hidden">
       {/* Ondas decorativas laterales */}
       <div aria-hidden className="pointer-events-none absolute inset-y-0 left-0 -ml-16 hidden md:block">
-       <img src="./onda4.png" alt="" className="w-[200px] h-[1000px] object-cover -mt-30" />
+       <img src="/onda4.png" alt="" className="w-[200px] h-[1000px] object-cover -mt-30" />
       </div>
       <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 mt-30 -mr-25 hidden md:block">
-        <img src="./onda3.png" alt="" className="w-[220px] h-[800px] object-cover" />
+        <img src="/onda3.png" alt="" className="w-[220px] h-[800px] object-cover" />
       </div>
 
       <div className="max-w-5xl mx-auto">
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 pt-6 pb-5">
-          <img src="./focussia.png" alt="Focusia" className="w-10 h-10" />
-          <span className="text-xl font-bold text-gray-800 tracking-tight">Focusia</span>
+          <img src="/focussia.png" alt={i18n.t('focusia_3a6p')} className="w-10 h-10" />
+          <span className="text-xl font-bold text-gray-800 tracking-tight">{i18n.t('focusia_3a6p')}</span>
         </div>
 
         {showProactive && proactiveMsg && (
@@ -247,11 +250,11 @@ export function PantallaDecision({ userName, avatarIndex, avatarName, onGoDashbo
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
             <div className="relative rounded-xl overflow-hidden min-h-[240px] md:min-h-[550px] bg-gradient-to-br from-purple-200 via-indigo-100 to-blue-100 ml-20">
               {heroImg && imgOk ? (
-                <img src={heroImg} alt="Tu acompañante Focusia" onError={() => setImgOk(false)} className="absolute inset-0 w-full h-full object-cover" />
+                <img src={heroImg} alt={i18n.t('tu_acompanante_focusia')} onError={() => setImgOk(false)} className="absolute inset-0 w-full h-full object-cover" />
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100">
                   <Sparkles className="w-10 h-10 text-indigo-400" />
-                  <p className="text-xs text-indigo-400 font-medium">Tu acompañante Focusia</p>
+                  <p className="text-xs text-indigo-400 font-medium">{i18n.t('tu_acompanante_focusia')}</p>
                 </div>
               )}
             </div>
@@ -275,7 +278,7 @@ export function PantallaDecision({ userName, avatarIndex, avatarName, onGoDashbo
             icon={LayoutDashboard}
             iconBg="bg-blue-50"
             iconColor="text-indigo-700"
-            title={<>Ir al<br />Dashboard completo</>}
+            title={<>{i18n.t('ir_al')}<br />{i18n.t('dashboard_completo')}</>}
             desc="Accede a todas las herramientas de Focusia en un solo lugar."
             cta="Entrar"
             onClick={onGoDashboard}
@@ -284,7 +287,7 @@ export function PantallaDecision({ userName, avatarIndex, avatarName, onGoDashbo
             icon={GraduationCap}
             iconBg="bg-violet-50"
             iconColor="text-violet-600"
-            title={<>Ir al<br />Tutorial</>}
+            title={<>{i18n.t('ir_al')}<br />{i18n.t('tutorial')}</>}
             desc="Conoce Focusia paso a paso y a tu propio ritmo."
             cta="Abrir tutorial"
             onClick={onGoTutorial}
@@ -293,7 +296,7 @@ export function PantallaDecision({ userName, avatarIndex, avatarName, onGoDashbo
             icon={Settings}
             iconBg="bg-orange-50"
             iconColor="text-orange-500"
-            title={<>Ir a<br />Configuración</>}
+            title={<>{i18n.t('ir_a')}<br />{i18n.t('configuracion_zcdt')}</>}
             desc="Ajusta tu avatar, acompañamiento y preferencias."
             cta="Abrir configuración"
             onClick={onGoConfig}
@@ -305,7 +308,7 @@ export function PantallaDecision({ userName, avatarIndex, avatarName, onGoDashbo
           <span className="w-8 h-8 rounded-full border border-indigo-400 text-indigo-600 flex items-center justify-center shrink-0">
             <Star className="w-4 h-4" />
           </span>
-          <p className="text-sm text-gray-700 font-medium">La aplicación te acompaña. Las decisiones siempre serán tuyas.</p>
+          <p className="text-sm text-gray-700 font-medium">{i18n.t('la_aplicacion_te_acompana_las_decisiones')}</p>
         </section>
       </div>
     </main>
@@ -333,10 +336,10 @@ const SECTION_STYLES: Record<string, {
   Icon: React.ComponentType<{ className?: string }>;
   circle: string; icon: string; btn: string; desc: string; img?: string;
 }> = {
-  planificacion: { Icon: Target, circle: 'bg-purple-100', icon: 'text-purple-700', btn: 'border-purple-600 text-purple-700 hover:bg-purple-50', desc: 'Convierte tus metas en un plan anual, mensual, semanal y diario.', img: './archer.png' },
+  planificacion: { Icon: Target, circle: 'bg-purple-100', icon: 'text-purple-700', btn: 'border-purple-600 text-purple-700 hover:bg-purple-50', desc: 'Convierte tus metas en un plan anual, mensual, semanal y diario.', img: '/archer.png' },
   ejecucion_diaria: { Icon: CalendarDays, circle: 'bg-blue-50', icon: 'text-blue-600', btn: 'border-blue-500 text-blue-600 hover:bg-blue-50', desc: 'Aprende cómo organizar y ejecutar las actividades de cada día.' },
-  bienestar: { Icon: Flower2, circle: 'bg-red-50', icon: 'text-red-500', btn: 'border-red-500 text-red-600 hover:bg-red-50', desc: 'Descubre las herramientas que apoyan tu equilibrio personal y familiar.', img: './loto.png' },
-  herramientas_personales: { Icon: Briefcase, circle: 'bg-teal-50', icon: 'text-teal-600', btn: 'border-teal-500 text-teal-600 hover:bg-teal-50', desc: 'Conoce los recursos complementarios para organizar y potenciar tu vida.', img: './bag.png' },
+  bienestar: { Icon: Flower2, circle: 'bg-red-50', icon: 'text-red-500', btn: 'border-red-500 text-red-600 hover:bg-red-50', desc: 'Descubre las herramientas que apoyan tu equilibrio personal y familiar.', img: '/loto.png' },
+  herramientas_personales: { Icon: Briefcase, circle: 'bg-teal-50', icon: 'text-teal-600', btn: 'border-teal-500 text-teal-600 hover:bg-teal-50', desc: 'Conoce los recursos complementarios para organizar y potenciar tu vida.', img: '/bag.png' },
   configuracion: { Icon: Settings, circle: 'bg-slate-100', icon: 'text-slate-600', btn: 'border-indigo-600 text-indigo-700 hover:bg-indigo-50', desc: 'Personaliza la forma en que Focusia te acompaña.' },
   reportes: { Icon: BarChart3, circle: 'bg-indigo-50', icon: 'text-indigo-600', btn: 'border-indigo-500 text-indigo-600 hover:bg-indigo-50', desc: 'Comprende cómo visualizar tu progreso y evolución.',  },
 };
@@ -428,17 +431,17 @@ export function TutorialScreen({ userName, avatarIndex, avatarName, onShowVideo,
     <main className="relative z-10 px-6 pb-10 overflow-hidden">
       {/* Ondas decorativas laterales */}
       <div aria-hidden className="pointer-events-none absolute inset-y-0 left-0 -ml-16 hidden md:block">
-        <img src="./onda4.png" alt="" className="w-[200px] h-[1000px] object-cover" />
+        <img src="/onda4.png" alt="" className="w-[200px] h-[1000px] object-cover" />
       </div>
       <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 -mr-16 hidden md:block">
-        <img src="./onda3.png" alt="" className="w-[250px] h-[800px]  mt-30 -mr-20 object-cover" />
+        <img src="/onda3.png" alt="" className="w-[250px] h-[800px]  mt-30 -mr-20 object-cover" />
       </div>
 
       <div className="max-w-5xl mx-auto ">
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 pt-6 pb-4">
-          <img src="./focussia.png" alt="Focusia" className="w-10 h-10" />
-          <span className="text-xl font-bold text-gray-800 tracking-tight">Focusia</span>
+          <img src="/focussia.png" alt={i18n.t('focusia_3a6p')} className="w-10 h-10" />
+          <span className="text-xl font-bold text-gray-800 tracking-tight">{i18n.t('focusia_3a6p')}</span>
         </div>
 
         <button onClick={onBack} className="flex items-center gap-8 text-sm font-semibold text-indigo-600 hover:text-indigo-800 mb-4 transition-colors">
@@ -450,7 +453,7 @@ export function TutorialScreen({ userName, avatarIndex, avatarName, onShowVideo,
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
             <div className="relative rounded-xl overflow-hidden min-h-[240px] md:min-h-[550px] w-[400px] bg-gradient-to-br from-purple-200 via-indigo-100 to-blue-100 ml-15">
               {heroImg && imgOk ? (
-                <img src={heroImg} alt="Tu acompañante Focusia" onError={() => setImgOk(false)} className="absolute inset-0 w-full h-full object-cover" />
+                <img src={heroImg} alt={i18n.t('tu_acompanante_focusia')} onError={() => setImgOk(false)} className="absolute inset-0 w-full h-full object-cover" />
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100">
                  
@@ -516,19 +519,19 @@ export function TutorialScreen({ userName, avatarIndex, avatarName, onShowVideo,
           </div>
 
           <div className="bg-white/90 border border-gray-100 rounded-2xl p-6 text-center shadow-sm hover:shadow-md transition-shadow flex flex-col">
-            <div className="w-28 h-28 rounded-full bg-orange-50 flex items-center justify-center mx-auto mb-4">
-              <img src="./tour.png" alt="Visita guiada del dashboard" className="w-16 h-14 text-purple-700 fill-purple-100" />
+            <div className="w-28 h-28 rounded-full bg-purple-50 flex items-center justify-center mx-auto mb-4">
+              <BarChart3 className="w-14 h-14 text-purple-600" strokeWidth={1.5} />
             </div>
             <h3 className="font-bold text-gray-900 flex items-center justify-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-orange-100 text-orange-600 text-xs font-bold flex items-center justify-center shrink-0">3</span>
-              Iniciar visita guiada del dashboard
+              <span className="w-6 h-6 rounded-full bg-purple-100 text-purple-600 text-xs font-bold flex items-center justify-center shrink-0">3</span>
+              Reportes disponibles
             </h3>
             <p className="text-xs text-gray-500 mt-2 leading-relaxed flex-1">
-              Recorre el dashboard junto a Focusia y descubre la función de cada herramienta paso a paso.
+              Consultá tu último reporte semanal, mensual o anual y revisá los datos del período.
             </p>
-            <button onClick={onStartTour} className="mt-4 w-full py-2.5 border border-orange-500 text-orange-600 font-semibold text-sm rounded-lg hover:bg-orange-50 transition-colors flex items-center justify-center gap-2">
-              <Compass className="w-5 h-5" />
-              Iniciar recorrido
+            <button onClick={() => navigate('/app/reportes')} className="mt-4 w-full py-2.5 border border-purple-500 text-purple-600 font-semibold text-sm rounded-lg hover:bg-purple-50 transition-colors flex items-center justify-center gap-2">
+              <BarChart3 className="w-5 h-5" />
+              Ver reportes
             </button>
           </div>
         </section>
@@ -553,7 +556,7 @@ export function SectionsScreen({ categories, avatarIndex, avatarName, onBack }: 
       planificacion: {
         title: 'PLANIFICACIÓN',
         sideCaption: 'De la claridad a la acción',
-        sideImg: './task-1.png' as string | undefined,
+        sideImg: '/task-1.png' as string | undefined,
         sideIcon: undefined as 'check' | 'sliders' | undefined,
         fallback: PLANIFICACION_MODULES,
         useBackendModules: true,
@@ -575,7 +578,7 @@ export function SectionsScreen({ categories, avatarIndex, avatarName, onBack }: 
       bienestar: {
         title: 'BIENESTAR',
         sideCaption: 'Equilibrio, energía, cuidado personal y vida significativa',
-        sideImg: './loto.png' as string | undefined,
+        sideImg: '/loto.png' as string | undefined,
         sideIcon: undefined as 'check' | 'sliders' | undefined,
         fallback: BIENESTAR_MODULES,
         useBackendModules: false,
@@ -586,7 +589,7 @@ export function SectionsScreen({ categories, avatarIndex, avatarName, onBack }: 
       herramientas_personales: {
         title: 'HERRAMIENTAS PERSONALES',
         sideCaption: 'Apoyo práctico, administración personal, vínculos, aprendizaje y organización complementaria',
-        sideImg: './bag.png' as string | undefined,
+        sideImg: '/bag.png' as string | undefined,
         sideIcon: undefined as 'check' | 'sliders' | undefined,
         fallback: HERRAMIENTAS_MODULES,
         useBackendModules: false,
@@ -639,10 +642,10 @@ export function SectionsScreen({ categories, avatarIndex, avatarName, onBack }: 
     <main className="relative z-10 px-6 pb-10 overflow-hidden">
       {/* Ondas decorativas laterales */}
       <div aria-hidden className="pointer-events-none absolute inset-y-0 left-0 -ml-16 hidden md:block">
-        <img src="./onda4.png" alt="" className="w-[200px] h-[1000px] object-cover" />
+        <img src="/onda4.png" alt="" className="w-[200px] h-[1000px] object-cover" />
       </div>
       <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 -mr-16 hidden md:block">
-        <img src="./onda3.png" alt="" className="w-[250px] h-[800px] mt-30 -mr-20 object-cover" />
+        <img src="/onda3.png" alt="" className="w-[250px] h-[800px] mt-30 -mr-20 object-cover" />
       </div>
 
       <div className="max-w-5xl mx-auto">
@@ -652,16 +655,16 @@ export function SectionsScreen({ categories, avatarIndex, avatarName, onBack }: 
             <ChevronLeft className="w-4 h-4" /> Volver
           </button>
           <div className="flex items-center justify-center gap-2">
-            <img src="./focussia.png" alt="Focusia" className="w-10 h-10" />
+            <img src="/focussia.png" alt={i18n.t('focusia_3a6p')} className="w-10 h-10" />
             <span className="text-xl font-bold tracking-tight">
-              <span className="text-purple-500">F</span><span className="text-gray-800">ocusia</span>
+              <span className="text-purple-500">{i18n.t('f_882u')}</span><span className="text-gray-800">{i18n.t('ocusia')}</span>
             </span>
           </div>
         </div>
 
         <div className="text-center mt-4 mb-8">
           <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900">
-            APRENDER POR <span className="text-blue-700">SECCIONES</span>
+            APRENDER POR <span className="text-blue-700">{i18n.t('secciones')}</span>
           </h1>
           <p className="text-sm md:text-base text-indigo-600 font-medium mt-3">
             Elige una categoría para conocer sus módulos paso a paso.
@@ -750,10 +753,10 @@ function CategoryDetail({ title, tagline, sideCaption, sideImg, sideIcon, module
     <main className="relative z-10 px-6 pb-10 overflow-hidden min-h-screen">
       {/* Ondas decorativas laterales */}
       <div aria-hidden className="pointer-events-none absolute inset-y-0 left-0 -ml-10 hidden md:block">
-        <img src="./onda4.png" alt="" className="w-[160px] h-full object-cover" />
+        <img src="/onda4.png" alt="" className="w-[160px] h-full object-cover" />
       </div>
       <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 -mr-10 hidden md:block">
-        <img src="./onda3.png" alt="" className="w-[200px] h-full object-cover" />
+        <img src="/onda3.png" alt="" className="w-[200px] h-full object-cover" />
       </div>
 
       <div className="max-w-5xl mx-auto relative">
@@ -763,9 +766,9 @@ function CategoryDetail({ title, tagline, sideCaption, sideImg, sideIcon, module
             <ArrowRight className="w-5 h-5 rotate-180" /> Volver
           </button>
           <div className="flex items-center justify-center gap-2">
-            <img src="./focussia.png" alt="Focusia" className="w-10 h-10" />
+            <img src="/focussia.png" alt={i18n.t('focusia_3a6p')} className="w-10 h-10" />
             <span className="text-xl font-bold tracking-tight">
-              <span className="text-purple-500">F</span><span className="text-gray-800">ocusia</span>
+              <span className="text-purple-500">{i18n.t('f_882u')}</span><span className="text-gray-800">{i18n.t('ocusia')}</span>
             </span>
           </div>
         </div>
@@ -784,7 +787,7 @@ function CategoryDetail({ title, tagline, sideCaption, sideImg, sideIcon, module
           <div className="bg-white border border-indigo-100 rounded-2xl overflow-hidden shadow-sm">
             <div className="relative min-h-[280px] bg-gradient-to-br from-indigo-600 via-purple-500 to-blue-500">
               {avatarImg && imgOk ? (
-                <img src={avatarImg} alt="Tu acompañante Focusia" onError={() => setImgOk(false)} className="absolute inset-0 w-full h-full object-cover object-top" />
+                <img src={avatarImg} alt={i18n.t('tu_acompanante_focusia')} onError={() => setImgOk(false)} className="absolute inset-0 w-full h-full object-cover object-top" />
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                   <Sparkles className="w-10 h-10 text-white/80" />
@@ -899,7 +902,7 @@ function GuidedTour({ blocks, onFinish, onGoToDashboard, userName, avatarIndex }
           <div className="w-16 h-16 mx-auto bg-gradient-to-br from-emerald-400 to-teal-500 rounded-md flex items-center justify-center mb-4">
             <Check className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Visita completada</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">{i18n.t('visita_completada')}</h2>
           <p className="text-sm text-gray-500 mb-6">Ya conoces las zonas principales de Focusia. Este recorrido concluye en la sección de Bienestar — el resto lo descubrirás explorando.</p>
           <div className="flex flex-col gap-3">
             <button onClick={onGoToDashboard} className="px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-md hover:shadow-lg transition-all">
@@ -933,9 +936,9 @@ function GuidedTour({ blocks, onFinish, onGoToDashboard, userName, avatarIndex }
         <p className="text-sm text-gray-500 text-center leading-relaxed">{s.avatar_message}</p>
 
         <div className="flex items-center justify-center gap-3 mt-8">
-          {step > 0 && <button onClick={() => setStep(s => s - 1)} className="px-4 py-2 border border-gray-200 rounded-md text-sm text-gray-500 hover:bg-white transition-colors">Anterior</button>}
-          {step < tourBlocks.length - 1 && <button onClick={() => setStep(s => s + 1)} className="px-4 py-2 bg-purple-500 text-white rounded-md text-sm font-medium hover:bg-purple-600 transition-colors">Siguiente</button>}
-          <button onClick={handleSkip} className="px-4 py-2 text-xs text-gray-400 hover:text-gray-600 transition-colors">Saltar</button>
+          {step > 0 && <button onClick={() => setStep(s => s - 1)} className="px-4 py-2 border border-gray-200 rounded-md text-sm text-gray-500 hover:bg-white transition-colors">{i18n.t('anterior_l54j')}</button>}
+          {step < tourBlocks.length - 1 && <button onClick={() => setStep(s => s + 1)} className="px-4 py-2 bg-purple-500 text-white rounded-md text-sm font-medium hover:bg-purple-600 transition-colors">{i18n.t('siguiente_st69')}</button>}
+          <button onClick={handleSkip} className="px-4 py-2 text-xs text-gray-400 hover:text-gray-600 transition-colors">{i18n.t('saltar_5dwe')}</button>
         </div>
       </div>
     </main>
@@ -1007,7 +1010,7 @@ function ConfigScreen({ userName, avatarIndex, onVideoShown, onOpenNow, onBack, 
           <div className="w-20 h-20 mx-auto bg-gradient-to-br from-amber-400 to-orange-500 rounded-md flex items-center justify-center mb-6 shadow-2xl">
             <Settings className="w-10 h-10 text-white animate-spin-slow" />
           </div>
-          <h2 className="text-xl font-bold text-gray-800 mb-3">Antes de configurar</h2>
+          <h2 className="text-xl font-bold text-gray-800 mb-3">{i18n.t('antes_de_configurar')}</h2>
           <p className="text-sm text-gray-500 leading-relaxed">
             Los cambios se realizan de forma permanente mediante el icono de engranaje
             ubicado en la parte superior del dashboard, junto a la campanita de notificaciones.
@@ -1026,7 +1029,7 @@ function ConfigScreen({ userName, avatarIndex, onVideoShown, onOpenNow, onBack, 
       <main className="relative z-10 flex flex-col items-center justify-center min-h-[80vh] px-6">
         <div className="text-center max-w-md animate-fade-in">
           {avatarImg && avatarImgOk ? (
-            <img src={avatarImg} alt="Tu avatar" onError={() => setAvatarImgOk(false)} className="w-20 h-20 mx-auto rounded-md object-cover border-2 border-purple-200 mb-6 shadow-lg" />
+            <img src={avatarImg} alt={i18n.t('tu_avatar_ie1z')} onError={() => setAvatarImgOk(false)} className="w-20 h-20 mx-auto rounded-md object-cover border-2 border-purple-200 mb-6 shadow-lg" />
           ) : (
             <div className="w-20 h-20 mx-auto bg-gradient-to-br from-amber-400 to-orange-500 rounded-md flex items-center justify-center mb-6 shadow-2xl">
               <Settings className="w-10 h-10 text-white" />

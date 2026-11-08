@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, X, ChevronLeft, ChevronRight, ChevronDown, CalendarDays, ArrowLeft, GripVertical, AlertCircle, Plus, Trash2, Play, RotateCcw, Lock } from 'lucide-react';
 import { api } from '../services/api';
@@ -345,7 +346,7 @@ export const AgendaDiariaBoard: React.FC<BoardProps> = ({
             ) : (
               <span
                 onDoubleClick={() => { skipBlur.current = false; setEditingSub({ id: sub.id, texto: sub.texto }); }}
-                title="Doble clic para editar"
+                title={i18n.t('doble_clic_para_editar')}
                 className={`flex-1 min-w-0 text-[13px] cursor-text ${sub.estado === 'Completada' ? 'text-green-700 line-through' : 'text-[#1d3fbf]'}`}
               >
                 {sub.texto}
@@ -355,7 +356,7 @@ export const AgendaDiariaBoard: React.FC<BoardProps> = ({
               type="button"
               onClick={() => eliminarSubaccion(accion.id, sub.id)}
               className="w-6 h-6 rounded flex items-center justify-center text-red-500 hover:bg-red-50"
-              title="Eliminar subacción"
+              title={i18n.t('eliminar_subaccion')}
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -366,7 +367,7 @@ export const AgendaDiariaBoard: React.FC<BoardProps> = ({
             <input
               autoFocus
               value={subInput.texto}
-              placeholder="Escriba una subacción"
+              placeholder={i18n.t('escriba_una_subaccion')}
               onChange={e => setSubInput({ accionId: accion.id, texto: e.target.value })}
               onBlur={() => {
                 if (skipBlur.current) { skipBlur.current = false; return; }
@@ -463,8 +464,8 @@ export const AgendaDiariaBoard: React.FC<BoardProps> = ({
           <div className="mt-2 flex items-start gap-2 text-[13px] text-[#dc2626]">
             <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
             <div>
-              <p className="font-bold">La acción está en «Haciendo».</p>
-              <p>No puede cambiar de hora ni de día mientras esté en ejecución.</p>
+              <p className="font-bold">{i18n.t('la_accion_esta_en_haciendo')}</p>
+              <p>{i18n.t('no_puede_cambiar_de_hora_ni_de_dia_mient')}</p>
             </div>
           </div>
         )}
@@ -474,7 +475,7 @@ export const AgendaDiariaBoard: React.FC<BoardProps> = ({
             <div className="flex items-start gap-3">
               <Trash2 className="w-5 h-5 text-[#dc2626] mt-0.5 shrink-0" />
               <div>
-                <p className="font-bold text-[#dc2626]">¿Eliminar este grupo?</p>
+                <p className="font-bold text-[#dc2626]">{i18n.t('eliminar_este_grupo')}</p>
                 <p className="text-[13px] text-[#1e2a5a]">
                   Se eliminarán «{accion.texto_accion}» y sus {subs.length} subacciones.
                 </p>
@@ -528,7 +529,7 @@ export const AgendaDiariaBoard: React.FC<BoardProps> = ({
             type="button"
             onClick={() => cambiarEstado(accion, 'Pendiente')}
             className="w-7 h-7 rounded-md flex items-center justify-center text-[#7c3aed] hover:bg-purple-50 transition-colors"
-            title="Volver a Pendiente"
+            title={i18n.t('volver_a_pendiente')}
           >
             <RotateCcw className="w-4 h-4" />
           </button>
@@ -537,7 +538,7 @@ export const AgendaDiariaBoard: React.FC<BoardProps> = ({
           type="button"
           onClick={() => abrirSubInput(accion.id)}
           className="w-7 h-7 rounded-md flex items-center justify-center text-[#2563eb] hover:bg-blue-50 transition-colors"
-          title="Añadir subacción"
+          title={i18n.t('anadir_subaccion')}
         >
           <Plus className="w-4 h-4" />
         </button>
@@ -545,7 +546,7 @@ export const AgendaDiariaBoard: React.FC<BoardProps> = ({
           type="button"
           onClick={() => (accion.subacciones?.length ? setConfirmDelete(accion.id) : eliminarAccion(accion))}
           className="w-7 h-7 rounded-md flex items-center justify-center text-red-500 hover:bg-red-50 transition-colors"
-          title="Eliminar acción"
+          title={i18n.t('eliminar_accion')}
         >
           <Trash2 className="w-4 h-4" />
         </button>
@@ -604,7 +605,7 @@ export const AgendaDiariaBoard: React.FC<BoardProps> = ({
                     onChange={e => { if (e.target.value) moverAccion(a, Number(e.target.value)); }}
                     className="rounded-md border border-[#e3e9f4] bg-white px-2 py-1.5 text-[13px] outline-none"
                   >
-                    <option value="">Asignar hora…</option>
+                    <option value="">{i18n.t('asignar_hora')}</option>
                     {HOURS.filter(h => !occupied.has(h)).map(h => (
                       <option key={h} value={h}>{pad(h)}:00 – {pad((h + 1) % 24)}:00</option>
                     ))}
@@ -618,9 +619,9 @@ export const AgendaDiariaBoard: React.FC<BoardProps> = ({
 
         <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 bg-[#fdf6f4] border-b border-[#e3e9f4] text-[11px] font-bold tracking-wider text-[#b8a090] uppercase">
           <div className={COL_GRIP} />
-          <div className={COL_HORA}>Hora</div>
-          <div className="flex-1">Acción</div>
-          <div className={`${COL_ESTADO} text-center`}>Estado</div>
+          <div className={COL_HORA}>{i18n.t('hora')}</div>
+          <div className="flex-1">{i18n.t('accion')}</div>
+          <div className={`${COL_ESTADO} text-center`}>{i18n.t('estado')}</div>
         </div>
 
         <div className="px-2 sm:px-4 py-1">
@@ -643,13 +644,13 @@ export const AgendaDiariaBoard: React.FC<BoardProps> = ({
                       onDragStart={e => { e.dataTransfer.setData('text/plain', accion.id); setDragAccionId(accion.id); }}
                       onDragEnd={() => setDragAccionId(null)}
                       className="cursor-grab text-slate-400 hover:text-slate-600"
-                      title="Arrastra para cambiar de bloque"
+                      title={i18n.t('arrastra_para_cambiar_de_bloque')}
                     >
                       <GripVertical className="w-4 h-4" />
                     </span>
                   )}
                   {accion && enEjecucion && (
-                    <span className="text-[#7c3aed]" title="En ejecución: no se puede mover">
+                    <span className="text-[#7c3aed]" title={i18n.t('en_ejecucion_no_se_puede_mover')}>
                       <Lock className="w-3.5 h-3.5" />
                     </span>
                   )}
@@ -670,7 +671,7 @@ export const AgendaDiariaBoard: React.FC<BoardProps> = ({
                         if (e.key === 'Enter') { skipBlur.current = true; terminarEdicionHora(h, true); }
                         if (e.key === 'Escape') { skipBlur.current = true; terminarEdicionHora(h, false); }
                       }}
-                      placeholder="Escriba una acción"
+                      placeholder={i18n.t('escriba_una_accion_p74b')}
                       className="w-full rounded-md border border-[#2563eb] px-3 py-2 text-[14px] outline-none"
                     />
                   ) : (
@@ -732,8 +733,8 @@ export const AgendaDiaria: React.FC<AgendaDiariaProps> = ({
 }) => (
   <AppShell
     activeNav="diaria"
-    title="DIARIA - TIME BLOCKING"
-    subtitle="Organiza tu jornada en bloques de una hora."
+    title={i18n.t('diaria_time_blocking')}
+    subtitle={i18n.t('organiza_tu_jornada_en_bloques_de_una_ho')}
     username={username}
     avatarUrl={avatarUrl}
     onNavigate={onNavigate}

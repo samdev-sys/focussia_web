@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useState, useRef, useEffect } from 'react';
 import {
   X, Check, Calendar, Users, Trash2, ClipboardCheck,
@@ -229,15 +230,15 @@ export const MatrizEisenhower: React.FC<MatrizEisenhowerProps> = ({ className = 
     <div className={`fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 ${className}`}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
       <div className="relative w-full max-w-5xl max-h-[94vh] overflow-y-auto rounded-3xl shadow-2xl" onClick={e => e.stopPropagation()}>
-        <button onClick={onClose} aria-label="Cerrar" className="absolute top-3 right-3 z-30 w-9 h-9 rounded-full bg-white shadow flex items-center justify-center hover:scale-105 transition">
+        <button onClick={onClose} aria-label={i18n.t('cerrar_9sl5')} className="absolute top-3 right-3 z-30 w-9 h-9 rounded-full bg-white shadow flex items-center justify-center hover:scale-105 transition">
           <X className="w-5 h-5 text-gray-700" />
         </button>
 
         {showResume && (
           <div className="bg-amber-50 border-b border-amber-200 px-5 py-3 flex flex-col sm:flex-row items-center gap-3 rounded-t-3xl">
-            <p className="text-sm text-amber-800 flex-1 text-center sm:text-left">Tienes este módulo en progreso. Puedes continuar donde quedaste o reiniciarlo.</p>
+            <p className="text-sm text-amber-800 flex-1 text-center sm:text-left">{i18n.t('tienes_este_modulo_en_progreso_puedes_co')}</p>
             <div className="flex gap-2">
-              <button onClick={() => { setShowResume(false); setPaso(resumeStep); }} className="px-4 py-2 bg-amber-500 text-white text-sm font-bold rounded-lg hover:bg-amber-600">Continuar</button>
+              <button onClick={() => { setShowResume(false); setPaso(resumeStep); }} className="px-4 py-2 bg-amber-500 text-white text-sm font-bold rounded-lg hover:bg-amber-600">{i18n.t('continuar')}</button>
               <button onClick={() => { setShowResume(false); setPaso(1); persistStep(1); }} className="px-4 py-2 border border-amber-300 text-amber-700 text-sm font-bold rounded-lg hover:bg-amber-100 flex items-center gap-1"><RotateCcw className="w-3 h-3" /> Reiniciar</button>
             </div>
           </div>
@@ -250,11 +251,11 @@ export const MatrizEisenhower: React.FC<MatrizEisenhowerProps> = ({ className = 
               <div className="absolute -bottom-24 left-0 right-0 h-56 bg-gradient-to-r from-[#2b3bff] via-[#3b82f6] to-[#8b5cf6] opacity-40 blur-2xl" />
             </div>
             {yaCompletado && (
-              <p className="relative text-center text-xs text-emerald-300 mb-4">Ya completaste este módulo. Puedes repasarlo de nuevo.</p>
+              <p className="relative text-center text-xs text-emerald-300 mb-4">{i18n.t('ya_completaste_este_modulo_puedes_repasa')}</p>
             )}
             <h1 className="relative text-center text-3xl sm:text-3xl font-extrabold leading-tight">
               ¿Sabes distinguir lo urgente<br />
-              <span className="bg-gradient-to-r from-[#c084fc] to-[#22d3ee] bg-clip-text text-transparent">de lo importante?</span>
+              <span className="bg-gradient-to-r from-[#c084fc] to-[#22d3ee] bg-clip-text text-transparent">{i18n.t('de_lo_importante')}</span>
             </h1>
             <div className="relative mt-8 grid sm:grid-cols-[240px_1fr] gap-6 items-center max-w-3xl mx-auto">
               <div className="mx-auto text-center">
@@ -262,7 +263,7 @@ export const MatrizEisenhower: React.FC<MatrizEisenhowerProps> = ({ className = 
                   {liaOk ? (
                     <img src={avatarImg} alt={avatarNombre} onError={() => setLiaOk(false)} className="w-full h-full object-cover rounded-full bg-[#0b123a]" />
                   ) : (
-                    <div className="w-full h-full rounded-full bg-gradient-to-br from-[#3b2d8f] to-[#0ea5e9] flex items-center justify-center text-5xl font-extrabold">L</div>
+                    <div className="w-full h-full rounded-full bg-gradient-to-br from-[#3b2d8f] to-[#0ea5e9] flex items-center justify-center text-5xl font-extrabold">{i18n.t('l')}</div>
                   )}
                 </div>
                 <span className="inline-block mt-3 px-8 py-1.5 rounded-full bg-gradient-to-r from-[#1e1b4b] to-[#7c3aed] border border-purple-400/60 text-sm font-extrabold tracking-widest">{avatarNombre}</span>
@@ -301,7 +302,7 @@ export const MatrizEisenhower: React.FC<MatrizEisenhowerProps> = ({ className = 
               <div className="flex items-center gap-3 px-4 py-3 bg-[#0b1b3f] text-white text-sm">
                 <Play className="w-4 h-4" />
                 <span className="text-white/70">00:00 / 00:45</span>
-                <span className="ml-auto hidden sm:block text-white/60 text-xs">Priorizar es decidir mejor: Hacer · Planificar · Delegar · Eliminar</span>
+                <span className="ml-auto hidden sm:block text-white/60 text-xs">{i18n.t('priorizar_es_decidir_mejor_hacer_planifi')}</span>
               </div>
             </div>
             <div className="flex justify-center mt-6">
@@ -314,7 +315,7 @@ export const MatrizEisenhower: React.FC<MatrizEisenhowerProps> = ({ className = 
               </button>
             </div>
             {!videoEnded && (
-              <button onClick={() => setVideoEnded(true)} className="mx-auto mt-3 block text-xs text-gray-400 hover:text-gray-600">Ya vi la explicación, continuar</button>
+              <button onClick={() => setVideoEnded(true)} className="mx-auto mt-3 block text-xs text-gray-400 hover:text-gray-600">{i18n.t('ya_vi_la_explicacion_continuar')}</button>
             )}
           </div>
         )}
@@ -322,12 +323,12 @@ export const MatrizEisenhower: React.FC<MatrizEisenhowerProps> = ({ className = 
         {/* PASO 3 — MATRIZ INTERACTIVA */}
         {paso === 3 && (
           <div className="bg-white rounded-3xl px-4 py-6 sm:px-8 sm:py-8">
-            <h2 className="text-center text-2xl sm:text-4xl font-extrabold text-[#0b123a] tracking-tight">MATRIZ DE EISENHOWER</h2>
+            <h2 className="text-center text-2xl sm:text-4xl font-extrabold text-[#0b123a] tracking-tight">{i18n.t('matriz_de_eisenhower')}</h2>
             <div className="mt-6 flex gap-3 sm:gap-5">
               <div className="flex flex-col items-center justify-between py-2">
-                <span className="text-sm sm:text-base text-[#0b123a]">Alta</span>
-                <span className="text-[#0b123a] font-extrabold tracking-widest text-sm sm:text-lg [writing-mode:vertical-rl] rotate-180">IMPORTANCIA</span>
-                <span className="text-sm sm:text-base text-[#0b123a]">Baja</span>
+                <span className="text-sm sm:text-base text-[#0b123a]">{i18n.t('alta')}</span>
+                <span className="text-[#0b123a] font-extrabold tracking-widest text-sm sm:text-lg [writing-mode:vertical-rl] rotate-180">{i18n.t('importancia')}</span>
+                <span className="text-sm sm:text-base text-[#0b123a]">{i18n.t('baja')}</span>
               </div>
               <div className="flex-1">
                 <div className="grid grid-cols-2 gap-3 sm:gap-4">
@@ -354,9 +355,9 @@ export const MatrizEisenhower: React.FC<MatrizEisenhowerProps> = ({ className = 
                 <div className="mt-3 border-t-4 border-[#0b123a] relative">
                   <span className="absolute right-0 -top-[9px] text-[#0b123a] text-xl leading-none">▶</span>
                   <div className="flex justify-between text-[#0b123a] text-sm sm:text-base mt-1">
-                    <span>Baja</span>
-                    <span className="font-extrabold tracking-widest">URGENCIA</span>
-                    <span className="mr-6">Alta</span>
+                    <span>{i18n.t('baja')}</span>
+                    <span className="font-extrabold tracking-widest">{i18n.t('urgencia')}</span>
+                    <span className="mr-6">{i18n.t('alta')}</span>
                   </div>
                 </div>
               </div>
@@ -364,7 +365,7 @@ export const MatrizEisenhower: React.FC<MatrizEisenhowerProps> = ({ className = 
 
             {explorados.size < 4 ? (
               <div className="mt-6 text-center">
-                <p className="text-[#0b123a] text-xs sm:text-sm font-extrabold tracking-widest">SELECCIONA CADA CUADRANTE PARA CONOCERLO</p>
+                <p className="text-[#0b123a] text-xs sm:text-sm font-extrabold tracking-widest">{i18n.t('selecciona_cada_cuadrante_para_conocerlo')}</p>
                 <div className="flex items-center justify-center gap-6 sm:gap-10 mt-3 max-w-md mx-auto">
                   <div className="flex-1 h-1 rounded-full bg-gray-200 relative overflow-hidden">
                     <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#1e9bff] to-[#7c3aed] transition-all" style={{ width: `${(explorados.size / 4) * 100}%` }} />
@@ -388,8 +389,8 @@ export const MatrizEisenhower: React.FC<MatrizEisenhowerProps> = ({ className = 
               </div>
             ) : (
               <div className="mt-6 text-center">
-                <p className="text-[#0b123a] text-lg sm:text-xl font-extrabold">Ya terminaste de conocer los cuadrantes.</p>
-                <p className="text-[#0b123a]/70 text-sm sm:text-base">Ahora te invito a hacer un ejercicio práctico.</p>
+                <p className="text-[#0b123a] text-lg sm:text-xl font-extrabold">{i18n.t('ya_terminaste_de_conocer_los_cuadrantes')}</p>
+                <p className="text-[#0b123a]/70 text-sm sm:text-base">{i18n.t('ahora_te_invito_a_hacer_un_ejercicio_pra')}</p>
                 <button onClick={() => goPaso(4)} className="mt-4 px-12 py-3 rounded-xl bg-gradient-to-r from-[#1e6bff] to-[#7c3aed] text-white font-extrabold tracking-widest shadow-lg hover:brightness-110 flex items-center gap-2 mx-auto">
                   COMENZAR <ArrowRight className="w-5 h-5" />
                 </button>
@@ -404,8 +405,8 @@ export const MatrizEisenhower: React.FC<MatrizEisenhowerProps> = ({ className = 
             <div className="flex items-start justify-between gap-4">
               <div>
                 <span className="block w-10 h-1.5 rounded-full bg-gradient-to-r from-[#7c3aed] to-[#1e9bff] mb-3" />
-                <h2 className="text-2xl sm:text-4xl font-extrabold text-[#0b123a] tracking-tight">EJERCICIO DE PRIORIZACIÓN</h2>
-                <p className="text-[#3b4bd8] text-lg sm:text-2xl mt-1">¿Dónde ubicarías esta tarea?</p>
+                <h2 className="text-2xl sm:text-4xl font-extrabold text-[#0b123a] tracking-tight">{i18n.t('ejercicio_de_priorizacion')}</h2>
+                <p className="text-[#3b4bd8] text-lg sm:text-2xl mt-1">{i18n.t('donde_ubicarias_esta_tarea')}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0 pt-2">
                 <span className="text-[#0b123a] font-extrabold text-sm sm:text-base">{ejercicioIdx + 1} DE 4</span>
@@ -437,7 +438,7 @@ export const MatrizEisenhower: React.FC<MatrizEisenhowerProps> = ({ className = 
             </div>
 
             {!respondido ? (
-              <p className="text-center text-[#2b3a9e] mt-5 text-sm sm:text-base">Arrastra la tarea donde corresponda</p>
+              <p className="text-center text-[#2b3a9e] mt-5 text-sm sm:text-base">{i18n.t('arrastra_la_tarea_donde_corresponda')}</p>
             ) : (
               <div className="text-center mt-5">
                 {acierto ? (
@@ -489,7 +490,7 @@ export const MatrizEisenhower: React.FC<MatrizEisenhowerProps> = ({ className = 
         {paso === 5 && (
           <div className="bg-[#f7f9fd] rounded-3xl px-6 py-10 sm:py-14 text-center">
             <span className="inline-block w-12 h-1.5 rounded-full bg-gradient-to-r from-[#7c3aed] to-[#1e9bff]" />
-            <h2 className="mt-4 text-3xl sm:text-5xl font-extrabold text-[#0b123a] tracking-tight">EJERCICIO COMPLETADO</h2>
+            <h2 className="mt-4 text-3xl sm:text-5xl font-extrabold text-[#0b123a] tracking-tight">{i18n.t('ejercicio_completado')}</h2>
             <div className="mx-auto mt-8 w-40 h-40 relative">
               <svg viewBox="0 0 100 100" className="w-full h-full">
                 <circle cx="50" cy="50" r="34" fill="none" stroke="#e5e7eb" strokeWidth="10" />

@@ -1,3 +1,4 @@
+import i18n from '../../i18n';
 import React, { useCallback, useEffect, useState } from 'react';
 import { api } from '../../services/api';
 import AppShell, { MonthlyNavKey } from '../AppShell';
@@ -40,6 +41,18 @@ export default function KanbanModule({ username, avatarUrl, onNavigate, onClose,
   const [pickerRefresh, setPickerRefresh] = useState(0);
   const [horaModal, setHoraModal] = useState<AccionKanban | null>(null);
   const [dailyDate, setDailyDate] = useState(isoToday());
+
+  // Sincronizar vistaInicial cuando se abra desde fuera (dashboard/sidebar)
+  useEffect(() => {
+    if (vistaInicial) {
+      setView(vistaInicial);
+      setPickerAction(null);
+      setPickerBanner(null);
+      setDailyBanner(null);
+      setHoraModal(null);
+      setDestinoModal(null);
+    }
+  }, [vistaInicial]);
   const [dailyBanner, setDailyBanner] = useState<{ text: string; actionId: string } | null>(null);
 
   const refreshAll = useCallback(async () => {
@@ -76,6 +89,25 @@ export default function KanbanModule({ username, avatarUrl, onNavigate, onClose,
   const shellNav = (key: MonthlyNavKey) => {
     if (key === 'kanban') {
       resetToKanban();
+      return;
+    }
+    if (key === 'semanal') {
+      setView('semanal');
+      setPickerAction(null);
+      setPickerBanner(null);
+      setDailyBanner(null);
+      setHoraModal(null);
+      setDestinoModal(null);
+      return;
+    }
+    if (key === 'diaria') {
+      setView('diaria');
+      setDailyDate(isoToday());
+      setDailyBanner(null);
+      setPickerAction(null);
+      setPickerBanner(null);
+      setHoraModal(null);
+      setDestinoModal(null);
       return;
     }
     onNavigate?.(key);

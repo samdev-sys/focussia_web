@@ -12,7 +12,7 @@ from django.core.cache import cache
 
 from ..models import (
     KanbanTask, AccionKanban, TimeBlock, Action, AgentConversation, AgentSchedule, AgentConfig,
-    GranMetaAnual, WeeklyPlan, Recordatorio,
+    GranMetaAnual, WeeklyPlan, Recordatorio, Suplemento, SuplementoToma
 )
 
 logger = logging.getLogger(__name__)
@@ -156,8 +156,6 @@ class AgentService:
         kanban_tablero_pendientes = kanban_qs.exclude(columna='Hecho').count()
 
         # Bandeja visible del Kanban Backlog (lo que el usuario ve en la UI).
-        # Es la fuente principal de "pendientes": las tareas legacy del tablero
-        # se migran aquí (origen OTRO) para que agente y bandeja coincidan.
         backlog_qs = AccionKanban.objects.filter(
             user=self.user,
             estado_actual=AccionKanban.EstadoChoices.KANBAN_ACTIVO,
@@ -190,6 +188,33 @@ class AgentService:
             user=self.user, is_active=True, status='APROBADA'
         ).first()
 
+        # Suplementos / Medicamentos activos
+        suplementos_qs = Suplemento.objects.filter(user=self.user, activo=True).order_by('tipo', 'nombre')
+        suplementos_list = []
+        for s in suplementos_qs:
+            suplementos_list.append({
+                'id': s.id,
+                'nombre': s.nombre,
+                'tipo': s.tipo,
+                'presentacion': s.presentacion,
+                'frecuencia_horas': s.frecuencia_horas,
+                'hora_primera': s.hora_primera.strftime('%H:%M') if s.hora_primera else None,
+                'fecha_inicio': s.fecha_inicio.isoformat() if s.fecha_inicio else None,
+                'duracion_dias': s.duracion_dias,
+            })
+        tomas_pendientes = SuplementoToma.objects.filter(
+            suplemento__user=self.user,
+            tomado=False,
+            programada__date=today,
+        ).select_related('suplemento').order_by('programada')[:10]
+        tomas_pendientes_list = []
+        for t in tomas_pendientes:
+            tomas_pendientes_list.append({
+                'suplemento': t.suplemento.nombre,
+                'tipo': t.suplemento.tipo,
+                'hora': t.programada.strftime('%H:%M'),
+            })
+
         return {
             "nombre_usuario": self.user.first_name or self.user.username,
             "hora_actual": datetime.now().strftime('%H:%M'),
@@ -201,6 +226,8 @@ class AgentService:
             "progreso_general": {"total": total, "completadas": completadas, "porcentaje": porcentaje},
             "meta_anual": gran_meta.generated_goal_text if gran_meta else None,
             "tono": self.config.tono,
+            "suplementos": suplementos_list,
+            "suplementos_pendientes_hoy": tomas_pendientes_list,
         }
 
     def _build_system_message(self, contexto: dict) -> str:
@@ -220,6 +247,28 @@ class AgentService:
 
         if ctx['meta_anual']:
             intro += f"\nMeta Anual activa: {ctx['meta_anual']}"
+
+        suplementos = ctx.get('suplementos') or []
+        if suplementos:
+            parts = []
+            for s in suplementos:
+                p = f"- {s['nombre']} ({s['tipo']})"
+                if s.get('presentacion'):
+                    p += f" [{s['presentacion']}]"
+                if s.get('hora_primera'):
+                    p += f", primera toma {s['hora_primera']}"
+                if s.get('frecuencia_horas'):
+                    p += f", cada {s['frecuencia_horas']}h"
+                if s.get('duracion_dias'):
+                    p += f", duración {s['duracion_dias']} días"
+                parts.append(p)
+            intro += "\n\nSuplementos/medicamentos activos:\n" + "\n".join(parts)
+            intro += "\nSi el usuario pregunta qué toma o qué medicamentos/suplementos tiene, responde con esta lista exacta."
+        tomas_pend = ctx.get('suplementos_pendientes_hoy') or []
+        if tomas_pend:
+            tp = '; '.join(f"{t['suplemento']} ({t['tipo']}) a las {t['hora']}" for t in tomas_pend)
+            intro += f"\nTomas pendientes hoy: {tp}."
+            intro += " Puedes recordárselas si el usuario lo pide o si hay oportunidad."
 
         return f"{SYSTEM_PROMPT}\n\nContexto actual:\n{intro}"
 

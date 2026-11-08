@@ -1,3 +1,4 @@
+import i18n from '../../i18n';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import { api } from '../../services/api';
@@ -83,7 +84,7 @@ export default function PlanMensualView({ highlightActionId, refreshKey, onConfi
           <ArrowLeft className="w-4 h-4" /> Volver a Kanban
         </button>
       </div>
-      <p className="px-4 pt-2 text-sm text-[#5b6b8c]">Selecciona otra fecha para cambiar la planificación.</p>
+      <p className="px-4 pt-2 text-sm text-[#5b6b8c]">{i18n.t('selecciona_otra_fecha_para_cambiar_la_pl')}</p>
       <div className="p-4">
         <div className="grid grid-cols-7 gap-1.5">
           {WEEK_DAYS.map(d => (

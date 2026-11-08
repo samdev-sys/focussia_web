@@ -10,11 +10,28 @@ coverage
 .venv
 **/__pycache__
 *.pyc
-*.log
+**/*.log
 docs
 parametros
 MCP
 public
 src
 backups
-tts_service
+
+# ── Secretos y estado local: NUNCA dentro de la imagen ──
+# El Dockerfile hace `COPY backend/ .`, así que sin estas reglas el .env de
+# desarrollo (con la GROQ_API_KEY y la clave privada VAPID reales) y el
+# .env.production viajaban horneados en cada capa de la imagen de producción.
+# En el servidor esos valores se inyectan en runtime con `env_file:`, no
+# necesitan estar dentro de la imagen.
+**/.env
+**/.env.*
+!**/.env.example
+# Ojo: en .dockerignore un patrón sin `**/` solo casa en la raíz del contexto
+# (a diferencia de .gitignore). Como el Dockerfile copia `backend/`, todo lo
+# que vive dentro de esa carpeta necesita el prefijo `**/`.
+**/*.sqlite3
+**/celerybeat-schedule*
+**/.pytest_cache
+**/media
+**/staticfiles

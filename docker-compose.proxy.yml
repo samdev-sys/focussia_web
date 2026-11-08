@@ -19,8 +19,15 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+      # Media y estáticos: Caddy los sirve él mismo (media solo por la ruta
+      # interna que autoriza Django; estáticos del admin directamente).
+      - media_data:/media:ro
+      - static_data:/static:ro
     environment:
       API_DOMAIN: ${API_DOMAIN:?Defina API_DOMAIN en el entorno}
+      # IPs (separadas por espacios) que pueden entrar a /admin/. Si no se
+      # define, solo localhost: el admin de Django es para el desarrollador.
+      ADMIN_ALLOWED_IPS: ${ADMIN_ALLOWED_IPS:-127.0.0.1 ::1}
     depends_on:
       web:
         condition: service_healthy
@@ -33,3 +40,5 @@ services:
 volumes:
   caddy_data:
   caddy_config:
+  media_data:
+  static_data:

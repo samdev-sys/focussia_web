@@ -981,6 +981,10 @@ export const notificationService = {
   },
   marcarTodasLeidas: async (): Promise<void> => {
     await api.post('/api/notifications/leer-todas/');
+  },
+  flush: async (): Promise<any> => {
+    const response = await api.post('/api/notifications/flush/');
+    return response.data;
   }
 };
 
@@ -2173,6 +2177,9 @@ export const focusService = {
     forzar?: boolean;
   }): Promise<FocusSesionData> => {
     const response = await api.post('/api/focus-sessions/iniciar/', data);
+    try {
+      await api.post('/api/notifications/flush/').catch(() => {});
+    } catch (_) {}
     return response.data;
   },
   finalizar: async (
@@ -2180,6 +2187,9 @@ export const focusService = {
     data: { completada: boolean; minutos_enfocado?: number },
   ): Promise<FocusSesionData> => {
     const response = await api.post(`/api/focus-sessions/${id}/finalizar/`, data);
+    try {
+      await api.post('/api/notifications/flush/').catch(() => {});
+    } catch (_) {}
     return response.data;
   },
 };
@@ -2208,6 +2218,10 @@ export const reportService = {
   },
   takeAction: async (id: number, action: string): Promise<FocusiaReportData> => {
     const response = await api.post(`/api/focusia-reports/${id}/action/`, { action });
+    return response.data;
+  },
+  reconciliar: async (): Promise<{ reconciliado: boolean }> => {
+    const response = await api.post('/api/focusia-reports/reconciliar/');
     return response.data;
   },
 };

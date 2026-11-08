@@ -33,9 +33,14 @@ TAREAS = (
     # Doc 27 §5.1: recordatorio nocturno de acciones sin confirmar.
     ('Acciones pendientes del día', 'remind_pending_actions',
      Schedule.CRON, None, '0 20 * * *'),
+    # Recordatorios proactivos de bloques próximos
+    ('Recordatorios de bloques próximos', 'remind_upcoming_blocks',
+     Schedule.MINUTES, 10, None),
     # Doc 27 §2.7: los avisos postergados (Focus, fuera de horario) se revisan
     # y entregan en cuanto se abre una franja permitida, sin ráfagas.
     ('Avisos postergados', 'flush_notificaciones', Schedule.MINUTES, 5, None),
+    ('Agente FocusIA', 'run_agent', Schedule.MINUTES, 60, None),
+    ('Motor de decision', 'run_decision_engine', Schedule.CRON, None, '0 6 * * *'),
 )
 
 
@@ -43,25 +48,41 @@ class Command(BaseCommand):
     help = 'Registra las tareas programadas de recordatorios en django-q2'
 
     def handle(self, *args, **options):
+        fallidas = []
         for nombre, comando, tipo, minutos, cron in TAREAS:
-            _, created = Schedule.objects.update_or_create(
-                func=FUNC,
-                args=f"('{comando}',)",
-                defaults={
-                    'name': nombre,
-                    'schedule_type': tipo,
-                    'minutes': minutos,
-                    'cron': cron,
-                    'repeats': -1,
-                },
-            )
             if cron:
                 cadencia = f'cron «{cron}»'
             elif minutos:
                 cadencia = f'cada {minutos} min'
             else:
                 cadencia = 'cada hora'
+            # Un fallo en una tarea no debe impedir registrar las demás: sin
+            # este try/except, un entorno sin `croniter` abortaba el bucle y
+            # dejaba fuera también las tareas de intervalo posteriores.
+            try:
+                _, created = Schedule.objects.update_or_create(
+                    func=FUNC,
+                    args=f"('{comando}',)",
+                    defaults={
+                        'name': nombre,
+                        'schedule_type': tipo,
+                        'minutes': minutos,
+                        'cron': cron,
+                        'repeats': -1,
+                    },
+                )
+            except Exception as exc:
+                fallidas.append(nombre)
+                self.stderr.write(self.style.ERROR(
+                    f'{nombre}: FALLÓ ({cadencia}) -> {exc}'
+                ))
+                continue
             estado = 'programada' if created else 'actualizada'
             self.stdout.write(self.style.SUCCESS(
                 f'{nombre}: {estado} ({cadencia})'
+            ))
+
+        if fallidas:
+            self.stderr.write(self.style.WARNING(
+                'Tareas que no se pudieron registrar: ' + ', '.join(fallidas)
             ))

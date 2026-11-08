@@ -4,7 +4,7 @@ Modelo elegido: **backend=self-hosted en Docker, frontend=Netlify**.
 
 ```
   Navegador ──HTTPS──▶ API (tú servidor, Docker)      Navegador ──HTTPS──▶ Netlify (front)
-                      web / worker / schedule
+                      web / worker
                       postgres + redis
                       ↑ tls proxy overlay (Caddy)
 ```
@@ -22,10 +22,24 @@ El front **nunca** habla con netlify por datos: todo va al dominio del API.
 ### Variables
 | Dónde | Qué |
 |---|---|
-| `.env` (raíz del proyecto en el server) | `DB_PASSWORD` (lo exige el compose) y `API_DOMAIN` (lo exige el proxy overlay) |
-| `backend/.env.production` | `SECRET_KEY`, `DEBUG=False`, `ALLOWED_HOSTS=<dominio-api>`, `CORS_ALLOWED_ORIGINS=https://<dominio-front-Netlify>`, `CSRF_TRUSTED_ORIGINS` igual, `GROQ_API_KEY`, `VITE_GOOGLE_CLIENT_ID`/OAuth, `THROTTLE_*` |
+| `.env` (raíz del proyecto en el server) | `DB_PASSWORD` (lo exige el compose), `API_DOMAIN` (lo exige el proxy overlay) y opcionalmente `ADMIN_ALLOWED_IPS` (IPs con acceso a `/admin/`; por defecto solo `127.0.0.1 ::1`) |
+| `backend/.env.production` | `SECRET_KEY` (≥50 caracteres, **no** un valor de ejemplo), `DEBUG=False`, `ALLOWED_HOSTS=<dominio-api>` (obligatoria), `CORS_ALLOWED_ORIGINS=https://<dominio-front-Netlify>`, `CSRF_TRUSTED_ORIGINS` igual, `GROQ_API_KEY`, VAPID (`VAPID_*`), `EMAIL_*`, OAuth, `THROTTLE_*`, `SECURE_SSL_REDIRECT=True` |
 
 > `backend/.env.production` **no viaja por git**: crearlo a mano en el server.
+> El contenedor arranca con `DJANGO_SKIP_DOTENV=1`: si falta una variable, **no**
+> cae al `.env` de desarrollo (antes lo hacía y metía claves del portátil en la
+> imagen). El arranque falla con un mensaje claro.
+
+### Volúmenes con estado
+
+| Volumen | Contenido | Se llena en |
+|---|---|---|
+| `postgres_data` | base de datos | primer arranque |
+| `media_data` | archivos subidos desde el panel (**sensibles**) | al subir contenido |
+| `static_data` | estáticos del admin | cada arranque de `web` (`collectstatic`) |
+
+`media_data` es lo que hace que las subidas **sobrevivan a los despliegues**.
+Conviene incluirlo en el backup, no solo el dump de Postgres.
 
 ### Primer despliegue
 ```bash
@@ -38,8 +52,17 @@ docker compose -p focusia -f docker-compose.prod.yml -f docker-compose.proxy.yml
 docker compose -p focusia -f docker-compose.prod.yml -f docker-compose.proxy.yml up -d
 docker compose -p focusia -f docker-compose.prod.yml run --rm web python manage.py migrate
 docker compose -p focusia -f docker-compose.prod.yml run --rm web python manage.py createsuperuser
-docker compose -p focusia -f docker-compose.prod.yml run --rm schedule   # registra los 5 crons
 ```
+
+> Los crons **los registra el propio `worker` al arrancar** (idempotente). Ya no
+> existe el servicio `schedule`: era one-shot con `restart: on-failure` y, al
+> terminar bien, no se reiniciaba, de modo que tras un reinicio del servidor sin
+> `up -d` las tareas quedaban sin registrar y el sistema proactivo se detenía en
+> silencio. Verifica en los logs del worker que aparezcan las 7 tareas:
+>
+> ```bash
+> docker compose -p focusia -f docker-compose.prod.yml logs worker | grep -E 'min|hora|cron'
+> ```
 
 Bloque de datos del Postgres local (opcional: demo/con datos reales):
 ```bash
@@ -55,11 +78,13 @@ docker compose -p focusia -f docker-compose.prod.yml exec -T db \
 ### Rutina de actualización (futuro)
 ```bash
 git pull
-docker compose ... build web worker schedule
+docker compose ... build web worker
 docker compose ... up -d            # recrea solo lo cambiado
-docker compose ... run --rm schedule  # re-registra crons (el service corre una vez)
 docker compose ... run --rm web python manage.py migrate   # solo si hubo migraciones
 ```
+
+El `worker` se recrea en cada despliegue y vuelve a registrar los crons, así que
+no hay un paso manual que se pueda olvidar.
 
 ### Créditos de esquina para recordar
 - TLS los entrega el servicio `proxy` (Caddy,Certificates automatizados) — verificar el DNS antes de levantar, si no falla la emisión.
@@ -90,6 +115,8 @@ Con credenciales (cookies JWT HttpOnly), CORS no puede ser `*`: el origen exacto
 - [ ] `https://api.tudominio.com/api/health/` responde 200.
 - [ ] Login desde `https://app.tudominio.com` (cookies Secure/SameSite=None: sin HTTPS no entra).
 - [ ] Campana: notificaciones en tiempo ≤1min.
-- [ ] Crons: `docker compose -p focusia -f docker-compose.prod.yml run --rm schedule` sin errores.
+- [ ] Crons: en los logs del `worker` aparecen las 7 tareas al arrancar
+      (`docker compose ... logs worker | grep -E 'min|hora|cron'`). Si falta
+      `croniter` en la imagen, las 3 tareas de tipo cron salen como "FALLÓ".
 - [ ] `crontab`/respaldos server.
 - [ ] `SECRET_KEY` etc. NO versionadas: check `git status` limpio de archivos `.env*`.

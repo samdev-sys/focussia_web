@@ -14,7 +14,7 @@ class Command(BaseCommand):
             tomado=False,
             fecha_hora__lte=now,
             fecha_hora__gte=now - timedelta(minutes=1),
-        )
+        ).exclude(categoria='Cumpleaños')
 
         created = 0
         for r in due:

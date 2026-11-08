@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useState } from 'react';
 import { X, Target, CalendarDays, Calendar, Clock, CheckCircle, Plus } from 'lucide-react';
 import { notify } from '../services/notify';
@@ -93,7 +94,7 @@ export const PlanificarModal: React.FC<PlanificarModalProps> = ({ onClose, onCla
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="w-8 h-8 text-green-600" />
           </div>
-          <h3 className="text-lg font-bold text-gray-800 mb-2">¡Creado!</h3>
+          <h3 className="text-lg font-bold text-gray-800 mb-2">{i18n.t('creado')}</h3>
           <p className="text-sm text-gray-500">Se agregó a <strong>{META_CONFIG[selected].label}</strong></p>
         </div>
       </div>
@@ -106,7 +107,7 @@ export const PlanificarModal: React.FC<PlanificarModalProps> = ({ onClose, onCla
         <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-indigo-700 to-purple-600 shrink-0">
           <div className="flex items-center gap-2">
             <Plus className="w-5 h-5 text-white" />
-            <h2 className="text-lg font-bold text-white">Plan Rápido</h2>
+            <h2 className="text-lg font-bold text-white">{i18n.t('plan_rapido')}</h2>
           </div>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-white/20 transition-colors">
             <X className="w-5 h-5 text-white" />
@@ -115,13 +116,13 @@ export const PlanificarModal: React.FC<PlanificarModalProps> = ({ onClose, onCla
 
         <div className="p-5">
           <div className="mb-4">
-            <label className="text-xs text-gray-400 mb-1 block font-medium">¿Qué quieres planificar?</label>
+            <label className="text-xs text-gray-400 mb-1 block font-medium">{i18n.t('que_quieres_planificar')}</label>
             <input
               autoFocus
               value={title}
               onChange={e => { setTitle(e.target.value); setSelected(clasificarPorPalabrasClave(e.target.value)); }}
               onKeyDown={e => { if (e.key === 'Enter') handleConfirm(); }}
-              placeholder="Ej: Terminar reporte, Comprar regalo..."
+              placeholder={i18n.t('ej_terminar_reporte_comprar_regalo')}
               className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-300 focus:border-purple-400"
             />
           </div>
@@ -147,7 +148,7 @@ export const PlanificarModal: React.FC<PlanificarModalProps> = ({ onClose, onCla
                         <span className="block font-semibold text-gray-800 text-sm">{cfg.label}</span>
                         <span className="text-xs text-gray-400">{cfg.desc}</span>
                       </div>
-                      {isSugerencia && <span className="text-[10px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-medium">IA</span>}
+                      {isSugerencia && <span className="text-[10px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-medium">{i18n.t('ia_l6vw')}</span>}
                       {isSelected && <CheckCircle className="w-5 h-5 text-purple-500 shrink-0" />}
                     </button>
                   );
@@ -163,7 +164,7 @@ export const PlanificarModal: React.FC<PlanificarModalProps> = ({ onClose, onCla
           </button>
           <button onClick={handleConfirm} disabled={loading || !title.trim()}
             className="flex-1 py-2.5 bg-gradient-to-r from-[#D1C4E9] to-[#FFD1D1] text-[#4A3B8B] font-semibold rounded-xl transition-all hover:shadow-lg active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2 text-sm">
-            {loading ? <div className="w-4 h-4 border-2 border-[#4A3B8B]/30 border-t-[#4A3B8B] rounded-full animate-spin" /> : <>Crear</>}
+            {loading ? <div className="w-4 h-4 border-2 border-[#4A3B8B]/30 border-t-[#4A3B8B] rounded-full animate-spin" /> : <>{i18n.t('crear')}</>}
           </button>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   X, Minus, CheckCircle2, Coffee,
@@ -333,11 +334,11 @@ export default function FocusWidget({ sesion, minimizado, onMinimizar, onCerrarS
           <span className="flex-1 truncate text-[12px] font-semibold text-white">
             {ETIQUETA_HERRAMIENTA[sesion.herramienta]}
           </span>
-          {pausado && <span className="text-[9px] font-bold uppercase text-amber-400">Pausa</span>}
-          <button onClick={onMinimizar} title="Minimizar" className="rounded p-0.5 text-slate-500 hover:bg-white/10 hover:text-white">
+          {pausado && <span className="text-[9px] font-bold uppercase text-amber-400">{i18n.t('pausa')}</span>}
+          <button onClick={onMinimizar} title={i18n.t('minimizar')} className="rounded p-0.5 text-slate-500 hover:bg-white/10 hover:text-white">
             <Minus className="h-3.5 w-3.5" />
           </button>
-          <button onClick={onCerrarSolicitado} title="Cerrar widget" className="rounded p-0.5 text-slate-500 hover:bg-white/10 hover:text-white">
+          <button onClick={onCerrarSolicitado} title={i18n.t('cerrar_widget')} className="rounded p-0.5 text-slate-500 hover:bg-white/10 hover:text-white">
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -358,7 +359,7 @@ export default function FocusWidget({ sesion, minimizado, onMinimizar, onCerrarS
                 className={`${btnCircular} h-8 w-8`}>
                 {pausado ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
               </button>
-              <button onClick={onCerrarSolicitado} title="Detener"
+              <button onClick={onCerrarSolicitado} title={i18n.t('detener')}
                 className={`${btnCircular} h-8 w-8`}>
                 <Square className="h-3 w-3" />
               </button>
@@ -374,7 +375,7 @@ export default function FocusWidget({ sesion, minimizado, onMinimizar, onCerrarS
             <p className="text-center text-[10px] text-slate-400">{calculo.secundario}</p>
             <div className="mt-2.5 flex items-center justify-center gap-2">
               {sesion.herramienta === 'temporizador' && (
-                <button onClick={reiniciar} title="Reiniciar" className={`${btnCircular} h-7 w-7`}>
+                <button onClick={reiniciar} title={i18n.t('reiniciar')} className={`${btnCircular} h-7 w-7`}>
                   <RotateCcw className="h-3 w-3" />
                 </button>
               )}
@@ -383,7 +384,7 @@ export default function FocusWidget({ sesion, minimizado, onMinimizar, onCerrarS
                 style={{ background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)' }}>
                 {pausado ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
               </button>
-              <button onClick={onCerrarSolicitado} title="Detener" className={`${btnCircular} h-7 w-7`}>
+              <button onClick={onCerrarSolicitado} title={i18n.t('detener')} className={`${btnCircular} h-7 w-7`}>
                 <Square className="h-2.5 w-2.5" />
               </button>
             </div>
@@ -396,7 +397,7 @@ export default function FocusWidget({ sesion, minimizado, onMinimizar, onCerrarS
             <p className="text-center text-[11px] font-semibold text-white">{calculo.secundario}</p>
             <p className="mt-0.5 text-center text-[10px] text-slate-400">{calculo.detalle}</p>
             <div className="mt-2.5 flex items-center justify-center gap-2">
-              <span className="rounded-full bg-white/10 px-2 py-0.5 font-mono text-[9px] text-slate-300" title="Tiempo restante">
+              <span className="rounded-full bg-white/10 px-2 py-0.5 font-mono text-[9px] text-slate-300" title={i18n.t('tiempo_restante_ulwb')}>
                 {formatear(calculo.restante || 0)}
               </span>
               <button
@@ -465,7 +466,7 @@ export function FocusModales({ guardNueva, sesionActual, confirmCerrar, fin, ocu
   if (guardNueva) {
     return (
       <Dialogo>
-        <h3 className="text-lg font-bold text-slate-900">Ya existe una sesión de enfoque en ejecución.</h3>
+        <h3 className="text-lg font-bold text-slate-900">{i18n.t('ya_existe_una_sesion_de_enfoque_en_ejecu')}</h3>
         <p className="mt-2 text-sm text-slate-600">
           Está corriendo <strong>{ETIQUETA_HERRAMIENTA[sesionActual?.herramienta || 'reloj']}</strong>.
           ¿Qué quieres hacer con ella para iniciar{' '}
@@ -488,7 +489,7 @@ export function FocusModales({ guardNueva, sesionActual, confirmCerrar, fin, ocu
   if (confirmCerrar) {
     return (
       <Dialogo>
-        <h3 className="text-lg font-bold text-slate-900">Cerrar el widget</h3>
+        <h3 className="text-lg font-bold text-slate-900">{i18n.t('cerrar_el_widget')}</h3>
         <p className="mt-2 text-sm text-slate-600">
           La sesión de <strong>{ETIQUETA_HERRAMIENTA[sesionActual?.herramienta || 'reloj']}</strong> sigue
           en ejecución. Cerrar el widget no finaliza la sesión automáticamente.

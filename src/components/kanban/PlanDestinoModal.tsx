@@ -1,3 +1,4 @@
+import i18n from '../../i18n';
 import React from 'react';
 import { X, CalendarDays, CalendarRange, CalendarClock } from 'lucide-react';
 import { AccionKanban } from './types';
@@ -28,7 +29,7 @@ export default function PlanDestinoModal({ accion, onPick, onCancel }: {
           ¿CUÁNDO QUIERES PLANIFICAR ESTA ACCIÓN?
         </h2>
         <p className="mt-1 text-lg text-[#101433] font-medium">{accion.texto_accion}</p>
-        <p className="mt-1 text-sm text-[#5b6b8c]">Elige el nivel de planificación donde quieres organizarla.</p>
+        <p className="mt-1 text-sm text-[#5b6b8c]">{i18n.t('elige_el_nivel_de_planificacion_donde_qu')}</p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
           {OPTIONS.map(({ key, title, desc, Icon }) => (
             <button

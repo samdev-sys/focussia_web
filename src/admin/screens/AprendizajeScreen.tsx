@@ -1,3 +1,4 @@
+import i18n from '../../i18n';
 import { useState } from 'react';
 import { Plus, Pencil, Trash2, Save, Layers, ListOrdered, Compass } from 'lucide-react';
 import {
@@ -75,7 +76,7 @@ export default function AprendizajeScreen() {
           }
         >
           {lista.length === 0 ? (
-            <Vacio>No hay categorías cargadas.</Vacio>
+            <Vacio>{i18n.t('no_hay_categorias_cargadas')}</Vacio>
           ) : (
             <div className="space-y-4">
               {lista.map((cat) => (
@@ -150,7 +151,7 @@ export default function AprendizajeScreen() {
                     ))}
                     {cat.modules.length === 0 && (
                       <li className="px-4 py-3">
-                        <p className="text-[11px] text-gray-400">Sin módulos todavía.</p>
+                        <p className="text-[11px] text-gray-400">{i18n.t('sin_modulos_todavia')}</p>
                       </li>
                     )}
                   </ul>
@@ -203,7 +204,7 @@ export default function AprendizajeScreen() {
           ) : bloques.error ? (
             <Aviso tipo="error">{bloques.error}</Aviso>
           ) : (bloques.datos ?? []).length === 0 ? (
-            <Vacio>No hay bloques de visita guiada.</Vacio>
+            <Vacio>{i18n.t('no_hay_bloques_de_visita_guiada')}</Vacio>
           ) : (
             <ul className="space-y-2">
               {(bloques.datos ?? []).map((bloque) => (
@@ -357,7 +358,7 @@ function EditorCategoria({
         <Input
           value={form.name}
           onChange={(e) => onNombre(e.target.value)}
-          placeholder="p. ej. Comunicación"
+          placeholder={i18n.t('p_ej_comunicacion')}
         />
       </Field>
 
@@ -366,7 +367,7 @@ function EditorCategoria({
           <Input
             value={form.slug}
             onChange={(e) => setForm({ ...form, slug: e.target.value })}
-            placeholder="comunicacion"
+            placeholder={i18n.t('comunicacion')}
           />
         </Field>
         <Field etiqueta="Orden">
@@ -442,7 +443,7 @@ function EditorModulo({
         <Input
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
-          placeholder="p. ej. Escucha activa"
+          placeholder={i18n.t('p_ej_escucha_activa')}
         />
       </Field>
 
@@ -545,7 +546,7 @@ function EditorBloque({
           <Input
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
-            placeholder="p. ej. Tu primer paso"
+            placeholder={i18n.t('p_ej_tu_primer_paso')}
           />
         </Field>
         <Field etiqueta="Orden">
@@ -562,7 +563,7 @@ function EditorBloque({
         <Input
           value={form.slug}
           onChange={(e) => setForm({ ...form, slug: e.target.value })}
-          placeholder="BIENVENIDA"
+          placeholder={i18n.t('bienvenida')}
         />
       </Field>
 

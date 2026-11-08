@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 ﻿import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Heart, CheckCircle2, Sparkles, ArrowRight, ChevronLeft, X, Brain,
@@ -6,7 +7,7 @@ import {
   RefreshCw, Home, HandHeart, Star, Shield,
 } from 'lucide-react';
 import { notify } from '../services/notify';
-import { ruedaService, configService, RuedaCategoria, DiagnosticoRuedaData, AccionSugeridaData } from '../services/api';
+import { ruedaService, configService, authService, RuedaCategoria, DiagnosticoRuedaData, AccionSugeridaData } from '../services/api';
 import { AVATAR_FILES, AVATARS } from '../constants/avatars';
 import RuedaSVG, { colorPorArea } from './RuedaSVG';
 import { FotoIntro, FotoGuia } from './RuedaIntroFotos';
@@ -152,18 +153,33 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
   const [videoListo, setVideoListo] = useState(false);
   const [reportePaso, setReportePaso] = useState<'rueda' | 'fuertes' | 'focos' | 'resumen' | 'focosFinal'>('rueda');
   const [avatarName, setAvatarName] = useState('');
+  const [avatarIdxLocal, setAvatarIdxLocal] = useState(avatarIndex);
+  const [userNameLocal, setUserName] = useState('');
   const videoTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const nombre = userName?.trim() || '';
-  const avatarImg = avatarIndex > 0 ? AVATAR_FILES[avatarIndex] : null;
+  const nombre = userName?.trim() || userNameLocal;
+  const avatarImg = avatarIdxLocal > 0 ? AVATAR_FILES[avatarIdxLocal] : null;
   // Nombre del avatar elegido por el usuario (para "ACCIONES SUGERIDAS POR ...")
-  const nombreAvatar = (avatarName || AVATARS.find(a => a.index === avatarIndex)?.name || '').toUpperCase();
+  const nombreAvatar = (avatarName || AVATARS.find(a => a.index === avatarIdxLocal)?.name || '').toUpperCase();
 
   useEffect(() => {
     configService.getAvatar().then(a => {
       const nm = (a.avatar as { name?: unknown } | null)?.name;
       if (typeof nm === 'string' && nm.trim()) setAvatarName(nm.trim());
+      // El avatar en pantalla debe ser el elegido por el usuario. Los ids de BD
+      // pueden variar según el orden de creación: resolvemos por nombre.
+      const idxPorNombre = typeof nm === 'string'
+        ? AVATARS.find(av => av.name.toLowerCase() === nm.trim().toLowerCase())?.index
+        : undefined;
+      const idx = idxPorNombre
+        || (typeof a.current_avatar_id === 'number' && a.current_avatar_id > 0 ? a.current_avatar_id : 0);
+      if (idx > 0) setAvatarIdxLocal(idx);
     }).catch(() => {});
+    if (!userName?.trim()) {
+      authService.getCurrentUser().then(u => {
+        if (u.username) setUserName(u.username);
+      }).catch(() => {});
+    }
   }, []);
 
   useEffect(() => {
@@ -379,7 +395,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
             <button onClick={() => setScreen('instruccion')} className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600">
               <ChevronLeft className="w-4 h-4" /> Intro
             </button>
-            <h2 className="text-lg sm:text-xl font-bold text-gray-800">Toca cada segmento de tu rueda</h2>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800">{i18n.t('toca_cada_segmento_de_tu_rueda')}</h2>
             <p className="text-xs text-gray-400 whitespace-nowrap">{guardadas.size} de {categorias.length} áreas evaluadas</p>
           </div>
           <div className="flex items-start gap-4 bg-[#f6f2ff] border border-[#e9e2fb] rounded-2xl px-5 py-4 mb-4">
@@ -433,10 +449,10 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
                     })}
                   </div>
                   <div className="flex items-center justify-between text-xs text-gray-500 mb-4 px-0.5">
-                    <span>Muy bajo</span>
-                    <span>Muy alto</span>
+                    <span>{i18n.t('muy_bajo')}</span>
+                    <span>{i18n.t('muy_alto')}</span>
                   </div>
-                  <p className="text-sm font-semibold text-gray-700 mb-2">Comentario opcional</p>
+                  <p className="text-sm font-semibold text-gray-700 mb-2">{i18n.t('comentario_opcional')}</p>
                   <textarea
                     placeholder=""
                     value={comentarios[String(catSel.id)] || ''}
@@ -450,7 +466,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
                   </button>
                 </>
               ) : (
-                <p className="text-sm text-gray-400 text-center py-10">Selecciona un segmento de la rueda para evaluarlo.</p>
+                <p className="text-sm text-gray-400 text-center py-10">{i18n.t('selecciona_un_segmento_de_la_rueda_para_')}</p>
               )}
             </div>
           </div>
@@ -467,14 +483,14 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
         <div className="py-16 flex items-center justify-center">
           <div className="text-center">
             {avatarImg ? (
-              <img src={avatarImg} alt="avatar" className="w-24 h-24 rounded-2xl object-cover mx-auto mb-6 shadow-xl" />
+              <img src={avatarImg} alt={i18n.t('avatar_aka3')} className="w-24 h-24 rounded-2xl object-cover mx-auto mb-6 shadow-xl" />
             ) : (
               <div className="w-24 h-24 mx-auto bg-gradient-to-br from-purple-400 to-pink-400 rounded-2xl flex items-center justify-center mb-6 animate-pulse shadow-xl">
                 <Brain className="w-12 h-12 text-white" />
               </div>
             )}
             <h2 className="text-2xl font-bold text-gray-800 mb-2">¡Buen trabajo{nombre ? `, ${nombre}` : ''}! Analizando tus respuestas</h2>
-            <p className="text-sm text-gray-500">La inteligencia artificial está procesando tus puntajes y comentarios para seleccionar los focos estratégicos...</p>
+            <p className="text-sm text-gray-500">{i18n.t('la_inteligencia_artificial_esta_procesan')}</p>
             <div className="flex justify-center gap-1.5 mt-6">
               {[0, 1, 2].map(i => <div key={i} className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />)}
             </div>
@@ -506,7 +522,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
       return (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6">
           <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight mb-4">
-            DIAGNÓSTICO DE TU <span className="text-[#1d4ed8]">RUEDA DE LA VIDA</span>
+            DIAGNÓSTICO DE TU <span className="text-[#1d4ed8]">{i18n.t('rueda_de_la_vida')}</span>
           </h2>
           <div className="grid lg:grid-cols-[1fr_300px_300px] gap-4 items-start">
             <div className="flex justify-center">
@@ -518,7 +534,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
               />
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-              <h3 className="font-black text-gray-900 tracking-wide mb-3">RESULTADOS</h3>
+              <h3 className="font-black text-gray-900 tracking-wide mb-3">{i18n.t('resultados')}</h3>
               <div className="space-y-1.5">
                 {datosRueda.map((d, i) => {
                   const niv = nivelStr(d.puntaje);
@@ -543,7 +559,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
               </h3>
               <div className="flex gap-3 mb-3">
                 {avatarImg ? (
-                  <img src={avatarImg} alt="avatar" className="w-20 h-24 rounded-xl object-cover object-top shrink-0 shadow" />
+                  <img src={avatarImg} alt={i18n.t('avatar_aka3')} className="w-20 h-24 rounded-xl object-cover object-top shrink-0 shadow" />
                 ) : (
                   <div className="w-20 h-24 rounded-xl bg-gradient-to-b from-[#2b3fd4] to-[#7a5af8] shrink-0" />
                 )}
@@ -557,7 +573,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
           </div>
           <div className="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
             <h3 className="font-black tracking-wide mb-3">
-              ÁREAS FOCO <span className="text-[#1d4ed8]">PRIORITARIAS</span>
+              ÁREAS FOCO <span className="text-[#1d4ed8]">{i18n.t('prioritarias')}</span>
             </h3>
             <div className="grid sm:grid-cols-4 gap-3 items-stretch">
               {focosList.map((f, i) => {
@@ -638,16 +654,16 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
               <p className="text-[13px] text-indigo-900/80 text-center leading-relaxed mb-4">{catFoco ? areaDesc(catFoco.nombre) : ''}</p>
               <div className="flex items-center justify-center gap-4 border border-gray-200 rounded-2xl py-3 px-4 mb-5">
                 <div className="text-center">
-                  <p className="text-[11px] font-bold tracking-widest text-gray-700">PUNTAJE</p>
+                  <p className="text-[11px] font-bold tracking-widest text-gray-700">{i18n.t('puntaje')}</p>
                   <p className="text-4xl font-black text-[#1d4ed8] leading-none mt-1">{puntajeFoco}</p>
                 </div>
                 <div className="w-px self-stretch bg-gray-200" />
                 <NivelBadge puntaje={puntajeFoco} />
               </div>
-              <h4 className="font-extrabold text-[#101331] text-sm mb-3">¿POR QUÉ FUE SELECCIONADA?</h4>
+              <h4 className="font-extrabold text-[#101331] text-sm mb-3">{i18n.t('por_que_fue_seleccionada')}</h4>
               <div className="flex gap-3">
                 {avatarImg ? (
-                  <img src={avatarImg} alt="coach" className="w-24 h-32 rounded-xl object-cover object-top shrink-0 shadow" />
+                  <img src={avatarImg} alt={i18n.t('coach')} className="w-24 h-32 rounded-xl object-cover object-top shrink-0 shadow" />
                 ) : (
                   <div className="w-24 h-32 rounded-xl bg-gradient-to-b from-[#2b3fd4] to-[#7a5af8] shrink-0" />
                 )}
@@ -658,7 +674,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
               <h3 className="text-xl sm:text-2xl font-black text-gray-900">
                 ACCIONES SUGERIDAS <span className="text-[#6d28d9]">POR {nombreAvatar || 'LÍA'}</span>
               </h3>
-              <p className="text-sm text-indigo-900/70 mt-1 mb-4">Selecciona una o varias acciones para enviarlas a tu Kanban Backlog.</p>
+              <p className="text-sm text-indigo-900/70 mt-1 mb-4">{i18n.t('selecciona_una_o_varias_acciones_para_en')}</p>
               {confirmacion && (
                 <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-3 flex items-start gap-2">
                   <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
@@ -667,7 +683,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
               )}
               {limiteAcciones && (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-3">
-                  <p className="text-xs text-amber-700">Focusia recomienda no generar más acciones por ahora, para evitar saturación y ayudarte a avanzar con foco.</p>
+                  <p className="text-xs text-amber-700">{i18n.t('focusia_recomienda_no_generar_mas_accion')}</p>
                 </div>
               )}
               <div className="space-y-2.5 max-h-[46vh] overflow-y-auto pr-1 mb-4">
@@ -700,7 +716,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
                       {sent && (
                         <span className="flex items-center gap-2 shrink-0">
                           <Lock className="w-4 h-4 text-green-700" />
-                          <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-[10px] font-extrabold tracking-wide">ENVIADO AL KANBAN</span>
+                          <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-[10px] font-extrabold tracking-wide">{i18n.t('enviado_al_kanban')}</span>
                         </span>
                       )}
                     </div>
@@ -738,7 +754,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-8 grid lg:grid-cols-[280px_1fr_340px] gap-6 items-center">
         <div className="relative rounded-2xl overflow-hidden bg-gradient-to-b from-[#2b3fd4] via-[#4b3fd6] to-[#7a5af8] min-h-[380px]">
           {avatarImg ? (
-            <img src={avatarImg} alt="Coach" className="absolute inset-0 w-full h-full object-cover object-top" />
+            <img src={avatarImg} alt={i18n.t('coach_bkv0')} className="absolute inset-0 w-full h-full object-cover object-top" />
           ) : (
             <div className="absolute inset-0" />
           )}

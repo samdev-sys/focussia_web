@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useState, useEffect } from 'react';
 import { Bell, Settings, Moon, Sun, ChevronDown, ChevronLeft, CircleHelp } from 'lucide-react';
 import {
@@ -67,7 +68,7 @@ export const ModuleHeader: React.FC<ModuleHeaderProps> = ({
       <div className="flex items-center gap-4">
         <button
           onClick={onBack}
-          title="Volver al Dashboard"
+          title={i18n.t('volver_al_dashboard_emnn')}
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-[#6236FF] hover:bg-purple-50 dark:hover:bg-white/10 transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -99,11 +100,9 @@ export const ModuleHeader: React.FC<ModuleHeaderProps> = ({
             <span className="text-xs font-bold text-gray-500 dark:text-gray-400">{progress.pct}%</span>
           </div>
         )}
-        <button onClick={onHelp ?? (() => setShowHelpLocal(true))} title="Ayuda de IA" className="w-9 h-9 rounded-full border border-gray-200 dark:border-white/15 text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10 transition-colors flex items-center justify-center">
-          <CircleHelp className="w-5 h-5" />
-        </button>
+       
         <div className="relative">
-          <button onClick={toggleNotifications} title="Notificaciones" className="relative text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors">
+          <button onClick={toggleNotifications} title={i18n.t('notificaciones_3z8x')} className="relative text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors mt-1">
             <Bell className="w-5 h-5" />
             {notifications.length > 0 && (
               <span className="absolute -top-1 -right-1 min-w-4 h-4 px-0.5 bg-[#6236FF] text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white dark:border-[#14142e]">
@@ -119,7 +118,7 @@ export const ModuleHeader: React.FC<ModuleHeaderProps> = ({
                   Notificaciones
                 </p>
                 {notifications.length === 0 ? (
-                  <p className="px-4 py-6 text-sm text-gray-400 dark:text-gray-500 text-center">Sin notificaciones.</p>
+                  <p className="px-4 py-6 text-sm text-gray-400 dark:text-gray-500 text-center">{i18n.t('sin_notificaciones_o75m')}</p>
                 ) : notifications.map(n => (
                   <div key={n.id} className="px-4 py-3 border-b border-gray-50 dark:border-white/5 last:border-0 hover:bg-gray-50 dark:hover:bg-white/5">
                     <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{n.title}</p>
@@ -131,7 +130,7 @@ export const ModuleHeader: React.FC<ModuleHeaderProps> = ({
           )}
         </div>
 
-        <button onClick={() => setShowConfig(true)} title="Configuración" className="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors">
+        <button onClick={() => setShowConfig(true)} title={i18n.t('configuracion_44nm')} className="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors">
           <Settings className="w-5 h-5" />
         </button>
 

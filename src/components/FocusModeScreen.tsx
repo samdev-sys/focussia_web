@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useEffect, useState } from 'react';
 import {
   X, Clock, Hourglass, Bell, Play, Target, Info,
@@ -163,17 +164,17 @@ function ModalConfiguracion({ herramienta, onIniciar, onCerrar, ocupado }: {
         <div className="space-y-4">
           {herramienta === 'pomodoro' && (
             <>
-              <Campo label="Concentración (minutos)">
+              <Campo label={i18n.t('concentracion_minutos')}>
                 <input type="number" min={1} max={120} value={minConc}
                   onChange={(e) => setConcentracion(Number(e.target.value))}
                   className={inputCls} />
               </Campo>
-              <Campo label="Descanso (minutos)">
+              <Campo label={i18n.t('descanso_minutos')}>
                 <input type="number" min={0} max={60} value={minDes}
                   onChange={(e) => setDescanso(Number(e.target.value))}
                   className={inputCls} />
               </Campo>
-              <Campo label="Cantidad de ciclos">
+              <Campo label={i18n.t('cantidad_de_ciclos')}>
                 <input type="number" min={1} max={8} value={minCic}
                   onChange={(e) => setCiclos(Number(e.target.value))}
                   className={inputCls} />
@@ -181,7 +182,7 @@ function ModalConfiguracion({ herramienta, onIniciar, onCerrar, ocupado }: {
             </>
           )}
           {herramienta === 'temporizador' && (
-            <Campo label="Duración (minutos)">
+            <Campo label={i18n.t('duracion_minutos')}>
               <input type="number" min={1} max={720} value={minDur}
                 onChange={(e) => setDuracion(Number(e.target.value))}
                 className={inputCls} />
@@ -189,12 +190,12 @@ function ModalConfiguracion({ herramienta, onIniciar, onCerrar, ocupado }: {
           )}
           {herramienta === 'alarma' && (
             <>
-              <Campo label="Hora de la alarma">
+              <Campo label={i18n.t('hora_de_la_alarma')}>
                 <input type="time" value={hora} onChange={(e) => setHora(e.target.value)}
                   className={inputCls} />
               </Campo>
-              <Campo label="Etiqueta (opcional)">
-                <input type="text" value={etiqueta} placeholder="Ej. Reunión con cliente"
+              <Campo label={i18n.t('etiqueta_opcional')}>
+                <input type="text" value={etiqueta} placeholder={i18n.t('ej_reunion_con_cliente')}
                   onChange={(e) => setEtiqueta(e.target.value)}
                   className={inputCls} />
               </Campo>
@@ -269,7 +270,7 @@ function VistaPreviaWidgets() {
   return (
     <div className="mt-3 overflow-hidden rounded-2xl border border-purple-100 bg-gradient-to-br from-[#F5F3FF] via-[#F8F9FB] to-[#EEF2FF] p-5">
       <h4 className="text-[15px] font-bold text-slate-900">Tus herramientas activas (widgets flotantes)</h4>
-      <p className="text-xs text-slate-500">Así se verán acompañándote mientras trabajas en cualquier módulo de Focusia.</p>
+      <p className="text-xs text-slate-500">{i18n.t('asi_se_veran_acompanandote_mientras_trab')}</p>
       <div className="mt-4 flex flex-wrap items-start justify-center gap-6 pb-1">
         <WidgetDemo titulo="Pomodoro" icono="🍅">
           <AnilloPomodoro minutos="17:24" etiqueta="Trabajo" />
@@ -280,7 +281,7 @@ function VistaPreviaWidgets() {
         </WidgetDemo>
         <WidgetDemo titulo="Temporizador" icono="⏳">
           <p className="py-2 text-center font-mono text-2xl font-bold">25:00</p>
-          <p className="-mt-1 text-center text-[10px] text-slate-400">Tiempo restante</p>
+          <p className="-mt-1 text-center text-[10px] text-slate-400">{i18n.t('tiempo_restante')}</p>
           <div className="mt-2 flex items-center justify-center gap-2">
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-[10px]">↺</span>
             <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#8B5CF6] to-[#6D28D9]"><Play className="h-4 w-4" /></span>
@@ -288,9 +289,9 @@ function VistaPreviaWidgets() {
           </div>
         </WidgetDemo>
         <WidgetDemo titulo="Alarma" icono="🔔">
-          <p className="py-1.5 text-center font-mono text-xl font-bold">10:30 AM</p>
-          <p className="text-center text-[11px] font-semibold">Reunión con cliente</p>
-          <p className="mt-0.5 text-center text-[10px] text-slate-400">Lun, 12 de mayo</p>
+          <p className="py-1.5 text-center font-mono text-xl font-bold">{i18n.t('10_30_am')}</p>
+          <p className="text-center text-[11px] font-semibold">{i18n.t('reunion_con_cliente')}</p>
+          <p className="mt-0.5 text-center text-[10px] text-slate-400">{i18n.t('lun_12_de_mayo')}</p>
           <div className="mt-2 flex items-center justify-center gap-2">
             <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9px] text-slate-300">08:30</span>
             <span className="flex h-5 w-9 items-center rounded-full bg-[#8B5CF6] px-0.5">
@@ -299,8 +300,8 @@ function VistaPreviaWidgets() {
           </div>
         </WidgetDemo>
         <WidgetDemo titulo="Reloj" icono="🕐">
-          <p className="py-2 text-center font-mono text-lg font-bold">10:24:15 AM</p>
-          <p className="-mt-1 pb-1 text-center text-[10px] text-slate-400">Lunes, 12 de mayo</p>
+          <p className="py-2 text-center font-mono text-lg font-bold">{i18n.t('10_24_15_am')}</p>
+          <p className="-mt-1 pb-1 text-center text-[10px] text-slate-400">{i18n.t('lunes_12_de_mayo')}</p>
         </WidgetDemo>
       </div>
     </div>
@@ -324,7 +325,7 @@ export default function FocusModeScreen({ userName, sesionActiva, onIniciar, onB
 
   return (
     <>
-      <ModuleShell activeNav="focus" userName={userName} onBack={onBack} onNavigate={onNavigate} titulo="ENFÓCATE" subtitulo="Herramientas para proteger tu concentración y lograr más." iconoTitulo={() => <img src="./archer.png" alt="Archer" className="w-8 h-8" />}>
+      <ModuleShell activeNav="focus" userName={userName} onBack={onBack} onNavigate={onNavigate} titulo="ENFÓCATE" subtitulo="Herramientas para proteger tu concentración y lograr más." iconoTitulo={() => <img src="/archer.png" alt={i18n.t('archer')} className="w-8 h-8" />}>
         <div className="mx-auto max-w-7xl px-6 py-8">
           <div className="mt-6 grid items-start gap-6 xl:grid-cols-[1fr_310px]">
             {/* Columna principal */}
@@ -332,7 +333,7 @@ export default function FocusModeScreen({ userName, sesionActiva, onIniciar, onB
               {/* Hero (mockup) */}
               <div className="relative overflow-hidden rounded-xl bg-[#101828] text-white">
                 <img
-                  src="./focus.jpg"
+                  src="/focus.jpg"
                   alt="" aria-hidden
                   className="absolute inset-0 h-full w-full h-100"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
@@ -395,12 +396,12 @@ export default function FocusModeScreen({ userName, sesionActiva, onIniciar, onB
                     <X className="h-4 w-4" />
                   </button>
                   <div className="flex items-center justify-between pr-7">
-                    <h4 className="text-[15px] font-bold text-slate-900">Estado Focus</h4>
+                    <h4 className="text-[15px] font-bold text-slate-900">{i18n.t('estado_focus')}</h4>
                     <Info className="h-4 w-4 text-slate-300" />
                   </div>
                   <div className="mt-4 flex items-center gap-4">
                     <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-white shadow-inner ${enCurso ? 'bg-[#059669]' : 'bg-[#79A7D1]'}`}>
-                      <img src="./archer.png" alt="Archer" className="h-9 w-9" />
+                      <img src="/archer.png" alt={i18n.t('archer')} className="h-9 w-9" />
                     </span>
                     {enCurso ? (
                       <p className="text-[13px] leading-relaxed text-slate-700">
@@ -409,7 +410,7 @@ export default function FocusModeScreen({ userName, sesionActiva, onIniciar, onB
                       </p>
                     ) : (
                       <p className="text-[13px] leading-relaxed text-slate-700">
-                        <strong className="text-slate-900">No hay sesión activa</strong><br />
+                        <strong className="text-slate-900">{i18n.t('no_hay_sesion_activa')}</strong><br />
                         Elige una herramienta y comienza tu sesión de enfoque.
                       </p>
                     )}
@@ -419,7 +420,7 @@ export default function FocusModeScreen({ userName, sesionActiva, onIniciar, onB
 
               {/* ¿Cómo funciona? (mockup) */}
               <div className="rounded-2xl border border-purple-100 bg-[#F6F4FF] p-5">
-                <h4 className="text-[15px] font-bold text-slate-900">¿Cómo funciona?</h4>
+                <h4 className="text-[15px] font-bold text-slate-900">{i18n.t('como_funciona')}</h4>
                 <div className="mt-4 space-y-4">
                   {COMO_FUNCIONA.map(({ Icon, titulo, desc }) => (
                     <div key={titulo} className="flex items-start gap-3">
@@ -442,7 +443,7 @@ export default function FocusModeScreen({ userName, sesionActiva, onIniciar, onB
                     <Star className="h-5 w-5" />
                   </span>
                   <p className="text-[13px] leading-relaxed text-slate-700">
-                    <strong className="block text-[15px] text-slate-900">Consejo Focusia</strong>
+                    <strong className="block text-[15px] text-slate-900">{i18n.t('consejo_focusia')}</strong>
                     Sesiones cortas y constantes te llevan más lejos que largas e inconsistentes.
                   </p>
                 </div>

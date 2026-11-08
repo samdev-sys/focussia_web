@@ -661,6 +661,15 @@ export function ReportDetailScreen({
                   <p className="text-base font-bold text-slate-800 max-w-xs">
                     No pudimos generar tu reporte. Volveremos a intentarlo.
                   </p>
+                  {report.ai_interpretation ? (
+                    <p className="text-xs text-red-500 mt-2 max-w-xs break-words">
+                      {report.ai_interpretation}
+                    </p>
+                  ) : (
+                     <p className="text-xs text-red-500 mt-2 max-w-xs break-words">
+                       Error de generación pendiente. Revisá los logs del backend (reconciliación).
+                     </p>
+                   )}
                   <p className="text-sm text-slate-400 mt-1.5 max-w-xs">
                     TodavÃ­a no hay una base verificable para mostrar resultados.
                   </p>

@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft, Check, Play, Pause, Volume2, Moon, Scale, Rocket, Smile,
@@ -26,9 +27,9 @@ const AVATAR_SUB: Record<number, string> = {
 };
 
 const INTENSIDADES = [
-  { id: 'suave', titulo: 'SUAVE', desc: 'Focusia interviene solo en momentos importantes o cuando detecta una desviación significativa.', pie: 'Baja frecuencia', img: './moon.png', color: '#2dd4bf', puntos: 3, nivel: 3 },
-  { id: 'equilibrada', titulo: 'EQUILIBRADA', desc: 'Focusia acompaña mediante recordatorios estratégicos y sugerencias oportunas, sin generar saturación.', pie: 'Frecuencia media', img: './balance.png', color: '#a855f7', puntos: 5, nivel: 5, recomendado: true },
-  { id: 'exigente', titulo: 'EXIGENTE', desc: 'Focusia aumenta la frecuencia de las intervenciones y utiliza mensajes más directos para mantener el compromiso con los objetivos.', pie: 'Alta frecuencia', img: './rocket.png', color: '#fb923c', puntos: 7, nivel: 7 },
+  { id: 'suave', titulo: 'SUAVE', desc: 'Focusia interviene solo en momentos importantes o cuando detecta una desviación significativa.', pie: 'Baja frecuencia', img: '/moon.png', color: '#2dd4bf', puntos: 3, nivel: 3 },
+  { id: 'equilibrada', titulo: 'EQUILIBRADA', desc: 'Focusia acompaña mediante recordatorios estratégicos y sugerencias oportunas, sin generar saturación.', pie: 'Frecuencia media', img: '/balance.png', color: '#a855f7', puntos: 5, nivel: 5, recomendado: true },
+  { id: 'exigente', titulo: 'EXIGENTE', desc: 'Focusia aumenta la frecuencia de las intervenciones y utiliza mensajes más directos para mantener el compromiso con los objetivos.', pie: 'Alta frecuencia', img: '/rocket.png', color: '#fb923c', puntos: 7, nivel: 7 },
 ];
 
 const AVATAR_TONE: Record<number, string> = {
@@ -41,23 +42,23 @@ const AVATAR_TONE: Record<number, string> = {
 };
 
 const TONOS = [
-  { id: 'cercano', titulo: 'CERCANO Y MOTIVADOR', desc: 'Mensajes positivos y alentadores que te impulsan a avanzar con energía y confianza.', img: './smile.png', color: '#4ade80', nivel: 4 },
-  { id: 'claro', titulo: 'CLARO Y ESTRATÉGICO', desc: 'Mensajes directos, organizados y orientados a la toma de decisiones efectivas.',  img: './archer.png', color: '#60a5fa', nivel: 5 },
-  { id: 'firme', titulo: 'FIRME Y EXIGENTE', desc: 'Mensajes con mayor nivel de compromiso y presión estratégica para mantener el foco en tus objetivos.', img: './safeOrange.png', color: '#fb923c', nivel: 6 },
-  { id: 'adaptativo', titulo: 'ADAPTATIVO', desc: 'El sistema ajusta automáticamente el tono según tu comportamiento y evolución.', img: './stars.png', color: '#a855f7', nivel: 7, recomendado: true },
+  { id: 'cercano', titulo: 'CERCANO Y MOTIVADOR', desc: 'Mensajes positivos y alentadores que te impulsan a avanzar con energía y confianza.', img: '/smile.png', color: '#4ade80', nivel: 4 },
+  { id: 'claro', titulo: 'CLARO Y ESTRATÉGICO', desc: 'Mensajes directos, organizados y orientados a la toma de decisiones efectivas.',  img: '/archer.png', color: '#60a5fa', nivel: 5 },
+  { id: 'firme', titulo: 'FIRME Y EXIGENTE', desc: 'Mensajes con mayor nivel de compromiso y presión estratégica para mantener el foco en tus objetivos.', img: '/safeOrange.png', color: '#fb923c', nivel: 6 },
+  { id: 'adaptativo', titulo: 'ADAPTATIVO', desc: 'El sistema ajusta automáticamente el tono según tu comportamiento y evolución.', img: '/stars.png', color: '#a855f7', nivel: 7, recomendado: true },
 ];
 
 const APOYOS = [
-  { id: 'organizar', titulo: 'APOYO PARA ORGANIZARME MEJOR', img: './tabList.png', color: '#60a5fa' },
-  { id: 'disciplina', titulo: 'APOYO PARA MANTENER DISCIPLINA Y CONSTANCIA', img: './dumbbell.png', color: '#a855f7' },
-  { id: 'decisiones', titulo: 'APOYO PARA TOMAR MEJORES DECISIONES', img: './direction.png', color: '#2dd4bf' },
+  { id: 'organizar', titulo: 'APOYO PARA ORGANIZARME MEJOR', img: '/tabList.png', color: '#60a5fa' },
+  { id: 'disciplina', titulo: 'APOYO PARA MANTENER DISCIPLINA Y CONSTANCIA', img: '/dumbbell.png', color: '#a855f7' },
+  { id: 'decisiones', titulo: 'APOYO PARA TOMAR MEJORES DECISIONES', img: '/direction.png', color: '#2dd4bf' },
 ];
 
 const CANALES = [
-  { id: 'app', titulo: 'Notificaciones dentro de la app', desc: 'Mensajes visibles únicamente dentro de Focusia.', img:'./panel.png',  },
-  { id: 'push', titulo: 'Notificaciones push', desc: 'Avisos enviados directamente a tu dispositivo.', img: './ring-1.png',  },
-  { id: 'whatsapp', titulo: 'Mensajes tipo WhatsApp', desc: 'Mensajes con formato conversacional para activaciones relevantes.', img: './whatsapp-1.png', },
-  { id: 'calls', titulo: 'Llamadas simuladas', desc: 'Activaciones de alta prioridad para situaciones definidas por ti.', img: './phone-1.png', },
+  { id: 'app', titulo: 'Notificaciones dentro de la app', desc: 'Mensajes visibles únicamente dentro de Focusia.', img:'/panel.png',  },
+  { id: 'push', titulo: 'Notificaciones push', desc: 'Avisos enviados directamente a tu dispositivo.', img: '/ring-1.png',  },
+  { id: 'whatsapp', titulo: 'Mensajes tipo WhatsApp', desc: 'Mensajes con formato conversacional para activaciones relevantes.', img: '/whatsapp-1.png', },
+  { id: 'calls', titulo: 'Llamadas simuladas', desc: 'Activaciones de alta prioridad para situaciones definidas por ti.', img: '/phone-1.png', },
 ];
 const ESTADOS_CANAL = [
   { id: 'active', label: 'ACTIVAR' },
@@ -80,10 +81,10 @@ const DIA_DISPLAY: Record<string, string> = Object.fromEntries(
 );
 
 const HORARIOS_GENERAL = [
-  { id: 'todo_dia', titulo: 'Todo el día', desc: 'Puedo acompañarte en cualquier momento del día.', img:'./sunBlue.png' },
-  { id: 'laboral', titulo: 'Solo horario laboral', desc: 'Activaciones solo durante tu jornada de trabajo.', img: './corporative.png' },
-  { id: 'manana_tarde', titulo: 'Mañana y tarde', desc: 'Te acompaño en las franjas más productivas del día.', img: './sunRelax.png',  },
-  { id: 'personalizado', titulo: 'Personalizado', desc: 'Elige los bloques de tiempo en los que deseas recibir activaciones.', img: './clockBlue.png',  },
+  { id: 'todo_dia', titulo: 'Todo el día', desc: 'Puedo acompañarte en cualquier momento del día.', img:'/sunBlue.png' },
+  { id: 'laboral', titulo: 'Solo horario laboral', desc: 'Activaciones solo durante tu jornada de trabajo.', img: '/corporative.png' },
+  { id: 'manana_tarde', titulo: 'Mañana y tarde', desc: 'Te acompaño en las franjas más productivas del día.', img: '/sunRelax.png',  },
+  { id: 'personalizado', titulo: 'Personalizado', desc: 'Elige los bloques de tiempo en los que deseas recibir activaciones.', img: '/clockBlue.png',  },
 ];
 const DIAS = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 
@@ -100,8 +101,8 @@ function Ondas({ flip }: { flip?: boolean }) {
 function LogoFocusia({ dark }: { dark?: boolean }) {
   return (
     <div className="flex items-center gap-2">
-      <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#22d3ee] via-[#2b44ff] to-[#d946ef] flex items-center justify-center text-white font-black text-lg">F</span>
-      <span className={`text-2xl font-black ${dark ? 'text-white' : 'text-[#1e1b4b]'}`}>Focusia</span>
+      <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#22d3ee] via-[#2b44ff] to-[#d946ef] flex items-center justify-center text-white font-black text-lg">{i18n.t('f')}</span>
+      <span className={`text-2xl font-black ${dark ? 'text-white' : 'text-[#1e1b4b]'}`}>{i18n.t('focusia_5aq1')}</span>
     </div>
   );
 }
@@ -248,7 +249,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
           configService.getPlan().catch(() => null),
         ]);
         if (perfil) {
-          const confirmado = perfil.current_avatar_id || 0;
+          const confirmado = (typeof perfil.avatar === 'number' ? perfil.avatar : (perfil.avatar as any)?.id) || perfil.current_avatar_id || 0;
           const elegido = confirmado || indiceProp || 4;
           setAvatarId(elegido); setAvatarDraft(elegido);
           if (perfil.intensity) setIntensidad(perfil.intensity);
@@ -529,25 +530,25 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
     return (
       <div className="fixed inset-0 z-[300] bg-[#f4f6fb] overflow-y-auto">
         <div className="relative min-h-full">
-          <img src="./onda1.png" alt="" className="w-30 h-160" />
-          <img src="./onda3.png" alt="" aria-hidden className="absolute right-0 top-0 w-30 h-160 object-cover pointer-events-none ml-8" />
+          <img src="/onda1.png" alt="" className="w-30 h-160" />
+          <img src="/onda3.png" alt="" aria-hidden className="absolute right-0 top-0 w-30 h-160 object-cover pointer-events-none ml-8" />
           <div className="relative max-w-6xl  px-6 py-6 -mt-150 ml-25">
             <div className="flex items-center justify-between">
               <button type="button" onClick={onClose} className="flex items-center gap-2 font-bold text-[#1e1b4b] hover:opacity-70 ">
                 <ArrowLeft className="w-6 h-6" /> Volver
               </button>
-              <img src="./focussia.png" alt="Focusia" className="w-15" /><span className="w-20 text-center text-xl font-bold text-[#323EC0] ml-20" ><p className="text-center -ml-230 text-xl font-bold">Focusia</p> </span>
+              <img src="/focussia.png" alt={i18n.t('focusia_5aq1')} className="w-15" /><span className="w-20 text-center text-xl font-bold text-[#323EC0] ml-20" ><p className="text-center -ml-230 text-xl font-bold">{i18n.t('focusia_5aq1')}</p> </span>
             </div>
-            <h1 className="text-center text-4xl font-black text-[#14173a] mt-8 tracking-wide">CONFIGURACIÓN</h1>
+            <h1 className="text-center text-4xl font-black text-[#14173a] mt-8 tracking-wide">{i18n.t('configuracion_dchz')}</h1>
             <p className="text-center text-[#2b44ff] font-medium mt-2">
               Aquí puedes ajustar Focusia a tu manera, {nombre}. Elige qué quieres modificar.
             </p>
             <div className="grid md:grid-cols-[300px_1fr] gap-6 mt-8 items-start">
               <div className="bg-white rounded-xl shadow border border-slate-100 overflow-hidden">
-                <img src={fotoMenu} alt="Avatar actual" className="w-full aspect-[4/5] object-cover" />
+                <img src={fotoMenu} alt={i18n.t('avatar_actual')} className="w-full aspect-[4/5] object-cover" />
                 <div className="p-4 text-center">
                   <p className="font-black text-[#14173a]">{AVATAR_NOMBRES[avatarId] || ''}</p>
-                  <p className="text-xs text-slate-500">Tu avatar actual</p>
+                  <p className="text-xs text-slate-500">{i18n.t('tu_avatar_actual')}</p>
                 </div>
               </div>
               <div className="grid sm:grid-cols-3 gap-4">
@@ -576,15 +577,15 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
     return (
       <div className="fixed inset-0 z-[300] bg-[#f4f6fb] overflow-y-auto">
         <div className="relative min-h-full">
-         <img src="./onda1.png" alt="" className="w-30 h-160" />
-          <img src="./onda3.png" alt="" aria-hidden className="absolute right-0 top-0 w-30 h-160 object-cover pointer-events-none ml-8" />
+         <img src="/onda1.png" alt="" className="w-30 h-160" />
+          <img src="/onda3.png" alt="" aria-hidden className="absolute right-0 top-0 w-30 h-160 object-cover pointer-events-none ml-8" />
           <div className="relative max-w-6xl  px-6 py-6 -mt-150 ml-25">
             <div className="flex items-center justify-between">
               <Volver onClick={irMenu} />
-             <img src="./focussia.png" alt="Focusia" className="w-15" /><span className="w-20 text-center text-xl font-bold text-[#323EC0] ml-20" ><p className="text-center -ml-230 text-xl font-bold">Focusia</p> </span>
+             <img src="/focussia.png" alt={i18n.t('focusia_5aq1')} className="w-15" /><span className="w-20 text-center text-xl font-bold text-[#323EC0] ml-20" ><p className="text-center -ml-230 text-xl font-bold">{i18n.t('focusia_5aq1')}</p> </span>
             </div>
-            <h1 className="text-center text-4xl font-bold text-[#14173a] mt-6 tracking-wide">AVATAR</h1>
-            <p className="text-center text-slate-500 mt-1">Revisa tu avatar actual o elige uno nuevo.</p>
+            <h1 className="text-center text-4xl font-bold text-[#14173a] mt-6 tracking-wide">{i18n.t('avatar_7e46')}</h1>
+            <p className="text-center text-slate-500 mt-1">{i18n.t('revisa_tu_avatar_actual_o_elige_uno_nuev')}</p>
             <div className="grid lg:grid-cols-2 gap-6 mt-6 items-start">
               <div>
                 <div className="rounded-xl overflow-hidden text-white flex" style={{ background: 'linear-gradient(135deg, #373491 0%, #2B1C7E 55%, #170552 100%)' }}>
@@ -614,7 +615,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
                       <span className="absolute -left-2 top-5 w-4 h-4 bg-white rotate-45 rounded-[3px]" aria-hidden />
                       <div className="relative bg-white rounded-2xl p-4 pl-5 text-sm leading-relaxed">
                         <p className="text-slate-800"><span className="text-[#6d28d9] text-2xl font-black leading-none mr-1">“</span><b>Hola, {nombre}.</b></p>
-                        <p className="text-slate-500 mt-1">Desde ahora voy a acompañarte a construir la versión de ti que estás buscando.</p>
+                        <p className="text-slate-500 mt-1">{i18n.t('desde_ahora_voy_a_acompanarte_a_construi')}</p>
                       </div>
                     </div>
                     <button
@@ -638,7 +639,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
                 {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
               </div>
               <div>
-                <p className="font-bold text-[#1e1b4b] mb-3 text-center">Escucha a los otros avatares</p>
+                <p className="font-bold text-[#1e1b4b] mb-3 text-center">{i18n.t('escucha_a_los_otros_avatares')}</p>
                 <div className="grid grid-cols-3 gap-3">
                   {otros.map(a => (
                     <button
@@ -691,8 +692,8 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
         >
           <div className="absolute inset-0 bg-gradient-to-b from-[#0a1030]/80 via-[#0a1030]/30 to-[#050816]/92" aria-hidden />
           <div className="relative z-10 flex items-center gap-2">
-            <img src="./focussia.png" alt="Focusia" className="w-12 shrink-0" />
-            <span className="text-xl font-bold text-white leading-none">Focusia</span>
+            <img src="/focussia.png" alt={i18n.t('focusia_5aq1')} className="w-12 shrink-0" />
+            <span className="text-xl font-bold text-white leading-none">{i18n.t('focusia_5aq1')}</span>
           </div>
           <div className="relative z-10 mt-[32rem]  " />
           <div className="relative z-10 rounded-xl border border-[#2b44ff]/40 bg-[#0a1030]/80 p-4 text-sm leading-relaxed ">
@@ -702,12 +703,12 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
           {extraLia && <div className="relative z-10">{extraLia}</div>}
           {screen === 'acomp' && acompTab === 'intensidad' && (
           <div className="relative z-20 mt-auto rounded-2xl border border-[#a855f7]/50 bg-[#0a1030]/95 p-4 shadow-[0_0_28px_rgba(168,85,247,0.35)] backdrop-blur">
-            <h4 className="text-[11px] tracking-[0.22em] text-white font-black text-center mb-3">NIVEL DE PRESENCIA</h4>
-            <img src="./levels.png" alt="Nivel de presencia" className="w-full drop-shadow-[0_0_12px_rgba(168,85,247,0.5)]" />
+            <h4 className="text-[11px] tracking-[0.22em] text-white font-black text-center mb-3">{i18n.t('nivel_de_presencia')}</h4>
+            <img src="/levels.png" alt={i18n.t('nivel_de_presencia_18vg')} className="w-full drop-shadow-[0_0_12px_rgba(168,85,247,0.5)]" />
             <div className="w-full flex items-center justify-between px-1 mt-3">
-              <span className="text-[#5eead4] font-black text-xs">Suave</span>
+              <span className="text-[#5eead4] font-black text-xs">{i18n.t('suave')}</span>
               <div className="flex-1 mx-3 h-px border-t border-dashed border-white/25" />
-              <span className="text-[#fb923c] font-black text-xs">Exigente</span>
+              <span className="text-[#fb923c] font-black text-xs">{i18n.t('exigente')}</span>
             </div>
           </div>
           )}
@@ -744,16 +745,16 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
   /* ============ ACOMPAÑAMIENTO ============ */
   if (screen === 'acomp') {
     const notaLia = acompTab === 'intensidad' ? (
-      <><p>Cada persona necesita un nivel distinto de acompañamiento. Elige el que mejor se adapte a tu forma de trabajar.</p><p className="text-[#a855f7] mt-2">Siempre podrás cambiarlo más adelante.</p></>
+      <><p>{i18n.t('cada_persona_necesita_un_nivel_distinto_')}</p><p className="text-[#a855f7] mt-2">{i18n.t('siempre_podras_cambiarlo_mas_adelante')}</p></>
     ) : acompTab === 'tono' ? (
-      <><p>El tono define cómo me comunicaré contigo en tu día a día. Elige el estilo que mejor se adapta a tu personalidad y objetivos.</p><p className="text-[#a855f7] mt-2">Siempre podrás cambiarlo cuando quieras.</p></>
+      <><p>El tono define cómo me comunicaré contigo en tu día a día. Elige el estilo que mejor se adapta a tu personalidad y objetivos.</p><p className="text-[#a855f7] mt-2">{i18n.t('siempre_podras_cambiarlo_cuando_quieras')}</p></>
     ) : (
-      <><p>El usuario podrá elegir una o más opciones.</p><p className="mt-2">Esta configuración permite que Focusia entienda qué tipo de acompañamiento necesita priorizar el usuario.</p></>
+      <><p>{i18n.t('el_usuario_podra_elegir_una_o_mas_opcion')}</p><p className="mt-2">{i18n.t('esta_configuracion_permite_que_focusia_e')}</p></>
     );
     const contenido = acompTab === 'intensidad' ? (
       <div>
-        <h2 className="text-3xl font-bold">Intensidad del acompañamiento</h2>
-        <p className="text-white/70 mt-1">Elige qué tan presente quieres que esté Focusia en tu proceso. <span className="text-[#a855f7]">Puedes cambiar esta configuración cuando quieras.</span></p>
+        <h2 className="text-3xl font-bold">{i18n.t('intensidad_del_acompanamiento')}</h2>
+        <p className="text-white/70 mt-1">Elige qué tan presente quieres que esté Focusia en tu proceso. <span className="text-[#a855f7]">{i18n.t('puedes_cambiar_esta_configuracion_cuando')}</span></p>
         <div className="grid md:grid-cols-3 gap-4 mt-6">
           {INTENSIDADES.map(c => {
             const sel = intensidad === c.id;
@@ -770,7 +771,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
                   }}
                 >
                   {c.recomendado && (
-                    <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#2b44ff] to-[#a21caf] text-[10px] font-black px-4 py-1.5 rounded-lg whitespace-nowrap shadow-lg">★ RECOMENDADO</span>
+                    <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#2b44ff] to-[#a21caf] text-[10px] font-black px-4 py-1.5 rounded-lg whitespace-nowrap shadow-lg">{i18n.t('recomendado')}</span>
                   )}
                   <span
                     className="mx-auto w-24 h-24 rounded-full flex items-center justify-center overflow-hidden"
@@ -800,8 +801,8 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
       </div>
     ) : acompTab === 'tono' ? (
       <div>
-        <h2 className="text-3xl font-bold">Tono del avatar</h2>
-        <p className="text-white/70 mt-1">Elige el estilo con que tu avatar te acompañará. <span className="text-[#a855f7]">Podrás modificarlo cuando quieras.</span></p>
+        <h2 className="text-3xl font-bold">{i18n.t('tono_del_avatar')}</h2>
+        <p className="text-white/70 mt-1">Elige el estilo con que tu avatar te acompañará. <span className="text-[#a855f7]">{i18n.t('podras_modificarlo_cuando_quieras')}</span></p>
         <div className="grid md:grid-cols-4 gap-4 mt-6">
           {TONOS.map(c => (
             <button
@@ -812,7 +813,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
               style={{ borderColor: tono === c.id ? c.color : 'rgba(255,255,255,0.12)' }}
             >
               {c.recomendado && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#2b44ff] to-[#a21caf] text-[10px] font-black px-3 py-1 rounded-md whitespace-nowrap">★ RECOMENDADO</span>
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#2b44ff] to-[#a21caf] text-[10px] font-black px-3 py-1 rounded-md whitespace-nowrap">{i18n.t('recomendado')}</span>
               )}
               <span className="relative mx-auto w-18 h-16 rounded-full flex items-center justify-center border overflow-hidden" style={{ borderColor: c.color + '66', background: c.color + '14' }}>
                 {'img' in c && c.img ? (
@@ -840,8 +841,8 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
       </div>
     ) : (
       <div>
-        <h2 className="text-3xl font-bold">Tipo de apoyo</h2>
-        <p className="text-white/70 mt-1">Elige una o más opciones</p>
+        <h2 className="text-3xl font-bold">{i18n.t('tipo_de_apoyo')}</h2>
+        <p className="text-white/70 mt-1">{i18n.t('elige_una_o_mas_opciones')}</p>
         <div className="grid md:grid-cols-3 gap-4 mt-6">
           {APOYOS.map(c => (
             <button
@@ -880,12 +881,12 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
 
   /* ============ NOTIFICACIONES ============ */
   if (screen === 'notifs') {
-    const notaLia = <p>Así podré comunicarme contigo de la forma que prefieras y en el momento adecuado.</p>;
+    const notaLia = <p>{i18n.t('asi_podre_comunicarme_contigo_de_la_form')}</p>;
     
     const contenido = (
       <div>
-        <h2 className="text-3xl font-bold">Notificaciones</h2>
-        <p className="text-white/70 mt-1">Elige qué avisos quieres recibir y cuáles aceptar solo cuando sean realmente importantes.</p>
+        <h2 className="text-3xl font-bold">{i18n.t('notificaciones_h3fm')}</h2>
+        <p className="text-white/70 mt-1">{i18n.t('elige_que_avisos_quieres_recibir_y_cuale')}</p>
         <div className="space-y-4 mt-6">
           {CANALES.map(c => (
             <div key={c.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 flex flex-col md:flex-row md:items-center gap-4">
@@ -940,7 +941,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
         ))}
       </div>
     );
-    const notaLia = <><p>Establecer límites también es parte del equilibrio. Así puedo acompañarte mejor respetando tu tiempo y tus momentos.</p></>;
+    const notaLia = <><p>{i18n.t('establecer_limites_tambien_es_parte_del_')}</p></>;
     const extraLia = horTab === 'general' ? (
       <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-xs leading-relaxed">
         <p className="text-[#a855f7] font-bold mb-1 flex items-center gap-1"><ShieldCheck className="w-4 h-4" /> TÚ TIENES EL CONTROL</p>
@@ -949,8 +950,8 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
     ) : undefined;
     const contenido = horTab === 'general' ? (
       <div>
-        <h2 className="text-3xl font-bold">Horarios</h2>
-        <p className="text-white/70 mt-1">Define cuándo Focusia tiene permiso para intervenir.</p>
+        <h2 className="text-3xl font-bold">{i18n.t('horarios')}</h2>
+        <p className="text-white/70 mt-1">{i18n.t('define_cuando_focusia_tiene_permiso_para')}</p>
         <div className="space-y-4 mt-6">
           {HORARIOS_GENERAL.map(h => (
             <button
@@ -981,10 +982,10 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
       </div>
     ) : (
       <div>
-        <h2 className="text-3xl font-bold">Horarios</h2>
-        <p className="text-white/70 mt-1">Configura los momentos en que Focusia no debe intervenir.</p>
+        <h2 className="text-3xl font-bold">{i18n.t('horarios')}</h2>
+        <p className="text-white/70 mt-1">{i18n.t('configura_los_momentos_en_que_focusia_no')}</p>
         <div className="rounded-2xl border border-[#a855f7]/40 bg-white/[0.02] p-5 mt-6">
-          <p className="font-bold mb-3">Días sin intervención</p>
+          <p className="font-bold mb-3">{i18n.t('dias_sin_intervencion')}</p>
           <div className="flex flex-wrap gap-2">
             {DIAS.map(d => (
               <button
@@ -1000,7 +1001,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
           </div>
         </div>
         <div className="rounded-2xl border border-[#a855f7]/40 bg-white/[0.02] p-5 mt-4">
-          <p className="font-bold mb-3">Horas sin intervención</p>
+          <p className="font-bold mb-3">{i18n.t('horas_sin_intervencion')}</p>
           <div className="grid sm:grid-cols-2 gap-4">
             <label className="block text-xs text-white/60">DESDE
               <input type="time" value={horasOff.desde} onChange={e => setHorasOff(p => ({ ...p, desde: e.target.value }))} className="mt-1 w-full bg-transparent border border-white/15 rounded-xl px-3 py-2.5 text-white text-sm" />
@@ -1011,7 +1012,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
           </div>
         </div>
         <div className="rounded-xl border border-[#a855f7]/40 bg-white/[0.02] p-5 mt-4">
-          <p className="font-bold mb-3">NO INTERVENIR DURANTE</p>
+          <p className="font-bold mb-3">{i18n.t('no_intervenir_durante')}</p>
           <div className="grid md:grid-cols-3 gap-3">
             {[['descanso', 'MI HORARIO DE DESCANSO'], ['noche', 'LA NOCHE'], ['madrugada', 'LA MADRUGADA']].map(([k, label]) => (
               <div key={k} className="rounded-xl border border-white/10 p-3">
@@ -1030,8 +1031,8 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
         </div>
         <div className="rounded-2xl border border-[#a855f7]/40 bg-white/[0.02] p-5 mt-4 flex flex-col md:flex-row md:items-center gap-4">
           <div className="flex-1">
-            <p className="font-bold">Acciones críticas</p>
-            <p className="text-xs text-white/60">Permitir intervención solo si la acción es crítica.</p>
+            <p className="font-bold">{i18n.t('acciones_criticas')}</p>
+            <p className="text-xs text-white/60">{i18n.t('permitir_intervencion_solo_si_la_accion_')}</p>
           </div>
           <div className="flex gap-2">
             {([['permitir', 'PERMITIR'], ['bloquear', 'BLOQUEAR']] as const).map(([id, label]) => (
@@ -1075,12 +1076,12 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
     );
     const contenido = (
       <div>
-        <h2 className="text-3xl font-bold">Privacidad</h2>
-        <p className="text-white/70 mt-1">Revisa cómo Focusia protege tu información.</p>
+        <h2 className="text-3xl font-bold">{i18n.t('privacidad')}</h2>
+        <p className="text-white/70 mt-1">{i18n.t('revisa_como_focusia_protege_tu_informaci')}</p>
         <div className="rounded-xl border border-[#60a5fa]/40 bg-white/[0.02] p-5 mt-6">
           <div className="flex items-center gap-4 mb-5">
-            <img src="./SF2.png" alt="Protección de datos" className="w-11 h-11 object-contain shrink-0" />
-            <p className="font-bold text-base">1. Cómo Focusia protege tus datos</p>
+            <img src="/SF2.png" alt={i18n.t('proteccion_de_datos')} className="w-11 h-11 object-contain shrink-0" />
+            <p className="font-bold text-base">{i18n.t('1_como_focusia_protege_tus_datos')}</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 md:divide-x md:divide-white/10 gap-y-4">
             {([
@@ -1101,24 +1102,24 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
           </div>
         </div>
 
-            <p className="text-[11px] text-white/50">Marco normativo: Chile · Ley N.º 19.628 | Unión Europea · RGPD/GDPR | EE. UU. · CCPA/CPRA y demás normas aplicables.</p>
+            <p className="text-[11px] text-white/50">{i18n.t('marco_normativo_chile_ley_n_19_628_union')}</p>
           
         <div className="rounded-xl border border-[#a855f7]/40 bg-white/[0.02] p-5 mt-2">
             <div className="flex items-center gap-2 ">
-            <img src="./teams.png" alt="Protección de datos" className="w-18 h-20" />
-            <p className="font-bold mb-1">2. Permisos y consentimientos</p>
+            <img src="/teams.png" alt={i18n.t('proteccion_de_datos')} className="w-18 h-20" />
+            <p className="font-bold mb-1">{i18n.t('2_permisos_y_consentimientos')}</p>
           </div>
           <div className="grid md:grid-cols-2 gap-x-8">
-            <Toggle id="notificaciones" label="Notificaciones" icon={Bell} valor={priv.notificaciones} />
-            <Toggle id="recordatorios" label="Recordatorios" icon={BellRing} valor={priv.recordatorios} />
-            <Toggle id="datos_sensibles" label="Datos sensibles" icon={Lock} valor={priv.datos_sensibles} />
-            <Toggle id="funciones_especiales" label="Funciones especiales" icon={Sparkles} valor={priv.funciones_especiales} />
+            <Toggle id="notificaciones" label={i18n.t('notificaciones_h3fm')} icon={Bell} valor={priv.notificaciones} />
+            <Toggle id="recordatorios" label={i18n.t('recordatorios')} icon={BellRing} valor={priv.recordatorios} />
+            <Toggle id="datos_sensibles" label={i18n.t('datos_sensibles')} icon={Lock} valor={priv.datos_sensibles} />
+            <Toggle id="funciones_especiales" label={i18n.t('funciones_especiales')} icon={Sparkles} valor={priv.funciones_especiales} />
           </div>
         </div>
         <div className="rounded-xl border border-green-500/40 bg-white/[0.02] p-5 mt-4">
          <div className="flex items-center gap-4 mb-4">
-            <img src="./File.png" alt="Protección de datos" className="w-18 h-20" />
-            <p className="font-bold mb-3">3. Datos guardados</p>
+            <img src="/File.png" alt={i18n.t('proteccion_de_datos')} className="w-18 h-20" />
+            <p className="font-bold mb-3">{i18n.t('3_datos_guardados')}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             {([
@@ -1139,42 +1140,42 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
         <div className="grid md:grid-cols-2 gap-4 mt-4">
           <div className="rounded-xl border border-[#60a5fa]/40 p-5">
            <div className="flex items-center gap-4 mb-4">
-            <img src="./upload.png" alt="Protección de datos" className="w-20 h-20" />
-            <p className="font-bold">4. Exportar datos</p>
+            <img src="/upload.png" alt={i18n.t('proteccion_de_datos')} className="w-20 h-20" />
+            <p className="font-bold">{i18n.t('4_exportar_datos')}</p>
           </div>
             
-            <p className="text-xs text-white/60 mt-1">Solicita una copia descargable de tu información personal.</p>
-            <button type="button" onClick={exportarDatos} className="mt-3 w-full border border-[#60a5fa]/60 text-[#93c5fd] rounded-xl py-2.5 text-sm font-bold hover:bg-[#60a5fa]/10">Solicitar copia de mis datos</button>
+            <p className="text-xs text-white/60 mt-1">{i18n.t('solicita_una_copia_descargable_de_tu_inf')}</p>
+            <button type="button" onClick={exportarDatos} className="mt-3 w-full border border-[#60a5fa]/60 text-[#93c5fd] rounded-xl py-2.5 text-sm font-bold hover:bg-[#60a5fa]/10">{i18n.t('solicitar_copia_de_mis_datos')}</button>
           </div>
           <div className="rounded-xl border border-red-500/40 p-5">
             <div className="flex items-center gap-4 mb-4">
-              <img src="./trash.png" alt="Eliminar datos" className="w-20 h-20" />
-              <p className="font-bold">5. Eliminar datos</p>
+              <img src="/trash.png" alt={i18n.t('eliminar_datos')} className="w-20 h-20" />
+              <p className="font-bold">{i18n.t('5_eliminar_datos')}</p>
             </div>
-            <p className="text-xs text-white/60 mt-1">Solicita eliminar tus datos o cerrar definitivamente tu cuenta.</p>
+            <p className="text-xs text-white/60 mt-1">{i18n.t('solicita_eliminar_tus_datos_o_cerrar_def')}</p>
             {!showEliminar ? (
-              <button type="button" onClick={() => setShowEliminar(true)} className="mt-3 w-full border border-red-500/60 text-red-400 rounded-xl py-2.5 text-sm font-bold hover:bg-red-500/10">Gestionar eliminación</button>
+              <button type="button" onClick={() => setShowEliminar(true)} className="mt-3 w-full border border-red-500/60 text-red-400 rounded-xl py-2.5 text-sm font-bold hover:bg-red-500/10">{i18n.t('gestionar_eliminacion')}</button>
             ) : (
               <div className="mt-3 flex gap-2">
-                <button type="button" onClick={eliminarDatos} disabled={saving} className="flex-1 bg-red-600 rounded-xl py-2.5 text-sm font-bold hover:bg-red-500 disabled:opacity-50">Confirmar eliminación</button>
-                <button type="button" onClick={() => setShowEliminar(false)} className="flex-1 border border-white/20 rounded-xl py-2.5 text-sm font-bold">Cancelar</button>
+                <button type="button" onClick={eliminarDatos} disabled={saving} className="flex-1 bg-red-600 rounded-xl py-2.5 text-sm font-bold hover:bg-red-500 disabled:opacity-50">{i18n.t('confirmar_eliminacion')}</button>
+                <button type="button" onClick={() => setShowEliminar(false)} className="flex-1 border border-white/20 rounded-xl py-2.5 text-sm font-bold">{i18n.t('cancelar_lqk3')}</button>
               </div>
             )}
           </div>
         </div>
         <div className="rounded-xl border border-white/10 mt-4 p-4 flex flex-col md:flex-row md:items-center gap-3">
-          <p className="flex-1 text-sm text-white/80">Política de Privacidad y Compliance completa.</p>
+          <p className="flex-1 text-sm text-white/80">{i18n.t('politica_de_privacidad_y_compliance_comp')}</p>
           <button type="button" onClick={() => setShowPolitica(v => !v)} className="border border-white/20 rounded-xl px-5 py-2.5 text-sm font-bold text-[#93c5fd] flex items-center gap-2 hover:bg-white/5">
             <Download className="w-4 h-4" /> {showPolitica ? 'Ocultar documento' : 'Descargar documento completo (PDF)'}
           </button>
         </div>
         {showPolitica && (
           <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5 mt-4 text-xs text-white/70 leading-relaxed space-y-2 max-h-72 overflow-y-auto">
-            <p><b className="text-white">1. Datos que tratamos.</b> Perfil, metas, planificación, preferencias y registros de uso necesarios para el acompañamiento.</p>
-            <p><b className="text-white">2. Finalidad.</b> Proveer acompañamiento, recordatorios y mejoras del servicio. Nunca vendemos tus datos.</p>
-            <p><b className="text-white">3. Tus derechos.</b> Acceso, rectificación, exportación y eliminación desde esta pantalla.</p>
-            <p><b className="text-white">4. Conservación.</b> Solo durante la vigencia de tu cuenta; al eliminarla se desactivan tus accesos.</p>
-            <p><b className="text-white">5. Marco normativo.</b> Chile Ley N.º 19.628, RGPD/GDPR, CCPA/CPRA y normas aplicables.</p>
+            <p><b className="text-white">{i18n.t('1_datos_que_tratamos')}</b> Perfil, metas, planificación, preferencias y registros de uso necesarios para el acompañamiento.</p>
+            <p><b className="text-white">{i18n.t('2_finalidad')}</b> Proveer acompañamiento, recordatorios y mejoras del servicio. Nunca vendemos tus datos.</p>
+            <p><b className="text-white">{i18n.t('3_tus_derechos')}</b> Acceso, rectificación, exportación y eliminación desde esta pantalla.</p>
+            <p><b className="text-white">{i18n.t('4_conservacion')}</b> Solo durante la vigencia de tu cuenta; al eliminarla se desactivan tus accesos.</p>
+            <p><b className="text-white">{i18n.t('5_marco_normativo')}</b> Chile Ley N.º 19.628, RGPD/GDPR, CCPA/CPRA y normas aplicables.</p>
           </div>
         )}
       </div>
@@ -1185,26 +1186,26 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
   /* ============ CUENTA ============ */
   const cuentaContenido = (
     <div>
-      <h2 className="text-3xl font-bold">Cuenta</h2>
-      <p className="text-white/70 mt-1">Administra tu información, tus accesos y el estado de tu cuenta.</p>
+      <h2 className="text-3xl font-bold">{i18n.t('cuenta')}</h2>
+      <p className="text-white/70 mt-1">{i18n.t('administra_tu_informacion_tus_accesos_y_')}</p>
       <div className="grid md:grid-cols-2 gap-4 mt-6">
         <div className="rounded-xl border border-[#60a5fa]/50 p-5">
           <p className="font-bold flex items-center gap-2"><UserIcon className="w-5 h-5 text-[#60a5fa]" /> Perfil</p>
           <div className="mt-4 space-y-4">
             <div className="flex items-start gap-4">
               <div className="w-20 h-20 rounded-full overflow-hidden shadow-sm border-2 border-white/30 shrink-0">
-                <img src={avatarUrl || AVATARS.find(a => a.index === avatarId)?.file} alt="profile" className="w-full h-full object-cover" />
+                <img src={avatarUrl || AVATARS.find(a => a.index === avatarId)?.file} alt={i18n.t('profile')} className="w-full h-full object-cover" />
               </div>
               <div className="flex-1 space-y-4">
                 <div>
-                  <label className="text-xs text-white/60">Nombre</label>
+                  <label className="text-xs text-white/60">{i18n.t('nombre_19xe')}</label>
                   <div className="flex gap-2 mt-1">
                     <input value={nombreEdit} onChange={e => setNombreEdit(e.target.value)} className="flex-1 bg-transparent border-b border-white/15 focus:border-[#60a5fa] outline-none py-1 text-sm" />
-                    <button type="button" onClick={guardarCuenta} disabled={saving} className="text-xs border border-[#60a5fa]/60 text-[#93c5fd] rounded-lg px-3 py-1">Editar</button>
+                    <button type="button" onClick={guardarCuenta} disabled={saving} className="text-xs border border-[#60a5fa]/60 text-[#93c5fd] rounded-lg px-3 py-1">{i18n.t('editar_ujtf')}</button>
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-white/60">Fotografía de perfil</label>
+                  <label className="text-xs text-white/60">{i18n.t('fotografia_de_perfil')}</label>
                   <button type="button" onClick={() => setScreen('avatar')} className="mt-1 text-xs border border-[#60a5fa]/60 text-[#93c5fd] rounded-lg px-3 py-1.5 flex items-center gap-1">
                     Cambiar fotografía <ChevronRight className="w-3 h-3" />
                   </button>
@@ -1212,10 +1213,10 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
               </div>
             </div>
             <div>
-              <label className="text-xs text-white/60">Correo electrónico</label>
+              <label className="text-xs text-white/60">{i18n.t('correo_electronico_d0t4')}</label>
               <div className="flex gap-2 mt-1">
                 <input value={emailEdit} onChange={e => setEmailEdit(e.target.value)} className="flex-1 bg-transparent border-b border-white/15 focus:border-[#60a5fa] outline-none py-1 text-sm" />
-                <button type="button" onClick={guardarCuenta} disabled={saving} className="text-xs border border-[#60a5fa]/60 text-[#93c5fd] rounded-lg px-3 py-1">Actualizar</button>
+                <button type="button" onClick={guardarCuenta} disabled={saving} className="text-xs border border-[#60a5fa]/60 text-[#93c5fd] rounded-lg px-3 py-1">{i18n.t('actualizar_50co')}</button>
               </div>
             </div>
             {cuentaMsg && <p className="text-xs text-emerald-300">{cuentaMsg}</p>}
@@ -1225,20 +1226,20 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
           <p className="font-bold flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-[#a855f7]" /> Seguridad y accesos</p>
           <div className="mt-4 space-y-3 text-sm">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-white/80">Contraseña</span>
-              <button type="button" onClick={() => setShowPass(v => !v)} className="text-xs border border-[#a855f7]/60 text-[#c084fc] rounded-lg px-3 py-1.5">Cambiar contraseña</button>
+              <span className="text-white/80">{i18n.t('contrasena_5g0f')}</span>
+              <button type="button" onClick={() => setShowPass(v => !v)} className="text-xs border border-[#a855f7]/60 text-[#c084fc] rounded-lg px-3 py-1.5">{i18n.t('cambiar_contrasena')}</button>
             </div>
             {showPass && (
               <div className="space-y-2 rounded-xl border border-white/10 p-3">
-                <input type="password" placeholder="Actual" value={pass.actual} onChange={e => setPass(p => ({ ...p, actual: e.target.value }))} className="w-full bg-transparent border border-white/15 rounded-lg px-2 py-1.5 text-sm" />
-                <input type="password" placeholder="Nueva" value={pass.nueva} onChange={e => setPass(p => ({ ...p, nueva: e.target.value }))} className="w-full bg-transparent border border-white/15 rounded-lg px-2 py-1.5 text-sm" />
-                <input type="password" placeholder="Confirmar nueva" value={pass.confirmar} onChange={e => setPass(p => ({ ...p, confirmar: e.target.value }))} className="w-full bg-transparent border border-white/15 rounded-lg px-2 py-1.5 text-sm" />
-                <button type="button" onClick={cambiarPass} disabled={saving} className="w-full bg-[#7c3aed] rounded-lg py-2 text-xs font-bold disabled:opacity-50">Guardar contraseña</button>
+                <input type="password" placeholder={i18n.t('actual')} value={pass.actual} onChange={e => setPass(p => ({ ...p, actual: e.target.value }))} className="w-full bg-transparent border border-white/15 rounded-lg px-2 py-1.5 text-sm" />
+                <input type="password" placeholder={i18n.t('nueva')} value={pass.nueva} onChange={e => setPass(p => ({ ...p, nueva: e.target.value }))} className="w-full bg-transparent border border-white/15 rounded-lg px-2 py-1.5 text-sm" />
+                <input type="password" placeholder={i18n.t('confirmar_nueva')} value={pass.confirmar} onChange={e => setPass(p => ({ ...p, confirmar: e.target.value }))} className="w-full bg-transparent border border-white/15 rounded-lg px-2 py-1.5 text-sm" />
+                <button type="button" onClick={cambiarPass} disabled={saving} className="w-full bg-[#7c3aed] rounded-lg py-2 text-xs font-bold disabled:opacity-50">{i18n.t('guardar_contrasena')}</button>
               </div>
             )}
             <div className="flex items-center justify-between gap-2">
-              <span className="text-white/80">Dispositivos conectados</span>
-              <button type="button" onClick={cargarDispositivos} className="text-xs border border-[#a855f7]/60 text-[#c084fc] rounded-lg px-3 py-1.5">Ver dispositivos</button>
+              <span className="text-white/80">{i18n.t('dispositivos_conectados')}</span>
+              <button type="button" onClick={cargarDispositivos} className="text-xs border border-[#a855f7]/60 text-[#c084fc] rounded-lg px-3 py-1.5">{i18n.t('ver_dispositivos')}</button>
             </div>
             {dispositivos.length > 0 && (
               <div className="text-xs text-white/60 space-y-2">
@@ -1253,10 +1254,10 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
                     </li>
                   ))}
                 </ul>
-                <button type="button" onClick={() => configService.logoutAllDevices().then(cargarDispositivos).catch(() => {})} className="text-[#c084fc] underline">Cerrar otras sesiones</button>
+                <button type="button" onClick={() => configService.logoutAllDevices().then(cargarDispositivos).catch(() => {})} className="text-[#c084fc] underline">{i18n.t('cerrar_otras_sesiones')}</button>
               </div>
             )}
-            <p className="text-xs text-white/50">Revisa y cierra sesiones activas cuando lo necesites.</p>
+            <p className="text-xs text-white/50">{i18n.t('revisa_y_cierra_sesiones_activas_cuando_')}</p>
           </div>
         </div>
       </div>
@@ -1264,25 +1265,25 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
         <div className="rounded-2xl border border-[#2dd4bf]/50 p-5">
           <p className="font-bold flex items-center gap-2 text-sm"><CreditCard className="w-5 h-5 text-[#2dd4bf]" /> Plan de suscripción</p>
           <p className="mt-2">{plan}</p>
-          <span className="inline-block mt-2 text-xs border border-[#2dd4bf]/60 text-[#5eead4] rounded-full px-3 py-1">Plan vigente</span>
+          <span className="inline-block mt-2 text-xs border border-[#2dd4bf]/60 text-[#5eead4] rounded-full px-3 py-1">{i18n.t('plan_vigente')}</span>
         </div>
         <div className="rounded-2xl border border-emerald-500/50 p-5">
           <p className="font-bold flex items-center gap-2 text-sm"><Check className="w-5 h-5 text-emerald-400" /> Estado de cuenta</p>
-          <span className="inline-block mt-3 text-xs border border-emerald-500/60 text-emerald-300 rounded-full px-3 py-1">Cuenta activa</span>
+          <span className="inline-block mt-3 text-xs border border-emerald-500/60 text-emerald-300 rounded-full px-3 py-1">{i18n.t('cuenta_activa')}</span>
           {cuenta.date_joined && (
             <p className="mt-2 text-xs text-white/50">Miembro desde {new Date(cuenta.date_joined).toLocaleDateString()}</p>
           )}
         </div>
         <div className="rounded-2xl border border-red-500/50 p-5">
           <p className="font-bold flex items-center gap-2 text-sm"><LogOut className="w-5 h-5 text-red-400" /> Cerrar sesión</p>
-          <p className="text-xs text-white/60 mt-2">Sal de la cuenta en este dispositivo.</p>
-          <button type="button" onClick={() => onLogout?.()} className="mt-3 w-full border border-red-500/60 text-red-400 rounded-xl py-2 text-sm font-bold hover:bg-red-500/10">Cerrar sesión</button>
+          <p className="text-xs text-white/60 mt-2">{i18n.t('sal_de_la_cuenta_en_este_dispositivo')}</p>
+          <button type="button" onClick={() => onLogout?.()} className="mt-3 w-full border border-red-500/60 text-red-400 rounded-xl py-2 text-sm font-bold hover:bg-red-500/10">{i18n.t('cerrar_sesion_du3a')}</button>
         </div>
       </div>
     </div>
   );
   if (screen === 'cuenta') {
-    const notaLia = <p>Aquí puedes administrar tu información, revisar tus accesos y conocer el estado de tu plan.</p>;
+    const notaLia = <p>{i18n.t('aqui_puedes_administrar_tu_informacion_r')}</p>;
     return shell('Cuenta', null, null, cuentaContenido, notaLia);
   }
 
@@ -1291,15 +1292,15 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
     return (
       <div className="fixed inset-0 z-[300] bg-[#f4f6fb] overflow-y-auto">
         <div className="relative min-h-full">
-          <img src="./onda1.png" alt="" className="w-30 h-160" />
-          <img src="./onda3.png" alt="" aria-hidden className="absolute right-0 top-0 w-30 h-160 object-cover pointer-events-none ml-8" />
+          <img src="/onda1.png" alt="" className="w-30 h-160" />
+          <img src="/onda3.png" alt="" aria-hidden className="absolute right-0 top-0 w-30 h-160 object-cover pointer-events-none ml-8" />
           <div className="relative max-w-6xl px-6 py-6 -mt-150 ml-25">
             <div className="flex items-center justify-between">
               <Volver onClick={irMenu} />
-              <img src="./focussia.png" alt="Focusia" className="w-15" /><span className="w-20 text-center text-xl font-bold text-[#323EC0] ml-20"><p className="text-center -ml-230 text-xl font-bold">Focusia</p></span>
+              <img src="/focussia.png" alt={i18n.t('focusia_5aq1')} className="w-15" /><span className="w-20 text-center text-xl font-bold text-[#323EC0] ml-20"><p className="text-center -ml-230 text-xl font-bold">{i18n.t('focusia_5aq1')}</p></span>
             </div>
-            <h1 className="text-center text-4xl font-black text-[#14173a] mt-6 tracking-wide">MIS REDES SOCIALES</h1>
-            <p className="text-center text-slate-500 mt-1">Guarda el enlace de cada perfil una sola vez. El Dashboard mostrará solo las redes configuradas.</p>
+            <h1 className="text-center text-4xl font-black text-[#14173a] mt-6 tracking-wide">{i18n.t('mis_redes_sociales')}</h1>
+            <p className="text-center text-slate-500 mt-1">{i18n.t('guarda_el_enlace_de_cada_perfil_una_sola')}</p>
             <div className="grid md:grid-cols-2 gap-4 mt-6">
               {REDES.map(r => {
                 const valor = redes[r.id] || '';
@@ -1328,7 +1329,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
                     {abierto && (
                       <ol className="mt-3 rounded-xl bg-[#eef2ff] p-3 pl-8 text-[13px] text-slate-700 list-decimal space-y-1">
                         {r.tutorial.map((paso, i) => <li key={i}>{paso}</li>)}
-                        <li className="font-bold text-[#2b44ff]">Tarda unos 10 segundos.</li>
+                        <li className="font-bold text-[#2b44ff]">{i18n.t('tarda_unos_10_segundos')}</li>
                       </ol>
                     )}
                     <div className="flex gap-2 mt-3">
@@ -1354,7 +1355,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
                     {redesErr[r.id] ? (
                       <p className="text-red-500 text-xs mt-2">{redesErr[r.id]}</p>
                     ) : configurada ? (
-                      <p className="text-xs text-slate-400 mt-2">Vacía el campo y pulsa Guardar para desactivar esta red.</p>
+                      <p className="text-xs text-slate-400 mt-2">{i18n.t('vacia_el_campo_y_pulsa_guardar_para_desa')}</p>
                     ) : null}
                   </div>
                 );

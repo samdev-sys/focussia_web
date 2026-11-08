@@ -1,4 +1,7 @@
+import i18n from '../i18n';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { BarChart3 } from 'lucide-react';
 import { driver, type Driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import '../tour/focusia-tour.css';
@@ -120,7 +123,7 @@ export function FocusiaTourLauncher({ autoStart = false }: { autoStart?: boolean
         popover: {
           // Tarjeta blanca con avatar + título + texto (réplica fotos).
           // El CSS (.focusia-tour-popover) la centra arriba como en las fotos.
-          title: `<div class="focusia-tour-card"><img src="${TOUR_AVATAR}" alt="Guía Focusia" /><div><h3>${escapeHtml(s.title)}</h3><p>${escapeHtml(s.description)}</p><div class="focusia-tour-count">${i + 1} / ${steps.length}</div></div></div>`,
+          title: `<div class="focusia-tour-card"><img src="${TOUR_AVATAR}" alt={i18n.t('guia_focusia')} /><div><h3>${escapeHtml(s.title)}</h3><p>${escapeHtml(s.description)}</p><div class="focusia-tour-count">${i + 1} / ${steps.length}</div></div></div>`,
           description: '',
           popoverClass: 'focusia-tour-popover',
         },
@@ -187,17 +190,25 @@ export function FocusiaTourLauncher({ autoStart = false }: { autoStart?: boolean
     driverRef.current.moveNext();
   }, [stepIndex, destroy, logTourEnd]);
 
+  const navigate = useNavigate();
+
   return (
     <>
-      <button type="button" className="focusia-tour-launch mt-25 -ml-38 w-40 h-6  rounded rounded-md" onClick={start} title="Iniciar visita guiada">
-        <img src="./tour.png" alt="Visita guiada del dashboard" className="w-6 h-6" /><span>visita guiada </span>
+      <button
+        type="button"
+        className="focusia-tour-launch mt-25 -ml-38 w-40 h-6 rounded-md"
+        onClick={() => navigate('/app/reportes')}
+        title="Ver reportes"
+      >
+        <BarChart3 className="w-4 h-4 shrink-0" />
+        <span>Reportes</span>
       </button>
       {active && (
         <>
-          <button type="button" aria-label="Anterior" className="focusia-tour-edge left" onClick={goPrev} disabled={stepIndex <= 0}>
+          <button type="button" aria-label={i18n.t('anterior')} className="focusia-tour-edge left" onClick={goPrev} disabled={stepIndex <= 0}>
             ‹
           </button>
-          <button type="button" aria-label="Siguiente" className="focusia-tour-edge right" onClick={goNext}>
+          <button type="button" aria-label={i18n.t('siguiente')} className="focusia-tour-edge right" onClick={goNext}>
             ›
           </button>
         </>

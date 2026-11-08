@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useState, useEffect } from 'react';
 import {
   Home, CircleDot, LayoutGrid, Calendar, CalendarDays, Kanban,
@@ -49,11 +50,11 @@ const Sidebar = ({ onNav, userName, photoUrl, profile, onLogout, onBack }: { onN
   ];
 
   return (
-    <aside className="w-48 bg-[#0A0A26] h-full flex flex-col transition-all duration-300 z-20 shrink-0">
+    <aside className="w-48 bg-[#0A0A26] h-300 flex flex-col transition-all duration-300 z-20 shrink-0">
       <div className="h-16 flex items-center px-6 pt-4 pb-2">
         <div className="flex items-center gap-3 text-white">
-         <img src="./focussia.png" alt="Focusia" className='w-8 h-8' />
-          <span className="text-xl font-bold tracking-wide">Focusia</span>
+         <img src="/focussia.png" alt={i18n.t('focusia_vxbw')} className='w-8 h-8' />
+          <span className="text-xl font-bold tracking-wide">{i18n.t('focusia_vxbw')}</span>
         </div>
       </div>
 
@@ -61,7 +62,7 @@ const Sidebar = ({ onNav, userName, photoUrl, profile, onLogout, onBack }: { onN
         {navItems.map((item, index) => (
           <NavItem key={index} {...item} onClick={() => onNav(item.section)} />
         ))}
-        <NavItem icon={MoreHorizontal} label="Más" onClick={() => {}} />
+        <NavItem icon={MoreHorizontal} label={i18n.t('mas')} onClick={() => {}} />
       </nav>
 
       <div className="p-4 relative">
@@ -76,7 +77,7 @@ const Sidebar = ({ onNav, userName, photoUrl, profile, onLogout, onBack }: { onN
           </span>
           <div className="ml-3 text-left flex-1">
             <p className="text-sm font-semibold text-white">{userName || 'Usuario'}</p>
-            <p className="text-xs text-white/50">Ver perfil</p>
+            <p className="text-xs text-white/50">{i18n.t('ver_perfil_1sm0')}</p>
           </div>
           <ChevronDown className="w-4 h-4 text-white/50" />
         </button>
@@ -120,8 +121,15 @@ function ProfileMenu({ profile, userName, onBack, onLogout, onClose }: {
 }
 
 const Header = ({ onBack, userName, photoUrl, profile, onLogout, onOpenNotifications, onOpenSettings, onOpenHelp }: { onBack: () => void; userName?: string; photoUrl?: string | null; profile?: { username?: string; email?: string } | null; onLogout: () => void; onOpenNotifications?: () => void; onOpenSettings?: () => void; onOpenHelp?: () => void }) => {
-  const [dark, setDark] = useState(() =>
-    typeof window !== 'undefined' && localStorage.getItem('focusia-theme') === 'dark');
+  const [dark, setDark] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('darkMode');
+      if (saved === null) return false;
+      return saved === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const [showConfig, setShowConfig] = useState(false);
@@ -129,7 +137,7 @@ const Header = ({ onBack, userName, photoUrl, profile, onLogout, onOpenNotificat
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
-    try { localStorage.setItem('focusia-theme', dark ? 'dark' : 'light'); } catch {}
+    try { localStorage.setItem('darkMode', JSON.stringify(dark)); } catch {}
   }, [dark]);
 
   const toggleNotifications = async () => {
@@ -146,29 +154,27 @@ const Header = ({ onBack, userName, photoUrl, profile, onLogout, onOpenNotificat
     <div className="flex items-center gap-4">
       <button
         onClick={onBack}
-        title="Volver al Dashboard"
+        title={i18n.t('volver_al_dashboard')}
         className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-[#6236FF] hover:bg-purple-50 dark:hover:bg-white/10 transition-colors"
       >
         <ChevronLeft className="w-4 h-4" />
         
       </button>
-      <div className="w-10 h-10 rounded-xl bg-[#F3F0FF] dark:bg-white/10 flex items-center justify-center text-[#6236FF] dark:text-purple-300">
+      <div className="w-10 h-10 rounded-md bg-[#F3F0FF] dark:bg-white/10 flex items-center justify-center text-[#6236FF] dark:text-purple-300">
         <MessageSquare className="w-5 h-5" />
       </div>
       <div>
         <h1 className="text-2xl font-bold bg-gradient-to-r from-[#6236FF] to-[#8A2BE2] bg-clip-text text-transparent">
           Coaching
         </h1>
-        <p className="text-sm text-slate-500 dark:text-gray-400">Reflexiona hoy. Decide tu acción. Mañana ejecútala.</p>
+        <p className="text-sm text-slate-500 dark:text-gray-400">{i18n.t('reflexiona_hoy_decide_tu_accion_manana_e')}</p>
       </div>
     </div>
 
     <div className="flex items-center gap-6">
       <div className="relative">
-        <button onClick={() => { if (onOpenHelp) onOpenHelp(); }} title="Ayuda" className="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors">
-        <CircleHelp className="w-5 h-5" />
-      </button>
-      <button onClick={() => { if (onOpenNotifications) onOpenNotifications(); else toggleNotifications(); }} title="Notificaciones" className="relative text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors">
+       
+      <button onClick={() => { if (onOpenNotifications) onOpenNotifications(); else toggleNotifications(); }} title={i18n.t('notificaciones_f4zu')} className="relative text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors mt-1">
           <Bell className="w-5 h-5" />
           {notifications.length > 0 && (
             <span className="absolute -top-1 -right-1 min-w-4 h-4 px-0.5 bg-[#6236FF] text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white dark:border-[#14142e]">
@@ -184,7 +190,7 @@ const Header = ({ onBack, userName, photoUrl, profile, onLogout, onOpenNotificat
                 Notificaciones
               </p>
               {notifications.length === 0 ? (
-                <p className="px-4 py-6 text-sm text-gray-400 dark:text-gray-500 text-center">Sin notificaciones.</p>
+                <p className="px-4 py-6 text-sm text-gray-400 dark:text-gray-500 text-center">{i18n.t('sin_notificaciones_2zvw')}</p>
               ) : notifications.map(n => (
                 <div key={n.id} className="px-4 py-3 border-b border-gray-50 dark:border-white/5 last:border-0 hover:bg-gray-50 dark:hover:bg-white/5">
                   <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{n.title}</p>
@@ -196,11 +202,11 @@ const Header = ({ onBack, userName, photoUrl, profile, onLogout, onOpenNotificat
         )}
       </div>
 
-      <button onClick={() => { if (onOpenSettings) onOpenSettings(); else setShowConfig(true); }} title="Configuración" className="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors">
+      <button onClick={() => { if (onOpenSettings) onOpenSettings(); else setShowConfig(true); }} title={i18n.t('configuracion_16ep')} className="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors">
         <Settings className="w-5 h-5" />
       </button>
 
-      <button onClick={() => setDark(v => !v)} title={dark ? 'Modo claro' : 'Modo oscuro'} className="text-gray-500 dark:text-amber-300 hover:text-gray-700 dark:hover:text-amber-200 transition-colors">
+      <button onClick={() => setDark((v: any) => !v)} title={dark ? 'Modo claro' : 'Modo oscuro'} className="text-gray-500 dark:text-amber-300 hover:text-gray-700 dark:hover:text-amber-200 transition-colors">
         {dark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
       </button>
 
@@ -268,7 +274,7 @@ const TimelineSidebar = () => {
   ];
 
   return (
-    <aside className="w-full xl:w-[250px] h-200 shrink-0 bg-white dark:bg-[#14142e] p-6 rounded-xl shadow-sm border border-gray-100 dark:border-white/10 self-start -ml-20">
+    <aside className="w-full xl:w-[250px] shrink-0 bg-white dark:bg-[#14142e] p-6 rounded-xl shadow-sm border border-gray-100 dark:border-white/10 self-start xl:sticky xl:top-8">
       <h3 className="text-lg font-bold text-gray-900 dark:text-white">
         Tu ruta de hoy
       </h3>
@@ -293,7 +299,7 @@ const TimelineSidebar = () => {
         })}
       </div>
 
-      <div className="mt-5 bg-[#F3F0FF] dark:bg-[#1a1440] p-9 rounded-xl border border-purple-100 dark:border-white/10 relative">
+      <div className="mt-6 bg-[#F3F0FF] dark:bg-[#1a1440] p-5 rounded-xl border border-purple-100 dark:border-white/10 relative">
         <span className="block text-3xl leading-none text-[#6236FF] dark:text-purple-300 font-serif font-bold mb-1">“</span>
         <p className="text-sm text-gray-700 dark:text-gray-200 font-medium leading-relaxed">
           La claridad en tus decisiones hoy construye los resultados que deseas mañana.
@@ -390,14 +396,17 @@ export default function CoachingScreen({ onBack, userName, onNavigate, onOpenHel
         <Header onBack={onBack} userName={userName} photoUrl={photoUrl} profile={profile} onLogout={handleLogout} onOpenHelp={onOpenHelp} onOpenNotifications={onOpenNotifications} onOpenSettings={onOpenSettings} />
 
         <div className="flex-1 overflow-y-auto p-8">
-          <div className="max-w-[1400px] mx-auto flex flex-col xl:flex-row gap-8">
+          <div className="max-w-[1400px] mx-auto flex flex-col gap-8">
+            <div className="flex flex-col xl:flex-row items-start gap-8">
             {/* Columna Izquierda */}
             <div className="flex-1 flex flex-col gap-6">
               {/* Hero Banner */}
-              <section className="relative h-[280px] rounded-xl overflow-hidden shadow-sm w-180">
+              <section className="relative h-[280px] rounded-xl overflow-hidden shadow-sm w-full">
                 <img
-                  src="coaching.jpeg"
+                  src="/coaching.jpeg"
+                  alt={i18n.t('coaching')}
                   className="absolute inset-0 w-full h-full object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
                 <div className="absolute top-1/2 -translate-y-1/2 left-8 bg-white/95 dark:bg-[#1a1a3a]/95 backdrop-blur-sm p-8 rounded-xl max-w-[450px] shadow-lg border border-gray-100 dark:border-white/10">
                   <div className="inline-flex items-center gap-2 px-3 py-1 bg-purple-50 dark:bg-white/10 text-[#6236FF] dark:text-purple-300 text-xs font-semibold rounded-full mb-4">
@@ -415,14 +424,14 @@ export default function CoachingScreen({ onBack, userName, onNavigate, onOpenHel
 
               {/* Paso 1: Reflexión */}
               <div>
-                <section className="bg-white dark:bg-[#14142e] p-2 rounded-xl shadow-sm border border-gray-100 dark:border-white/10 w-180 h-[250px]">
+                <section className="bg-white dark:bg-[#14142e] p-2 rounded-md shadow-sm border border-gray-100 dark:border-white/10 w-full h-[240px]">
                 <div className="flex items-start gap-4 mb-4">
                   <div className="w-8 h-8 rounded-full bg-[#6236FF] text-white flex items-center justify-center font-bold shrink-0 mt-1">
                     1
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Tu reflexión personal</h3>
-                    <p className="text-sm text-slate-500 dark:text-gray-400">Escribe con honestidad, sin filtros. Este es tu espacio.</p>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">{i18n.t('tu_reflexion_personal')}</h3>
+                    <p className="text-sm text-slate-500 dark:text-gray-400">{i18n.t('escribe_con_honestidad_sin_filtros_este_')}</p>
                   </div>
                 </div>
                 <div className="ml-12 relative">
@@ -431,7 +440,7 @@ export default function CoachingScreen({ onBack, userName, onNavigate, onOpenHel
                     value={reflection}
                     onChange={(e) => setReflection(e.target.value)}
                     className="w-full h-32 p-4 bg-white dark:bg-[#0A0A26] text-slate-800 dark:text-gray-100 border border-purple-200 dark:border-white/15 rounded-xl resize-none focus:ring-2 focus:ring-[#6236FF] focus:outline-none transition-all placeholder-gray-400 dark:placeholder-gray-500 text-sm"
-                    placeholder="Escribe aquí tu reflexión de hoy..."
+                    placeholder={i18n.t('escribe_aqui_tu_reflexion_de_hoy')}
                   />
                   <div className="absolute bottom-3 right-4 text-xs text-gray-400">
                     {reflection.length}/3000
@@ -446,7 +455,7 @@ export default function CoachingScreen({ onBack, userName, onNavigate, onOpenHel
 </div>
               
               {/* Separador */}
-              <div className="relative flex items-center justify-center -my-2 z-10 w-180">
+              <div className="relative flex items-center justify-center -my-4 z-10 w-full">
                 <div className="w-full border-t border-gray-200 dark:border-white/10 absolute" />
                 <div className="w-8 h-8 bg-white dark:bg-[#14142e] border border-purple-200 dark:border-white/15 rounded-full flex items-center justify-center text-[#6236FF] dark:text-purple-300 relative shadow-sm">
                   <Check className="w-4 h-4" strokeWidth={3} />
@@ -454,14 +463,14 @@ export default function CoachingScreen({ onBack, userName, onNavigate, onOpenHel
               </div>
 
               {/* Paso 2: Decisión (se habilita tras registrar la reflexión) */}
-              <section className={`bg-[#F6F4FF] dark:bg-[#1a1440] p-2 rounded-xl shadow-sm border border-purple-100 dark:border-white/10 transition-opacity ${canDecide ? '' : 'opacity-60'} w-180 h-[350px]`}>
+              <section className={`bg-[#F6F4FF] dark:bg-[#1a1440] p-2 rounded-md shadow-sm border border-purple-100 dark:border-white/10 transition-opacity ${canDecide ? '' : 'opacity-60'} w-full h-[340px]`}>
                 <div className="flex items-start gap-4 mb-4">
                   <div className="w-8 h-8 rounded-full bg-[#6236FF] text-white flex items-center justify-center font-bold shrink-0 mt-1">
                     2
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Mi decisión para mañana</h3>
-                    <p className="text-sm text-slate-500 dark:text-gray-400">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">{i18n.t('mi_decision_para_manana')}</h3>
+                    <p className="text-xs text-slate-500 dark:text-gray-400">
                       Según tu reflexión anterior, ¿cuál será la acción más importante que realizarás mañana para acercarte a tu Gran Meta Anual?
                     </p>
                   </div>
@@ -472,7 +481,7 @@ export default function CoachingScreen({ onBack, userName, onNavigate, onOpenHel
                     value={action}
                     onChange={(e) => setAction(e.target.value)}
                     disabled={!canDecide}
-                    className="w-full h-24 p-4 bg-white dark:bg-[#0A0A26] text-slate-800 dark:text-gray-100 border border-purple-200 dark:border-white/15 rounded-xl resize-none focus:ring-2 focus:ring-[#6236FF] focus:outline-none transition-all placeholder-gray-400 dark:placeholder-gray-500 text-sm disabled:bg-gray-50 dark:disabled:bg-white/5 disabled:text-gray-400"
+                    className="w-full h-24 p-4 bg-white dark:bg-[#0A0A26] text-slate-800 dark:text-gray-100 border border-purple-200 dark:border-white/15 rounded-md resize-none focus:ring-2 focus:ring-[#6236FF] focus:outline-none transition-all placeholder-gray-400 dark:placeholder-gray-500 text-sm disabled:bg-gray-50 dark:disabled:bg-white/5 disabled:text-gray-400"
                     placeholder={canDecide ? 'Escribe aquí la acción más importante que realizarás mañana...' : 'Primero registra tu reflexión para habilitar este paso...'}
                   />
                   <div className="absolute bottom-3 right-4 text-xs text-gray-400">
@@ -481,7 +490,7 @@ export default function CoachingScreen({ onBack, userName, onNavigate, onOpenHel
                 </div>
                 <div className="ml-12 mt-3 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-6">
                   <Lock className="w-3.5 h-3.5 text-gray-400" />
-                  <span>Tu acción también se guarda automáticamente.</span>
+                  <span>{i18n.t('tu_accion_tambien_se_guarda_automaticame')}</span>
                   <span className="w-2 h-2 rounded-full bg-green-500 ml-1" />
                 </div>
 
@@ -496,7 +505,7 @@ export default function CoachingScreen({ onBack, userName, onNavigate, onOpenHel
                     </span>
                   ) : (
                     <>
-                      <div className="flex items-center gap-2 text-base md:text-lg">
+                      <div className="flex items-center gap-2 text-base md:text-sm">
                         <Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                         {sending ? 'Enviando...' : 'Enviar a la planificación de mañana'}
                       </div>
@@ -510,29 +519,29 @@ export default function CoachingScreen({ onBack, userName, onNavigate, onOpenHel
                 </button>
               </section>
 
-              {/* Banner Informativo */}
-              <section className='w-200'>
-                <div className="bg-[#F1EDFF] dark:bg-[#1a1440] p-1 rounded-xl shadow-sm border border-purple-100 dark:border-white/10 flex items-center gap-4 mt-2 overflow-hidden w-250">
-                <div className="w-12 h-12 rounded-full bg-[#6236FF] text-white flex items-center justify-center shrink-0">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-bold text-gray-900 dark:text-white">Coaching conecta tu aprendizaje con tu acción diaria.</h4>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    Reflexiona • Decide • Planifica • Ejecuta • Avanza hacia tu Gran Meta Anual.
-                  </p>
-                </div>
-                
-                <img src="./meta-1.png" alt="Ilustración de coaching" className="w-28 h-15 " />
-              </div>
-              </section>
-                
-             
+              
             </div>
 
             {/* Columna Derecha */}
             <TimelineSidebar />
           </div>
+
+          {/* Banner Informativo — ancho completo bajo ambas columnas (como el mockup) */}
+          <section className='w-full'>
+            <div className="bg-[#F1EDFF] dark:bg-[#1a1440] p-1 rounded-xl shadow-sm border border-purple-100 dark:border-white/10 flex items-center gap-4 overflow-hidden w-full">
+              <div className="w-12 h-12 rounded-full bg-[#6236FF] text-white flex items-center justify-center shrink-0">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-bold text-gray-900 dark:text-white">{i18n.t('coaching_conecta_tu_aprendizaje_con_tu_a')}</h4>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Reflexiona • Decide • Planifica • Ejecuta • Avanza hacia tu Gran Meta Anual.
+                </p>
+              </div>
+              <img src="/meta-1.png" alt={i18n.t('ilustracion_de_coaching')} className="w-28 h-15 shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+            </div>
+          </section>
+        </div>
         </div>
       </main>
     </div>

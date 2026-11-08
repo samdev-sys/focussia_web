@@ -692,14 +692,18 @@ def _generate_report_for_user(user, level, force=False):
 
     ahora = timezone.now()
 
+    data_error = None
+
     # 1. Recolectar datos. Un fallo de datos deja el estado de error explícito.
     try:
         data = _gather_report_data(user, level, period_start, period_end)
         datos_ok = True
     except Exception as e:
         logger.error(f'[REPORTS] datos fallaron user={user.id} level={level}: {e}')
+        logger.exception(e)
         data = _empty_report_data()
         datos_ok = False
+        data_error = str(e)
 
     # 2. Interpretación de IA. Un fallo de IA no bloquea el resumen de datos.
     tono = None
@@ -711,7 +715,11 @@ def _generate_report_for_user(user, level, force=False):
 
     headline, interpretation = (None, None)
     if datos_ok:
-        headline, interpretation = _generate_ai_content(level, data, tono=tono)
+        try:
+            headline, interpretation = _generate_ai_content(level, data, tono=tono)
+        except Exception as e:
+            logger.exception(f'[REPORTS] IA falló user={user.id} level={level}: {e}')
+            headline, interpretation = None, None
 
     if not datos_ok:
         estado = FocusiaReport.GenerationState.FAILED
@@ -751,7 +759,7 @@ def _generate_report_for_user(user, level, force=False):
 
     if not datos_ok:
         campos['headline_message'] = ''
-        campos['ai_interpretation'] = ''
+        campos['ai_interpretation'] = (data_error or '')[:2000]
     elif not headline:
         campos['headline_message'] = 'Análisis pendiente'
         campos['ai_interpretation'] = ''
@@ -801,8 +809,15 @@ def reconciliar_reportes(user=None):
     )
     if user is not None:
         qs = qs.filter(user=user)
+    resultados = []
     for report in qs:
-        _generate_report_for_user(report.user, report.level, force=True)
+        try:
+            nuevo = _generate_report_for_user(report.user, report.level, force=True)
+            resultados.append({'level': report.level, 'state': nuevo.generation_state if nuevo else 'none'})
+        except Exception as e:
+            logger.exception(f'[REPORTS] reconciliar falló user={report.user_id} level={report.level}: {e}')
+            resultados.append({'level': report.level, 'state': 'error', 'error': str(e)})
+    return resultados
 
 
 def _run_for_all(level):
@@ -841,6 +856,8 @@ def remind_pending_actions():
 
     User = get_user_model()
     hoy = timezone.localdate()
+    from dashboard.services.notification_dispatcher import puede_entregar_ahora
+    from dashboard.models import ConfiguracionUsuario, AgentConfig
     for user in User.objects.filter(is_active=True):
         try:
             pendientes = AccionKanban.objects.filter(
@@ -854,12 +871,31 @@ def remind_pending_actions():
                 ]
             ).count()
             if pendientes > 0:
-                recordatorio = timezone.make_aware(datetime.combine(hoy, dtime(20, 0)))
+                hora_cfg = None
+                try:
+                    agent_cfg = AgentConfig.objects.filter(user=user).first()
+                    if agent_cfg and agent_cfg.horario_fin:
+                        hora_cfg = agent_cfg.horario_fin
+                except Exception:
+                    pass
+                try:
+                    cfg = ConfiguracionUsuario.objects.filter(user=user).first()
+                    if cfg and cfg.ventana_fin and hora_cfg is None:
+                        hora_cfg = cfg.ventana_fin
+                except Exception:
+                    pass
+                if hora_cfg is None:
+                    hora_cfg = dtime(20, 0)
+                recordatorio = timezone.make_aware(datetime.combine(hoy, hora_cfg))
+                now = timezone.localtime()
+                prioridad = 'importante'
+                if not puede_entregar_ahora(user, prioridad, now):
+                    pass  # notificar se encargará de postergar
                 notificar(
                     user,
                     'Acciones pendientes de hoy',
                     f'Tenés {pendientes} acción(es) sin confirmar. Indicá qué hacés con cada una.',
-                    prioridad='importante',
+                    prioridad=prioridad,
                     canales=['app', 'push'],
                     scheduled_for=recordatorio,
                     dedupe_key=f'pending-actions:{hoy.isoformat()}',
@@ -867,6 +903,42 @@ def remind_pending_actions():
                 )
         except Exception as e:
             logger.error(f'[REPORTS] recordatorio nocturno falló user={user.id}: {e}')
+
+
+@shared_task
+def remind_upcoming_blocks():
+    """Recordatorio proactivo de bloques de tiempo próximos (sistema proactivo)."""
+    from django.contrib.auth import get_user_model
+    from dashboard.models import TimeBlock
+    from dashboard.services.notification_dispatcher import notificar, puede_entregar_ahora
+
+    User = get_user_model()
+    ahora = timezone.localtime()
+    hoy = ahora.date()
+    for user in User.objects.filter(is_active=True):
+        try:
+            bloques = TimeBlock.objects.filter(user=user, fecha=hoy).exclude(estado__in=['completed', 'completado', 'done'])
+            for bloque in bloques:
+                try:
+                    hora_bloque = dtime(int(bloque.hora), 0)
+                    bloque_dt = timezone.make_aware(datetime.combine(hoy, hora_bloque))
+                    diff_min = (bloque_dt - ahora).total_seconds() / 60.0
+                    if 0 < diff_min <= 30:
+                        prioridad = 'importante'
+                        notificar(
+                            user,
+                            'Bloque de tiempo próximo',
+                            f'Tu bloque "{bloque.tarea or "Bloque de enfoque"}" empieza en {int(diff_min)} min.',
+                            prioridad=prioridad,
+                            canales=['app', 'push'],
+                            scheduled_for=bloque_dt,
+                            dedupe_key=f'block-reminder:{bloque.id}:{hoy.isoformat()}',
+                            data={'kind': 'bloque_proximo', 'block_id': bloque.id, 'fecha': hoy.isoformat()},
+                        )
+                except Exception:
+                    continue
+        except Exception as e:
+            logger.error(f'[PROACTIVO] recordatorio de bloques falló user={user.id}: {e}')
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -890,12 +962,17 @@ def _dentro_de_ventana(user):
 @shared_task
 def avisar_dosis_pendientes():
     """Doc 21 §III/§IV: el Sistema Proactivo avisa de las dosis cuya hora ya pasó
-    sin registrarse. Se envía un único aviso por dosis y nunca cuando el usuario
-    tomó la dosis: simplemente permanece pendiente en el módulo.
+    sin registrarse. Se envía un único aviso por dosis (dedupe `toma:<id>`) y
+    nunca cuando el usuario tomó la dosis: simplemente permanece pendiente en el
+    módulo.
 
-    Solo mira las dosis de hoy: las de días anteriores siguen pendientes en el
-    módulo, pero no se avisa de ellas (serían avisos atrasados, uno cada vez que
-    corre la tarea).
+    Avisa de **todas** las dosis pendientes dentro de la ventana, no solo de la
+    primera de cada suplemento: si el worker estuvo caído (o la app no se abrió
+    en días), la campana debe reflejar la situación actual y no ir soltando un
+    aviso cada 15 minutos durante horas.
+
+    Revisa dosis de las últimas 48 h: las anteriores siguen pendientes en el
+    módulo, pero no se avisa de ellas (serían avisos atrasados sin valor).
     """
     from django.contrib.auth import get_user_model
     from dashboard.models import Suplemento, SuplementoToma
@@ -903,44 +980,54 @@ def avisar_dosis_pendientes():
 
     User = get_user_model()
     ahora = timezone.now()
-    inicio_del_dia = timezone.localtime().replace(
-        hour=0, minute=0, second=0, microsecond=0)
+    # Ventana de 48 horas para dosis atrasadas.
+    hace_48h = ahora - timedelta(hours=48)
+    # Tope por corrida y usuario: si estuvo días sin correr, no se inunda la
+    # campana; el resto se avisa en la siguiente pasada.
+    max_avisos = 10
+
     for user in User.objects.filter(is_active=True):
         try:
+            avisos = 0
             for suplemento in Suplemento.objects.filter(user=user, activo=True):
-                toma = (
-                    SuplementoToma.objects
-                    .filter(suplemento=suplemento, tomado=False, avisada=False,
-                            programada__gte=inicio_del_dia, programada__lte=ahora)
-                    .order_by('programada')
-                    .first()
-                )
-                if not toma:
-                    continue
+                if avisos >= max_avisos:
+                    break
                 # Doc 27 §2.4: medicamentos son críticos; suplementos, importantes.
                 prioridad = (
                     'critica' if suplemento.tipo == 'Medicamento' else 'importante')
-                resultado = notificar(
-                    user,
-                    'Toma pendiente',
-                    f'Es la hora de tu {suplemento.tipo.lower()}: {suplemento.nombre}. '
-                    'Registra la toma cuando la hayas hecho.',
-                    prioridad=prioridad,
-                    canales=['app', 'push', 'whatsapp', 'calls'],
-                    scheduled_for=toma.programada,
-                    dedupe_key=f'toma:{toma.id}',
-                    data={
-                        'kind': 'toma',
-                        'toma_id': toma.id,
-                        'suplemento_id': suplemento.id,
-                        'tipo': suplemento.tipo,
-                    },
+                pendientes = (
+                    SuplementoToma.objects
+                    .filter(suplemento=suplemento, tomado=False, avisada=False,
+                            programada__gte=hace_48h, programada__lte=ahora)
+                    .order_by('programada')
                 )
-                # Solo se marca avisada si hubo al menos un canal disponible;
-                # si no, queda pendiente para el próximo intento.
-                if any(k in resultado for k in ('app', 'push', 'whatsapp', 'calls', 'postponed')):
-                    toma.avisada = True
-                    toma.save(update_fields=['avisada'])
+                for toma in pendientes:
+                    if avisos >= max_avisos:
+                        break
+                    hora = timezone.localtime(toma.programada).strftime('%H:%M')
+                    resultado = notificar(
+                        user,
+                        'Toma pendiente',
+                        f'Es la hora de tu {suplemento.tipo.lower()}: '
+                        f'{suplemento.nombre} (programada a las {hora}). '
+                        'Registra la toma cuando la hayas hecho.',
+                        prioridad=prioridad,
+                        canales=['app', 'push', 'whatsapp', 'calls'],
+                        scheduled_for=toma.programada,
+                        dedupe_key=f'toma:{toma.id}',
+                        data={
+                            'kind': 'toma',
+                            'toma_id': toma.id,
+                            'suplemento_id': suplemento.id,
+                            'tipo': suplemento.tipo,
+                        },
+                    )
+                    # Solo se marca avisada si hubo al menos un canal disponible;
+                    # si no, queda pendiente para el próximo intento.
+                    if any(k in resultado for k in ('app', 'push', 'whatsapp', 'calls', 'postponed')):
+                        toma.avisada = True
+                        toma.save(update_fields=['avisada'])
+                        avisos += 1
         except Exception as e:
             logger.error(f'[SUPLEMENTOS] aviso de dosis falló user={user.id}: {e}')
 

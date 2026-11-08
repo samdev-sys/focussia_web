@@ -1,13 +1,34 @@
 # Proxy TLS para producción (backend API).
 # El dominio se define con la variable de entorno API_DOMAIN al levantar el stack:
 #   docker compose -p focusia -f docker-compose.prod.yml -f docker-compose.proxy.yml up -d
-# Comentarios en {$VAR} los resuelve Caddy al arrancar. Caddy emite y renueva
-# los certificados por sí solo (Let's Encrypt), sin humansintheloop.
+# Caddy emite y renueva los certificados por sí solo (Let's Encrypt).
+#
+# Variables que espera este archivo:
+#   API_DOMAIN          dominio del API (obligatoria)
+#   ADMIN_ALLOWED_IPS   IPs con acceso a /admin/ (por defecto solo localhost)
 
 {$API_DOMAIN} {
 	encode zstd gzip
 
-	# Reenvío al contenedor web de docker-compose.prod.yml (gunicorn)
+	# ── Estáticos del admin ──
+	# Los genera `collectstatic` al arrancar el contenedor web, en el volumen
+	# static_data. Sin esto, /admin/ se veía sin CSS.
+	handle /static/* {
+		uri strip_prefix /static
+		root * /static
+		file_server
+	}
+
+	# ── Admin de Django: solo IPs permitidas ──
+	# El panel de producto es el de React (/api/admin/); el admin de Django es
+	# herramienta del desarrollador y no debe estar expuesto al público.
+	handle /admin/* {
+		@fuera not remote_ip {$ADMIN_ALLOWED_IPS}
+		respond @fuera "No disponible" 403
+		reverse_proxy web:8000
+	}
+
+	# ── API (incluye /media/*, que Django sirve solo con sesión válida) ──
 	reverse_proxy web:8000
 
 	header {

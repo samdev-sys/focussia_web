@@ -4,7 +4,7 @@ from rest_framework.validators import UniqueTogetherValidator
 from .models import (User, RuedaVida, TimeBlock, KanbanTask, Recordatorio, ObjetivoSemana, KeepNota, MisionHoy, CategoriaRueda, RegistroRueda, MatrixItem, Factura, Workspace, WorkspaceMember, Invitation, Delegation, Notification, MetaAnual, GranMetaAnual, AnnualGoalConversationTurn, ObjetivoMensual, PropuestaIA, ConfiguracionUsuario, MatrizEisenhower, Activacion, InteraccionUsuario, DiagnosticoRueda, AccionSugerida, FocusArea, KanbanAction, AccionKanban, SubaccionKanban, HistorialMovimiento, ObjetivoSemanal, MonthlyPlan, MonthlyGoal, WeeklyPlan, Action, ActionDelegation, AgentConversation, AgentSchedule, AgentConfig, FocusiaReport, ReportDataSource, Avatar, OnboardingProfile, InicioState, InicioEventLog, LearningCategory, LearningModuleRef, GuidedTourBlock, AccompanimentPreferences, NotificationPreference, ScheduleException, AccountChangeLog,     InicioPrivacyPreferences, ProgramMonth, MonthlyTraining, ProgramDay, UserProgramProgress, DailyPhraseViewLog,
     CoachingEntry, TribuTemaSemana, TribuCompromiso, UserTrainingProgress, Juego, Membresia,
     AsignacionContenido, CuentaColumna, CuentaRegistro, CuentaValor, Suplemento, SuplementoToma,
-    HoraOroExperiencia, HoraOroAjustes, FocusSession)
+    HoraOroExperiencia, HoraOroAjustes, FocusSession, normalizar_nivel_exigencia)
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -856,7 +856,10 @@ class OnboardingSerializer(serializers.Serializer):
         if 'avatar_id' in data:
             config.avatar_index = data['avatar_id']
         if 'intensity_level' in data:
-            config.nivel_exigencia = data['intensity_level']
+            # El cliente manda el vocabulario del onboarding
+            # ('SUAVE'|'EQUILIBRADA'|'EXIGENTE'); la columna solo admite
+            # 'bajo'|'medio'|'alto' y 5 caracteres.
+            config.nivel_exigencia = normalizar_nivel_exigencia(data['intensity_level'])
         if 'allowed_channels' in data:
             config.canales_interaccion = data['allowed_channels']
         if 'avatar_tone' in data:

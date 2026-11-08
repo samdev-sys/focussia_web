@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useState } from 'react';
 import { X, Check, ArrowRight, Calendar, Target, ListTodo } from 'lucide-react';
 import { PropuestaIData, timeBlockService } from '../services/api';
@@ -95,7 +96,7 @@ export const MicroFlujoAjuste: React.FC<MicroFlujoAjusteProps> = ({ isOpen, onCl
         <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-indigo-600 to-purple-600 shrink-0">
           <div className="flex items-center gap-2">
             <ArrowRight className="w-5 h-5 text-white" />
-            <h2 className="text-lg font-bold uppercase text-white">Aplicar Ajuste</h2>
+            <h2 className="text-lg font-bold uppercase text-white">{i18n.t('aplicar_ajuste')}</h2>
           </div>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-white/30 transition-colors">
             <X className="w-5 h-5 text-white" />
@@ -106,11 +107,11 @@ export const MicroFlujoAjuste: React.FC<MicroFlujoAjusteProps> = ({ isOpen, onCl
           {paso === 'inicio' && (
             <>
               <div className="bg-indigo-50 rounded-xl p-3 border border-indigo-200">
-                <p className="text-xs text-indigo-700 font-medium">Propuesta del sistema</p>
+                <p className="text-xs text-indigo-700 font-medium">{i18n.t('propuesta_del_sistema')}</p>
                 <p className="text-sm text-gray-700 mt-1">{propuesta.propuesta_ajuste}</p>
               </div>
               <div className="space-y-2">
-                <p className="text-xs font-bold text-gray-500 uppercase">Selecciona una acción:</p>
+                <p className="text-xs font-bold text-gray-500 uppercase">{i18n.t('selecciona_una_accion')}</p>
                 {opciones.map((op) => {
                   const Icon = op.icon;
                   return (
@@ -135,7 +136,7 @@ export const MicroFlujoAjuste: React.FC<MicroFlujoAjusteProps> = ({ isOpen, onCl
             <div className="space-y-4">
               <div className="bg-green-50 rounded-xl p-4 border border-green-200 text-center">
                 <Check className="w-10 h-10 text-green-500 mx-auto mb-2" />
-                <p className="text-sm font-bold text-green-700">Acción seleccionada</p>
+                <p className="text-sm font-bold text-green-700">{i18n.t('accion_seleccionada')}</p>
                 <p className="text-xs text-green-600 mt-1">
                   {opciones.find((o) => o.id === seleccion)?.label}
                 </p>
@@ -166,8 +167,8 @@ export const MicroFlujoAjuste: React.FC<MicroFlujoAjusteProps> = ({ isOpen, onCl
               <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
                 <Check className="w-8 h-8 text-green-600" />
               </div>
-              <p className="text-sm font-bold text-gray-700">¡Ajuste Aplicado!</p>
-              <p className="text-xs text-gray-500">Tu planificación ha sido actualizada.</p>
+              <p className="text-sm font-bold text-gray-700">{i18n.t('ajuste_aplicado')}</p>
+              <p className="text-xs text-gray-500">{i18n.t('tu_planificacion_ha_sido_actualizada')}</p>
               <button
                 onClick={onClose}
                 className="w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-sm hover:opacity-90 transition-opacity"

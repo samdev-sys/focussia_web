@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useEffect, useRef, useState } from 'react';
 
 const TTS_API_URL = import.meta.env.VITE_API_URL
@@ -225,7 +226,7 @@ export default function AvatarGreeting({
           className="w-14 h-14 rounded-full overflow-hidden border-2 border-purple-400/50 flex-shrink-0"
           style={{ animation: 'glow-pulse 2.5s ease-in-out infinite' }}
         >
-          <img src={avatarUrl || undefined} alt="avatar" className="w-full h-full object-cover" />
+          <img src={avatarUrl || undefined} alt={i18n.t('avatar')} className="w-full h-full object-cover" />
         </div>
       </div>
     </div>

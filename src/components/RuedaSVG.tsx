@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React from 'react';
 import {
   HeartPulse, Users, Coins, Flower2, Heart, Lightbulb,
@@ -243,7 +244,7 @@ const RuedaSVG: React.FC<RuedaSVGProps> = ({
           <circle cx={cx} cy={cy} r={40} fill="#ffffff" stroke="#e5e7eb" strokeWidth="3" />
           <foreignObject x={cx - 26} y={cy - 26} width={52} height={52} style={{ pointerEvents: 'none' }}>
             <div style={{ width: 52, height: 52, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img src="/Rueda3.png" alt="Rueda" style={{ width: 44, height: 44, objectFit: 'contain' }} />
+              <img src="/Rueda3.png" alt={i18n.t('rueda_56ca')} style={{ width: 44, height: 44, objectFit: 'contain' }} />
             </div>
           </foreignObject>
         </>

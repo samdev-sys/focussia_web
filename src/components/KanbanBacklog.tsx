@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Loader2, Undo2, Target, CalendarDays, Calendar, Clock, X, Check, Sparkles, HelpCircle, Trash2, Users, Maximize2 } from 'lucide-react';
 import { api } from '../services/api';
@@ -122,8 +123,8 @@ const PlanificacionModalComponent: React.FC<PlanificacionModalInnerProps> = ({ a
         {/* Header */}
         <div className="px-5 pt-5 pb-3 flex items-start justify-between">
           <div>
-            <h2 className="text-base font-bold text-gray-900">Planificar tarea</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Clasifica en qué meta encaja</p>
+            <h2 className="text-base font-bold text-gray-900">{i18n.t('planificar_tarea')}</h2>
+            <p className="text-xs text-gray-400 mt-0.5">{i18n.t('clasifica_en_que_meta_encaja')}</p>
           </div>
           <button type="button" onClick={onCancel} className="text-gray-300 hover:text-gray-500 transition-colors mt-0.5">
             <X className="w-5 h-5" />
@@ -143,7 +144,7 @@ const PlanificacionModalComponent: React.FC<PlanificacionModalInnerProps> = ({ a
         {/* Sugerencia */}
         <div className="px-5 pb-2">
           <span className="text-[10px] font-bold tracking-wide text-purple-500 uppercase">
-            Sugerencia: <span className="text-purple-600">Meta Diaria</span>
+            Sugerencia: <span className="text-purple-600">{i18n.t('meta_diaria')}</span>
           </span>
         </div>
 
@@ -252,11 +253,11 @@ const EmptyRow: React.FC<{ onClassified?: (clasificacion: string, texto: string)
         type="text"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Escriba aquí"
+        placeholder={i18n.t('escriba_aqui')}
         disabled={saving}
-        className="flex-1 border border-gray-200 rounded text-[10px] px-1.5 py-1 h-6  w-10 flex items-center text-gray-700 bg-white truncate"
+        className="flex-1 border border-gray-200 dark:border-white/80 rounded text-[10px] px-1.5 py-1 h-6 w-10 flex items-center text-gray-700 italic placeholder:text-gray-400 bg-white truncate"
       />
-      <div className="flex gap-[3px] shrink-0 rounded-md px-1 py-0.5 bg-gray-100 border border-black-100">
+      <div className="flex gap-[3px] shrink-0 rounded-md px-1 py-0.5 bg-gray-100 dark:bg-white border border-black-100 dark:border-white/80">
         {(['H', 'P', 'D', 'E'] as const).map(tipo => {
           const cfg = TIPO_CONFIG[tipo];
           return (
@@ -587,7 +588,7 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
   return (
     <div
       ref={containerRef}
-      className={`bg-white rounded-md border border-gray-200 overflow-hidden w-full shadow-[0_4px_20px_rgba(0,0,0,0.06)] -mt-15 h-[450px] flex flex-col ${className}`}
+      className={`bg-white dark:bg-transparent rounded-md border border-gray-200 dark:border-transparent overflow-hidden w-full shadow-[0_4px_20px_rgba(0,0,0,0.06)] dark:shadow-none h-full min-h-0 flex flex-col ${className}`}
       tabIndex={-1}
     >
       <style>{`
@@ -626,13 +627,13 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
         }
       `}</style>
 
-      <div className="relative bg-[#171e3b] text-white text-center py-2 font-bold text-[11px] uppercase tracking-widest shrink-0 mb-2 mt-2 rounded-md w-full flex items-center justify-center" style={{ background: 'linear-gradient(90deg, #171e3b, #143ccc)' }}>
+      <div className="relative bg-[linear-gradient(90deg,#171e3b,#143ccc)] dark:bg-none dark:bg-transparent text-white dark:text-[#fda4af] text-center py-2 font-bold text-[11px] uppercase tracking-widest shrink-0 mb-2 mt-2 rounded-md w-full flex items-center justify-center">
         KANBAN BACKLOG
         {onExpand && (
           <button
             type="button"
             onClick={onExpand}
-            title="Abrir página completa del Kanban"
+            title={i18n.t('abrir_pagina_completa_del_kanban')}
             className="absolute right-8 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
           >
             <Maximize2 className="w-4 h-4" />
@@ -641,23 +642,23 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
         <button
           type="button"
           onClick={() => setShowHelp(v => !v)}
-          title="Ayuda: H = Hacer ahora. P = Planificar para otro momento. D = Delegar a otra persona. E = Eliminar o desechar."
+          title={i18n.t('ayuda_h_hacer_ahora_p_planificar_para_ot')}
           className="absolute right-2 top-1/2 -translate-y-1/2 text-white/60 hover:text-white transition-colors"
         >
           <HelpCircle className="w-4 h-4" />
         </button>
       </div>
       {showHelp && (
-        <p className="text-[10px] text-gray-500 leading-relaxed px-2 pb-1 shrink-0">
+        <p className="text-[10px] text-gray-500 dark:text-pink-200/80 leading-relaxed px-2 pb-1 shrink-0">
           {HELP_TEXT}
         </p>
       )}
 
-      <div className="grid grid-cols-[1fr_90px] text-[10px] font-bold border-b border-gray-200 shrink-0 gap-1">
-        <div className="bg-[linear-gradient(90deg,#ffe29f,#ffc997)] text-slate-800 text-center py-1 uppercase tracking-wide rounded-md border border-black-300/50 w-[130px] ml-1">
+      <div className="grid grid-cols-[1fr_90px] text-[10px] font-bold border-b border-gray-200 dark:border-transparent shrink-0 gap-1">
+        <div className="bg-[linear-gradient(90deg,#ffe29f,#ffc997)] dark:bg-[linear-gradient(90deg,#fde68a,#f9a8d4)] text-slate-800 dark:text-[#14050c] text-center py-1 uppercase tracking-wide rounded-md border border-black-300/50 dark:border-pink-300/40 w-full">
           Acción
         </div>
-        <div className="bg-[linear-gradient(90deg,#ffe29f,#ffc997)] text-slate-800 text-center py-1 px-2 uppercase border border-black-300/50 rounded-md w-[85px]">
+        <div className="bg-[linear-gradient(90deg,#ffe29f,#ffc997)] dark:bg-[linear-gradient(90deg,#fde68a,#f9a8d4)] text-slate-800 dark:text-[#14050c] text-center py-1 px-2 uppercase border border-black-300/50 dark:border-pink-300/40 rounded-md w-full">
           Matriz
         </div>
       </div>
@@ -680,11 +681,11 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
                   onDoubleClick={() => handleDoubleClick(accion)}
                   onMouseEnter={() => setActiveIndex(idx)}
                 >
-                  <div className="flex-1 border border-gray-200 rounded text-[10px] px-1.5 py-1 h-6 flex items-center text-gray-700 bg-white truncate" title={accion.texto_accion}>
+                  <div className="flex-1 border border-gray-200 dark:border-white/80 rounded text-[10px] px-1.5 py-1 h-6 flex items-center text-gray-700 bg-white truncate" title={accion.texto_accion}>
                     {accion.es_fijo && <span className="text-amber-500 mr-1">★</span>}
                     {accion.texto_accion}
                   </div>
-                  <div className="flex gap-[3px] shrink-0 rounded-md px-1 py-0.5 bg-gray-100 border border-black-100">
+                  <div className="flex gap-[3px] shrink-0 rounded-md px-1 py-0.5 bg-gray-100 dark:bg-white border border-black-100 dark:border-white/80">
                     {(['H', 'P', 'D', 'E'] as const).map(tipo => {
                       const cfg = TIPO_CONFIG[tipo];
                       return (
@@ -727,19 +728,19 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
         </div>
       )}
 
-      <div className="border-t border-gray-100 shrink-0">
+      <div className="border-t border-gray-100 dark:border-white/10 shrink-0">
         <div className="flex items-center justify-center gap-4 py-1.5 text-[10px] font-bold">
           <button
             type="button"
             onClick={() => setShowPorDelegar(v => !v)}
-            className="flex items-center gap-1 text-gray-500 hover:text-amber-600 transition-colors"
+            className="flex items-center gap-1 text-gray-500 dark:text-pink-200/80 hover:text-amber-600 dark:hover:text-amber-300 transition-colors"
           >
             <Users className="w-3 h-3" /> Por delegar ({porDelegar.length}) {showPorDelegar ? '▾' : '▸'}
           </button>
           <button
             type="button"
             onClick={() => setShowPapelera(v => !v)}
-            className="flex items-center gap-1 text-gray-500 hover:text-red-600 transition-colors"
+            className="flex items-center gap-1 text-gray-500 dark:text-pink-200/80 hover:text-red-600 dark:hover:text-rose-300 transition-colors"
           >
             <Trash2 className="w-3 h-3" /> Ideas desechadas ({papelera.length}) {showPapelera ? '▾' : '▸'}
           </button>
@@ -747,10 +748,10 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
         {showPorDelegar && (
           <div className="max-h-28 overflow-y-auto px-2 pb-1.5 space-y-0.5">
             {porDelegar.length === 0 ? (
-              <p className="text-[10px] text-gray-400 text-center py-1">Sin acciones por delegar</p>
+              <p className="text-[10px] text-gray-400 dark:text-pink-200/60 text-center py-1">{i18n.t('sin_acciones_por_delegar')}</p>
             ) : (
               porDelegar.map(a => (
-                <p key={a.id} className="text-[10px] text-gray-600 truncate" title={a.texto_accion}>
+                <p key={a.id} className="text-[10px] text-gray-600 dark:text-pink-100 truncate" title={a.texto_accion}>
                   • {a.texto_accion}
                 </p>
               ))
@@ -760,17 +761,17 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
         {showPapelera && (
           <div className="max-h-28 overflow-y-auto px-2 pb-1.5 space-y-0.5">
             {papelera.length === 0 ? (
-              <p className="text-[10px] text-gray-400 text-center py-1">Sin ideas desechadas</p>
+              <p className="text-[10px] text-gray-400 dark:text-pink-200/60 text-center py-1">{i18n.t('sin_ideas_desechadas_zolq')}</p>
             ) : (
               papelera.map(a => (
                 <div key={a.id} className="flex items-center gap-2">
-                  <p className="flex-1 text-[10px] text-gray-500 truncate" title={a.texto_accion}>
+                  <p className="flex-1 text-[10px] text-gray-500 dark:text-pink-100 truncate" title={a.texto_accion}>
                     • {a.texto_accion}
                   </p>
                   <button
                     type="button"
                     onClick={() => handleRestore(a.id)}
-                    className="text-[10px] font-bold text-sky-600 hover:text-sky-700 shrink-0"
+                    className="text-[10px] font-bold text-sky-600 dark:text-sky-400 hover:text-sky-700 shrink-0"
                   >
                     Recuperar
                   </button>
@@ -834,7 +835,7 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
                 </svg>
               </div>
             </div>
-            <p className="text-sm font-medium text-gray-600">Eliminando acción...</p>
+            <p className="text-sm font-medium text-gray-600">{i18n.t('eliminando_accion')}</p>
           </div>
         </div>
       )}

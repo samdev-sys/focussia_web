@@ -4,6 +4,8 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - browserslist@4.29.5
   - postcss@8.5.32
+  - i18next@26.7.1
+  - react-i18next@17.1.11
 
 # Parches de seguridad para dependencias transitivas (pnpm >= 11).
 # Se mantienen alineados con "overrides" de package.json, que usa npm/Netlify.

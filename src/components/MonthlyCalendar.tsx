@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useState, useEffect, useMemo } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import { monthlyService, MonthlyPlanData, MonthlyGoalData } from '../services/api';
@@ -85,7 +86,7 @@ export default function MonthlyCalendar({ onClose, onNeedAnnualGoal, onReview, u
             {loading && (
               <div className="py-16 text-center">
                 <div className="animate-spin w-8 h-8 border-4 border-white/60 border-t-transparent rounded-full mx-auto mb-4" />
-                <p className="text-white/70 text-sm">Cargando plan mensual...</p>
+                <p className="text-white/70 text-sm">{i18n.t('cargando_plan_mensual')}</p>
               </div>
             )}
 
@@ -121,10 +122,10 @@ export default function MonthlyCalendar({ onClose, onNeedAnnualGoal, onReview, u
                     {onReview && (
                       <button
                         onClick={onReview}
-                        title="Revisar metas por bloques"
+                        title={i18n.t('revisar_metas_por_bloques')}
                         className="h-9 px-3 rounded-xl border border-white/40 text-white text-xs font-bold flex items-center gap-1.5 hover:bg-white/10 transition-colors"
                       >
-                        <Pencil className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Revisar metas</span>
+                        <Pencil className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{i18n.t('revisar_metas')}</span>
                       </button>
                     )}
                     <button

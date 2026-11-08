@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Home, CircleDot, LayoutGrid, Calendar, CalendarDays, Kanban,
@@ -417,7 +418,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
     if (esBanco) {
       return (
         <select value={fExtras[id] || ''} onChange={e => setFExtras(p => ({ ...p, [id]: e.target.value }))} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF]">
-          <option value="">Selecciona un banco</option>
+          <option value="">{i18n.t('selecciona_un_banco')}</option>
           {BANCOS.map(b => <option key={b} value={b}>{b}</option>)}
         </select>
       );
@@ -425,7 +426,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
     if (esMedio) {
       return (
         <select value={fExtras[id] || ''} onChange={e => setFExtras(p => ({ ...p, [id]: e.target.value }))} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF]">
-          <option value="">Selecciona medio de pago</option>
+          <option value="">{i18n.t('selecciona_medio_de_pago')}</option>
           {MEDIOS.map(b => <option key={b} value={b}>{b}</option>)}
         </select>
       );
@@ -434,7 +435,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
       <input
         value={fExtras[id] || ''}
         onChange={e => setFExtras(p => ({ ...p, [id]: e.target.value }))}
-        placeholder="Escribe una observación"
+        placeholder={i18n.t('escribe_una_observacion')}
         className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF] placeholder:text-slate-400"
       />
     );
@@ -446,8 +447,8 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
       <aside className="w-48 bg-[#0A0A26] h-full hidden md:flex flex-col z-20 shrink-0">
         <div className="h-16 flex items-center px-6 pt-4 pb-2">
           <div className="flex items-center gap-3 text-white">
-            <img src="./focussia.png" alt="Focusia" className="w-4 h-4 text-white" />
-            <span className="text-xl font-bold tracking-wide">Focusia</span>
+            <img src="/focussia.png" alt={i18n.t('focusia_jft3')} className="w-4 h-4 text-white" />
+            <span className="text-xl font-bold tracking-wide">{i18n.t('focusia_jft3')}</span>
           </div>
         </div>
         <nav className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
@@ -467,7 +468,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
           ))}
           <button className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors w-full text-left text-white/60 hover:text-white hover:bg-white/5">
             <MoreHorizontal className="w-5 h-5 text-center shrink-0" />
-            <span className="truncate">Más</span>
+            <span className="truncate">{i18n.t('mas_svbh')}</span>
           </button>
         </nav>
         <div className="p-4">
@@ -477,7 +478,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
             </div>
             <div className="ml-3 text-left flex-1">
               <p className="text-sm font-semibold text-white">{userName || 'Usuario'}</p>
-              <p className="text-xs text-white/50">Ver perfil</p>
+              <p className="text-xs text-white/50">{i18n.t('ver_perfil_gqh9')}</p>
             </div>
             <ChevronDown className="w-4 h-4 text-white/50" />
           </button>
@@ -492,14 +493,14 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
             <Wallet className="w-6 h-6 text-white" />
           </span>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold text-slate-900">Cuentas</h1>
-            <p className="text-sm text-slate-500">Administra tus pagos recurrentes y mantén todo bajo control.</p>
+            <h1 className="text-xl font-bold text-slate-900">{i18n.t('cuentas')}</h1>
+            <p className="text-sm text-slate-500">{i18n.t('administra_tus_pagos_recurrentes_y_mante')}</p>
           </div>
           <div className="hidden sm:flex items-center gap-2">
-            <button title="Ayuda de IA" onClick={() => setShowHelp(true)} className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:shadow-md transition-shadow font-black">?</button>
+            <button title={i18n.t('ayuda_de_ia_tcc0')} onClick={() => setShowHelp(true)} className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:shadow-md transition-shadow font-black">?</button>
             <div className="relative">
               <button
-                title="Notificaciones"
+                title={i18n.t('notificaciones_5j5d')}
                 onClick={async () => {
                   if (!showNotifications) {
                     try { setNotifications(await notificationService.getAll()); } catch { /* noop */ }
@@ -519,9 +520,9 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
                   <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-white rounded-xl shadow-2xl border border-slate-100 z-50">
-                    <p className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">Notificaciones</p>
+                    <p className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">{i18n.t('notificaciones_5j5d')}</p>
                     {notifications.length === 0 ? (
-                      <p className="px-4 py-6 text-sm text-slate-400 text-center">Sin notificaciones.</p>
+                      <p className="px-4 py-6 text-sm text-slate-400 text-center">{i18n.t('sin_notificaciones_2hhg')}</p>
                     ) : notifications.map(n => (
                       <div key={n.id} className="px-4 py-3 border-b border-slate-50 last:border-0 hover:bg-slate-50">
                         <p className="text-sm font-semibold text-slate-800">{n.title}</p>
@@ -532,7 +533,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                 </>
               )}
             </div>
-            <button title="Configuración" onClick={() => setShowConfig(true)} className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:shadow-md transition-shadow">
+            <button title={i18n.t('configuracion_5kx5')} onClick={() => setShowConfig(true)} className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:shadow-md transition-shadow">
               <Settings className="w-5 h-5" />
             </button>
           </div>
@@ -557,7 +558,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                   <Download className="w-4 h-4" /> Exportar
                 </button>
                 <div className="relative">
-                  <button onClick={() => setPanel(panel === 'acciones' ? null : 'acciones')} title="Acciones" className="w-10 h-10 flex items-center justify-center text-slate-700 bg-white border border-slate-200 rounded-md hover:shadow-md active:scale-95 transition-all font-black">
+                  <button onClick={() => setPanel(panel === 'acciones' ? null : 'acciones')} title={i18n.t('acciones')} className="w-10 h-10 flex items-center justify-center text-slate-700 bg-white border border-slate-200 rounded-md hover:shadow-md active:scale-95 transition-all font-black">
                     •••
                   </button>
                   {panel === 'acciones' && (
@@ -621,7 +622,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                           </th>
                         ))}
                         <th className="px-2 py-3 w-12 text-right">
-                          <button onClick={() => setEditCols(v => !v)} title="Editar columnas" className={`transition-colors ${editCols ? 'text-[#6236FF]' : 'text-slate-300 hover:text-slate-500'}`}>
+                          <button onClick={() => setEditCols(v => !v)} title={i18n.t('editar_columnas')} className={`transition-colors ${editCols ? 'text-[#6236FF]' : 'text-slate-300 hover:text-slate-500'}`}>
                             <Settings className="w-4 h-4" />
                           </button>
                         </th>
@@ -651,11 +652,11 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                             <td className="px-2 py-3">
                               <span className="inline-flex items-center gap-2.5 font-bold text-slate-800">
                                 {f.cuenta.toLowerCase().includes('netflix') ? (
-                                  <span className="w-7 h-7 rounded-lg bg-[#E50914] text-white font-black flex items-center justify-center text-sm shrink-0">N</span>
+                                  <span className="w-7 h-7 rounded-lg bg-[#E50914] text-white font-black flex items-center justify-center text-sm shrink-0">{i18n.t('n')}</span>
                                 ) : (
                                   <span className="text-lg leading-none shrink-0">{emojiCuenta(f.cuenta)}</span>
                                 )}
-                                {f.cuenta || <span className="text-slate-300 font-medium">Sin nombre</span>}
+                                {f.cuenta || <span className="text-slate-300 font-medium">{i18n.t('sin_nombre')}</span>}
                               </span>
                             </td>
                             <td className="px-2 py-3 font-bold text-slate-700">
@@ -695,10 +696,10 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                               );
                             })}
                             <td className="px-2 py-3 whitespace-nowrap text-right">
-                              <button onClick={() => abrirEditarFila(f)} title="Editar" className="text-slate-400 hover:text-[#6236FF] transition-colors mr-2">
+                              <button onClick={() => abrirEditarFila(f)} title={i18n.t('editar_32cv')} className="text-slate-400 hover:text-[#6236FF] transition-colors mr-2">
                                 <Pencil className="w-4 h-4" />
                               </button>
-                              <button onClick={() => eliminarFila(f)} title="Eliminar" className="text-slate-400 hover:text-red-500 transition-colors">
+                              <button onClick={() => eliminarFila(f)} title={i18n.t('eliminar')} className="text-slate-400 hover:text-red-500 transition-colors">
                                 <Trash2 className="w-4 h-4" />
                               </button>
                             </td>
@@ -710,7 +711,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                 </div>
                 <p className="text-center text-xs text-slate-400 py-3 border-t border-slate-100">
                   Mostrando {filas.length} cuenta{filas.length === 1 ? '' : 's'} registrada{filas.length === 1 ? '' : 's'}
-                  {guardando && <span className="ml-2 animate-pulse">· Guardando…</span>}
+                  {guardando && <span className="ml-2 animate-pulse">{i18n.t('guardando')}</span>}
                 </p>
               </section>
             </div>
@@ -719,7 +720,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
             <div className="w-full xl:w-[320px] shrink-0 flex flex-col gap-5">
               <section className="rounded-md bg-gradient-to-br from-[#2b3df0] via-[#6236FF] to-[#a21caf] text-white p-5 shadow-md">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold">Resumen del mes</h3>
+                  <h3 className="font-bold">{i18n.t('resumen_del_mes')}</h3>
                   <select
                     value={`${anio}-${String(mes).padStart(2, '0')}`}
                     onChange={e => { const [a, m] = e.target.value.split('-').map(Number); irPeriodo(a, m); }}
@@ -732,25 +733,25 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                     ))}
                   </select>
                 </div>
-                <p className="text-xs opacity-80 mt-3">Total estimado</p>
+                <p className="text-xs opacity-80 mt-3">{i18n.t('total_estimado')}</p>
                 <p className="text-3xl font-bold">{fmtMonto(total)}</p>
                 <div className="grid grid-cols-2 gap-3 mt-3">
                   <div className="rounded-md bg-black/20 p-3 text-center">
-                    <p className="text-xs opacity-80">Pagadas</p>
+                    <p className="text-xs opacity-80">{i18n.t('pagadas')}</p>
                     <p className="text-xl font-bold">{pagadas}</p>
                   </div>
                   <div className="rounded-md bg-black/20 p-3 text-center">
-                    <p className="text-xs opacity-80">Pendientes</p>
+                    <p className="text-xs opacity-80">{i18n.t('pendientes_9ok5')}</p>
                     <p className="text-xl font-bold">{pendientes}</p>
                   </div>
                 </div>
               </section>
 
               <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-                <h3 className="font-bold text-slate-900 text-[15px]">Próximos vencimientos</h3>
+                <h3 className="font-bold text-slate-900 text-[15px]">{i18n.t('proximos_vencimientos')}</h3>
                 <div className="flex flex-col gap-2 mt-3">
                   {vencimientos.length === 0 ? (
-                    <p className="text-[13px] text-slate-400">Sin vencimientos pendientes.</p>
+                    <p className="text-[13px] text-slate-400">{i18n.t('sin_vencimientos_pendientes')}</p>
                   ) : (
                     vencimientos.map(f => (
                       <div key={f.id} className="rounded-md bg-[#f4f6fb] p-3 flex items-center gap-3">
@@ -777,8 +778,8 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                   <CloudCog className="w-5 h-5 text-emerald-600" />
                 </span>
                 <div>
-                  <p className="text-sm font-extrabold text-slate-900">Tus cambios se guardan automáticamente.</p>
-                  <p className="text-[13px] text-slate-500 leading-snug">Puedes editar siempre que lo necesites.</p>
+                  <p className="text-sm font-extrabold text-slate-900">{i18n.t('tus_cambios_se_guardan_automaticamente')}</p>
+                  <p className="text-[13px] text-slate-500 leading-snug">{i18n.t('puedes_editar_siempre_que_lo_necesites')}</p>
                 </div>
               </section>
             </div>
@@ -797,16 +798,16 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <label className="block text-xs font-bold text-slate-500">Cuenta
-                <input value={fCuenta} onChange={e => setFCuenta(e.target.value)} placeholder="Nombre de la cuenta" className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF] font-normal" />
+                <input value={fCuenta} onChange={e => setFCuenta(e.target.value)} placeholder={i18n.t('nombre_de_la_cuenta')} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF] font-normal" />
               </label>
               <label className="block text-xs font-bold text-slate-500">Día de vencimiento
                 <select value={fDia} onChange={e => setFDia(e.target.value)} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF] font-normal bg-white">
-                  <option value="">Selecciona un día</option>
+                  <option value="">{i18n.t('selecciona_un_dia')}</option>
                   {Array.from({ length: 31 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{String(d).padStart(2, '0')}</option>)}
                 </select>
               </label>
               <label className="block text-xs font-bold text-slate-500">Monto
-                <input value={fMonto} onChange={e => setFMonto(e.target.value)} placeholder="Ej: $42.000 o variable" className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF] font-normal placeholder:text-slate-400" />
+                <input value={fMonto} onChange={e => setFMonto(e.target.value)} placeholder={i18n.t('ej_42_000_o_variable')} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF] font-normal placeholder:text-slate-400" />
               </label>
               {columnas.map(c => (
                 <label key={c.id} className="block text-xs font-bold text-slate-500">{c.nombre}
@@ -815,7 +816,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
               ))}
             </div>
             <div className="flex gap-2 mt-4">
-              <button onClick={() => setPanel(null)} className="flex-1 border border-slate-200 rounded-xl py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">Cancelar</button>
+              <button onClick={() => setPanel(null)} className="flex-1 border border-slate-200 rounded-xl py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">{i18n.t('cancelar_7umw')}</button>
               <button onClick={guardarFila} disabled={guardando} className="flex-1 text-sm font-bold text-white bg-gradient-to-r from-[#6236FF] to-[#8A2BE2] rounded-xl py-2.5 hover:brightness-110 active:scale-95 disabled:opacity-50">
                 Guardar
               </button>
@@ -830,7 +831,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
           <div className="absolute inset-0 bg-black/40" />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-extrabold text-slate-900">Agregar nueva columna</h3>
+              <h3 className="font-extrabold text-slate-900">{i18n.t('agregar_nueva_columna')}</h3>
               <button onClick={() => setPanel(null)} className="text-slate-400 hover:text-slate-700"><X className="w-5 h-5" /></button>
             </div>
             <label className="block text-xs font-bold text-slate-500">Nombre de la columna
@@ -839,18 +840,18 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                 value={nuevaCol}
                 onChange={e => setNuevaCol(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') agregarColumna(); }}
-                placeholder="Ej: Banco, Medio de pago, Comprobante"
+                placeholder={i18n.t('ej_banco_medio_de_pago_comprobante')}
                 className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF] font-normal placeholder:text-slate-400"
               />
             </label>
             <label className="block text-xs font-bold text-slate-500 mt-3">Tipo de dato
               <select disabled className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50 text-slate-500">
-                <option>Texto</option>
+                <option>{i18n.t('texto')}</option>
               </select>
             </label>
             <div className="flex gap-2 mt-4">
-              <button onClick={() => setPanel(null)} className="flex-1 border border-slate-200 rounded-xl py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">Cancelar</button>
-              <button onClick={agregarColumna} className="flex-1 text-sm font-bold text-white bg-gradient-to-r from-[#6236FF] to-[#8A2BE2] rounded-xl py-2.5 hover:brightness-110 active:scale-95">Guardar</button>
+              <button onClick={() => setPanel(null)} className="flex-1 border border-slate-200 rounded-xl py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">{i18n.t('cancelar_7umw')}</button>
+              <button onClick={agregarColumna} className="flex-1 text-sm font-bold text-white bg-gradient-to-r from-[#6236FF] to-[#8A2BE2] rounded-xl py-2.5 hover:brightness-110 active:scale-95">{i18n.t('guardar_9nec')}</button>
             </div>
           </div>
         </div>
@@ -869,10 +870,10 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
               <Trash2 className="w-6 h-6 text-red-500" />
             </span>
             <h3 className="font-extrabold text-slate-900 mt-3">¿Eliminar columna “{colAEliminar.nombre}”?</h3>
-            <p className="text-[13px] text-slate-500 mt-1">Se eliminará esta columna y toda la información asociada.</p>
+            <p className="text-[13px] text-slate-500 mt-1">{i18n.t('se_eliminara_esta_columna_y_toda_la_info')}</p>
             <div className="flex gap-2 mt-4">
-              <button onClick={() => setPanel(null)} className="flex-1 border border-slate-200 rounded-xl py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">Cancelar</button>
-              <button onClick={eliminarColumna} className="flex-1 text-sm font-bold text-white bg-red-500 rounded-xl py-2.5 hover:bg-red-600 active:scale-95">Eliminar</button>
+              <button onClick={() => setPanel(null)} className="flex-1 border border-slate-200 rounded-xl py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">{i18n.t('cancelar_7umw')}</button>
+              <button onClick={eliminarColumna} className="flex-1 text-sm font-bold text-white bg-red-500 rounded-xl py-2.5 hover:bg-red-600 active:scale-95">{i18n.t('eliminar')}</button>
             </div>
           </div>
         </div>
@@ -891,10 +892,10 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
               <Trash2 className="w-6 h-6 text-red-500" />
             </span>
             <h3 className="font-extrabold text-slate-900 mt-3">¿Eliminar las {filas.length} cuentas de {MESES[mes - 1]} {anio}?</h3>
-            <p className="text-[13px] text-slate-500 mt-1">Esta acción no se puede deshacer. Otros meses no se verán afectados.</p>
+            <p className="text-[13px] text-slate-500 mt-1">{i18n.t('esta_accion_no_se_puede_deshacer_otros_m')}</p>
             <div className="flex gap-2 mt-4">
-              <button onClick={() => setPanel(null)} className="flex-1 border border-slate-200 rounded-xl py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">Cancelar</button>
-              <button onClick={eliminarCuentasMes} className="flex-1 text-sm font-bold text-white bg-red-500 rounded-xl py-2.5 hover:bg-red-600 active:scale-95">Eliminar</button>
+              <button onClick={() => setPanel(null)} className="flex-1 border border-slate-200 rounded-xl py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">{i18n.t('cancelar_7umw')}</button>
+              <button onClick={eliminarCuentasMes} className="flex-1 text-sm font-bold text-white bg-red-500 rounded-xl py-2.5 hover:bg-red-600 active:scale-95">{i18n.t('eliminar')}</button>
             </div>
           </div>
         </div>
@@ -906,11 +907,11 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
           <div className="absolute inset-0 bg-black/40" />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5 max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-extrabold text-slate-900">Historial mensual</h3>
+              <h3 className="font-extrabold text-slate-900">{i18n.t('historial_mensual')}</h3>
               <button onClick={() => setPanel(null)} className="text-slate-400 hover:text-slate-700"><X className="w-5 h-5" /></button>
             </div>
             {historial.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-6">Aún no hay meses registrados.</p>
+              <p className="text-sm text-slate-400 text-center py-6">{i18n.t('aun_no_hay_meses_registrados')}</p>
             ) : (
               historial.map(h => (
                 <button

@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Send, Bot, Loader2, Sparkles } from 'lucide-react';
@@ -84,7 +85,7 @@ export default function HelpChat({ open, onClose, pasoLabel, titulo, bienvenida,
             <p className="text-[11px] text-white/70 leading-tight truncate">{pasoLabel} · {titulo}</p>
           </div>
         </div>
-        <button onClick={onClose} className="p-1.5 rounded-full hover:bg-white/20 transition-colors shrink-0" title="Cerrar chat">
+        <button onClick={onClose} className="p-1.5 rounded-full hover:bg-white/20 transition-colors shrink-0" title={i18n.t('cerrar_chat')}>
           <X className="w-4 h-4 text-white" />
         </button>
       </div>
@@ -129,7 +130,7 @@ export default function HelpChat({ open, onClose, pasoLabel, titulo, bienvenida,
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Pregunta sobre estas opciones..."
+            placeholder={i18n.t('pregunta_sobre_estas_opciones')}
             className="flex-1 bg-transparent outline-none text-[12.5px] text-white placeholder:text-white/30"
             disabled={loading}
           />
@@ -137,7 +138,7 @@ export default function HelpChat({ open, onClose, pasoLabel, titulo, bienvenida,
             onClick={sendMessage}
             disabled={!input.trim() || loading}
             className="p-1.5 rounded-lg bg-gradient-to-r from-[#1d2fdc] to-[#7c3aed] text-white hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-            title="Enviar"
+            title={i18n.t('enviar_p1dl')}
           >
             <Send className="w-3.5 h-3.5" />
           </button>

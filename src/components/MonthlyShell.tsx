@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React from 'react';
 import { X, ChevronDown, List, Calendar } from 'lucide-react';
 import { NAV_ICONS } from './navIcons';
@@ -55,7 +56,7 @@ export default function MonthlyShell({ username, avatarUrl, onNavigate, onClose,
         onClick={e => e.stopPropagation()}
       >
         <div className="bg-white rounded-2xl px-3 py-2.5 mb-4 flex items-center">
-          <img src="/focusia-logo.png" alt="Focusia" className="h-9 object-contain" />
+          <img src="/focusia-logo.png" alt={i18n.t('focusia_ak3l')} className="h-9 object-contain" />
         </div>
         <nav className="flex-1 overflow-y-auto space-y-0.5 pr-0.5">
           {NAV_ITEMS.map(({ key, label, Icon }) => {
@@ -80,7 +81,7 @@ export default function MonthlyShell({ username, avatarUrl, onNavigate, onClose,
           <UserAvatar src={avatarUrl} name={displayName} />
           <div className="flex-1 min-w-0">
             <p className="text-white text-sm font-bold truncate">{displayName}</p>
-            <p className="text-white/50 text-[11px]">Ver perfil</p>
+            <p className="text-white/50 text-[11px]">{i18n.t('ver_perfil_hpal')}</p>
           </div>
           <ChevronDown className="w-4 h-4 text-white/60" />
         </div>
@@ -104,7 +105,7 @@ export default function MonthlyShell({ username, avatarUrl, onNavigate, onClose,
               <Calendar className="w-6 h-6 text-[#5b5bd6]" />
             </span>
             <h2 className="text-2xl sm:text-4xl font-black text-[#14142b]">
-              Metas <span className="bg-gradient-to-r from-[#4f46e5] to-[#c026d3] bg-clip-text text-transparent">Mensuales</span>
+              Metas <span className="bg-gradient-to-r from-[#4f46e5] to-[#c026d3] bg-clip-text text-transparent">{i18n.t('mensuales')}</span>
             </h2>
             <span className="ml-auto flex items-center gap-2">
               <span className="w-10 h-10 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-500 font-bold">?</span>

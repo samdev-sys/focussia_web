@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React from 'react';
 import { AlertTriangle, TrendingUp, AlertCircle, Check, Eye, ChevronRight } from 'lucide-react';
 import { PropuestaIData } from '../services/api';
@@ -45,13 +46,13 @@ export const PropuestaCard: React.FC<PropuestaCardProps> = ({ propuesta, onDecid
               {config.label}
             </span>
             {!propuesta.leida && (
-              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">Nueva</span>
+              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">{i18n.t('nueva_fpm3')}</span>
             )}
           </div>
           <p className="text-sm text-gray-700 mt-2 font-medium">{propuesta.situacion_clara}</p>
           <p className="text-xs text-gray-500 mt-1">{propuesta.explicacion_impacto}</p>
           <div className="mt-3 p-3 bg-white/80 rounded-lg border border-gray-200">
-            <p className="text-xs font-bold text-gray-600 uppercase mb-1">Propuesta de Ajuste</p>
+            <p className="text-xs font-bold text-gray-600 uppercase mb-1">{i18n.t('propuesta_de_ajuste')}</p>
             <p className="text-sm text-gray-700">{propuesta.propuesta_ajuste}</p>
           </div>
           {!propuesta.respondida && (

@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useRef, useEffect } from 'react';
 
 interface Particle {

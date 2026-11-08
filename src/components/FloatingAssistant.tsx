@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Mic, MicOff, Volume2 } from 'lucide-react';
 import { agentService, ttsService } from '../services/api';
@@ -368,7 +369,7 @@ export default function FloatingAssistant({ username, avatarUrl, avatarIndex }: 
       <button
         type="button"
         onClick={abrirVoz}
-        title="Hablar con tu asistente"
+        title={i18n.t('hablar_con_tu_asistente')}
         className="fixed bottom-5 right-5 z-[60] w-14 h-14 rounded-full shadow-2xl overflow-hidden ring-4 ring-white/70 hover:scale-105 active:scale-95 transition-transform bg-gradient-to-br from-[#2b44ff] to-[#a21caf]"
       >
         {avatarUrl ? (
@@ -414,7 +415,7 @@ export default function FloatingAssistant({ username, avatarUrl, avatarIndex }: 
         <button
           type="button"
           onClick={detener}
-          title="Terminar"
+          title={i18n.t('terminar')}
           className="p-2 rounded-full hover:bg-white/15 transition-colors"
         >
           {estado === 'escuchando' ? <MicOff className="w-4 h-4" /> : <X className="w-4 h-4" />}
@@ -439,13 +440,13 @@ export default function FloatingAssistant({ username, avatarUrl, avatarIndex }: 
         )}
         {estado === 'escuchando' && transcritoEnVivo && (
           <div className="bg-[#eef3ff] rounded-2xl rounded-br-md px-3.5 py-2.5">
-            <p className="text-[10px] font-bold text-[#5b6b8c] uppercase tracking-wide mb-0.5">Escucho</p>
+            <p className="text-[10px] font-bold text-[#5b6b8c] uppercase tracking-wide mb-0.5">{i18n.t('escucho')}</p>
             <p className="text-sm text-[#1b2350]">{transcritoEnVivo}</p>
           </div>
         )}
         {ultimoTexto && (
           <div className="bg-[#eef3ff] rounded-2xl rounded-br-md px-3.5 py-2.5">
-            <p className="text-[10px] font-bold text-[#5b6b8c] uppercase tracking-wide mb-0.5">Dijiste</p>
+            <p className="text-[10px] font-bold text-[#5b6b8c] uppercase tracking-wide mb-0.5">{i18n.t('dijiste')}</p>
             <p className="text-sm text-[#1b2350]">{ultimoTexto}</p>
           </div>
         )}
@@ -458,7 +459,7 @@ export default function FloatingAssistant({ username, avatarUrl, avatarIndex }: 
         )}
         {respuesta && (
           <div className="bg-[#f6f7fb] border border-gray-100 rounded-2xl rounded-bl-md px-3.5 py-2.5">
-            <p className="text-[10px] font-bold text-[#5b6b8c] uppercase tracking-wide mb-0.5">Focusia dice</p>
+            <p className="text-[10px] font-bold text-[#5b6b8c] uppercase tracking-wide mb-0.5">{i18n.t('focusia_dice')}</p>
             <p className="text-sm text-gray-800 leading-relaxed">{respuesta}</p>
           </div>
         )}
@@ -490,7 +491,7 @@ export default function FloatingAssistant({ username, avatarUrl, avatarIndex }: 
             value={textoManual}
             onChange={e => setTextoManual(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') enviarManual(); }}
-            placeholder="O escribe aquí si el micrófono falla..."
+            placeholder={i18n.t('o_escribe_aqui_si_el_microfono_falla')}
             className="flex-1 min-w-0 px-3.5 py-2.5 rounded-full border border-gray-200 text-sm outline-none focus:border-purple-400"
           />
           <button

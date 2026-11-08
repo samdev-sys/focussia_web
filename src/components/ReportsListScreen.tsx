@@ -1,9 +1,12 @@
+import i18n from '../i18n';
 import React, { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   ChevronRight, History, AlertTriangle, Clock, Lock, Info, Hourglass,
 } from 'lucide-react';
 import { reportService, FocusiaReportData, ReporteResumenItem } from '../services/api';
 import { ReportNotificationsScreen } from './ReportNotificationBanner';
+import { ReportDetailScreen } from './ReportDetailScreen';
 import {
   DEMO_HISTORIAL_WEEKLY,
   DEMO_REPORT_ANNUAL,
@@ -58,7 +61,11 @@ function capFirst(s: string): string {
 
 function fmtFechaPrevista(iso: string, level: Level): string {
   try {
-    const d = new Date(iso + 'T00:00:00');
+    let d = new Date(iso);
+    if (Number.isNaN(d.getTime())) {
+      d = new Date(iso + 'T00:00:00');
+    }
+    if (Number.isNaN(d.getTime())) return `${iso} · 21:00`;
     if (level === 'weekly') {
       const diaSemana = capFirst(d.toLocaleDateString('es-AR', { weekday: 'long' }));
       const mes = d.toLocaleDateString('es-AR', { month: 'long' });
@@ -180,19 +187,32 @@ export function ReportsListScreen({
   const [historial, setHistorial] = useState<Level | null>(null);
   const [historialItems, setHistorialItems] = useState<FocusiaReportData[]>([]);
   const [historialLoading, setHistorialLoading] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<FocusiaReportData | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const st = (location.state as { report?: FocusiaReportData } | null);
+    if (st?.report) setSelectedReport(st.report);
+  }, [location.state]);
 
   useEffect(() => {
     reportService
-      .getResumen()
-      .then((data) => {
-        if (Array.isArray(data) && data.some((i) => i.report !== null)) {
-          setResumenReal(data);
-        } else {
-          setResumenReal(null);
-        }
-      })
-      .catch(() => setResumenReal(null))
-      .finally(() => setLoading(false));
+      .reconciliar()
+      .catch(() => {})
+      .finally(() => {
+        reportService
+          .getResumen()
+          .then((data) => {
+            if (Array.isArray(data) && data.some((i) => i.report !== null)) {
+              setResumenReal(data);
+            } else {
+              setResumenReal(null);
+            }
+          })
+          .catch(() => setResumenReal(null))
+          .finally(() => setLoading(false));
+      });
   }, []);
 
   const abrirHistorial = async (level: Level) => {
@@ -215,7 +235,7 @@ export function ReportsListScreen({
   // Barra de acceso rápido a las 12 pantallas digitalizadas
   const SelectorPantallas = () => (
     <div className="pt-3 pb-1 flex flex-wrap items-center gap-1.5 border-b border-slate-100 text-xs">
-      <span className="font-bold text-slate-400 mr-1">Vistas:</span>
+      <span className="font-bold text-slate-400 mr-1">{i18n.t('vistas')}</span>
       {[
         {
           label: '1. Reportes',
@@ -225,17 +245,17 @@ export function ReportsListScreen({
         {
           label: '2. Semanal',
           active: false,
-          onClick: () => onSelect(DEMO_REPORT_WEEKLY_CLOSED),
+          onClick: () => setSelectedReport(DEMO_REPORT_WEEKLY_CLOSED),
         },
         {
           label: '3. Mensual',
           active: false,
-          onClick: () => onSelect(DEMO_REPORT_MONTHLY),
+          onClick: () => setSelectedReport(DEMO_REPORT_MONTHLY),
         },
         {
           label: '4. Anual',
           active: false,
-          onClick: () => onSelect(DEMO_REPORT_ANNUAL),
+          onClick: () => setSelectedReport(DEMO_REPORT_ANNUAL),
         },
         {
           label: '5. Historial',
@@ -245,12 +265,12 @@ export function ReportsListScreen({
         {
           label: '6. Sin acciones (0/0)',
           active: false,
-          onClick: () => onSelect(DEMO_REPORT_WEEKLY_EMPTY),
+          onClick: () => setSelectedReport(DEMO_REPORT_WEEKLY_EMPTY),
         },
         {
           label: '7. En actualización',
           active: false,
-          onClick: () => onSelect(DEMO_REPORT_WEEKLY_LIVE),
+          onClick: () => setSelectedReport(DEMO_REPORT_WEEKLY_LIVE),
         },
         {
           label: '8. Sin reportes',
@@ -260,12 +280,12 @@ export function ReportsListScreen({
         {
           label: '9. Análisis pendiente',
           active: false,
-          onClick: () => onSelect(DEMO_REPORT_WEEKLY_PENDING_ANALYSIS),
+          onClick: () => setSelectedReport(DEMO_REPORT_WEEKLY_PENDING_ANALYSIS),
         },
         {
           label: '10. Error',
           active: false,
-          onClick: () => onSelect(DEMO_REPORT_WEEKLY_FAILED),
+          onClick: () => setSelectedReport(DEMO_REPORT_WEEKLY_FAILED),
         },
         {
           label: '11. Notificaciones',
@@ -305,7 +325,7 @@ export function ReportsListScreen({
         </div>
         <ReportNotificationsScreen
           avatarIndex={avatarIndex}
-          onOpenReport={(r) => onSelect(r)}
+          onOpenReport={(r) => setSelectedReport(r)}
           onBack={() => setModoLista('disponibles')}
         />
       </div>
@@ -326,7 +346,7 @@ export function ReportsListScreen({
             avatarIndex={avatarIndex}
             backLabel="Volver a Reportes"
             onBack={() => setHistorial(null)}
-            title="Reportes anteriores"
+            title={i18n.t('reportes_anteriores')}
             subtitle={`Tipo ${meta.label.toLowerCase()}`}
             caption="Del más reciente al más antiguo · Cada período cierra con sus datos fijados"
           />
@@ -339,13 +359,13 @@ export function ReportsListScreen({
             ) : historialItems.length === 0 ? (
               <div className="text-center py-16">
                 <History className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                <p className="text-slate-400">Todavía no hay reportes anteriores de este tipo.</p>
+                <p className="text-slate-400">{i18n.t('todavia_no_hay_reportes_anteriores_de_es')}</p>
               </div>
             ) : (
               historialItems.map((r) => (
                 <button
                   key={r.id}
-                  onClick={() => onSelect(r)}
+                  onClick={() => setSelectedReport(r)}
                   className="w-full border border-[#e2e8f0] rounded-xl p-4 sm:p-5 hover:shadow-md transition-all text-left flex items-center gap-4 bg-white"
                 >
                   <div className="w-12 h-12 rounded-xl bg-[#E8F1FF] flex items-center justify-center shrink-0">
@@ -383,7 +403,7 @@ export function ReportsListScreen({
                         <div className="text-2xl font-black text-slate-900 leading-none">
                           {Math.round(r.completion_percentage)}%
                         </div>
-                        <div className="text-xs text-slate-400 mt-0.5">cumplimiento</div>
+                        <div className="text-xs text-slate-400 mt-0.5">{i18n.t('cumplimiento')}</div>
                       </>
                     )}
                   </div>
@@ -410,6 +430,22 @@ export function ReportsListScreen({
   const ningunReporte = resumen.every((i) => !i.report);
   const haySinConsultar = resumen.some((i) => i.report?.never_opened && i.report.closed_at);
 
+  if (selectedReport) {
+    return (
+      <ReportDetailScreen
+        report={selectedReport}
+        avatarIndex={avatarIndex}
+        onBack={() => setSelectedReport(null)}
+        onNavigate={(section: string) => {
+          if (section === 'semanal') navigate('/app/kanban?vista=semanal');
+          else if (section === 'mensual') navigate('/app/mensual');
+          else if (section === 'anual') navigate('/app/anual');
+          else navigate('/app');
+        }}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-5xl mx-auto px-5 sm:px-8 pb-10">
@@ -420,8 +456,8 @@ export function ReportsListScreen({
           avatarIndex={avatarIndex}
           backLabel="Volver al inicio"
           onBack={onBack}
-          title="Reportes"
-          subtitle="Elige el periodo que quieres revisar"
+          title={i18n.t('reportes')}
+          subtitle={i18n.t('elige_el_periodo_que_quieres_revisar')}
         />
 
         {loading ? (
@@ -457,7 +493,7 @@ export function ReportsListScreen({
                         {enModoFocus && !report.closed_at && (
                           <div className="flex items-start gap-1.5 text-xs font-semibold text-amber-600 mt-2">
                             <Hourglass className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                            <span>Aviso en espera · se enviará al finalizar Focus</span>
+                            <span>{i18n.t('aviso_en_espera_se_enviara_al_finalizar_')}</span>
                           </div>
                         )}
 
@@ -467,7 +503,7 @@ export function ReportsListScreen({
                             style={{ color: BLUE }}
                           >
                             <Clock className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                            <span>No consultado en su intervalo · aviso único ya entregado</span>
+                            <span>{i18n.t('no_consultado_en_su_intervalo_aviso_unic')}</span>
                           </div>
                         )}
 
@@ -479,7 +515,7 @@ export function ReportsListScreen({
 
                         <div className="mt-auto pt-5 flex flex-col items-center">
                           <button
-                            onClick={() => onSelect(report)}
+                            onClick={() => setSelectedReport(report)}
                             className="w-full text-white rounded-lg py-3 text-base font-semibold hover:brightness-110 active:scale-95 transition-all shadow-xs"
                             style={{ background: `linear-gradient(135deg, #8B5CF6, ${PURPLE})` }}
                           >

@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   X, Send, Check, Edit3, ChevronLeft, Trophy, Target, Loader2,
@@ -242,7 +243,7 @@ export function GranMetaAnualModal({
     <div className="relative rounded-2xl overflow-hidden min-h-[300px] lg:min-h-[480px] bg-gradient-to-b from-[#2b3fd4] via-[#4b3fd6] to-[#7a5af8]">
       <img
         src={avatarSrc}
-        alt="Avatar"
+        alt={i18n.t('avatar_hbx8')}
         className="absolute inset-0 w-full h-full object-cover object-top"
         onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('Sophya.jpeg')) t.src = '/avatars/Sophya.jpeg'; }}
       />
@@ -329,7 +330,7 @@ export function GranMetaAnualModal({
                 value={p1}
                 onChange={setP1}
                 onSubmit={() => handleAnswer('p1', p1)}
-                placeholder="Escribe aquí tu respuesta..."
+                placeholder={i18n.t('escribe_aqui_tu_respuesta')}
               />
             </div>
           </div>
@@ -349,7 +350,7 @@ export function GranMetaAnualModal({
               value={p2}
               onChange={setP2}
               onSubmit={() => handleAnswer('p2', p2)}
-              placeholder="Escribe aquí tu respuesta..."
+              placeholder={i18n.t('escribe_aqui_tu_respuesta')}
             />
           </div>
         </div>
@@ -368,7 +369,7 @@ export function GranMetaAnualModal({
               value={p3}
               onChange={setP3}
               onSubmit={() => handleAnswer('p3', p3)}
-              placeholder="Escribe aquí tu respuesta..."
+              placeholder={i18n.t('escribe_aqui_tu_respuesta')}
             />
           </div>
         </div>
@@ -387,12 +388,12 @@ export function GranMetaAnualModal({
               </h2>
               <p className="text-xl sm:text-3xl text-[#1a1446] leading-snug mt-6">
                 Ahora transformaré tus respuestas<br />
-                en una <span className="font-black bg-gradient-to-r from-[#2b5cff] to-[#7c3aed] bg-clip-text text-transparent">Gran Meta Anual</span><br />
-                usando el modelo <span className="font-black bg-gradient-to-r from-[#2b5cff] to-[#7c3aed] bg-clip-text text-transparent">SMART.</span>
+                en una <span className="font-black bg-gradient-to-r from-[#2b5cff] to-[#7c3aed] bg-clip-text text-transparent">{i18n.t('gran_meta_anual_jij0')}</span><br />
+                usando el modelo <span className="font-black bg-gradient-to-r from-[#2b5cff] to-[#7c3aed] bg-clip-text text-transparent">{i18n.t('smart')}</span>
               </p>
               <div className="flex items-center justify-center gap-3 mt-8">
                 <div className="w-8 h-8 border-4 border-[#7c3aed] border-t-transparent rounded-full animate-spin" />
-                <p className="text-base text-[#2b5cff] font-medium">Construyendo tu Gran Meta Anual...</p>
+                <p className="text-base text-[#2b5cff] font-medium">{i18n.t('construyendo_tu_gran_meta_anual')}</p>
               </div>
             </div>
           </div>
@@ -432,7 +433,7 @@ export function GranMetaAnualModal({
             <div className="relative rounded-2xl overflow-hidden min-h-[300px] lg:min-h-[460px] bg-[#101331]">
               <img
                 src={avatarSrc}
-                alt="Avatar"
+                alt={i18n.t('avatar_hbx8')}
                 className="absolute inset-0 w-full h-full object-cover object-top"
                 onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('Sophya.jpeg')) t.src = '/avatars/Sophya.jpeg'; }}
               />
@@ -487,7 +488,7 @@ export function GranMetaAnualModal({
               id="gma-edit-input"
               value={editComment}
               onChange={(e) => setEditComment(e.target.value)}
-              placeholder="Escribe aquí tu respuesta..."
+              placeholder={i18n.t('escribe_aqui_tu_respuesta')}
               rows={7}
               className="w-full px-4 py-3 rounded-xl border border-[#c4b5fd] bg-white text-[15px] outline-none focus:ring-2 focus:ring-[#7c3aed]/30 focus:border-[#7c3aed] placeholder:text-[#a5b4fc] resize-y"
             />

@@ -22,11 +22,19 @@ logger = logging.getLogger(__name__)
 def mes_alcanzado(user):
     """Mes más alto con capacitación completada. 0 = aún no completa el mes 1."""
     from ..models import UserTrainingProgress
-    numeros = (
-        UserTrainingProgress.objects
-        .filter(user=user, completado=True)
-        .values_list('training__month__month_number', flat=True)
-    )
+    rel = getattr(user, 'training_progress', None)
+    if rel is not None:
+        try:
+            qs = rel.all()
+        except Exception:
+            qs = UserTrainingProgress.objects.filter(user=user)
+    else:
+        qs = UserTrainingProgress.objects.filter(user=user)
+    numeros = [
+        tp.training.month.month_number
+        for tp in qs
+        if tp.completado and tp.training_id and getattr(tp.training, 'month_id', None)
+    ]
     return max(numeros, default=0)
 
 
@@ -44,17 +52,16 @@ def resumen_usuario(user):
 
     nivel = mes_alcanzado(user)
     total = MonthlyTraining.objects.count()
-    hechas = user.training_progress.filter(completado=True).count()
+    progress = list(getattr(user, 'training_progress', []).all() if hasattr(user, 'training_progress') else [])
+    hechas = sum(1 for tp in progress if tp.completado)
 
     membresias = list(user.membresias.order_by('-fecha_inicio')[:5])
     actual = next((m for m in membresias if m.estado == 'vigente'), None)
     if actual is None and membresias:
         actual = membresias[0]
 
-    ultima = (
-        user.training_progress.filter(completado=True)
-        .order_by('-completado_en').first()
-    )
+    completadas = [tp for tp in progress if tp.completado and tp.completado_en]
+    ultima = max(completadas, key=lambda tp: tp.completado_en, default=None)
 
     return {
         'id': user.id,

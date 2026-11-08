@@ -1,3 +1,4 @@
+import i18n from '../../i18n';
 import React, { useEffect, useRef, useState } from 'react';
 import { X, Loader2, AlertTriangle, CheckCircle2, Image as ImageIcon, Upload, Link2 } from 'lucide-react';
 
@@ -212,7 +213,7 @@ export function MediaField({
             <Input
               value={url}
               onChange={(e) => onUrl(e.target.value)}
-              placeholder="https://…"
+              placeholder={i18n.t('https')}
               className="pl-8"
             />
           </div>
@@ -313,7 +314,7 @@ export function Modal({
           <button
             onClick={onCerrar}
             className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 shrink-0"
-            aria-label="Cerrar"
+            aria-label={i18n.t('cerrar')}
           >
             <X className="w-5 h-5" />
           </button>

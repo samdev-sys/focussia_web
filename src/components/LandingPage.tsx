@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React from 'react';
 import {
   User, ArrowRight, CirclePlay as PlayCircle, Zap, Flag, Server, Rocket,
@@ -32,9 +33,9 @@ export default function LandingPage({ onEntrar, onCrearCuenta }: {
         <div className="h-16 w-full max-w-[1240px] mx-auto px-4 md:px-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <a href="#" onClick={e => e.preventDefault()} className="flex items-center gap-2">
-              <span className="w-7 h-7 bg-[#0024e0] flex items-center justify-center rounded text-white text-xs font-black">F</span>
-              <span className="text-xl font-bold tracking-tight" style={DISPLAY}>FOCUSSIA</span>
-              <span className="hidden lg:inline-block text-[9px] font-black uppercase tracking-widest text-[#444657] bg-[#e7e8ed] px-1 py-0.5 rounded">ENGINE 2.0</span>
+              <span className="w-7 h-7 bg-[#0024e0] flex items-center justify-center rounded text-white text-xs font-black">{i18n.t('f_4ivv')}</span>
+              <span className="text-xl font-bold tracking-tight" style={DISPLAY}>{i18n.t('focussia')}</span>
+              <span className="hidden lg:inline-block text-[9px] font-black uppercase tracking-widest text-[#444657] bg-[#e7e8ed] px-1 py-0.5 rounded">{i18n.t('engine_2_0')}</span>
             </a>
             <nav className="hidden xl:flex items-center gap-1 text-sm">
               {[
@@ -73,13 +74,13 @@ export default function LandingPage({ onEntrar, onCrearCuenta }: {
             <div className="flex flex-col gap-4 max-w-4xl pt-2 md:pt-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#e7e8ed] w-fit shadow-sm">
                 <span className="w-2 h-2 rounded-full bg-[#0024e0] animate-pulse" />
-                <span className="text-[12px] font-black uppercase tracking-wider text-[#0024e0]" style={GEIST}>Sistema de decisión ejecutiva 3.0</span>
+                <span className="text-[12px] font-black uppercase tracking-wider text-[#0024e0]" style={GEIST}>{i18n.t('sistema_de_decision_ejecutiva_3_0')}</span>
                 <span className="text-gray-400 text-xs">/</span>
-                <span className="text-[9px] font-black uppercase text-[#444657] tracking-widest" style={GEIST}>Arquitectura suiza</span>
+                <span className="text-[9px] font-black uppercase text-[#444657] tracking-widest" style={GEIST}>{i18n.t('arquitectura_suiza')}</span>
               </div>
               <h1 className="text-[32px] leading-[40px] md:text-[54px] md:leading-[60px] tracking-tight font-bold" style={DISPLAY}>
                 Menos ruido reactivo.<br className="hidden sm:inline" />
-                <span className="text-[#0024e0] tracking-tight">Decisiones implacables.</span>
+                <span className="text-[#0024e0] tracking-tight">{i18n.t('decisiones_implacables')}</span>
               </h1>
               <p className="text-[#444657] max-w-2xl text-base md:text-lg leading-relaxed">
                 Focussia traslada tus prioridades estratégicas de la Matriz de Eisenhower directamente a bloques horarios ininterrumpidos. Diseñado para directivos, fundadores y mentes de alta responsabilidad.
@@ -91,18 +92,18 @@ export default function LandingPage({ onEntrar, onCrearCuenta }: {
                 </button>
                 <button onClick={scrollDemo} className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#ededf3] text-[11px] font-black uppercase tracking-wider shadow-sm hover:bg-[#e7e8ed] transition-colors" style={GEIST}>
                   <PlayCircle className="w-4 h-4 text-[#0024e0]" />
-                  <span>Ver Demostración Ejecutiva</span>
+                  <span>{i18n.t('ver_demostracion_ejecutiva')}</span>
                 </button>
               </div>
               <div className="pt-4 flex flex-col sm:flex-row sm:items-center gap-3 text-[#444657]">
                 <div className="flex -space-x-2">
-                  <span className="w-7 h-7 rounded-full bg-[#0024e0] text-white text-[9px] font-black flex items-center justify-center ring-2 ring-[#f9f9fe] shadow-sm">VP</span>
-                  <span className="w-7 h-7 rounded-full bg-[#fe932c] text-[#663500] text-[9px] font-black flex items-center justify-center ring-2 ring-[#f9f9fe] shadow-sm">CTO</span>
-                  <span className="w-7 h-7 rounded-full bg-[#2e3034] text-[#f0f0f5] text-[9px] font-black flex items-center justify-center ring-2 ring-[#f9f9fe] shadow-sm">CEO</span>
-                  <span className="w-7 h-7 rounded-full bg-[#e2e2e7] text-[9px] font-black flex items-center justify-center ring-2 ring-[#f9f9fe] shadow-sm">+12k</span>
+                  <span className="w-7 h-7 rounded-full bg-[#0024e0] text-white text-[9px] font-black flex items-center justify-center ring-2 ring-[#f9f9fe] shadow-sm">{i18n.t('vp')}</span>
+                  <span className="w-7 h-7 rounded-full bg-[#fe932c] text-[#663500] text-[9px] font-black flex items-center justify-center ring-2 ring-[#f9f9fe] shadow-sm">{i18n.t('cto')}</span>
+                  <span className="w-7 h-7 rounded-full bg-[#2e3034] text-[#f0f0f5] text-[9px] font-black flex items-center justify-center ring-2 ring-[#f9f9fe] shadow-sm">{i18n.t('ceo')}</span>
+                  <span className="w-7 h-7 rounded-full bg-[#e2e2e7] text-[9px] font-black flex items-center justify-center ring-2 ring-[#f9f9fe] shadow-sm">{i18n.t('12k')}</span>
                 </div>
                 <span className="text-xs md:text-sm font-medium">
-                  Confiado por más de <span className="text-[#1a1c1f] font-semibold">12,000 ejecutivos</span> y directores de operaciones en scale-ups globales.
+                  Confiado por más de <span className="text-[#1a1c1f] font-semibold">{i18n.t('12_000_ejecutivos')}</span> y directores de operaciones en scale-ups globales.
                 </span>
               </div>
             </div>
@@ -114,12 +115,12 @@ export default function LandingPage({ onEntrar, onCrearCuenta }: {
           <div className="w-full max-w-[1240px] mx-auto px-4 md:px-6 flex flex-col gap-6">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 pb-1">
               <div>
-                <span className="text-[12px] font-black uppercase text-[#0024e0]" style={GEIST}>Motor matricial bidireccional</span>
+                <span className="text-[12px] font-black uppercase text-[#0024e0]" style={GEIST}>{i18n.t('motor_matricial_bidireccional')}</span>
                 <h2 className="text-2xl mt-1" style={DISPLAY}>De la Matriz al Calendario en &lt;1.2 Segundos</h2>
               </div>
               <div className="flex items-center gap-2 bg-[#ededf3] px-3 py-1 rounded-full">
                 <span className="w-2 h-2 rounded-full bg-[#2b44ff] animate-ping" />
-                <span className="text-[11px] font-black uppercase" style={GEIST}>Sincronización Cronos: Activa</span>
+                <span className="text-[11px] font-black uppercase" style={GEIST}>{i18n.t('sincronizacion_cronos_activa')}</span>
               </div>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -128,7 +129,7 @@ export default function LandingPage({ onEntrar, onCrearCuenta }: {
                   {/* Q1 */}
                   <div className="bg-[#f3f3f8] rounded-xl p-5 flex flex-col gap-3 shadow-sm hover:-translate-y-0.5 transition-transform">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-black uppercase text-[#ba1a1a] tracking-wider" style={GEIST}>Q1 · Hacer ahora</span>
+                      <span className="text-[11px] font-black uppercase text-[#ba1a1a] tracking-wider" style={GEIST}>{i18n.t('q1_hacer_ahora')}</span>
                       <span className="w-2.5 h-2.5 rounded-full bg-[#ba1a1a]" />
                     </div>
                     <h3 className="text-[12px] font-black uppercase" style={GEIST}>Urgente &amp; Importante</h3>
@@ -154,7 +155,7 @@ export default function LandingPage({ onEntrar, onCrearCuenta }: {
                   <div className="bg-[#0024e0] text-white rounded-xl p-5 flex flex-col gap-3 shadow-lg sm:scale-[1.02] relative overflow-hidden">
                     <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-[#2b44ff] rounded-full blur-2xl opacity-60" />
                     <div className="flex items-center justify-between relative z-10">
-                      <span className="text-[11px] font-black uppercase text-[#dfe0ff] tracking-wider" style={GEIST}>Q2 · Zona de alto impacto</span>
+                      <span className="text-[11px] font-black uppercase text-[#dfe0ff] tracking-wider" style={GEIST}>{i18n.t('q2_zona_de_alto_impacto')}</span>
                       <span className="inline-flex items-center gap-1 bg-white text-[#0024e0] text-[10px] font-bold px-2 py-0.5 rounded-full shadow-xs">
                         <Zap className="w-3 h-3" /> AUTO-BLOCK
                       </span>
@@ -182,7 +183,7 @@ export default function LandingPage({ onEntrar, onCrearCuenta }: {
                   {/* Q3 */}
                   <div className="bg-[#f3f3f8] rounded-xl p-5 flex flex-col gap-3 shadow-sm hover:-translate-y-0.5 transition-transform">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-black uppercase text-[#904d00] tracking-wider" style={GEIST}>Q3 · Delegar</span>
+                      <span className="text-[11px] font-black uppercase text-[#904d00] tracking-wider" style={GEIST}>{i18n.t('q3_delegar')}</span>
                       <span className="w-2.5 h-2.5 rounded-full bg-[#fe932c]" />
                     </div>
                     <h3 className="text-[12px] font-black uppercase" style={GEIST}>Urgente &amp; No Vital</h3>
@@ -210,10 +211,10 @@ export default function LandingPage({ onEntrar, onCrearCuenta }: {
                   {/* Q4 */}
                   <div className="bg-[#f3f3f8]/70 rounded-xl p-5 flex flex-col gap-3 opacity-85 shadow-sm hover:-translate-y-0.5 transition-transform">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-black uppercase text-[#757688] tracking-wider" style={GEIST}>Q4 · Eliminar / Archivar</span>
+                      <span className="text-[11px] font-black uppercase text-[#757688] tracking-wider" style={GEIST}>{i18n.t('q4_eliminar_archivar')}</span>
                       <span className="w-2.5 h-2.5 rounded-full bg-[#757688]" />
                     </div>
-                    <h3 className="text-[12px] font-black uppercase text-[#444657]" style={GEIST}>Ruido Parasitario</h3>
+                    <h3 className="text-[12px] font-black uppercase text-[#444657]" style={GEIST}>{i18n.t('ruido_parasitario')}</h3>
                     <div className="flex flex-col gap-1.5">
                       {['Reunión de estatus sin agenda (30m)', 'Auditoría suscripciones inactivas', 'Newsletter catch-up no esencial'].map(t => (
                         <div key={t} className="p-2 bg-[#ededf3] rounded-lg flex items-center justify-between opacity-70">
@@ -222,7 +223,7 @@ export default function LandingPage({ onEntrar, onCrearCuenta }: {
                         </div>
                       ))}
                     </div>
-                    <p className="text-[11px] text-[#ba1a1a] font-medium pt-1">Filtrado automático por regla de agenda</p>
+                    <p className="text-[11px] text-[#ba1a1a] font-medium pt-1">{i18n.t('filtrado_automatico_por_regla_de_agenda')}</p>
                   </div>
                 </div>
               </div>
@@ -231,11 +232,11 @@ export default function LandingPage({ onEntrar, onCrearCuenta }: {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <CalendarDays className="w-4 h-4 text-[#0024e0]" />
-                    <span className="text-[12px] font-black uppercase" style={GEIST}>Bloque Cronos de protección</span>
+                    <span className="text-[12px] font-black uppercase" style={GEIST}>{i18n.t('bloque_cronos_de_proteccion')}</span>
                   </div>
-                  <span className="text-[11px] font-black text-[#0024e0] bg-[#dfe0ff] px-1.5 py-0.5 rounded" style={GEIST}>Hoy · 08:00 - 18:00</span>
+                  <span className="text-[11px] font-black text-[#0024e0] bg-[#dfe0ff] px-1.5 py-0.5 rounded" style={GEIST}>{i18n.t('hoy_08_00_18_00')}</span>
                 </div>
-                <p className="text-xs text-[#444657]">Las tareas del cuadrante Q2 blindan tu agenda automáticamente en slots de alta concentración energética.</p>
+                <p className="text-xs text-[#444657]">{i18n.t('las_tareas_del_cuadrante_q2_blindan_tu_a')}</p>
                 <div className="flex flex-col gap-1.5 pt-1">
                   {[
                     ['08:30', 'Deep Focus: Plan Expansión Q3', 'CUADRANTE Q2 · INMUNIDAD TOTAL', true, false],
@@ -255,8 +256,8 @@ export default function LandingPage({ onEntrar, onCrearCuenta }: {
                   ))}
                 </div>
                 <div className="p-2 bg-[#ededf3] rounded-lg flex items-center justify-between mt-1">
-                  <span className="text-[9px] font-black uppercase text-[#444657]" style={GEIST}>Protección de Agenda:</span>
-                  <span className="text-[11px] font-black text-[#0024e0]" style={GEIST}>87.4% Tiempo Estratégico</span>
+                  <span className="text-[9px] font-black uppercase text-[#444657]" style={GEIST}>{i18n.t('proteccion_de_agenda')}</span>
+                  <span className="text-[11px] font-black text-[#0024e0]" style={GEIST}>{i18n.t('87_4_tiempo_estrategico')}</span>
                 </div>
               </div>
             </div>
@@ -267,8 +268,8 @@ export default function LandingPage({ onEntrar, onCrearCuenta }: {
         <section className="w-full py-8" id="pilares">
           <div className="w-full max-w-[1240px] mx-auto px-4 md:px-6 flex flex-col gap-6">
             <div className="max-w-2xl">
-              <span className="text-[12px] font-black uppercase text-[#0024e0]" style={GEIST}>Arquitectura de rendimiento</span>
-              <h2 className="text-2xl mt-1" style={DISPLAY}>Cuatro pilares para líderes que no pueden permitirse fatiga por decisión.</h2>
+              <span className="text-[12px] font-black uppercase text-[#0024e0]" style={GEIST}>{i18n.t('arquitectura_de_rendimiento')}</span>
+              <h2 className="text-2xl mt-1" style={DISPLAY}>{i18n.t('cuatro_pilares_para_lideres_que_no_puede')}</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
@@ -299,16 +300,16 @@ export default function LandingPage({ onEntrar, onCrearCuenta }: {
         <section className="w-full bg-white py-8 shadow-sm">
           <div className="w-full max-w-[1240px] mx-auto px-4 md:px-6 flex flex-col gap-6">
             <div className="flex flex-col gap-1 max-w-2xl">
-              <span className="text-[12px] font-black uppercase text-[#ba1a1a]" style={GEIST}>El coste de la fricción cognitiva</span>
-              <h2 className="text-2xl" style={DISPLAY}>Por qué las herramientas tradicionales destruyen el foco ejecutivo</h2>
+              <span className="text-[12px] font-black uppercase text-[#ba1a1a]" style={GEIST}>{i18n.t('el_coste_de_la_friccion_cognitiva')}</span>
+              <h2 className="text-2xl" style={DISPLAY}>{i18n.t('por_que_las_herramientas_tradicionales_d')}</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-[#f3f3f8] rounded-xl p-6 flex flex-col gap-4 shadow-sm">
                 <div className="flex items-center justify-between pb-1">
-                  <span className="text-[12px] font-black uppercase text-[#757688]" style={GEIST}>El modelo tradicional</span>
-                  <span className="text-[9px] font-black uppercase text-[#ba1a1a] bg-[#ffdad6] px-1.5 py-0.5 rounded">Ineficiente</span>
+                  <span className="text-[12px] font-black uppercase text-[#757688]" style={GEIST}>{i18n.t('el_modelo_tradicional')}</span>
+                  <span className="text-[9px] font-black uppercase text-[#ba1a1a] bg-[#ffdad6] px-1.5 py-0.5 rounded">{i18n.t('ineficiente')}</span>
                 </div>
-                <h3 className="text-2xl" style={DISPLAY}>Gestores de Tareas Habituales</h3>
+                <h3 className="text-2xl" style={DISPLAY}>{i18n.t('gestores_de_tareas_habituales')}</h3>
                 <ul className="flex flex-col gap-3 text-sm text-[#444657]">
                   {[
                     ['Listas infinitas descontextualizadas:', 'Provocan ansiedad parálisis y sobrecarga cognitiva diaria.'],
@@ -323,15 +324,15 @@ export default function LandingPage({ onEntrar, onCrearCuenta }: {
                   ))}
                 </ul>
                 <div className="mt-auto p-3 bg-[#ededf3] rounded-lg text-xs text-[#444657]">
-                  Resultado promedio: <strong className="text-[#ba1a1a]">18.4 horas semanales</strong> perdidas en cambios de contexto.
+                  Resultado promedio: <strong className="text-[#ba1a1a]">{i18n.t('18_4_horas_semanales')}</strong> perdidas en cambios de contexto.
                 </div>
               </div>
               <div className="bg-[#ededf3] rounded-xl p-6 flex flex-col gap-4 shadow-md">
                 <div className="flex items-center justify-between pb-1">
-                  <span className="text-[12px] font-black uppercase text-[#0024e0]" style={GEIST}>Sistema Focussia</span>
-                  <span className="text-[9px] font-black uppercase text-white bg-[#0024e0] px-1.5 py-0.5 rounded">Ejecutivo</span>
+                  <span className="text-[12px] font-black uppercase text-[#0024e0]" style={GEIST}>{i18n.t('sistema_focussia')}</span>
+                  <span className="text-[9px] font-black uppercase text-white bg-[#0024e0] px-1.5 py-0.5 rounded">{i18n.t('ejecutivo')}</span>
                 </div>
-                <h3 className="text-2xl" style={DISPLAY}>Focussia Decision Engine</h3>
+                <h3 className="text-2xl" style={DISPLAY}>{i18n.t('focussia_decision_engine')}</h3>
                 <ul className="flex flex-col gap-3 text-sm">
                   {[
                     ['Priorización matemática 2x2:', 'Clasificación inmediata por urgencia y retorno de capital estratégico.'],
@@ -346,7 +347,7 @@ export default function LandingPage({ onEntrar, onCrearCuenta }: {
                   ))}
                 </ul>
                 <div className="mt-auto p-3 bg-[#dfe0ff] rounded-lg text-xs text-[#000a63] font-semibold">
-                  Resultado validado: <strong className="text-[#0024e0]">+15 horas de enfoque ininterrumpido</strong> recuperadas semanalmente.
+                  Resultado validado: <strong className="text-[#0024e0]">{i18n.t('15_horas_de_enfoque_ininterrumpido')}</strong> recuperadas semanalmente.
                 </div>
               </div>
             </div>
@@ -360,7 +361,7 @@ export default function LandingPage({ onEntrar, onCrearCuenta }: {
               <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#0024e0]/20 rounded-full blur-3xl" />
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-[#dfe0ff]">
                 <BadgeCheck className="w-3.5 h-3.5" />
-                <span className="text-[12px] font-black uppercase" style={GEIST}>Despliegue inmediato</span>
+                <span className="text-[12px] font-black uppercase" style={GEIST}>{i18n.t('despliegue_inmediato')}</span>
               </div>
               <h2 className="text-2xl md:text-[32px] leading-[40px] max-w-2xl font-bold tracking-tight" style={DISPLAY}>
                 ¿Listo para recuperar 15 horas de enfoque estratégico a la semana?
@@ -370,11 +371,11 @@ export default function LandingPage({ onEntrar, onCrearCuenta }: {
               </p>
               <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
                 <button onClick={onCrearCuenta} className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#0024e0] text-white text-[11px] font-black uppercase tracking-wider shadow-md hover:bg-[#2b44ff] transition-all" style={GEIST}>
-                  <span>Iniciar Prueba Ejecutiva Gratuita</span>
+                  <span>{i18n.t('iniciar_prueba_ejecutiva_gratuita')}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
                 <button onClick={onEntrar} className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-white/10 text-[11px] font-black uppercase tracking-wider hover:bg-white/20 transition-colors" style={GEIST}>
-                  <span>Ya tengo cuenta</span>
+                  <span>{i18n.t('ya_tengo_cuenta')}</span>
                 </button>
               </div>
               <div className="pt-1 flex flex-wrap items-center justify-center gap-4 text-xs text-[#d9dadf] font-medium">
@@ -394,35 +395,35 @@ export default function LandingPage({ onEntrar, onCrearCuenta }: {
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pb-6">
             <div className="md:col-span-5 flex flex-col gap-2">
               <div className="flex items-center gap-2">
-                <span className="w-6 h-6 bg-[#0024e0] flex items-center justify-center rounded text-white text-[12px] font-black">F</span>
-                <span className="text-xl tracking-tight" style={DISPLAY}>FOCUSSIA</span>
+                <span className="w-6 h-6 bg-[#0024e0] flex items-center justify-center rounded text-white text-[12px] font-black">{i18n.t('f_4ivv')}</span>
+                <span className="text-xl tracking-tight" style={DISPLAY}>{i18n.t('focussia')}</span>
               </div>
               <p className="text-sm text-[#444657] max-w-sm">Arquitectura de decisiones ejecutivas de alta precisión. Minimalismo suizo estructurado para líderes y estrategas cognitivos.</p>
             </div>
             <div className="md:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div className="flex flex-col gap-2">
-                <span className="text-[12px] font-black uppercase" style={GEIST}>Framework</span>
+                <span className="text-[12px] font-black uppercase" style={GEIST}>{i18n.t('framework')}</span>
                 {[['Eisenhower Vector', 'demo-showcase'], ['Bloque Cronos', 'demo-showcase'], ['Espacios Ejecutivos', 'pilares']].map(([l, id]) => (
                   <button key={l} onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })} className="text-sm text-[#444657] hover:text-[#1a1c1f] transition-colors text-left">{l}</button>
                 ))}
               </div>
               <div className="flex flex-col gap-2">
-                <span className="text-[12px] font-black uppercase" style={GEIST}>Plataforma</span>
-                <button onClick={onCrearCuenta} className="text-sm text-[#444657] hover:text-[#1a1c1f] transition-colors text-left">Planes de Acceso</button>
-                <button onClick={onEntrar} className="text-sm text-[#444657] hover:text-[#1a1c1f] transition-colors text-left">Portal de Acceso</button>
-                <button onClick={onCrearCuenta} className="text-sm text-[#444657] hover:text-[#1a1c1f] transition-colors text-left">Despliegue Rápido</button>
+                <span className="text-[12px] font-black uppercase" style={GEIST}>{i18n.t('plataforma')}</span>
+                <button onClick={onCrearCuenta} className="text-sm text-[#444657] hover:text-[#1a1c1f] transition-colors text-left">{i18n.t('planes_de_acceso')}</button>
+                <button onClick={onEntrar} className="text-sm text-[#444657] hover:text-[#1a1c1f] transition-colors text-left">{i18n.t('portal_de_acceso')}</button>
+                <button onClick={onCrearCuenta} className="text-sm text-[#444657] hover:text-[#1a1c1f] transition-colors text-left">{i18n.t('despliegue_rapido')}</button>
               </div>
               <div className="flex flex-col gap-2">
-                <span className="text-[12px] font-black uppercase" style={GEIST}>Editorial</span>
-                <span className="text-sm text-[#444657]">Zúrich · Edición MMXXIV</span>
-                <span className="text-sm text-[#444657]">SLA 99.99%</span>
+                <span className="text-[12px] font-black uppercase" style={GEIST}>{i18n.t('editorial')}</span>
+                <span className="text-sm text-[#444657]">{i18n.t('zurich_edicion_mmxxiv')}</span>
+                <span className="text-sm text-[#444657]">{i18n.t('sla_99_99')}</span>
               </div>
             </div>
           </div>
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-[#444657] text-[11px] font-black" style={GEIST}>
-            <span className="tracking-wider">© 2024 FOCUSSIA EXECUTIVE SYSTEM. ALL RIGHTS RESERVED.</span>
+            <span className="tracking-wider">{i18n.t('2024_focussia_executive_system_all_right')}</span>
             <div className="flex items-center gap-4">
-              <span>SWISS EDITORIAL SYSTEM</span>
+              <span>{i18n.t('swiss_editorial_system')}</span>
               <span>LATENCY: &lt;12MS</span>
             </div>
           </div>

@@ -1,3 +1,4 @@
+import i18n from '../../i18n';
 import { useState } from 'react';
 import {
   LayoutDashboard, GraduationCap, Users2, BookOpen, Sparkles,
@@ -80,11 +81,11 @@ export default function AdminLayout({
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold text-white truncate">{usuario.username}</p>
-          <p className="text-[10px] text-white/40 truncate">Administrador</p>
+          <p className="text-[10px] text-white/40 truncate">{i18n.t('administrador')}</p>
         </div>
         <button
           onClick={onSalir}
-          title="Cerrar sesión"
+          title={i18n.t('cerrar_sesion')}
           className="text-white/40 hover:text-white transition-colors shrink-0"
         >
           <LogOut className="w-4 h-4" />
@@ -98,10 +99,10 @@ export default function AdminLayout({
       {/* Sidebar de escritorio */}
       <aside className="hidden lg:flex w-60 shrink-0 flex-col bg-[#0A0A26]">
         <div className="h-14 flex items-center gap-2.5 px-5 border-b border-white/10">
-          <img src="./focussia.png" alt="" className="w-4 h-4" />
+          <img src="/focussia.png" alt="" className="w-4 h-4" />
           <div>
-            <span className="text-sm font-bold text-white tracking-wide">Focusia</span>
-            <span className="block text-[9px] text-white/40 leading-none">Panel de contenido</span>
+            <span className="text-sm font-bold text-white tracking-wide">{i18n.t('focusia')}</span>
+            <span className="block text-[9px] text-white/40 leading-none">{i18n.t('panel_de_contenido')}</span>
           </div>
         </div>
         {navegacion}
@@ -114,7 +115,7 @@ export default function AdminLayout({
           <div className="absolute inset-0 bg-black/50" onClick={() => setMenuAbierto(false)} />
           <aside className="relative w-64 flex flex-col bg-[#0A0A26]">
             <div className="h-14 flex items-center justify-between px-5 border-b border-white/10">
-              <span className="text-sm font-bold text-white">Panel de contenido</span>
+              <span className="text-sm font-bold text-white">{i18n.t('panel_de_contenido')}</span>
               <button onClick={() => setMenuAbierto(false)} className="text-white/50">
                 <X className="w-5 h-5" />
               </button>
@@ -128,10 +129,10 @@ export default function AdminLayout({
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Barra superior móvil */}
         <header className="lg:hidden h-14 flex items-center gap-3 px-4 bg-[#0A0A26] text-white">
-          <button onClick={() => setMenuAbierto(true)} aria-label="Abrir menú">
+          <button onClick={() => setMenuAbierto(true)} aria-label={i18n.t('abrir_menu')}>
             <Menu className="w-5 h-5" />
           </button>
-          <span className="text-sm font-bold">Panel de contenido</span>
+          <span className="text-sm font-bold">{i18n.t('panel_de_contenido')}</span>
         </header>
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1400px] w-full mx-auto">

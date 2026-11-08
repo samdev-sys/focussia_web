@@ -1,3 +1,4 @@
+import i18n from '../../i18n';
 import { useState } from 'react';
 import { Plus, Pencil, Trash2, Save, Volume2, UserRound } from 'lucide-react';
 import { adminApi, adminService, leerError, type Avatar } from '../lib/adminApi';
@@ -157,7 +158,7 @@ export default function AvatarsScreen() {
                     Escuchar
                   </a>
                 ) : (
-                  <span>Sin audio</span>
+                  <span>{i18n.t('sin_audio')}</span>
                 )}
               </div>
             </div>
@@ -165,7 +166,7 @@ export default function AvatarsScreen() {
         ))}
       </div>
 
-      {lista.length === 0 && <Vacio>Todavía no hay avatares.</Vacio>}
+      {lista.length === 0 && <Vacio>{i18n.t('todavia_no_hay_avatares')}</Vacio>}
 
       {editando && (
         <EditorAvatar
@@ -259,7 +260,7 @@ function EditorAvatar({
           <Input
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            placeholder="p. ej. Aura"
+            placeholder={i18n.t('p_ej_aura')}
           />
         </Field>
         <Field etiqueta="Género">
@@ -267,8 +268,8 @@ function EditorAvatar({
             value={form.gender}
             onChange={(e) => setForm({ ...form, gender: e.target.value })}
           >
-            <option value="female">Femenino</option>
-            <option value="male">Masculino</option>
+            <option value="female">{i18n.t('femenino')}</option>
+            <option value="male">{i18n.t('masculino')}</option>
           </Select>
         </Field>
       </div>
@@ -313,7 +314,7 @@ function EditorAvatar({
         <Input
           value={form.voice_id}
           onChange={(e) => setForm({ ...form, voice_id: e.target.value })}
-          placeholder="p. ej. es-CO-AuraNeural"
+          placeholder={i18n.t('p_ej_es_co_auraneural')}
         />
       </Field>
 

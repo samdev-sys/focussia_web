@@ -1,3 +1,4 @@
+import i18n from '../../i18n';
 import React, { useState } from 'react';
 import { Plus, FileText, Trash2, Info, ChevronDown, RotateCcw } from 'lucide-react';
 import { AccionKanban, Decision, LETTER_COLORS } from './types';
@@ -56,7 +57,7 @@ export default function KanbanPage({ acciones, papelera, loading, onAdd, onClass
           value={texto}
           onChange={e => { setTexto(e.target.value); setSimilarWarning(false); }}
           onKeyDown={e => e.key === 'Enter' && handleAdd()}
-          placeholder="Escribe una acción, tarea o pendiente..."
+          placeholder={i18n.t('escribe_una_accion_tarea_o_pendiente')}
           className="flex-1 min-w-0 text-base text-[#101433] placeholder:text-[#8a93b2] placeholder:italic border border-[#e3e8f5] rounded-xl px-4 py-3 outline-none focus:border-[#1f6feb] focus:ring-2 focus:ring-[#1f6feb]/20"
         />
         <button
@@ -65,7 +66,7 @@ export default function KanbanPage({ acciones, papelera, loading, onAdd, onClass
           disabled={!texto.trim() || adding}
           className="shrink-0 flex items-center gap-2 px-5 sm:px-7 py-3 rounded-md bg-gradient-to-r from-[#1f6feb] to-[#a21caf] text-white font-black tracking-wide text-sm hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50"
         >
-          <span className="hidden sm:inline">AGREGAR ACCIÓN</span>
+          <span className="hidden sm:inline">{i18n.t('agregar_accion')}</span>
           <Plus className="w-5 h-5" strokeWidth={3} />
         </button>
       </div>
@@ -79,7 +80,7 @@ export default function KanbanPage({ acciones, papelera, loading, onAdd, onClass
         {/* Pendientes */}
         <div className="lg:col-span-2 bg-white rounded-md border border-[#e3e8f5] overflow-hidden">
           <div className="flex items-center gap-3 px-5 pt-4 pb-3">
-            <h2 className="text-xl sm:text-2xl font-bold text-[#101433]">ACCIONES PENDIENTES</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-[#101433]">{i18n.t('acciones_pendientes')}</h2>
             <button
               type="button"
               onClick={() => setShowHelp(v => !v)}
@@ -93,9 +94,9 @@ export default function KanbanPage({ acciones, papelera, loading, onAdd, onClass
           )}
           <div className="px-3 sm:px-4 pb-2">
             {loading ? (
-              <p className="text-sm text-gray-400 text-center py-8">Cargando acciones...</p>
+              <p className="text-sm text-gray-400 text-center py-8">{i18n.t('cargando_acciones')}</p>
             ) : acciones.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-8">Sin acciones pendientes. Escribe una arriba para empezar.</p>
+              <p className="text-sm text-gray-400 text-center py-8">{i18n.t('sin_acciones_pendientes_escribe_una_arri')}</p>
             ) : (
               acciones.map(a => (
                 <div
@@ -111,10 +112,10 @@ export default function KanbanPage({ acciones, papelera, loading, onAdd, onClass
                     )}
                   </p>
                   <div className="flex items-center gap-2 shrink-0">
-                    <LetterButton letter="H" title="Hacer" onClick={() => onClassify(a, 'H')} />
-                    <LetterButton letter="P" title="Planificar" onClick={() => onPlan(a)} />
-                    <LetterButton letter="D" title="Delegar" onClick={() => onClassify(a, 'D')} />
-                    <LetterButton letter="E" title="Eliminar" onClick={() => onClassify(a, 'E')} />
+                    <LetterButton letter="H" title={i18n.t('hacer')} onClick={() => onClassify(a, 'H')} />
+                    <LetterButton letter="P" title={i18n.t('planificar')} onClick={() => onPlan(a)} />
+                    <LetterButton letter="D" title={i18n.t('delegar')} onClick={() => onClassify(a, 'D')} />
+                    <LetterButton letter="E" title={i18n.t('eliminar_fbf2')} onClick={() => onClassify(a, 'E')} />
                   </div>
                 </div>
               ))
@@ -122,9 +123,9 @@ export default function KanbanPage({ acciones, papelera, loading, onAdd, onClass
           </div>
           <div className="flex items-center gap-2 px-5 py-3 text-[11px] text-[#8a93b2] border-t border-[#eef1f8] flex-wrap">
             <Trash2 className="w-3.5 h-3.5" />
-            <span>Ideas desechadas</span>
+            <span>{i18n.t('ideas_desechadas')}</span>
             <span className="mx-1">·</span>
-            <span>Atajos: <b>H</b> Hacer <b className="ml-1">P</b> Planificar <b className="ml-1">D</b> Delegar <b className="ml-1">E</b> Eliminar</span>
+            <span>Atajos: <b>{i18n.t('h_agge')}</b> Hacer <b className="ml-1">{i18n.t('p')}</b> Planificar <b className="ml-1">{i18n.t('d')}</b> Delegar <b className="ml-1">{i18n.t('e')}</b> Eliminar</span>
           </div>
         </div>
 
@@ -132,20 +133,20 @@ export default function KanbanPage({ acciones, papelera, loading, onAdd, onClass
         <div className="bg-white rounded-md border border-[#e3e8f5] p-5">
           <div className="flex items-center gap-2">
             <Trash2 className="w-6 h-6 text-[#101433]" />
-            <h2 className="text-xl font-bold text-[#101433]">IDEAS DESECHADAS</h2>
+            <h2 className="text-xl font-bold text-[#101433]">{i18n.t('ideas_desechadas_9ztt')}</h2>
           </div>
-          <p className="text-sm text-[#5b6b8c] mt-1">Puedes recuperar estas acciones cuando lo necesites.</p>
+          <p className="text-sm text-[#5b6b8c] mt-1">{i18n.t('puedes_recuperar_estas_acciones_cuando_l')}</p>
           <div className="w-10 h-1 rounded-full bg-gradient-to-r from-[#1f6feb] to-[#a21caf] mt-2 mb-4" />
           <div className="space-y-3">
             {papelera.length === 0 && (
-              <p className="text-sm text-gray-400">Sin ideas desechadas.</p>
+              <p className="text-sm text-gray-400">{i18n.t('sin_ideas_desechadas')}</p>
             )}
             {papelera.map(a => (
               <div key={a.id} className="border border-[#e3e8f5] rounded-md p-4">
                 <p className="text-[#101433] font-bold text-base">{a.texto_accion}</p>
                 <div className="flex items-center gap-2 mt-3">
-                  <span className="w-8 h-8 rounded-full bg-black text-white text-sm font-black flex items-center justify-center">E</span>
-                  <span className="text-xs font-bold text-[#5b6b8c] bg-gray-100 px-2.5 py-1 rounded-full">Desechada</span>
+                  <span className="w-8 h-8 rounded-full bg-black text-white text-sm font-black flex items-center justify-center">{i18n.t('e')}</span>
+                  <span className="text-xs font-bold text-[#5b6b8c] bg-gray-100 px-2.5 py-1 rounded-full">{i18n.t('desechada')}</span>
                   <button
                     type="button"
                     onClick={() => onRestore(a.id)}
@@ -154,7 +155,7 @@ export default function KanbanPage({ acciones, papelera, loading, onAdd, onClass
                     <RotateCcw className="w-3.5 h-3.5" /> RECUPERAR
                   </button>
                 </div>
-                <p className="text-xs text-[#8a93b2] mt-2">Esta acción no se ha eliminado permanentemente.</p>
+                <p className="text-xs text-[#8a93b2] mt-2">{i18n.t('esta_accion_no_se_ha_eliminado_permanent')}</p>
               </div>
             ))}
           </div>

@@ -42,6 +42,11 @@ def avatar_audio_path(instance, filename):
 class User(AbstractUser):
     avatar_url = models.TextField(blank=True, default='')
     bio = models.TextField(blank=True, default='')
+    # Marca de "sesiones cerradas": al cambiar la contraseña o pulsar
+    # "cerrar todas las sesiones" se pone a `now()` y la autenticación rechaza
+    # cualquier token emitido antes de ese instante. Sin esto, quemar solo los
+    # refresh dejaba el access vigente hasta 24 h.
+    sessions_invalidated_at = models.DateTimeField(null=True, blank=True)
 
 class LoginAttempt(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='login_attempts')
@@ -72,6 +77,7 @@ class TimeBlock(models.Model):
         unique_together = ['user', 'fecha', 'hora']
 
 class KanbanTask(models.Model):
+    # DEPRECATED: usar AccionKanban como modelo unificado. Mantener solo para migraciones/lectura histórica.
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='kanban_tasks')
     titulo = models.CharField(max_length=255)
     descripcion = models.TextField(blank=True)
@@ -439,7 +445,7 @@ class Delegation(models.Model):
         ('completed', 'Completada'),
         ('rejected', 'Rechazada'),
     )
-    task = models.ForeignKey(KanbanTask, on_delete=models.CASCADE, related_name='delegations')
+    task = models.ForeignKey('AccionKanban', on_delete=models.CASCADE, related_name='delegations', null=True, blank=True)
     delegator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='delegations_sent')
     delegate = models.ForeignKey(User, on_delete=models.CASCADE, related_name='delegations_received')
     delegate_email = models.EmailField()
@@ -747,6 +753,37 @@ class ConfiguracionUsuario(models.Model):
 
     def __str__(self):
         return f'Config {self.user.username}'
+
+
+# El onboarding habla de "intensidad del acompañamiento" ('suave',
+# 'equilibrada', 'exigente') y ConfiguracionUsuario habla de "nivel de
+# exigencia" ('bajo', 'medio', 'alto'). Es el mismo concepto con dos
+# vocabularios, y la columna solo admite 5 caracteres: escribir
+# 'EQUILIBRADA' directamente lanzaba DataError en PostgreSQL y cortaba el
+# onboarding. Toda traducción intensidad -> nivel pasa por aquí.
+_INTENSIDAD_A_NIVEL_EXIGENCIA = {
+    'suave': 'bajo',
+    'equilibrada': 'medio',
+    'exigente': 'alto',
+}
+
+
+def normalizar_nivel_exigencia(valor, default='medio'):
+    """Traduce la intensidad del onboarding al nivel de exigencia canónico.
+
+    Acepta mayúsculas ('EQUILIBRADA'), minúsculas ('equilibrada') y los
+    valores ya normalizados ('bajo', 'medio', 'alto'), así que es idempotente.
+    Un valor desconocido cae en `default` en vez de escribirse tal cual, que
+    es justo lo que desbordaba la columna.
+    """
+    if not valor:
+        return default
+    limpio = str(valor).strip().lower()
+    if limpio in _INTENSIDAD_A_NIVEL_EXIGENCIA:
+        return _INTENSIDAD_A_NIVEL_EXIGENCIA[limpio]
+    if limpio in ConfiguracionUsuario.NivelExigencia.values:
+        return limpio
+    return default
 
 
 class InteraccionUsuario(models.Model):

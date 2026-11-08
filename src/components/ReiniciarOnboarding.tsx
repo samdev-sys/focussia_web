@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import { useState } from 'react';
 import { RotateCcw, Sparkles } from 'lucide-react';
 import { onboardingV2Service } from '../services/api';
@@ -44,14 +45,14 @@ export function ReiniciarOnboarding({ userName, onResetSuccess }: ReiniciarOnboa
         onClick={handleReset}
         disabled={loading}
         className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-[#6236FF] bg-white/60 hover:bg-white/90 border border-[#D1C4E9] rounded-full transition-all disabled:opacity-60 shadow-sm"
-        title="Reiniciar el asistente de onboarding"
+        title={i18n.t('reiniciar_el_asistente_de_onboarding')}
       >
         {loading ? (
           <div className="w-3 h-3 border-2 border-[#6236FF]/30 border-t-[#6236FF] rounded-full animate-spin" />
         ) : (
           <RotateCcw className="w-3.5 h-3.5" />
         )}
-        <span>Reiniciar Onboarding</span>
+        <span>{i18n.t('reiniciar_onboarding')}</span>
       </button>
 
       {success && (

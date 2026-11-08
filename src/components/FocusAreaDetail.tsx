@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useState, useEffect } from 'react';
 import { X, ChevronLeft, Loader2, Send, Check, Brain, CheckCircle2 } from 'lucide-react';
 import { ruedaService, FocusAreaDetail as FocusAreaDetailType, AccionSugeridaData } from '../services/api';
@@ -142,7 +143,7 @@ export default function FocusAreaDetail({ area, onClose, onVolverDiagnostico, us
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
         <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-8 text-center">
           <Loader2 className="w-8 h-8 animate-spin text-purple-500 mx-auto" />
-          <p className="text-gray-500 mt-4">Cargando área foco...</p>
+          <p className="text-gray-500 mt-4">{i18n.t('cargando_area_foco')}</p>
         </div>
       </div>
     );
@@ -174,7 +175,7 @@ export default function FocusAreaDetail({ area, onClose, onVolverDiagnostico, us
         <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gradient-to-r from-purple-500 to-indigo-600 shrink-0">
           <div className="flex items-center gap-2">
             {avatarIndex > 0 && AVATAR_FILES && (
-              <img src={AVATAR_FILES[avatarIndex]} alt="avatar" className="w-8 h-8 rounded-md object-cover border border-white/30" />
+              <img src={AVATAR_FILES[avatarIndex]} alt={i18n.t('avatar_3mu2')} className="w-8 h-8 rounded-md object-cover border border-white/30" />
             )}
             <h2 className="text-lg font-bold text-white">{area}</h2>
           </div>
@@ -188,11 +189,11 @@ export default function FocusAreaDetail({ area, onClose, onVolverDiagnostico, us
           {/* Score */}
           <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
             <div>
-              <p className="text-xs text-gray-400 uppercase tracking-wider">Puntaje obtenido</p>
+              <p className="text-xs text-gray-400 uppercase tracking-wider">{i18n.t('puntaje_obtenido')}</p>
               <p className={`text-3xl font-black ${getScoreColor(score)}`}>{score}<span className="text-sm font-normal text-gray-400">/10</span></p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-gray-400 uppercase tracking-wider">Prioridad</p>
+              <p className="text-xs text-gray-400 uppercase tracking-wider">{i18n.t('prioridad')}</p>
               <p className="text-lg font-bold text-purple-600">#{focusArea?.priority_order || '?'}</p>
             </div>
           </div>
@@ -200,14 +201,14 @@ export default function FocusAreaDetail({ area, onClose, onVolverDiagnostico, us
           {/* Reason */}
           {focusArea?.reason && (
             <div className="bg-purple-50 rounded-lg p-4 border border-purple-100">
-              <p className="text-xs text-purple-400 uppercase tracking-wider mb-1">¿Por qué fue seleccionada?</p>
+              <p className="text-xs text-purple-400 uppercase tracking-wider mb-1">{i18n.t('por_que_fue_seleccionada_xzni')}</p>
               <p className="text-sm text-purple-800 leading-relaxed">{focusArea.reason}</p>
             </div>
           )}
 
           {/* Explicación breve del área */}
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-            <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">El área</p>
+            <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">{i18n.t('el_area')}</p>
             <p className="text-sm text-gray-700 leading-relaxed">{EXPLICACIONES[area] || 'Un área clave de tu equilibrio de vida.'}</p>
           </div>
 
@@ -222,19 +223,19 @@ export default function FocusAreaDetail({ area, onClose, onVolverDiagnostico, us
           {/* Limit message */}
           {limiteAlcanzado && (
             <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
-              <p className="text-sm text-amber-700">Focusia recomienda no generar más acciones por ahora, para evitar saturación y ayudarte a avanzar con foco.</p>
+              <p className="text-sm text-amber-700">{i18n.t('focusia_recomienda_no_generar_mas_accion_nw23')}</p>
             </div>
           )}
 
           {/* Actions */}
           <div>
-            <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-3">Acciones sugeridas</h3>
+            <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-3">{i18n.t('acciones_sugeridas_sj5e')}</h3>
             <p className="text-xs text-gray-400 mb-3">{enviadasCount} de {totalAcciones} enviadas al Kanban</p>
             
             {acciones.length === 0 ? (
               <div className="text-center py-6">
                 <Brain className="w-10 h-10 text-purple-300 mx-auto mb-3" />
-                <p className="text-sm text-gray-500 mb-4">Aún no hay acciones para esta área</p>
+                <p className="text-sm text-gray-500 mb-4">{i18n.t('aun_no_hay_acciones_para_esta_area')}</p>
                 <button
                   onClick={handleGenerarAcciones}
                   disabled={generando}
@@ -255,7 +256,7 @@ export default function FocusAreaDetail({ area, onClose, onVolverDiagnostico, us
                   }`}>
                     {!a.enviada_kanban && (
                       <input type="checkbox" checked={seleccionadas.has(a.id)} onChange={() => toggleSeleccion(a.id)}
-                        className="w-4 h-4 accent-purple-600 shrink-0" aria-label="Seleccionar acción" />
+                        className="w-4 h-4 accent-purple-600 shrink-0" aria-label={i18n.t('seleccionar_accion')} />
                     )}
                     <p className={`text-sm flex-1 ${a.enviada_kanban ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
                       {a.texto}

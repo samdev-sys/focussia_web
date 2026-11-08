@@ -82,9 +82,9 @@ function base(props: React.SVGProps<SVGSVGElement>, children: React.ReactNode) {
 export const RedIcon: React.FC<{ id: RedId; className?: string }> = ({ id, className = 'w-8 h-6' }) => {
   switch (id) {
     case 'tiktok':
-      return img({ className }, './tiktok-1.png');
+      return img({ className }, '/tiktok-1.png');
     case 'facebook':
-      return img({ className }, './face.png');
+      return img({ className }, '/face.png');
     case 'instagram':
       return (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={className} aria-hidden>
@@ -94,7 +94,7 @@ export const RedIcon: React.FC<{ id: RedId; className?: string }> = ({ id, class
         </svg>
       );
     case 'linkedin':
-      return img ({ className }, './link.png');
+      return img ({ className }, '/link.png');
     case 'youtube':
       return base({ className }, <path d="M21.6 7.2c-.2-1.4-1-2.3-2.4-2.5C17.2 4.5 12 4.5 12 4.5s-5.2 0-7.2.2c-1.4.2-2.2 1.1-2.4 2.5C2.2 8.7 2.2 12 2.2 12s0 3.3.2 4.8c.2 1.4 1 2.3 2.4 2.5 2 .2 7.2.2 7.2.2s5.2 0 7.2-.2c1.4-.2 2.2-1.1 2.4-2.5.2-1.5.2-4.8.2-4.8s0-3.3-.2-4.8zM10 15.2V8.8l5.2 3.2L10 15.2z" />);
     case 'x':

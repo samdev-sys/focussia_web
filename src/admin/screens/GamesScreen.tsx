@@ -1,3 +1,4 @@
+import i18n from '../../i18n';
 import { useMemo, useState } from 'react';
 import { Plus, Pencil, Trash2, Save, ExternalLink, Search } from 'lucide-react';
 import { adminApi, adminService, leerError, type Juego, type LearningCategory } from '../lib/adminApi';
@@ -88,7 +89,7 @@ export default function GamesScreen() {
             <Input
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar por título, descripción o URL"
+              placeholder={i18n.t('buscar_por_titulo_descripcion_o_url')}
               className="pl-9"
             />
           </div>
@@ -192,9 +193,9 @@ export default function GamesScreen() {
       </div>
 
       {lista.length > 0 && filtrados.length === 0 && (
-        <Vacio>Ningún juego coincide con esa búsqueda.</Vacio>
+        <Vacio>{i18n.t('ningun_juego_coincide_con_esa_busqueda')}</Vacio>
       )}
-      {lista.length === 0 && <Vacio>El catálogo está vacío.</Vacio>}
+      {lista.length === 0 && <Vacio>{i18n.t('el_catalogo_esta_vacio')}</Vacio>}
 
       {editando && (
         <EditorJuego
@@ -311,7 +312,7 @@ function EditorJuego({
         <Input
           value={form.titulo}
           onChange={(e) => setForm({ ...form, titulo: e.target.value })}
-          placeholder="p. ej. El sudoku del enfoque"
+          placeholder={i18n.t('p_ej_el_sudoku_del_enfoque')}
         />
       </Field>
 
@@ -320,7 +321,7 @@ function EditorJuego({
           type="url"
           value={form.url}
           onChange={(e) => setForm({ ...form, url: e.target.value })}
-          placeholder="https://…"
+          placeholder={i18n.t('https_m30d')}
         />
       </Field>
 
@@ -366,7 +367,7 @@ function EditorJuego({
               setForm({ ...form, categoria: e.target.value ? Number(e.target.value) : null })
             }
           >
-            <option value="">Sin categoría</option>
+            <option value="">{i18n.t('sin_categoria')}</option>
             {categorias.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.order}. {c.name}

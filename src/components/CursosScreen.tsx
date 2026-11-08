@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Home, CircleDot, LayoutGrid, Calendar, CalendarDays, Kanban,
@@ -124,9 +125,9 @@ export default function CursosScreen({ onBack, userName, onNavigate }: { onBack:
         <div className="h-16 flex items-center px-6 pt-4 pb-2">
           <div className="flex items-center gap-3 text-white">
            
-              <img src="./focussia.png" alt="Focusia" className="w-4 h-4 text-white" />
+              <img src="/focussia.png" alt={i18n.t('focusia_i06y')} className="w-4 h-4 text-white" />
             
-            <span className="text-xl font-bold tracking-wide">Focusia</span>
+            <span className="text-xl font-bold tracking-wide">{i18n.t('focusia_i06y')}</span>
           </div>
         </div>
         <nav className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
@@ -146,7 +147,7 @@ export default function CursosScreen({ onBack, userName, onNavigate }: { onBack:
           ))}
           <button className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors w-full text-left text-white/60 hover:text-white hover:bg-white/5">
             <MoreHorizontal className="w-5 h-5 text-center shrink-0" />
-            <span className="truncate">Más</span>
+            <span className="truncate">{i18n.t('mas_jvym')}</span>
           </button>
         </nav>
         <div className="p-4">
@@ -158,8 +159,8 @@ export default function CursosScreen({ onBack, userName, onNavigate }: { onBack:
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-[#F8F9FB] dark:bg-[#0A0A26] md:rounded-tl-[2rem] md:border-l border-gray-200 dark:border-white/10">
         <ModuleHeader
           icon={GraduationCap}
-          title="Cursos"
-          subtitle="Tu ruta de aprendizaje progresa contigo."
+          title={i18n.t('cursos')}
+          subtitle={i18n.t('tu_ruta_de_aprendizaje_progresa_contigo')}
           onBack={onBack}
           userName={userName}
           progress={data ? { label: `Mes ${data.mes_actual} de 12`, pct: data.progreso_pct } : null}
@@ -179,11 +180,11 @@ export default function CursosScreen({ onBack, userName, onNavigate }: { onBack:
                         ← Viendo Mes {mesVisto} · Volver al mes actual
                       </button>
                     )}
-                    <p className="text-[11px] font-bold tracking-widest text-indigo-600 dark:text-indigo-300">TEMA DEL MES</p>
+                    <p className="text-[11px] font-bold tracking-widest text-indigo-600 dark:text-indigo-300">{i18n.t('tema_del_mes')}</p>
                     <h2 className="text-xs md:text-xs font-bold text-slate-900 dark:text-white mt-1">
                       {cap?.month_theme || 'Gestión del Tiempo'}
                     </h2>
-                    <p className="text-[11px] font-bold tracking-widest text-indigo-600 dark:text-indigo-300 mt-5">CAPACITACIÓN DEL MES</p>
+                    <p className="text-[11px] font-bold tracking-widest text-indigo-600 dark:text-indigo-300 mt-5">{i18n.t('capacitacion_del_mes')}</p>
                     <h3 className="text-[11px] font-bold text-slate-900 dark:text-white mt-1">
                       {cap?.title || 'Protege tu tiempo y dirige tu atención'}
                     </h3>
@@ -207,14 +208,14 @@ export default function CursosScreen({ onBack, userName, onNavigate }: { onBack:
                     </button>
                   </div>
                   <div className="relative rounded-xl overflow-hidden min-h-[150px] md:min-h-[190px] w-[200px]bg-gradient-to-br from-indigo-200 via-purple-100 to-blue-100 dark:from-indigo-900 dark:via-purple-900 dark:to-blue-900">
-                   <img src="./cursos.png" alt="cursos" />
+                   <img src="/cursos.png" alt={i18n.t('cursos_7x5c')} />
                   </div>
                 </div>
               </section>
 
               {/* Qué aprenderás */}
               <section className="bg-white dark:bg-[#14142e] rounded-2xl p-5 border border-gray-100 dark:border-white/10 shadow-sm">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">¿Qué aprenderás este mes?</h3>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">{i18n.t('que_aprenderas_este_mes')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {objetivos.map((o, i) => (
                     <div key={i} className="flex gap-3">
@@ -233,7 +234,7 @@ export default function CursosScreen({ onBack, userName, onNavigate }: { onBack:
               {/* Player + anteriores */}
               <section className="grid grid-cols-1 lg:grid-cols-5 gap-4">
                 <div className="lg:col-span-3 bg-white dark:bg-[#14142e] rounded-2xl p-5 border border-gray-100 dark:border-white/10 shadow-sm">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Microcapacitación del mes</h3>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">{i18n.t('microcapacitacion_del_mes')}</h3>
                   <div ref={playerRef} className="relative rounded-xl overflow-hidden bg-slate-900 aspect-video scroll-mt-4">
                     {videoSrc ? (
                       <video ref={videoRef} src={videoSrc} controls preload="metadata" className="absolute inset-0 w-full h-full" />
@@ -243,7 +244,7 @@ export default function CursosScreen({ onBack, userName, onNavigate }: { onBack:
                         <span className="relative w-16 h-16 rounded-full bg-[#8b5cf6] flex items-center justify-center shadow-xl">
                           <Play className="w-7 h-7 text-white fill-white ml-1" />
                         </span>
-                        <p className="relative text-[11px] text-white/60">Video próximamente</p>
+                        <p className="relative text-[11px] text-white/60">{i18n.t('video_proximamente')}</p>
                       </div>
                     )}
                   </div>
@@ -258,7 +259,7 @@ export default function CursosScreen({ onBack, userName, onNavigate }: { onBack:
                 </div>
                 <div className="lg:col-span-2 bg-white dark:bg-[#14142e] rounded-2xl p-5 border border-gray-100 dark:border-white/10 shadow-sm">
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Cursos anteriores</h3>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">{i18n.t('cursos_anteriores')}</h3>
                     <button onClick={() => setVerTodos(v => !v)} className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-white/15 rounded-lg px-2.5 py-1 hover:bg-indigo-50 dark:hover:bg-white/5">
                       {verTodos ? 'Ver menos' : 'Ver todos'}
                     </button>
@@ -284,7 +285,7 @@ export default function CursosScreen({ onBack, userName, onNavigate }: { onBack:
                         </div>
                       );
                     })}
-                    {meses.length === 0 && <p className="text-xs text-gray-400">Sin cursos registrados.</p>}
+                    {meses.length === 0 && <p className="text-xs text-gray-400">{i18n.t('sin_cursos_registrados')}</p>}
                   </div>
                 </div>
               </section>
@@ -295,8 +296,8 @@ export default function CursosScreen({ onBack, userName, onNavigate }: { onBack:
                   <Star className="w-5 h-5" />
                 </span>
                 <div className="flex-1">
-                  <p className="text-xs font-bold text-slate-800 dark:text-gray-100">Frases Motivacionales diarias</p>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400">Cada día recibirás frases que reforzarán los aprendizajes de este mes y te mantendrán enfocado en tu camino.</p>
+                  <p className="text-xs font-bold text-slate-800 dark:text-gray-100">{i18n.t('frases_motivacionales_diarias')}</p>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400">{i18n.t('cada_dia_recibiras_frases_que_reforzaran')}</p>
                 </div>
                 <button onClick={() => setShowFrases(true)} className="px-4 py-2 rounded-lg border border-indigo-300 dark:border-white/20 text-indigo-600 dark:text-indigo-300 text-xs font-semibold hover:bg-white dark:hover:bg-white/5 whitespace-nowrap">
                   Ir a Frases Motivacionales ›
@@ -307,8 +308,8 @@ export default function CursosScreen({ onBack, userName, onNavigate }: { onBack:
             {/* Riel derecho */}
             <aside className="w-full xl:w-[300px] shrink-0 flex flex-col gap-4">
               <div className="bg-white dark:bg-[#14142e] rounded-2xl p-5 border border-gray-100 dark:border-white/10 shadow-sm">
-                <p className="text-sm font-bold text-slate-900 dark:text-white">Tu ruta de aprendizaje</p>
-                <p className="text-[11px] text-gray-400 dark:text-gray-500">12 meses para tu mejor versión</p>
+                <p className="text-sm font-bold text-slate-900 dark:text-white">{i18n.t('tu_ruta_de_aprendizaje')}</p>
+                <p className="text-[11px] text-gray-400 dark:text-gray-500">{i18n.t('12_meses_para_tu_mejor_version')}</p>
                 <div className="mt-3 space-y-1 max-h-96 overflow-y-auto">
                   {meses.map(m => (
                     <div key={m.month_number}
@@ -329,14 +330,14 @@ export default function CursosScreen({ onBack, userName, onNavigate }: { onBack:
                         <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">{m.theme}</p>
                       </div>
                       {m.estado === 'actual' && (
-                        <span className="text-[9px] font-bold bg-[#6236FF] text-white px-2 py-0.5 rounded-full">Actual</span>
+                        <span className="text-[9px] font-bold bg-[#6236FF] text-white px-2 py-0.5 rounded-full">{i18n.t('actual_ipsp')}</span>
                       )}
                     </div>
                   ))}
                 </div>
                 <div className="mt-3 bg-purple-50 dark:bg-white/5 rounded-xl p-3 flex items-center gap-2">
                   <Gift className="w-5 h-5 text-[#6236FF] dark:text-purple-300 shrink-0" />
-                  <p className="text-[11px] font-semibold text-slate-700 dark:text-gray-200">Cada mes desbloquea una mejor versión de ti.</p>
+                  <p className="text-[11px] font-semibold text-slate-700 dark:text-gray-200">{i18n.t('cada_mes_desbloquea_una_mejor_version_de')}</p>
                 </div>
               </div>
 
@@ -348,15 +349,15 @@ export default function CursosScreen({ onBack, userName, onNavigate }: { onBack:
                     </span>
                     ¡Capacitación completada!
                   </p>
-                  <p className="text-xs text-gray-600 dark:text-gray-300 mt-2">Has completado la capacitación de este mes.</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Las Frases Motivacionales continuarán reforzando estos aprendizajes durante el resto del mes.</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-300 mt-2">{i18n.t('has_completado_la_capacitacion_de_este_m')}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{i18n.t('las_frases_motivacionales_continuaran_re')}</p>
                   <button onClick={onBack} className="mt-4 w-full py-2.5 rounded-xl border border-green-500 text-green-700 dark:text-green-300 text-sm font-semibold hover:bg-green-100 dark:hover:bg-green-500/10 flex items-center justify-center gap-2">
                     <HomeIcon className="w-4 h-4" /> Volver al Dashboard
                   </button>
                 </div>
               ) : (
                 <div className="bg-white dark:bg-[#14142e] rounded-2xl p-5 border border-gray-100 dark:border-white/10 shadow-sm">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Completa la microcapacitación para desbloquear tu constancia de este mes.</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{i18n.t('completa_la_microcapacitacion_para_desbl')}</p>
                   <button onClick={onBack} className="mt-3 w-full py-2.5 rounded-xl border border-indigo-300 dark:border-white/20 text-indigo-600 dark:text-indigo-300 text-sm font-semibold hover:bg-indigo-50 dark:hover:bg-white/5 flex items-center justify-center gap-2">
                     <HomeIcon className="w-4 h-4" /> Volver al Dashboard
                   </button>
@@ -372,7 +373,7 @@ export default function CursosScreen({ onBack, userName, onNavigate }: { onBack:
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowFrases(false)}>
           <div className="bg-white dark:bg-[#14142e] rounded-2xl shadow-2xl max-w-md w-full p-8 text-center" onClick={e => e.stopPropagation()}>
             <Star className="w-10 h-10 text-[#6236FF] dark:text-purple-300 mx-auto mb-3" />
-            <h3 className="font-bold text-slate-900 dark:text-white">Frase de hoy</h3>
+            <h3 className="font-bold text-slate-900 dark:text-white">{i18n.t('frase_de_hoy')}</h3>
             <p className="text-sm text-gray-600 dark:text-gray-300 italic mt-3 leading-relaxed">“{fraseHoy || 'Cada día cuenta: un paso consciente te acerca a tu mejor versión.'}”</p>
             <button onClick={() => setShowFrases(false)} className="mt-5 px-6 py-2 rounded-xl bg-gradient-to-r from-[#6236FF] to-[#8A2BE2] text-white text-sm font-semibold">
               Cerrar

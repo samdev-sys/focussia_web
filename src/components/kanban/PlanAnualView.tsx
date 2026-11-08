@@ -1,3 +1,4 @@
+import i18n from '../../i18n';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import { api } from '../../services/api';
@@ -72,7 +73,7 @@ export default function PlanAnualView({ highlightActionId, refreshKey, onConfirm
           <button type="button" onClick={() => setYear(y => y + 1)} className="w-9 h-9 rounded-lg border border-[#e3e8f5] flex items-center justify-center text-[#101433] hover:bg-gray-50">
             <ChevronRight className="w-5 h-5" />
           </button>
-          <span className="w-full sm:w-auto sm:ml-auto text-xs text-[#5b6b8c]">Selecciona otro mes o fecha para cambiar la planificación.</span>
+          <span className="w-full sm:w-auto sm:ml-auto text-xs text-[#5b6b8c]">{i18n.t('selecciona_otro_mes_o_fecha_para_cambiar')}</span>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-4">
           {MESES.map((m, i) => {

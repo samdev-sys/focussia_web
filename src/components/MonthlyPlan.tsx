@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useState, useMemo } from 'react';
 import { useMonthlyPlan } from '../hooks/useMonthlyPlan';
 import { Save, CheckCircle, AlertCircle, Loader2, Calendar, Target, Trash2, Plus } from 'lucide-react';
@@ -62,7 +63,7 @@ export const MonthlyPlan: React.FC<MonthlyPlanProps> = ({
       <div className={`bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-800 p-8 ${className}`}>
         <div className="text-center py-12">
           <Calendar className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Sin Plan Mensual</h3>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{i18n.t('sin_plan_mensual')}</h3>
           <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
             Crea tu plan anual dividiéndolo en 12 metas mensuales progresivas.
           </p>
@@ -185,7 +186,7 @@ export const MonthlyPlan: React.FC<MonthlyPlanProps> = ({
                       <button
                         onClick={() => setEditingGoal(goal.month_order)}
                         className="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
-                        aria-label="Editar meta"
+                        aria-label={i18n.t('editar_meta')}
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -195,7 +196,7 @@ export const MonthlyPlan: React.FC<MonthlyPlanProps> = ({
                         <button
                           onClick={addGoal}
                           className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
-                          aria-label="Agregar siguiente mes"
+                          aria-label={i18n.t('agregar_siguiente_mes')}
                         >
                           <Plus className="w-5 h-5" />
                         </button>
@@ -203,7 +204,7 @@ export const MonthlyPlan: React.FC<MonthlyPlanProps> = ({
                       <button
                         onClick={() => removeGoal(goal.month_order)}
                         className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                        aria-label="Eliminar meta"
+                        aria-label={i18n.t('eliminar_meta')}
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>
@@ -222,7 +223,7 @@ export const MonthlyPlan: React.FC<MonthlyPlanProps> = ({
                       type="text"
                       value={goal.goal_text}
                       onChange={e => updateGoal(goal.month_order, 'goal_text', e.target.value)}
-                      placeholder="¿Qué quieres lograr este mes?"
+                      placeholder={i18n.t('que_quieres_lograr_este_mes')}
                       className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     />
                   </div>
@@ -233,7 +234,7 @@ export const MonthlyPlan: React.FC<MonthlyPlanProps> = ({
                     <textarea
                       value={goal.explanation}
                       onChange={e => updateGoal(goal.month_order, 'explanation', e.target.value)}
-                      placeholder="¿Por qué es importante esta meta?"
+                      placeholder={i18n.t('por_que_es_importante_esta_meta')}
                       rows={2}
                       className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     />
@@ -246,7 +247,7 @@ export const MonthlyPlan: React.FC<MonthlyPlanProps> = ({
                       type="text"
                       value={goal.relation_to_annual}
                       onChange={e => updateGoal(goal.month_order, 'relation_to_annual', e.target.value)}
-                      placeholder="¿Cómo conecta con tu objetivo del año?"
+                      placeholder={i18n.t('como_conecta_con_tu_objetivo_del_ano')}
                       className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     />
                   </div>

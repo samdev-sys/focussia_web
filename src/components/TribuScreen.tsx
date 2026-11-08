@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useState, useEffect } from 'react';
 import {
   Home, CircleDot, LayoutGrid, Calendar, CalendarDays, Kanban,
@@ -39,10 +40,10 @@ const TRIBUS: { key: string; label: string; Icon: React.ComponentType<{ classNam
   { key: 'PAREJA', label: 'Pareja', Icon: HeartHandshake, tint: 'bg-rose-50', icon: 'text-rose-500' },
   { key: 'HIJOS', label: 'Hijos', Icon: Baby, tint: 'bg-orange-50', icon: 'text-orange-500' },
   { key: 'AMIGOS', label: 'Amigos', Icon: Users, tint: 'bg-blue-50', icon: 'text-blue-500' },
-  { key: 'TRABAJO', label: 'Trabajo', Icon: ({ className }: { className?: string }) => <img src="./bag.png" alt="kanban" className={className} /> , tint: 'bg-indigo-50', icon: 'text-indigo-500' },
+  { key: 'TRABAJO', label: 'Trabajo', Icon: ({ className }: { className?: string }) => <img src="/bag.png" alt={i18n.t('kanban_43px')} className={className} /> , tint: 'bg-indigo-50', icon: 'text-indigo-500' },
   { key: 'COMUNIDAD', label: 'Comunidad', Icon: UsersRound, tint: 'bg-green-50', icon: 'text-green-600' },
   { key: 'CLUB_DEPORTE', label: 'Club / Deporte', Icon: Trophy, tint: 'bg-sky-50', icon: 'text-sky-500' },
-  { key: 'JUNTA_EDUCATIVA', label: 'Junta educativa', Icon: ({ className }: { className?: string }) => <img src="./college.png" alt="kanban" className={className} /> , tint: 'bg-indigo-50', icon: 'text-indigo-500' },
+  { key: 'JUNTA_EDUCATIVA', label: 'Junta educativa', Icon: ({ className }: { className?: string }) => <img src="/college.png" alt={i18n.t('kanban_43px')} className={className} /> , tint: 'bg-indigo-50', icon: 'text-indigo-500' },
   { key: 'VOLUNTARIADO', label: 'Voluntariado', Icon: HandHeart, tint: 'bg-orange-50', icon: 'text-orange-600' },
   { key: 'OTRO', label: 'Otro', Icon: Plus, tint: 'bg-purple-50 border border-dashed border-purple-300', icon: 'text-purple-500' },
 ];
@@ -117,11 +118,11 @@ export default function TribuScreen({ onBack, userName, onNavigate }: { onBack: 
   return (
     <div className="flex h-full overflow-hidden text-slate-800 dark:text-gray-100 bg-[#F8F9FB] dark:bg-[#0A0A26]">
       {/* Sidebar */}
-      <aside className="w-64 bg-[#0A0A26] h-full hidden md:flex flex-col z-20 shrink-0">
+      <aside className="w-48 bg-[#0A0A26] h-300 hidden md:flex flex-col z-20 shrink-0">
         <div className="h-16 flex items-center px-6 pt-4 pb-2">
           <div className="flex items-center gap-3 text-white">
-           <img src="./focussia.png" alt="" className='w-8 h-8' />
-            <span className="text-xl font-bold tracking-wide">Focusia</span>
+           <img src="/focussia.png" alt="" className='w-8 h-8' />
+            <span className="text-xl font-bold tracking-wide">{i18n.t('focusia_6g2i')}</span>
           </div>
         </div>
         <nav className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
@@ -139,10 +140,7 @@ export default function TribuScreen({ onBack, userName, onNavigate }: { onBack: 
               <span className="truncate">{item.label}</span>
             </button>
           ))}
-          <button className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors w-full text-left text-white/60 hover:text-white hover:bg-white/5">
-            <MoreHorizontal className="w-5 h-5 text-center shrink-0" />
-            <span className="truncate">Más</span>
-          </button>
+          
         </nav>
         <div className="p-4">
           <button onClick={onBack} className="flex items-center w-full p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
@@ -151,7 +149,7 @@ export default function TribuScreen({ onBack, userName, onNavigate }: { onBack: 
             </div>
             <div className="ml-3 text-left flex-1">
               <p className="text-sm font-semibold text-white">{userName || 'Usuario'}</p>
-              <p className="text-xs text-white/50">Ver perfil</p>
+              <p className="text-xs text-white/50">{i18n.t('ver_perfil_usij')}</p>
             </div>
             <ChevronDown className="w-4 h-4 text-white/50" />
           </button>
@@ -160,7 +158,7 @@ export default function TribuScreen({ onBack, userName, onNavigate }: { onBack: 
 
       {/* Contenido */}
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-[#F8F9FB] dark:bg-[#0A0A26] md:rounded-tl-[2rem] md:border-l border-gray-200 dark:border-white/10">
-        <ModuleHeader icon={Users} title="Tribu" subtitle="Comparte tu aprendizaje y multiplica tu impacto" onBack={onBack} userName={userName} />
+        <ModuleHeader icon={Users} title={i18n.t('tribu')} subtitle={i18n.t('comparte_tu_aprendizaje_y_multiplica_tu_')} onBack={onBack} userName={userName} />
 
         <div className="flex-1 overflow-y-auto p-6">
           <div className="max-w-[1200px] mx-auto flex flex-col xl:flex-row gap-6">
@@ -181,7 +179,7 @@ export default function TribuScreen({ onBack, userName, onNavigate }: { onBack: 
                     </p>
                   </div>
                   <div className="relative rounded-xl overflow-hidden min-h-[200px] md:min-h-[200px] bg-gradient-to-br from-indigo-200 via-purple-100 to-blue-100 dark:from-indigo-900 dark:via-purple-900 dark:to-blue-900">
-                     <img src={tema?.imagen_resuelta || './tribu.png'} alt='tribu' className="absolute inset-0 w-full h-full object-cover" />
+                     <img src={tema?.imagen_resuelta || '/tribu.png'} alt='tribu' className="absolute inset-0 w-full h-full object-cover" />
                   </div>
                 </div>
               </section>
@@ -215,26 +213,26 @@ export default function TribuScreen({ onBack, userName, onNavigate }: { onBack: 
                     </span>
                     MI COMPROMISO
                   </p>
-                  <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Escribe la idea que compartirás esta semana.</p>
+                  <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">{i18n.t('escribe_la_idea_que_compartiras_esta_sem')}</p>
                   <div className="relative mt-2">
                     <textarea
                       maxLength={600}
                       value={texto}
                       onChange={(e) => setTexto(e.target.value)}
                       onBlur={() => guardar({ texto })}
-                      placeholder="Escribe aquí la idea que compartirás..."
+                      placeholder={i18n.t('escribe_aqui_la_idea_que_compartiras')}
                       className="w-full h-28 p-3 bg-white dark:bg-[#0A0A26] text-slate-800 dark:text-gray-100 border border-gray-200 dark:border-white/15 rounded-xl resize-none focus:ring-2 focus:ring-[#6236FF] focus:outline-none text-xs placeholder-gray-400"
                     />
                     <span className="absolute bottom-2 right-3 text-[10px] text-gray-400">{texto.length}/600</span>
                   </div>
-                  {saving && <p className="text-[10px] text-gray-400 mt-1">Guardando...</p>}
+                  {saving && <p className="text-[10px] text-gray-400 mt-1">{i18n.t('guardando_kppf')}</p>}
                 </div>
               </section>
 
               {/* Tribus */}
               <section className="bg-white dark:bg-[#14142e] rounded-2xl p-5 border border-gray-100 dark:border-white/10 shadow-sm">
-                <p className="text-[11px] font-bold tracking-wider text-indigo-600 dark:text-indigo-300">¿CON QUIÉN LO COMPARTIRÁS?</p>
-                <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">Elige tu tribu con la que compartirás tu aprendizaje.</p>
+                <p className="text-[11px] font-bold tracking-wider text-indigo-600 dark:text-indigo-300">{i18n.t('con_quien_lo_compartiras')}</p>
+                <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{i18n.t('elige_tu_tribu_con_la_que_compartiras_tu')}</p>
                 <div className="flex flex-col lg:flex-row gap-4 mt-3">
                   <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 flex-1">
                     {TRIBUS.map(t => (
@@ -256,12 +254,12 @@ export default function TribuScreen({ onBack, userName, onNavigate }: { onBack: 
                     ))}
                   </div>
                   <div className="lg:w-56 shrink-0 bg-gray-50 dark:bg-white/5 rounded-xl p-3 border border-gray-100 dark:border-white/10">
-                    <p className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Especifica tu tribu</p>
+                    <p className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">{i18n.t('especifica_tu_tribu')}</p>
                     <input
                       value={tribuDetalle}
                       onChange={(e) => setTribuDetalle(e.target.value)}
                       onBlur={() => guardar({ tribu_detalle: tribuDetalle })}
-                      placeholder="Escribe aquí..."
+                      placeholder={i18n.t('escribe_aqui')}
                       className="mt-2 w-full text-xs bg-white dark:bg-[#0A0A26] text-slate-800 dark:text-gray-100 border border-gray-200 dark:border-white/15 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#6236FF] placeholder-gray-400"
                     />
                   </div>
@@ -275,23 +273,23 @@ export default function TribuScreen({ onBack, userName, onNavigate }: { onBack: 
                   <Send className="w-5 h-5" />
                   <span className="text-left leading-tight">
                     {sentMsg ? '¡Enviado a tu Kanban Backlog!' : 'Agregar al Kanban'}
-                    {!sentMsg && <span className="block text-[11px] font-normal text-white/70">Focusia convertirá tu intención en una acción</span>}
+                    {!sentMsg && <span className="block text-[11px] font-normal text-white/70">{i18n.t('focusia_convertira_tu_intencion_en_una_a')}</span>}
                   </span>
                 </button>
                 {enviado && !sentMsg && (
-                  <p className="text-center text-[11px] text-green-600 dark:text-green-400 mt-2">Ya enviaste tu compromiso de esta semana al Kanban.</p>
+                  <p className="text-center text-[11px] text-green-600 dark:text-green-400 mt-2">{i18n.t('ya_enviaste_tu_compromiso_de_esta_semana')}</p>
                 )}
               </section>
 
               {/* Cómo funciona */}
               <section className="bg-white dark:bg-[#14142e] rounded-2xl p-5 border border-gray-100 dark:border-white/10 shadow-sm">
-                <p className="text-[11px] font-bold tracking-wider text-indigo-600 dark:text-indigo-300 mb-3">ASÍ FUNCIONA TRIBU</p>
+                <p className="text-[11px] font-bold tracking-wider text-indigo-600 dark:text-indigo-300 mb-3">{i18n.t('asi_funciona_tribu')}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   {[
                     { n: '1', t: 'Reflexiono', d: 'Recibes una pregunta semanal desde Focusia para inspirarte.', Icon: Lightbulb },
                     { n: '2', t: 'Comparto con mi tribu', d: 'Escribes qué compartirás y eliges con quién lo harás.', Icon: Users },
-                    { n: '3', t: 'Focusia crea la acción', d: 'Se genera automáticamente en tu Kanban Backlog para que la lleves a cabo.', Icon: ({ className }: { className?: string }) => <img src="./task-1.png" alt="kanban" className={className} /> },
-                    { n: '4', t: 'Kanban Backlog', d: 'Tu acción aparece en el Kanban para que puedas planificarla y cumplirla.', Icon: ({ className }: { className?: string }) => <img src="./kanban-1.png" alt="kanban" className={className} />  },
+                    { n: '3', t: 'Focusia crea la acción', d: 'Se genera automáticamente en tu Kanban Backlog para que la lleves a cabo.', Icon: ({ className }: { className?: string }) => <img src="/task-1.png" alt={i18n.t('kanban_43px')} className={className} /> },
+                    { n: '4', t: 'Kanban Backlog', d: 'Tu acción aparece en el Kanban para que puedas planificarla y cumplirla.', Icon: ({ className }: { className?: string }) => <img src="/kanban-1.png" alt={i18n.t('kanban_43px')} className={className} />  },
                   ].map(s => (
                     <div key={s.n} className="flex items-start gap-2">
                       <span className="w-9 h-9 rounded-full bg-purple-100 dark:bg-white/10 text-[#6236FF] dark:text-purple-300 flex items-center justify-center shrink-0">
@@ -323,14 +321,14 @@ export default function TribuScreen({ onBack, userName, onNavigate }: { onBack: 
               <div className="bg-white dark:bg-[#14142e] rounded-xl p-5 border border-gray-100 dark:border-white/10 shadow-sm">
               
                
-                 <span><img src="./check.png" alt="Check" className='w-6 h-6' /> <p className="text-[11px] font-bold tracking-wider text-indigo-600 dark:text-indigo-300">¿QUÉ OCURRE CUANDO AGREGAS AL KANBAN?</p></span>
+                 <span><img src="/check.png" alt={i18n.t('check')} className='w-6 h-6' /> <p className="text-[11px] font-bold tracking-wider text-indigo-600 dark:text-indigo-300">{i18n.t('que_ocurre_cuando_agregas_al_kanban')}</p></span>
                
                 <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed mt-2">
                   Se crea automáticamente una acción con tu idea para que no quede solo en tu mente, sino que se convierta en un paso real.
                 </p>
               </div>
               <div className="bg-[#F6F4FF] dark:bg-[#1a1440] rounded-2xl p-5 border border-purple-100 dark:border-white/10">
-                <p className="text-[11px] font-bold tracking-wider text-indigo-600 dark:text-indigo-300">EJEMPLO DE ACCIÓN GENERADA</p>
+                <p className="text-[11px] font-bold tracking-wider text-indigo-600 dark:text-indigo-300">{i18n.t('ejemplo_de_accion_generada')}</p>
                 <p className="text-xs text-gray-700 dark:text-gray-200 italic leading-relaxed mt-2">“{ejemplo}”</p>
               </div>
               <div className="bg-white dark:bg-[#14142e] rounded-2xl p-5 border border-gray-100 dark:border-white/10 shadow-sm">
@@ -340,7 +338,7 @@ export default function TribuScreen({ onBack, userName, onNavigate }: { onBack: 
                 <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed mt-2">
                   {frase || 'Lo que compartes hoy, puede transformar el mañana de alguien.'}
                 </p>
-                <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-2">— Desconocido</p>
+                <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-2">{i18n.t('desconocido')}</p>
               </div>
             </aside>
           </div>

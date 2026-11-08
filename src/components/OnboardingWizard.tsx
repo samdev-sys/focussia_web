@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   ArrowRight, Check, Sparkles, Gauge, Bell, Clock,
@@ -169,7 +170,7 @@ function ScreenVideoIntro({ next }: { next: () => void }) {
           </div>
         </div>
         <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 leading-tight">
-          Tu próximo nivel<br />de productividad<br />empieza aquí
+          Tu próximo nivel<br />{i18n.t('de_productividad')}<br />empieza aquí
         </h1>
         <p className="text-lg text-purple-200/80 mb-8 leading-relaxed">
           Focusia no es solo una app de tareas. Es tu acompañante estratégico<br />
@@ -195,8 +196,8 @@ function ScreenAvatar({ data, setAvatarByIndex, previewAvatar, onNext }: {
   return (
     <div>
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Elige tu acompañante</h2>
-        <p className="text-sm text-gray-500 mt-1">Selecciona el avatar que te acompañará en Focusia</p>
+        <h2 className="text-2xl font-bold text-gray-800">{i18n.t('elige_tu_acompanante')}</h2>
+        <p className="text-sm text-gray-500 mt-1">{i18n.t('selecciona_el_avatar_que_te_acompanara_e')}</p>
       </div>
       <div className="grid grid-cols-3 gap-3 mb-6">
         {AVATARS.map(a => {
@@ -213,9 +214,9 @@ function ScreenAvatar({ data, setAvatarByIndex, previewAvatar, onNext }: {
       </div>
       {previewAvatar && (
         <div className="flex items-center gap-4 p-4 bg-white/60 rounded-xl mb-4">
-          <img src={previewAvatar} alt="preview" className="w-14 h-14 rounded-xl object-cover" />
+          <img src={previewAvatar} alt={i18n.t('preview_16h1')} className="w-14 h-14 rounded-xl object-cover" />
           <div className="flex-1">
-            <p className="text-sm font-medium text-gray-700">¡Hola! Soy tu coach Focusia.</p>
+            <p className="text-sm font-medium text-gray-700">{i18n.t('hola_soy_tu_coach_focusia')}</p>
             <p className="text-xs text-gray-400">Voz {data.vozGenero === 'masculino' ? 'masculina' : 'femenina'}</p>
           </div>
           <button onClick={() => setPreviewAudio(!previewAudio)}
@@ -241,8 +242,8 @@ function ScreenConfigAtajo({ data, update, onAccept, onCustomize }: {
         <div className="w-14 h-14 bg-gradient-to-br from-purple-400 to-pink-300 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
           <Sparkles className="w-7 h-7 text-white" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-800">Configuración del acompañamiento</h2>
-        <p className="text-sm text-gray-500 mt-1">Focusia se adapta a tu forma de trabajar</p>
+        <h2 className="text-2xl font-bold text-gray-800">{i18n.t('configuracion_del_acompanamiento')}</h2>
+        <p className="text-sm text-gray-500 mt-1">{i18n.t('focusia_se_adapta_a_tu_forma_de_trabajar')}</p>
       </div>
       <div className="bg-white/60 rounded-2xl p-5 mb-5 border border-purple-100">
         <div className="flex items-start gap-3">
@@ -250,12 +251,12 @@ function ScreenConfigAtajo({ data, update, onAccept, onCustomize }: {
             <Check className="w-5 h-5 text-purple-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-800">Configuración Equilibrada Recomendada</h3>
+            <h3 className="font-semibold text-gray-800">{i18n.t('configuracion_equilibrada_recomendada')}</h3>
             <ul className="text-xs text-gray-500 mt-2 space-y-1">
               <li>• Intensidad: Equilibrada (ritmo constante sin presión)</li>
-              <li>• Canales: Notificaciones en la app</li>
+              <li>{i18n.t('canales_notificaciones_en_la_app')}</li>
               <li>• Horario: Mañana y tarde (07:00 - 22:00)</li>
-              <li>• Tono: Cercano y empático</li>
+              <li>{i18n.t('tono_cercano_y_empatico')}</li>
             </ul>
           </div>
         </div>
@@ -284,8 +285,8 @@ function ScreenIntensidad({ data, update, onNext, options }: {
         <div className="w-12 h-12 bg-gradient-to-br from-amber-300 to-orange-400 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
           <Gauge className="w-6 h-6 text-white" />
         </div>
-        <h2 className="text-xl font-bold text-gray-800">Intensidad del acompañamiento</h2>
-        <p className="text-xs text-gray-500 mt-1">¿Qué nivel de seguimiento prefieres?</p>
+        <h2 className="text-xl font-bold text-gray-800">{i18n.t('intensidad_del_acompanamiento_6y1h')}</h2>
+        <p className="text-xs text-gray-500 mt-1">{i18n.t('que_nivel_de_seguimiento_prefieres')}</p>
       </div>
       <div className="space-y-2 mb-6">
         {options.map(o => (
@@ -310,8 +311,8 @@ function ScreenCanales({ data, toggleCanal, onNext, options }: {
         <div className="w-12 h-12 bg-gradient-to-br from-cyan-300 to-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
           <Bell className="w-6 h-6 text-white" />
         </div>
-        <h2 className="text-xl font-bold text-gray-800">Canales de activación</h2>
-        <p className="text-xs text-gray-500 mt-1">¿Cómo quieres recibir las alertas?</p>
+        <h2 className="text-xl font-bold text-gray-800">{i18n.t('canales_de_activacion')}</h2>
+        <p className="text-xs text-gray-500 mt-1">{i18n.t('como_quieres_recibir_las_alertas')}</p>
       </div>
       <div className="space-y-2 mb-6">
         {options.map(o => {
@@ -359,8 +360,8 @@ function ScreenHorarios({ data, update, onNext, options }: {
         <div className="w-12 h-12 bg-gradient-to-br from-emerald-300 to-teal-400 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
           <Clock className="w-6 h-6 text-white" />
         </div>
-        <h2 className="text-xl font-bold text-gray-800">Horario de acompañamiento</h2>
-        <p className="text-xs text-gray-500 mt-1">Protege tu descanso limitando las interrupciones</p>
+        <h2 className="text-xl font-bold text-gray-800">{i18n.t('horario_de_acompanamiento')}</h2>
+        <p className="text-xs text-gray-500 mt-1">{i18n.t('protege_tu_descanso_limitando_las_interr')}</p>
       </div>
       <div className="space-y-2 mb-6">
         {options.map(o => (
@@ -372,7 +373,7 @@ function ScreenHorarios({ data, update, onNext, options }: {
         ))}
         <button onClick={() => setSelected('custom')}
           className={`w-full p-4 rounded-2xl border-2 text-left transition-all ${selected === 'custom' ? 'border-purple-400 bg-purple-50' : 'border-gray-100 bg-white/50 hover:border-gray-200'}`}>
-          <span className="block font-semibold text-gray-800">Personalizado</span>
+          <span className="block font-semibold text-gray-800">{i18n.t('personalizado')}</span>
           {selected === 'custom' && (
             <div className="flex gap-2 mt-2">
               <input type="time" value={customStart} onChange={e => setCustomStart(e.target.value)} className="flex-1 p-2 bg-white border rounded-lg text-xs" />
@@ -399,8 +400,8 @@ function ScreenTono({ data, update, onNext, options }: {
         <div className="w-12 h-12 bg-gradient-to-br from-pink-300 to-rose-400 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg">
           <Volume2 className="w-6 h-6 text-white" />
         </div>
-        <h2 className="text-xl font-bold text-gray-800">Tono de comunicación</h2>
-        <p className="text-xs text-gray-500 mt-1">¿Cómo prefieres que te hable Focusia?</p>
+        <h2 className="text-xl font-bold text-gray-800">{i18n.t('tono_de_comunicacion_090p')}</h2>
+        <p className="text-xs text-gray-500 mt-1">{i18n.t('como_prefieres_que_te_hable_focusia')}</p>
       </div>
       <div className="space-y-2 mb-6">
         {options.map(o => (
@@ -424,12 +425,12 @@ function ScreenResumen({ data, onPrev, onConfirm, loading, onEdit }: {
   return (
     <div>
       <div className="text-center mb-6">
-        <h2 className="text-xl font-bold text-gray-800">Resumen de preferencias</h2>
-        <p className="text-xs text-gray-500 mt-1">Revisa tu configuración antes de empezar</p>
+        <h2 className="text-xl font-bold text-gray-800">{i18n.t('resumen_de_preferencias')}</h2>
+        <p className="text-xs text-gray-500 mt-1">{i18n.t('revisa_tu_configuracion_antes_de_empezar')}</p>
       </div>
       <div className="flex flex-col items-center gap-3 mb-5">
-        {avatar && <img src={avatar.file} alt="avatar" className="w-16 h-16 rounded-2xl object-cover border-2 border-purple-200" />}
-        <p className="font-semibold text-gray-800">Tu acompañante</p>
+        {avatar && <img src={avatar.file} alt={i18n.t('avatar_62ne')} className="w-16 h-16 rounded-2xl object-cover border-2 border-purple-200" />}
+        <p className="font-semibold text-gray-800">{i18n.t('tu_acompanante')}</p>
       </div>
       <div className="space-y-2 mb-5">
         {[
@@ -479,7 +480,7 @@ function ScreenVideoOutro({ onFinish }: { onFinish: () => void }) {
             <Heart className="w-10 h-10 text-white" />
           </div>
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">Estás listo</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">{i18n.t('estas_listo')}</h1>
         <p className="text-base text-purple-200/80 leading-relaxed">
           Focusia ya está configurado para acompañarte. Recuerda: no se trata de hacer más, se trata de hacer lo que importa.
         </p>
@@ -528,7 +529,7 @@ function ScreenDispositivo({ onComplete }: { onComplete: () => void }) {
               <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Smartphone className="w-8 h-8 text-amber-600" />
               </div>
-              <h2 className="text-lg font-bold text-gray-800 mb-2">Gira tu dispositivo</h2>
+              <h2 className="text-lg font-bold text-gray-800 mb-2">{i18n.t('gira_tu_dispositivo_bmuv')}</h2>
               <p className="text-sm text-gray-500 mb-6">
                 El Dashboard de Focusia está diseñado para verse en orientación horizontal. Por favor, gira tu dispositivo.
               </p>
@@ -545,7 +546,7 @@ function ScreenDispositivo({ onComplete }: { onComplete: () => void }) {
               <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Monitor className="w-8 h-8 text-purple-600" />
               </div>
-              <h2 className="text-lg font-bold text-gray-800 mb-2">Recomendación</h2>
+              <h2 className="text-lg font-bold text-gray-800 mb-2">{i18n.t('recomendacion')}</h2>
               <p className="text-sm text-gray-500 mb-6">
                 El Dashboard de Focusia se disfruta mejor en computador por su amplitud visual. {isMobile ? 'Ya estás en horizontal, ¡perfecto!' : 'Si puedes, continúa desde un computador.'}
               </p>

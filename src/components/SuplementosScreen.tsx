@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   CalendarDays, Clock, Pill, Check, CheckCircle2, Bell,
@@ -10,6 +11,11 @@ import {
   type SuplementoTipo,
 } from '../services/api';
 import ModuleShell from './ModuleShell';
+
+/* Icono de cabecera: logo Focusia (igual que la marca del sidebar). */
+const IconoFocussia = ({ className }: { className?: string }) => (
+  <img src="/focussia.png" alt="Focusia" className={className || 'w-8 h-8'} />
+);
 
 /* ──────────────────────────────────────────────────────────────────────────
    Doc 21 · Suplementos y Medicamentos
@@ -153,7 +159,7 @@ function Tarjeta({ s, marcando, onTomado, onEliminar }: {
       <div className="absolute top-3 right-3 sm:static shrink-0">
         <button
           onClick={() => setMenu(v => !v)}
-          title="Opciones"
+          title={i18n.t('opciones_i5nw')}
           className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
         >
           <MoreVertical className="w-4 h-4" />
@@ -259,8 +265,8 @@ function Asistente({ onClose, onCreado }: { onClose: () => void; onCreado: (s: S
         <div className="px-5 py-4">
           {paso === 1 && (
             <>
-              <h3 className="text-lg font-bold text-[#101433] dark:text-white">¿Qué deseas agregar?</h3>
-              <p className="text-sm text-slate-500 dark:text-gray-400">Selecciona el tipo</p>
+              <h3 className="text-lg font-bold text-[#101433] dark:text-white">{i18n.t('que_deseas_agregar')}</h3>
+              <p className="text-sm text-slate-500 dark:text-gray-400">{i18n.t('selecciona_el_tipo')}</p>
               <div className="mt-4 space-y-3">
                 {([
                   { id: 'Suplemento' as SuplementoTipo, desc: 'Vitaminas, minerales, omega 3, proteínas, etc.' },
@@ -294,17 +300,17 @@ function Asistente({ onClose, onCreado }: { onClose: () => void; onCreado: (s: S
 
           {paso === 2 && (
             <>
-              <h3 className="text-lg font-bold text-[#101433] dark:text-white">Nombre del elemento</h3>
-              <p className="text-sm text-slate-500 dark:text-gray-400">Escribe el nombre del suplemento o medicamento</p>
-              <label className="block mt-4 text-xs font-semibold text-slate-500 dark:text-gray-400">Nombre</label>
+              <h3 className="text-lg font-bold text-[#101433] dark:text-white">{i18n.t('nombre_del_elemento')}</h3>
+              <p className="text-sm text-slate-500 dark:text-gray-400">{i18n.t('escribe_el_nombre_del_suplemento_o_medic')}</p>
+              <label className="block mt-4 text-xs font-semibold text-slate-500 dark:text-gray-400">{i18n.t('nombre_nx7e')}</label>
               <input
                 autoFocus
                 value={nombre}
                 onChange={e => setNombre(e.target.value)}
-                placeholder="Ejemplo: Vitamina D3"
+                placeholder={i18n.t('ejemplo_vitamina_d3')}
                 className="mt-1 w-full rounded-xl border border-slate-200 dark:border-white/15 dark:bg-white/5 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#6236FF]"
               />
-              <label className="block mt-4 text-xs font-semibold text-slate-500 dark:text-gray-400">Presentación</label>
+              <label className="block mt-4 text-xs font-semibold text-slate-500 dark:text-gray-400">{i18n.t('presentacion')}</label>
               <select
                 value={presentacion}
                 onChange={e => setPresentacion(e.target.value)}
@@ -317,9 +323,9 @@ function Asistente({ onClose, onCreado }: { onClose: () => void; onCreado: (s: S
 
           {paso === 3 && (
             <>
-              <h3 className="text-lg font-bold text-[#101433] dark:text-white">Frecuencia</h3>
-              <p className="text-sm text-slate-500 dark:text-gray-400">¿Con qué frecuencia lo tomas?</p>
-              <label className="block mt-4 text-xs font-semibold text-slate-500 dark:text-gray-400">Frecuencia habitual</label>
+              <h3 className="text-lg font-bold text-[#101433] dark:text-white">{i18n.t('frecuencia')}</h3>
+              <p className="text-sm text-slate-500 dark:text-gray-400">{i18n.t('con_que_frecuencia_lo_tomas')}</p>
+              <label className="block mt-4 text-xs font-semibold text-slate-500 dark:text-gray-400">{i18n.t('frecuencia_habitual')}</label>
               <select
                 value={personalizada ? 'custom' : (frecuencia === '' ? '' : String(frecuencia))}
                 onChange={e => {
@@ -329,13 +335,13 @@ function Asistente({ onClose, onCreado }: { onClose: () => void; onCreado: (s: S
                 }}
                 className="mt-1 w-full rounded-xl border border-slate-200 dark:border-white/15 dark:bg-white/5 px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#6236FF]"
               >
-                <option value="">Selecciona una opción</option>
+                <option value="">{i18n.t('selecciona_una_opcion')}</option>
                 {FRECUENCIAS.map(f => <option key={f.horas} value={f.horas}>{f.label}</option>)}
-                <option value="custom">Personalizada</option>
+                <option value="custom">{i18n.t('personalizada')}</option>
               </select>
-              <label className="block mt-4 text-xs font-semibold text-slate-500 dark:text-gray-400">Personalizada</label>
+              <label className="block mt-4 text-xs font-semibold text-slate-500 dark:text-gray-400">{i18n.t('personalizada')}</label>
               <div className={`mt-1 flex items-center gap-2 rounded-xl border px-3 py-2.5 ${personalizada ? 'border-[#6236FF] bg-[#F3F0FF] dark:bg-white/5' : 'border-slate-200 dark:border-white/15 opacity-60'}`}>
-                <span className="text-sm text-slate-500 dark:text-gray-400">Cada</span>
+                <span className="text-sm text-slate-500 dark:text-gray-400">{i18n.t('cada')}</span>
                 <input
                   type="number"
                   min={1}
@@ -345,16 +351,16 @@ function Asistente({ onClose, onCreado }: { onClose: () => void; onCreado: (s: S
                   onChange={e => setFrecuenciaCustom(parseInt(e.target.value) || 1)}
                   className="w-16 rounded-lg border border-slate-200 dark:border-white/15 dark:bg-white/5 px-2 py-1 text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#6236FF]"
                 />
-                <span className="text-sm text-slate-500 dark:text-gray-400">horas</span>
+                <span className="text-sm text-slate-500 dark:text-gray-400">{i18n.t('horas')}</span>
               </div>
             </>
           )}
 
           {paso === 4 && (
             <>
-              <h3 className="text-lg font-bold text-[#101433] dark:text-white">Hora de la primera toma</h3>
-              <p className="text-sm text-slate-500 dark:text-gray-400">¿A qué hora tomarás la primera dosis?</p>
-              <label className="block mt-4 text-xs font-semibold text-slate-500 dark:text-gray-400">Hora</label>
+              <h3 className="text-lg font-bold text-[#101433] dark:text-white">{i18n.t('hora_de_la_primera_toma')}</h3>
+              <p className="text-sm text-slate-500 dark:text-gray-400">{i18n.t('a_que_hora_tomaras_la_primera_dosis')}</p>
+              <label className="block mt-4 text-xs font-semibold text-slate-500 dark:text-gray-400">{i18n.t('hora_oedl')}</label>
               <div className="mt-1 flex items-center gap-2 rounded-xl border border-slate-200 dark:border-white/15 px-3 py-2.5">
                 <Clock className="w-4 h-4 text-slate-400" />
                 <input
@@ -372,9 +378,9 @@ function Asistente({ onClose, onCreado }: { onClose: () => void; onCreado: (s: S
 
           {paso === 5 && (
             <>
-              <h3 className="text-lg font-bold text-[#101433] dark:text-white">Duración del tratamiento</h3>
-              <p className="text-sm text-slate-500 dark:text-gray-400">¿Cuántos días durará tu tratamiento?</p>
-              <label className="block mt-4 text-xs font-semibold text-slate-500 dark:text-gray-400">Días de tratamiento</label>
+              <h3 className="text-lg font-bold text-[#101433] dark:text-white">{i18n.t('duracion_del_tratamiento')}</h3>
+              <p className="text-sm text-slate-500 dark:text-gray-400">{i18n.t('cuantos_dias_durara_tu_tratamiento')}</p>
+              <label className="block mt-4 text-xs font-semibold text-slate-500 dark:text-gray-400">{i18n.t('dias_de_tratamiento')}</label>
               <div className="mt-1 flex items-center gap-2">
                 <button
                   type="button"
@@ -457,7 +463,7 @@ function Confirmacion({ creado, onCerrar }: { creado: SuplementoData; onCerrar: 
           </span>
         </div>
 
-        <h3 className="mt-4 text-xl font-black text-[#101433] dark:text-white">¡Listo!</h3>
+        <h3 className="mt-4 text-xl font-black text-[#101433] dark:text-white">{i18n.t('listo_qewa')}</h3>
         <p className="mt-1 text-sm text-slate-500 dark:text-gray-400">Tu {creado.tipo.toLowerCase()} ha sido agregado correctamente.</p>
 
         <div className="mt-5 rounded-xl border border-gray-100 dark:border-white/10 p-3 text-left">
@@ -475,7 +481,7 @@ function Confirmacion({ creado, onCerrar }: { creado: SuplementoData; onCerrar: 
           </div>
           <div className="mt-3 pt-3 border-t border-gray-100 dark:border-white/10 flex items-center gap-2">
             <Clock className="w-4 h-4 text-slate-400" />
-            <span className="text-sm text-slate-500 dark:text-gray-400">Próxima toma</span>
+            <span className="text-sm text-slate-500 dark:text-gray-400">{i18n.t('proxima_toma')}</span>
             <span className="ml-auto text-base font-black text-[#101433] dark:text-white">{creado.proxima_toma_hora || '—'}</span>
             <span className="text-xs text-slate-500 dark:text-gray-400">
               {creado.proxima_dia === 'mañana' ? 'Mañana' : 'Hoy'}
@@ -579,6 +585,9 @@ export default function SuplementosScreen({ onBack, userName, onNavigate }: {
       userName={userName}
       onBack={onBack}
       onNavigate={onNavigate}
+      titulo="Focusia"
+      
+      iconoTitulo={IconoFocussia}
     >
       <div className="p-6">
         <div className="max-w-[1500px] mx-auto flex flex-col xl:flex-row gap-6">
@@ -588,9 +597,7 @@ export default function SuplementosScreen({ onBack, userName, onNavigate }: {
                 {/* Encabezado */}
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                   <div className="flex items-start gap-3 min-w-0">
-                    <span className="w-12 h-12 rounded-xl bg-[#F3F0FF] dark:bg-white/5 text-[#6236FF] dark:text-purple-300 flex items-center justify-center shrink-0">
-                      <img className="w-12 h-12" src="./pill-2.jpg" alt="Suplemento" />
-                    </span>
+                    <img src="/pill-2.png" alt="Suplementos" className="w-12 h-12 shrink-0 object-contain" />
                     <div className="min-w-0">
                       <h1 className="text-lg sm:text-xl font-bold tracking-tight text-[#101433] dark:text-white">
                         SUPLEMENTOS Y MEDICAMENTOS
@@ -675,7 +682,7 @@ export default function SuplementosScreen({ onBack, userName, onNavigate }: {
                   </div>
                 ) : visibles.length === 0 ? (
                   <div className="mt-5 rounded-xl border border-dashed border-slate-300 dark:border-white/15 py-14 text-center">
-                    <img src="./pill-1.png" alt="Placeholder" className="w-10 h-10 text-slate-300 mx-auto" />
+                    <img src="/pill-1.png" alt={i18n.t('placeholder')} className="w-10 h-10 text-slate-300 mx-auto" />
                     <p className="mt-3 font-semibold text-slate-600 dark:text-gray-300">
                       {activos.length === 0 ? 'Aún no tienes suplementos ni medicamentos' : 'Sin resultados con este filtro'}
                     </p>
@@ -732,7 +739,7 @@ export default function SuplementosScreen({ onBack, userName, onNavigate }: {
                         </span>
                         <button
                           onClick={() => eliminar(s)}
-                          title="Eliminar"
+                          title={i18n.t('eliminar_uxb7')}
                           className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 shrink-0"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -746,7 +753,7 @@ export default function SuplementosScreen({ onBack, userName, onNavigate }: {
 
             {/* Panel ¿Cómo funciona? */}
             <aside className="w-full xl:w-[340px] shrink-0 bg-white dark:bg-[#14142e] rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm p-6 self-start">
-              <h2 className="text-lg font-bold text-[#101433] dark:text-white">¿Cómo funciona?</h2>
+              <h2 className="text-lg font-bold text-[#101433] dark:text-white">{i18n.t('como_funciona_u73u')}</h2>
               <div className="mt-5 flex flex-col gap-5">
                 {COMO_FUNCIONA.map(({ Icon, title, desc }) => (
                   <div key={title} className="flex items-start gap-3">
@@ -764,7 +771,7 @@ export default function SuplementosScreen({ onBack, userName, onNavigate }: {
                 <span className="w-9 h-9 rounded-full bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-gray-300 flex items-center justify-center shrink-0">
                   <ShieldCheck className="w-4 h-4" />
                 </span>
-                <p className="text-xs text-slate-500 dark:text-gray-400">Tu información está segura y privada.</p>
+                <p className="text-xs text-slate-500 dark:text-gray-400">{i18n.t('tu_informacion_esta_segura_y_privada')}</p>
               </div>
             </aside>
         </div>

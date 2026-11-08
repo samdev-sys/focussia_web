@@ -1,3 +1,4 @@
+import i18n from './i18n';
 import React, { useState, useEffect, useRef } from 'react';
 import { Mail, Lock, ArrowRight, ArrowLeft } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
@@ -168,8 +169,8 @@ export default function AuthPanel({ onLogin, onRegister, initialMode = 'login' }
 
       <div className="relative w-full max-w-lg">
         <div className="text-center mb-10 flex flex-col items-center">
-          <img src="focusia-logo2.png" alt="Logo" className="w-32 h-32 mb-4" />
-          <h1 className="text-6xl font-['Montserrat'] font-black tracking-wide text-black ">WELCOME</h1>
+          <img src="focusia-logo2.png" alt={i18n.t('logo')} className="w-32 h-32 mb-4" />
+          <h1 className="text-6xl font-['Montserrat'] font-black tracking-wide text-black ">{i18n.t('welcome')}</h1>
           <p className="text-sm md:text-base font-semibold tracking-wide mt-1">
             
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#200013] via-[#814B8D] to-[#143CCC]">
@@ -188,7 +189,7 @@ export default function AuthPanel({ onLogin, onRegister, initialMode = 'login' }
           <>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-black uppercase tracking-wide">CORREO ELECTRÓNICO</label>
+              <label className="block text-sm font-bold text-black uppercase tracking-wide">{i18n.t('correo_electronico')}</label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                 <input
@@ -201,14 +202,14 @@ export default function AuthPanel({ onLogin, onRegister, initialMode = 'login' }
                     "placeholder:text-gray-400",
                     errors.email ? "border-red-300 focus:ring-red-200" : "border-transparent"
                   )}
-                  placeholder="usuario@gmail.com"
+                  placeholder={i18n.t('usuario_gmail_com')}
                 />
               </div>
               {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-black uppercase tracking-wide">CONTRASEÑA</label>
+              <label className="block text-sm font-bold text-black uppercase tracking-wide">{i18n.t('contrasena')}</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                 <input
@@ -265,7 +266,7 @@ export default function AuthPanel({ onLogin, onRegister, initialMode = 'login' }
               {isLoading ? (
                 <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-md animate-spin" />
               ) : (
-                <>INICIAR SESIÓN</>
+                <>{i18n.t('iniciar_sesion')}</>
               )}
             </button>
 
@@ -289,8 +290,8 @@ export default function AuthPanel({ onLogin, onRegister, initialMode = 'login' }
             </button>
 
             <div className="text-center">
-              <h2 className="text-xl font-bold text-gray-800">Recuperar contraseña</h2>
-              <p className="text-sm text-gray-500 mt-1">Te enviaremos un enlace para restablecer tu contraseña</p>
+              <h2 className="text-xl font-bold text-gray-800">{i18n.t('recuperar_contrasena')}</h2>
+              <p className="text-sm text-gray-500 mt-1">{i18n.t('te_enviaremos_un_enlace_para_restablecer')}</p>
             </div>
 
             {resetSent ? (
@@ -300,12 +301,12 @@ export default function AuthPanel({ onLogin, onRegister, initialMode = 'login' }
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <p className="text-sm text-gray-600">Si existe una cuenta con ese email, recibirás instrucciones para restablecer tu contraseña.</p>
+                <p className="text-sm text-gray-600">{i18n.t('si_existe_una_cuenta_con_ese_email_recib')}</p>
               </div>
             ) : (
               <>
                 <div className="space-y-2">
-                  <label className="block text-sm font-bold text-black uppercase tracking-wide">CORREO ELECTRÓNICO</label>
+                  <label className="block text-sm font-bold text-black uppercase tracking-wide">{i18n.t('correo_electronico')}</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                     <input
@@ -313,7 +314,7 @@ export default function AuthPanel({ onLogin, onRegister, initialMode = 'login' }
                       value={resetEmail}
                       onChange={(e) => setResetEmail(e.target.value)}
                       className="w-full pl-12 pr-4 py-3.5 bg-[#f2f3f5] border border-transparent rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2b44ff]/30 focus:border-[#2b44ff] placeholder:text-gray-400"
-                      placeholder="usuario@gmail.com"
+                      placeholder={i18n.t('usuario_gmail_com')}
                     />
                   </div>
                   {errors.reset && <p className="text-xs text-red-500">{errors.reset}</p>}
@@ -333,7 +334,7 @@ export default function AuthPanel({ onLogin, onRegister, initialMode = 'login' }
                   {isLoading ? (
                     <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-md animate-spin" />
                   ) : (
-                    <>ENVIAR ENLACE</>
+                    <>{i18n.t('enviar_enlace')}</>
                   )}
                 </button>
               </>
@@ -346,7 +347,7 @@ export default function AuthPanel({ onLogin, onRegister, initialMode = 'login' }
             <div className="w-full border-t border-gray-200" />
           </div>
           <div className="relative flex justify-center">
-            <span className="px-4 bg-white text-xs text-gray-400 font-medium">O continúa con</span>
+            <span className="px-4 bg-white text-xs text-gray-400 font-medium">{i18n.t('o_continua_con')}</span>
           </div>
         </div>
 
@@ -523,8 +524,8 @@ export function RegistroCuenta({ onExito, onIrLogin, onRecuperar, paso }: {
 
       <div className="relative z-10 w-full max-w-[600px] mx-auto flex flex-col items-center flex-1">
         <div className="flex items-center gap-2 mb-4">
-          <img src="/focusia-logo2.png" alt="Focusia Logo" className="w-6 h-6 object-contain" />
-          <span className="font-bold text-slate-800 text-lg tracking-tight">Focusia</span>
+          <img src="/focusia-logo2.png" alt={i18n.t('focusia_logo_etdh')} className="w-6 h-6 object-contain" />
+          <span className="font-bold text-focusia-gradient text-lg tracking-tight">{i18n.t('focusia_821v')}</span>
         </div>
 
         <h1 className="text-[42px] md:text-[56px] font-extrabold text-slate-900 text-center leading-tight tracking-tight">
@@ -545,7 +546,7 @@ export function RegistroCuenta({ onExito, onIrLogin, onRecuperar, paso }: {
               </svg>
             </div>
             <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} autoComplete="given-name"
-              className={inputCls} placeholder="Nombre" />
+              className={inputCls} placeholder={i18n.t('nombre')} />
           </div>
 
           <div className="relative w-full">
@@ -556,7 +557,7 @@ export function RegistroCuenta({ onExito, onIrLogin, onRecuperar, paso }: {
               </svg>
             </div>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email"
-              className={inputCls} placeholder="Correo electrónico" />
+              className={inputCls} placeholder={i18n.t('correo_electronico_x33i')} />
           </div>
 
           <div className="relative w-full">
@@ -568,7 +569,7 @@ export function RegistroCuenta({ onExito, onIrLogin, onRecuperar, paso }: {
               </svg>
             </div>
             <input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
-              className={inputPwCls} placeholder="Contraseña" />
+              className={inputPwCls} placeholder={i18n.t('contrasena_lmuj')} />
             <button type="button" onClick={() => setShowPw(!showPw)}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
               <IconoOjo abierto={showPw} />
@@ -584,7 +585,7 @@ export function RegistroCuenta({ onExito, onIrLogin, onRecuperar, paso }: {
               </svg>
             </div>
             <input type={showConfirmPw ? 'text' : 'password'} value={confirm} onChange={e => setConfirm(e.target.value)}
-              className={inputPwCls} placeholder="Confirmar contraseña" />
+              className={inputPwCls} placeholder={i18n.t('confirmar_contrasena_ef0n')} />
             <button type="button" onClick={() => setShowConfirmPw(!showConfirmPw)}
               className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
               <IconoOjo abierto={showConfirmPw} />
@@ -593,16 +594,16 @@ export function RegistroCuenta({ onExito, onIrLogin, onRecuperar, paso }: {
 
           <div className="w-full text-left">
             {onRecuperar ? (
-              <button type="button" onClick={onRecuperar} className="text-[#1d2fdc] text-[13px] font-medium hover:underline">¿Olvidaste tu contraseña?</button>
+              <button type="button" onClick={onRecuperar} className="text-[#1d2fdc] text-[13px] font-medium hover:underline">{i18n.t('olvidaste_tu_contrasena')}</button>
             ) : (
-              <span className="text-[#1d2fdc] text-[13px] font-medium">¿Olvidaste tu contraseña?</span>
+              <span className="text-[#1d2fdc] text-[13px] font-medium">{i18n.t('olvidaste_tu_contrasena')}</span>
             )}
           </div>
 
           <BotonGoogle
             onListo={() => onExito({ nombre: nombre.trim(), email: email.trim() })}
             fallback={
-              <button type="button" title="Inicio de sesión con otras aplicaciones — disponible próximamente"
+              <button type="button" title={i18n.t('inicio_de_sesion_con_otras_aplicaciones_')}
                 className="w-full py-2.5 rounded-lg border border-slate-200 bg-white text-slate-700 font-medium text-sm flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors cursor-pointer">
                 <svg width="20" height="20" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -664,7 +665,7 @@ export function RegistroCuenta({ onExito, onIrLogin, onRecuperar, paso }: {
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="#1d4ed8" />
             <polyline points="9,12 11,14 15,10" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <span className="text-slate-700 text-xs">Tu información está protegida y sincronizada en todos tus dispositivos.</span>
+          <span className="text-slate-700 text-xs">{i18n.t('tu_informacion_esta_protegida_y_sincroni')}</span>
         </div>
       </div>
     </div>
@@ -704,9 +705,9 @@ export function ResetPasswordGate({ token, onDone }: { token: string; onDone: ()
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#ffffff]">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <img src="focusia-logo2.png" alt="Logo" className="w-24 h-24 mx-auto mb-4" />
-          <h1 className="text-2xl font-black text-black">Nueva contraseña</h1>
-          <p className="text-sm text-gray-500 mt-1">Elige una contraseña segura para tu cuenta</p>
+          <img src="focusia-logo2.png" alt={i18n.t('logo')} className="w-24 h-24 mx-auto mb-4" />
+          <h1 className="text-2xl font-black text-black">{i18n.t('nueva_contrasena')}</h1>
+          <p className="text-sm text-gray-500 mt-1">{i18n.t('elige_una_contrasena_segura_para_tu_cuen')}</p>
         </div>
         {ok ? (
           <div className="text-center py-6">
@@ -715,7 +716,7 @@ export function ResetPasswordGate({ token, onDone }: { token: string; onDone: ()
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <p className="text-sm text-gray-600 mb-6">Contraseña actualizada. Ya puedes iniciar sesión.</p>
+            <p className="text-sm text-gray-600 mb-6">{i18n.t('contrasena_actualizada_ya_puedes_iniciar')}</p>
             <button
               type="button"
               onClick={onDone}
@@ -727,7 +728,7 @@ export function ResetPasswordGate({ token, onDone }: { token: string; onDone: ()
         ) : (
           <form onSubmit={submit} className="space-y-5">
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-black uppercase tracking-wide">NUEVA CONTRASEÑA</label>
+              <label className="block text-sm font-bold text-black uppercase tracking-wide">{i18n.t('nueva_contrasena_byja')}</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                 <input
@@ -735,12 +736,12 @@ export function ResetPasswordGate({ token, onDone }: { token: string; onDone: ()
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-12 pr-4 py-3.5 bg-[#f2f3f5] border border-transparent rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2b44ff]/30 focus:border-[#2b44ff] placeholder:text-gray-400"
-                  placeholder="Mínimo 8 caracteres"
+                  placeholder={i18n.t('minimo_8_caracteres')}
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-black uppercase tracking-wide">CONFIRMAR CONTRASEÑA</label>
+              <label className="block text-sm font-bold text-black uppercase tracking-wide">{i18n.t('confirmar_contrasena')}</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
                 <input
@@ -748,7 +749,7 @@ export function ResetPasswordGate({ token, onDone }: { token: string; onDone: ()
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
                   className="w-full pl-12 pr-4 py-3.5 bg-[#f2f3f5] border border-transparent rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2b44ff]/30 focus:border-[#2b44ff] placeholder:text-gray-400"
-                  placeholder="Repite tu contraseña"
+                  placeholder={i18n.t('repite_tu_contrasena')}
                 />
               </div>
             </div>

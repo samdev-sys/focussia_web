@@ -1,7 +1,9 @@
+import i18n from '../i18n';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Heart, Plus, X, Check, Loader2, CalendarDays, Info, ChevronRight,
-  Play, Clock, BookOpen, Target, BarChart3, Bell, RefreshCw,
+  Play, Clock, BookOpen, Target, BarChart3, Bell,
+  Dices, Clapperboard, TreePine, Tent, Palette, Trophy, Flower2,
 } from 'lucide-react';
 import {
   horaOroService,
@@ -119,7 +121,7 @@ function TarjetaExperiencia({ experiencia, emoji, indice, activo, onElegir, onQu
       <button
         type="button"
         onClick={onElegir}
-        title="Cambiar por otra experiencia"
+        title={i18n.t('cambiar_por_otra_experiencia')}
         className="w-full text-left px-2 py-2 flex items-start gap-2"
       >
         <span
@@ -140,7 +142,7 @@ function TarjetaExperiencia({ experiencia, emoji, indice, activo, onElegir, onQu
       </button>
       <button
         type="button"
-        title="Quitar"
+        title={i18n.t('quitar')}
         onClick={onQuitar}
         className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-white dark:bg-[#1a1a3a] border border-rose-200 text-rose-500 items-center justify-center hidden group-hover:flex hover:bg-rose-50"
       >
@@ -150,28 +152,43 @@ function TarjetaExperiencia({ experiencia, emoji, indice, activo, onElegir, onQu
   );
 }
 
+/** Ícono de lucide por categoría del catálogo (mockup); fallback: emoji. */
+const ICONO_CATEGORIA: Record<string, React.ComponentType<{ className?: string }>> = {
+  'Juegos': Dices,
+  'Películas y series': Clapperboard,
+  'Conversaciones': Heart,
+  'Aire libre': TreePine,
+  'Salidas': Tent,
+  'Creatividad': Palette,
+  'Deportes': Trophy,
+  'Espiritualidad y reflexión': Flower2,
+};
+
 function CatalogoCategoria({ categoria, cargando, onElegir, onOtraIdea }: {
   categoria: HoraOroCategoria;
   cargando: boolean;
   onElegir: (categoria: string, actividad: string) => void;
   onOtraIdea: (categoria: string) => void;
 }) {
+  const IconoCat = ICONO_CATEGORIA[categoria.nombre];
   return (
     <div
-      className="rounded-2xl border p-3 flex flex-col bg-white dark:bg-white/5"
-      style={{ borderColor: `${categoria.color}33`, backgroundColor: `${categoria.color}0A` }}
+      className="rounded-md w-23 border p-3 flex flex-col shadow-sm"
+      style={{ borderColor: `${categoria.color}40`, backgroundColor: `${categoria.color}0D` }}
     >
-      <h3 className="flex items-center gap-1.5 text-[12px] font-bold leading-tight" style={{ color: categoria.color }}>
-        <span className="text-sm">{categoria.emoji}</span>
-        {categoria.nombre}
+      <h3 className="flex items-center gap-1.5 text-[10.5px] font-bold leading-tight min-h-[18px]" style={{ color: categoria.color }}>
+        {IconoCat
+          ? <IconoCat className="w-3.5 h-3.5 shrink-0" />
+          : <span className="text-sm leading-none">{categoria.emoji}</span>}
+        <span className="truncate">{categoria.nombre}</span>
       </h3>
-      <ul className="mt-2 flex-1 flex flex-col">
+      <ul className="mt-2 mb-1 flex-1 flex flex-col">
         {categoria.actividades.map((actividad, indice) => (
           <li key={`${categoria.nombre}-${indice}-${actividad}`}>
             <button
               type="button"
               onClick={() => onElegir(categoria.nombre, actividad)}
-              className="w-full text-left text-[11px] leading-snug text-slate-600 dark:text-gray-300 py-0.5 hover:font-semibold transition-all truncate"
+              className="w-full text-left text-[11px] leading-snug text-slate-600 dark:text-gray-300 py-[3px] hover:font-semibold transition-all truncate"
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = categoria.color; }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = ''; }}
             >
@@ -184,12 +201,12 @@ function CatalogoCategoria({ categoria, cargando, onElegir, onOtraIdea }: {
         type="button"
         disabled={cargando}
         onClick={() => onOtraIdea(categoria.nombre)}
-        className="mt-2 w-full rounded-lg border py-1.5 text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors disabled:opacity-60"
-        style={{ borderColor: `${categoria.color}55`, color: categoria.color }}
+        className="mt-auto w-full rounded-lg py-1 text-[10.5px] font-bold flex items-center justify-center gap-1 transition-colors hover:brightness-95 disabled:opacity-60"
+        style={{ backgroundColor: 'rgba(255,255,255,0.75)', color: categoria.color }}
       >
         {cargando
-          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          : <RefreshCw className="w-3.5 h-3.5" />}
+          ? <Loader2 className="w-3 h-3 animate-spin" />
+          : <Plus className="w-3 h-3" strokeWidth={3} />}
         Otra idea
       </button>
     </div>
@@ -432,7 +449,7 @@ export default function HoraDeOroScreen({ onBack, userName, onNavigate, slotInic
             <div className="mb-5 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
               <X className="w-4 h-4 mt-0.5 shrink-0" />
               <span className="flex-1">{error}</span>
-              <button onClick={() => setError(null)} className="text-rose-400 hover:text-rose-600 text-xs font-bold">Cerrar</button>
+              <button onClick={() => setError(null)} className="text-rose-400 hover:text-rose-600 text-xs font-bold">{i18n.t('cerrar_nel6')}</button>
             </div>
           )}
 
@@ -442,7 +459,7 @@ export default function HoraDeOroScreen({ onBack, userName, onNavigate, slotInic
             <div className="flex flex-col gap-6 min-w-0">
 
               {/* Portada */}
-              <section className="relative overflow-hidden rounded-2xl bg-[#2A1B4D] min-h-[210px] sm:min-h-[240px] flex items-center">
+              <section className="relative overflow-hidden rounded-md bg-[#2A1B4D] h-[180px] flex items-center">
                 <img
                   src={HERO_IMAGE}
                   alt=""
@@ -452,7 +469,7 @@ export default function HoraDeOroScreen({ onBack, userName, onNavigate, slotInic
                 {/* Velo solo sobre el texto: la familia de la foto queda a la vista. */}
                 <div className="absolute inset-0 bg-gradient-to-r from-[#150A26]/92 via-[#1D1036]/60 to-transparent" />
                 <div className="relative p-6 sm:p-8 max-w-xl">
-                  <h2 className="text-2xl sm:text-[32px] font-bold leading-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)]">
+                  <h2 className="text-xs sm:text-[25px] font-bold leading-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.55)]">
                     Pequeños momentos<br />crean grandes recuerdos.
                   </h2>
                   <p className="mt-3 text-sm sm:text-base text-white/85 drop-shadow-[0_1px_6px_rgba(0,0,0,0.5)]">
@@ -476,19 +493,19 @@ export default function HoraDeOroScreen({ onBack, userName, onNavigate, slotInic
               {/* Tu plan semanal (§II.3) */}
               <section>
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-                  <h2 className="flex items-center gap-2 text-base sm:text-lg font-black text-[#101433] dark:text-white">
+                  <h2 className="flex items-center gap-2 text-base sm:text-lg font-bold text-[#101433] dark:text-white">
                     Tu plan semanal
-                    <span title="Cada día tiene dos espacios. Puedes agregar tantos como quieras.">
+                    <span title={i18n.t('cada_dia_tiene_dos_espacios_puedes_agreg')}>
                       <Info className="w-4 h-4 text-slate-400" />
                     </span>
                   </h2>
                   <div className="flex items-center gap-4">
                     <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 dark:text-gray-400">
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: TINTES[0].color }} />
+                      <span className="w-2.5 h-2.5 rounded-md" style={{ backgroundColor: TINTES[0].color }} />
                       1ª experiencia
                     </span>
                     <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 dark:text-gray-400">
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: TINTES[1].color }} />
+                      <span className="w-2.5 h-2.5 rounded-md" style={{ backgroundColor: TINTES[1].color }} />
                       2ª experiencia
                     </span>
                   </div>
@@ -499,24 +516,24 @@ export default function HoraDeOroScreen({ onBack, userName, onNavigate, slotInic
                     <Loader2 className="w-6 h-6 animate-spin" />
                   </div>
                 ) : (
-                  <div className="grid gap-3 grid-cols-2 md:grid-cols-4 2xl:grid-cols-7">
+                  <div className="grid gap-3 grid-cols-2 md:grid-cols-4 md:grid-cols-7">
                     {dias.map((dia, indiceDia) => {
                       const espacios = Math.max(dia.espacios_iniciales, dia.experiencias.length);
                       const esHoy = indiceDia === hoyIndice;
                       return (
                         <div
                           key={dia.dia}
-                          className={`rounded-2xl border bg-white dark:bg-[#14142e] p-3 flex flex-col min-w-0 ${
+                          className={`rounded-md border bg-white dark:bg-[#14142e] p-3 flex flex-col min-w-25 ${
                             esHoy ? 'border-[#6236FF]/40 shadow-sm' : 'border-[#EDEFF5] dark:border-white/10'
                           }`}
                         >
                           <div className="text-center pb-2 border-b border-dashed border-[#EDEFF5] dark:border-white/10">
-                            <p className="text-[11px] font-black tracking-wide text-[#101433] dark:text-white uppercase">
+                            <p className="text-[10px] font-bold tracking-wide text-[#101433] dark:text-white uppercase">
                               {dia.dia}
                             </p>
                             <p className="text-[10px] font-medium text-slate-400">
                               {semana[indiceDia]?.corta}
-                              {esHoy && <span className="ml-1 text-[#6236FF] font-bold">· hoy</span>}
+                              {esHoy && <span className="ml-1 text-[#6236FF] font-bold">{i18n.t('hoy')}</span>}
                             </p>
                           </div>
 
@@ -557,7 +574,7 @@ export default function HoraDeOroScreen({ onBack, userName, onNavigate, slotInic
                           {/* §II.3 — espacio extra, sin límite */}
                           <button
                             type="button"
-                            title="Agregar experiencia"
+                            title={i18n.t('agregar_experiencia')}
                             onClick={() => seleccionar(dia.dia, dia.siguiente_posicion)}
                             className={`mt-2 w-full rounded-xl border border-dashed py-1.5 flex items-center justify-center gap-1 text-[10px] font-bold transition-colors ${
                               dia.puede_agregar
@@ -577,27 +594,27 @@ export default function HoraDeOroScreen({ onBack, userName, onNavigate, slotInic
 
               {/* Catálogo de experiencias (§II.5, §II.6) */}
               <section ref={catalogoRef} className="scroll-mt-6">
-                <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <h2 className="text-base sm:text-lg font-bold text-[#101433] dark:text-white">
                       Catálogo de experiencias
                     </h2>
                     <p className="text-xs sm:text-sm text-slate-500 dark:text-gray-400">
-                      Elige una experiencia para agregar a tu plan. ¡Tu selección, Focusia inspira!
+                      Elige una experiencia para agregarla a tu plan. Tú seleccionas, Focusia inspira!
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={abrirRealizadas}
-                    className="rounded-xl border border-[#6236FF]/40 text-[#6236FF] text-[11px] sm:text-xs font-bold px-3.5 py-2 flex items-center gap-1 hover:bg-[#F5F3FF] dark:hover:bg-white/5 transition-colors shrink-0"
+                    className="rounded-md border border-[#6236FF]/40 text-[#6236FF] text-[11px] sm:text-xs font-bold px-3.5 py-2 flex items-center gap-1 hover:bg-[#F5F3FF] dark:hover:bg-white/5 transition-colors shrink-0"
                   >
-                    Ver mis experiencias realizadas
+                    Ver más experiencias realizadas
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
                 <div
-                  className={`mt-3 rounded-xl px-3.5 py-2.5 text-xs font-semibold flex items-center gap-2 ${
+                  className={`mt-3 rounded-md px-3.5 py-2.5 text-xs font-semibold flex items-center gap-3 ${
                     slot
                       ? 'bg-[#F3F0FF] text-[#6236FF] dark:bg-white/5 dark:text-purple-300'
                       : 'bg-slate-50 text-slate-500 dark:bg-white/5 dark:text-gray-400'
@@ -606,7 +623,7 @@ export default function HoraDeOroScreen({ onBack, userName, onNavigate, slotInic
                   <Target className="w-4 h-4 shrink-0" />
                   {slot
                     ? <>Agregando a <strong className="mx-1">{slot.dia}</strong> · espacio {slot.posicion + 1}. Toca una actividad.</>
-                    : <span>Sin día seleccionado: la experiencia entra en el primer espacio libre.</span>}
+                    : <span>{i18n.t('sin_dia_seleccionado_la_experiencia_entr')}</span>}
                 </div>
 
                 {loading ? (
@@ -614,7 +631,7 @@ export default function HoraDeOroScreen({ onBack, userName, onNavigate, slotInic
                     <Loader2 className="w-6 h-6 animate-spin" />
                   </div>
                 ) : (
-                  <div className="mt-3 grid gap-3 grid-cols-2 lg:grid-cols-4 2xl:grid-cols-8">
+                  <div className="mt-3 grid gap-3 grid-cols-4 md:grid-cols-8">
                     {categorias.map(cat => (
                       <CatalogoCategoria
                         key={cat.nombre}
@@ -637,19 +654,20 @@ export default function HoraDeOroScreen({ onBack, userName, onNavigate, slotInic
             <aside className="flex flex-col gap-4">
 
               {/* ¿Sabías que? */}
-              <div className="rounded-2xl border border-[#FBD5E4] bg-[#FFF5F8] dark:bg-white/5 dark:border-white/10 p-5">
+              <div className=" w-65 ml-15 rounded-md border border-[#FBD5E4] bg-[#FFF5F8] dark:bg-white/5 dark:border-white/10 p-5">
                 <h3 className="flex items-center gap-2 text-sm font-black text-[#C2185B] dark:text-pink-300">
                   <Heart className="w-4 h-4 fill-current" />
                   ¿Sabías que?
                 </h3>
-                <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-gray-300">
+                <p className="mt-2 text-xs leading-relaxed text-slate-600 dark:text-gray-300 px-4">
                   Una hora de calidad en familia puede mejorar la comunicación, la confianza y la
                   felicidad de todos los miembros.
                 </p>
+                <img src="/fam-2.png" alt="Familia" className="mt-2 ml-35 w-20 rounded-md object-cover" />
               </div>
 
               {/* Recordatorio del día */}
-              <div className="rounded-2xl border border-[#EDEFF5] dark:border-white/10 bg-white dark:bg-[#14142e] p-5">
+              <div className="w-65 ml-15 rounded-md border border-[#EDEFF5] dark:border-white/10 bg-white dark:bg-[#14142e] p-5">
                 <h3 className="flex items-center gap-2 text-sm font-black text-[#101433] dark:text-white">
                   <CalendarDays className="w-4 h-4 text-[#EC2C6B]" />
                   Recordatorio del día
@@ -673,7 +691,7 @@ export default function HoraDeOroScreen({ onBack, userName, onNavigate, slotInic
                     >
                       {pendienteHoy
                         ? <>Disfruta este momento <Heart className="w-3.5 h-3.5 fill-current" /></>
-                        : <>Realizada ✓ — toca para deshacer</>}
+                        : <>{i18n.t('realizada_toca_para_deshacer')}</>}
                     </button>
                     <p className="mt-2 text-[10px] text-center text-slate-400">
                       Hoy: {deHoy.map(e => e.actividad).join(' · ')}
@@ -699,7 +717,7 @@ export default function HoraDeOroScreen({ onBack, userName, onNavigate, slotInic
               </div>
 
               {/* Tus estadísticas */}
-              <div className="rounded-2xl border border-[#EDEFF5] dark:border-white/10 bg-white dark:bg-[#14142e] p-5">
+              <div className=" w-65 ml-15 rounded-md border border-[#EDEFF5] dark:border-white/10 bg-white dark:bg-[#14142e] p-5">
                 <h3 className="flex items-center gap-2 text-sm font-black text-[#101433] dark:text-white">
                   <BarChart3 className="w-4 h-4 text-[#6236FF]" />
                   Tus estadísticas
@@ -731,7 +749,7 @@ export default function HoraDeOroScreen({ onBack, userName, onNavigate, slotInic
               </div>
 
               {/* Inspírate cada día */}
-              <div className="rounded-2xl border border-[#DDD6FE] bg-[#F7F5FF] dark:bg-white/5 dark:border-white/10 p-5">
+              <div className=" w-65 ml-15 rounded-md  border border-[#DDD6FE] bg-[#F7F5FF] dark:bg-white/5 dark:border-white/10 p-5">
                 <h3 className="flex items-center gap-2 text-sm font-black text-[#101433] dark:text-white">
                   <Bell className="w-4 h-4 text-[#6236FF]" />
                   Inspírate cada día
@@ -761,7 +779,7 @@ export default function HoraDeOroScreen({ onBack, userName, onNavigate, slotInic
           >
             <div className="px-5 py-4 border-b border-gray-100 dark:border-white/10 flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-base font-black text-[#101433] dark:text-white">Mis experiencias realizadas</h2>
+                <h2 className="text-base font-black text-[#101433] dark:text-white">{i18n.t('mis_experiencias_realizadas')}</h2>
                 <p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
                   {realizadas?.total || 0} {(realizadas?.total || 0) === 1 ? 'momento disfrutado' : 'momentos disfrutados'}
                 </p>
@@ -800,7 +818,7 @@ export default function HoraDeOroScreen({ onBack, userName, onNavigate, slotInic
                         type="button"
                         onClick={() => marcar(item, false)}
                         className="text-[11px] font-bold text-slate-400 hover:text-rose-500 shrink-0"
-                        title="Deshacer"
+                        title={i18n.t('deshacer_flcm')}
                       >
                         Deshacer
                       </button>
@@ -822,7 +840,7 @@ export default function HoraDeOroScreen({ onBack, userName, onNavigate, slotInic
           >
             <div className="px-5 py-4 border-b border-gray-100 dark:border-white/10 flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-base font-black text-[#101433] dark:text-white">Configurar recordatorios</h2>
+                <h2 className="text-base font-black text-[#101433] dark:text-white">{i18n.t('configurar_recordatorios')}</h2>
                 <p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
                   Un aviso amable el día que programaste tu Hora de Oro.
                 </p>
@@ -837,7 +855,7 @@ export default function HoraDeOroScreen({ onBack, userName, onNavigate, slotInic
 
             <div className="p-5 flex flex-col gap-4">
               <div className="flex items-center justify-between gap-4">
-                <span className="text-sm font-semibold text-[#101433] dark:text-gray-100">Recordatorio diario</span>
+                <span className="text-sm font-semibold text-[#101433] dark:text-gray-100">{i18n.t('recordatorio_diario')}</span>
                 <button
                   type="button"
                   disabled={guardandoAjustes}
@@ -855,7 +873,7 @@ export default function HoraDeOroScreen({ onBack, userName, onNavigate, slotInic
               </div>
 
               <label className="flex items-center justify-between gap-4">
-                <span className="text-sm font-semibold text-[#101433] dark:text-gray-100">Hora del aviso</span>
+                <span className="text-sm font-semibold text-[#101433] dark:text-gray-100">{i18n.t('hora_del_aviso')}</span>
                 <select
                   value={ajustes.hora_recordatorio.slice(0, 2)}
                   disabled={guardandoAjustes || !ajustes.recordatorio_activo}

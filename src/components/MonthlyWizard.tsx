@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useState, useEffect } from 'react';
 import {
   X, ArrowRight, ArrowLeft, Pencil, Check, Calendar,
@@ -170,12 +171,12 @@ export default function MonthlyWizard({ onClose, onApproved, username, avatarUrl
             <Panel>
               <div className="text-center py-8 max-w-md mx-auto">
                 <Calendar className="w-12 h-12 text-[#5b5bd6] mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-white mb-2">Metas Mensuales</h3>
+                <h3 className="text-xl font-bold text-white mb-2">{i18n.t('metas_mensuales_7dvr')}</h3>
                 <p className="text-sm text-white/70 mb-6">
                   Para crear tus Metas Mensuales, primero debes aprobar tu Gran Meta Anual.
                 </p>
                 <PrimaryButton
-                  label="Crear mi Gran Meta Anual"
+                  label={i18n.t('crear_mi_gran_meta_anual_9p6b')}
                   onClick={() => { onNeedAnnualGoal?.(); onClose(); }}
                 />
               </div>
@@ -226,7 +227,7 @@ export default function MonthlyWizard({ onClose, onApproved, username, avatarUrl
               {plan.status === 'PENDIENTE_REVISION' && (
                 <div className="mx-5 sm:mx-8 mt-5 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 flex flex-wrap items-center gap-3">
                   <p className="flex-1 min-w-[220px] text-sm text-amber-800">
-                    <strong>Tu Gran Meta Anual cambió.</strong> Estas metas quedaron pendientes de revisión.
+                    <strong>{i18n.t('tu_gran_meta_anual_cambio')}</strong> Estas metas quedaron pendientes de revisión.
                     Puedes regenerarlas con la nueva dirección.
                   </p>
                   <button
@@ -294,9 +295,9 @@ export default function MonthlyWizard({ onClose, onApproved, username, avatarUrl
                 </div>
                 <div className="ml-auto">
                   {currentBlock === blocks.length - 1 ? (
-                    <PrimaryButton label="Ver resumen final" onClick={() => setStage('summary')} />
+                    <PrimaryButton label={i18n.t('ver_resumen_final')} onClick={() => setStage('summary')} />
                   ) : (
-                    <PrimaryButton label="Siguiente bloque" onClick={() => setCurrentBlock(currentBlock + 1)} />
+                    <PrimaryButton label={i18n.t('siguiente_bloque')} onClick={() => setCurrentBlock(currentBlock + 1)} />
                   )}
                 </div>
               </div>
@@ -315,7 +316,7 @@ export default function MonthlyWizard({ onClose, onApproved, username, avatarUrl
                 <span className="text-[11px] font-bold tracking-widest text-white/80 border border-white/25 rounded-full px-3 py-1">
                   REVISIÓN FINAL
                 </span>
-                <h3 className="text-white text-xl sm:text-2xl font-bold">Resumen de Metas Mensuales</h3>
+                <h3 className="text-white text-xl sm:text-2xl font-bold">{i18n.t('resumen_de_metas_mensuales')}</h3>
                 <span className="ml-auto text-[11px] font-bold tracking-widest text-white/70">{rangeLabel}</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 p-5 sm:p-8">
@@ -331,7 +332,7 @@ export default function MonthlyWizard({ onClose, onApproved, username, avatarUrl
                   <ArrowLeft className="w-4 h-4" /> Volver al bloque {blocks.length}
                 </button>
                 <div className="ml-auto">
-                  <PrimaryButton label="Aprobar Metas Mensuales" onClick={handleApprove} disabled={saving} />
+                  <PrimaryButton label={i18n.t('aprobar_metas_mensuales')} onClick={handleApprove} disabled={saving} />
                 </div>
               </div>
             </Panel>
@@ -343,7 +344,7 @@ export default function MonthlyWizard({ onClose, onApproved, username, avatarUrl
                 <span className="text-[11px] font-bold tracking-widest text-white/80 border border-white/25 rounded-full px-3 py-1">
                   EDICIÓN
                 </span>
-                <h3 className="text-white text-xl sm:text-2xl font-bold">Editar Meta Mensual</h3>
+                <h3 className="text-white text-xl sm:text-2xl font-bold">{i18n.t('editar_meta_mensual')}</h3>
                 <span className="ml-auto text-[11px] font-bold tracking-widest text-white/70">
                   {MONTH_NAMES[editingGoal.calendar_month - 1].toUpperCase()} {editingGoal.calendar_year}
                 </span>
@@ -359,7 +360,7 @@ export default function MonthlyWizard({ onClose, onApproved, username, avatarUrl
                       <span className="inline-flex w-8 h-8 rounded-full bg-[#efeafe] items-center justify-center mb-1">
                         <Quote className="w-4 h-4 text-[#5b5bd6] fill-[#5b5bd6]" />
                       </span>
-                      <p className="text-[#1b2350] font-bold">¿Qué quieres cambiar de esta meta?</p>
+                      <p className="text-[#1b2350] font-bold">{i18n.t('que_quieres_cambiar_de_esta_meta')}</p>
                     </div>
                   </div>
                   <p className="mt-5 mb-2 text-[11px] font-bold tracking-widest text-[#5b5bd6]">
@@ -369,7 +370,7 @@ export default function MonthlyWizard({ onClose, onApproved, username, avatarUrl
                     <textarea
                       value={editInstruction}
                       onChange={e => setEditInstruction(e.target.value)}
-                      placeholder="Escribe aquí qué quieres cambiar"
+                      placeholder={i18n.t('escribe_aqui_que_quieres_cambiar')}
                       rows={4}
                       autoFocus
                       className="w-full text-sm border border-[#b9b3f5] rounded-2xl px-4 py-3 outline-none focus:border-[#5b5bd6] resize-none text-[#1b2350]"
@@ -409,7 +410,7 @@ export default function MonthlyWizard({ onClose, onApproved, username, avatarUrl
                 <span className="w-10 h-10 rounded-full bg-gradient-to-br from-[#2b9df4] to-[#a21caf] flex items-center justify-center">
                   <Check className="w-5 h-5 text-white" strokeWidth={3} />
                 </span>
-                <h3 className="text-white text-xl sm:text-2xl font-bold">Metas Mensuales aprobadas</h3>
+                <h3 className="text-white text-xl sm:text-2xl font-bold">{i18n.t('metas_mensuales_aprobadas')}</h3>
                 <span className="ml-auto text-[11px] font-bold tracking-widest text-white/70">
                   CONFIGURACIÓN COMPLETADA
                 </span>
@@ -442,7 +443,7 @@ export default function MonthlyWizard({ onClose, onApproved, username, avatarUrl
                     <span className="hidden md:block absolute top-24 -right-3 w-6 h-6 bg-white rotate-45" />
                   </div>
                   <div className="mt-6">
-                    <PrimaryButton label="Entender cómo priorizar mis tareas" onClick={onApproved} withArrowCircle />
+                    <PrimaryButton label={i18n.t('entender_como_priorizar_mis_tareas')} onClick={onApproved} withArrowCircle />
                   </div>
                 </div>
                 <div className="bg-white rounded-3xl p-2 shadow-lg">
@@ -524,12 +525,12 @@ function GoalCard({ goal, onEdit, detailed, compact, numbered, hideEdit, metaLab
           <>
             <hr className="my-4 border-gray-200" />
             <div>
-              <p className="text-[11px] font-bold tracking-widest text-[#5b5bd6] mb-1">POR QUÉ IMPORTA</p>
+              <p className="text-[11px] font-bold tracking-widest text-[#5b5bd6] mb-1">{i18n.t('por_que_importa_h3uq')}</p>
               <p className="text-[#1b2350] text-[15px] leading-relaxed">{goal.brief_explanation}</p>
             </div>
             <hr className="my-4 border-gray-200" />
             <div>
-              <p className="text-[11px] font-bold tracking-widest text-[#5b5bd6] mb-1">RELACIÓN CON MI GRAN META ANUAL</p>
+              <p className="text-[11px] font-bold tracking-widest text-[#5b5bd6] mb-1">{i18n.t('relacion_con_mi_gran_meta_anual')}</p>
               <p className="text-[#1b2350] text-[15px] leading-relaxed">{goal.annual_goal_relation}</p>
             </div>
           </>

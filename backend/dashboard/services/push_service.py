@@ -8,15 +8,20 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
-def _vapid_key():
-    """Reconstruye la llave privada desde el DER en base64 del .env."""
+def _vapid_key_bytes():
+    """Reconstruye la llave privada en bytes PEM desde el DER en base64 del .env."""
     raw = (getattr(settings, 'VAPID_PRIVATE_KEY_B64', '') or '').strip()
     if not raw:
         return None
     try:
         from cryptography.hazmat.primitives import serialization
         der = base64.urlsafe_b64decode(raw + '=' * (-len(raw) % 4))
-        return serialization.load_der_private_key(der, password=None)
+        key = serialization.load_der_private_key(der, password=None)
+        return key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
     except Exception as e:
         logger.error(f'VAPID key inválida: {e}')
         return None
@@ -27,14 +32,15 @@ class PushService:
 
     @classmethod
     def _sender(cls):
-        from pywebpush import WebPusher
-        key = _vapid_key()
+        key = _vapid_key_bytes()
         if key is None:
             return None
-        return WebPusher(
-            vapid_private_key=key,
-            vapid_claims={'sub': getattr(settings, 'VAPID_CLAIM_SUB', 'mailto:focusia@example.com')},
-        )
+        try:
+            from pywebpush import webpush
+            return webpush
+        except Exception as e:
+            logger.error(f'pywebpush no disponible: {e}')
+            return None
 
     @classmethod
     def enviar(cls, user, titulo: str, mensaje: str) -> dict:
@@ -46,15 +52,19 @@ class PushService:
         if sender is None:
             return {'success': False, 'error': 'VAPID no configurado'}
         payload = json.dumps({'title': titulo, 'body': mensaje}, ensure_ascii=False)
+        vapid_claims = {'sub': getattr(settings, 'VAPID_CLAIM_SUB', 'mailto:focusia@example.com')}
+        vapid_private_key = _vapid_key_bytes()
         ok, errores = 0, []
         for sub in subs:
             try:
-                sender.send(
+                sender(
                     data=payload,
                     subscription_info={
                         'endpoint': sub.endpoint,
                         'keys': {'p256dh': sub.p256dh, 'auth': sub.auth},
                     },
+                    vapid_private_key=vapid_private_key,
+                    vapid_claims=vapid_claims,
                     headers={'TTL': '86400', 'Urgency': 'normal'},
                     timeout=15,
                 )

@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useEffect, useState } from 'react';
 import {
   FocusiaReportData, ReporteResumenItem, configService, configuracionService,
@@ -87,10 +88,10 @@ export function ReportHeroHeader({
       </div>
 
       {/* Contenido izquierdo: logo + volver + título + subtítulo */}
-      <div className="relative z-10 w-full max-w-2xl">
+      <div className="relative z-10 w-full max-w-xl">
         <div className="flex items-center gap-2.5 mb-3">
-          <img src="/focussia.png" alt="Focusia" className="w-9 h-9 object-contain" />
-          <span className="text-[26px] font-extrabold tracking-tight text-[#14173A] leading-none">
+          <img src="/focussia.png" alt={i18n.t('focusia_bgoc')} className="w-9 h-9 object-contain ml-90 -mt-10" />
+          <span className="text-[26px] font-bold tracking-tight bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent leading-none mt-2 -ml-18">
             Focusia
           </span>
         </div>
@@ -119,7 +120,7 @@ export function ReportHeroHeader({
 }
 
 /** Iconos SVG de las tarjetas de Reportes (fieles a los mockups). */
-export function IconoSemanal({ className = 'w-8 h-8' }: { className?: string }) {
+export function IconoSemanal({ className = 'w-12 h-12' }: { className?: string }) {
   return (
     <svg viewBox="0 0 36 36" fill="none" className={className}>
       <rect x="5" y="7" width="26" height="24" rx="5" stroke={REPORT_BLUE} strokeWidth="2.4" />

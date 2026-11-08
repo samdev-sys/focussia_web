@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useState } from 'react';
 import {
   CircleHelp, Bell, Settings, ChevronDown,
@@ -90,8 +91,8 @@ export const AnualShell: React.FC<AnualShellProps> = ({
       {/* Sidebar */}
       <aside className="hidden lg:flex w-60 shrink-0 flex-col bg-gradient-to-b from-[#0b0b22] to-[#060614] text-white py-5 px-4 overflow-y-auto">
         <div className="flex items-center gap-2 px-2 mb-6">
-          <img src="/focusia-logo.png" alt="Focusia" className="w-8 h-8 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-          <span className="text-xl font-extrabold tracking-tight">Focusia</span>
+          <img src="/focusia-logo.png" alt={i18n.t('focusia_odm1')} className="w-8 h-8 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          <span className="text-xl font-extrabold tracking-tight">{i18n.t('focusia_odm1')}</span>
         </div>
         <nav className="flex flex-col gap-0.5 flex-1">
           {NAV_ITEMS.map(item => (
@@ -119,7 +120,7 @@ export const AnualShell: React.FC<AnualShellProps> = ({
           )}
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold truncate">{userName || 'Usuario'}</p>
-            <p className="text-[11px] text-white/50">Ver perfil</p>
+            <p className="text-[11px] text-white/50">{i18n.t('ver_perfil')}</p>
           </div>
           <ChevronDown className="w-4 h-4 text-white/40" />
         </div>
@@ -136,11 +137,11 @@ export const AnualShell: React.FC<AnualShellProps> = ({
               <h1 className="text-xl sm:text-2xl font-extrabold text-[#101331]">{title}</h1>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => { if (onOpenHelp) onOpenHelp(); else setShowHelpLocal(true); }} className="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-700 hover:bg-gray-50" title="Ayuda de IA">
+              <button onClick={() => { if (onOpenHelp) onOpenHelp(); else setShowHelpLocal(true); }} className="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-700 hover:bg-gray-50" title={i18n.t('ayuda_de_ia')}>
                 <CircleHelp className="w-5 h-5" />
               </button>
               <div className="relative">
-                <button onClick={() => { if (onOpenNotifications) onOpenNotifications(); else toggleNotificationsLocal(); }} className="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-700 hover:bg-gray-50 relative" title="Notificaciones">
+                <button onClick={() => { if (onOpenNotifications) onOpenNotifications(); else toggleNotificationsLocal(); }} className="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-700 hover:bg-gray-50 relative" title={i18n.t('notificaciones_zzpz')}>
                   <Bell className="w-5 h-5" />
                   {notifications.length > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#6d28d9] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
@@ -152,9 +153,9 @@ export const AnualShell: React.FC<AnualShellProps> = ({
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowNotificationsLocal(false)} />
                     <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-white rounded-xl shadow-2xl border border-gray-100 z-50">
-                      <p className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-gray-400 border-b border-gray-100">Notificaciones</p>
+                      <p className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-gray-400 border-b border-gray-100">{i18n.t('notificaciones_zzpz')}</p>
                       {notifications.length === 0 ? (
-                        <p className="px-4 py-6 text-sm text-gray-400 text-center">Sin notificaciones.</p>
+                        <p className="px-4 py-6 text-sm text-gray-400 text-center">{i18n.t('sin_notificaciones')}</p>
                       ) : notifications.map(n => (
                         <div key={n.id} className="px-4 py-3 border-b border-gray-50 last:border-0 hover:bg-gray-50">
                           <p className="text-sm font-semibold text-gray-800">{n.title}</p>
@@ -165,7 +166,7 @@ export const AnualShell: React.FC<AnualShellProps> = ({
                   </>
                 )}
               </div>
-              <button onClick={() => { if (onOpenSettings) onOpenSettings(); else setShowConfigLocal(true); }} className="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-700 hover:bg-gray-50" title="Configuración">
+              <button onClick={() => { if (onOpenSettings) onOpenSettings(); else setShowConfigLocal(true); }} className="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-700 hover:bg-gray-50" title={i18n.t('configuracion_omg1')}>
                 <Settings className="w-5 h-5" />
               </button>
             </div>

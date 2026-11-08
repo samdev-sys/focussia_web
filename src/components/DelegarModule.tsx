@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   UserPlus, Phone, Mail, MessageCircle, Users, Undo2, Check,
@@ -24,7 +25,7 @@ const TIPOS = [
   {
     key: 'whatsapp',
     label: 'WhatsApp',
-    renderIcon: (cls: string) => <img src="./whatsapp-2.png" alt="" className={cls} />,
+    renderIcon: (cls: string) => <img src="/whatsapp-2.png" alt="" className={cls} />,
     iconCls: 'text-[#16a34a]',
   },
   {
@@ -36,10 +37,10 @@ const TIPOS = [
 ] as const;
 
 const BUENAS_PRACTICAS = [
-  { t: 'Define claramente', d: 'Quién será responsable y qué esperas como resultado.', f: <img src="./User-1.png" alt="Spin" className="w-7 h-6" /> },
-  { t: 'Realiza seguimiento', d: 'Comienza registrando la primera acción de control.', f: <img src="./t1.png" alt="Spin" className="w-6 h-6" /> },
-  { t: 'Confirma el resultado', d: 'Solo tú puedes marcar una delegación como cumplida.', f: <img src="./KAN.png" alt="Spin" className="w-6 h-6" /> },
-  { t: 'Recupera si es necesario', d: 'Si no avanza, recupera y reasigna o ejecútala tú.', f: <img src="./Spin-1.png" alt="Spin" className="w-7 h-8" /> },
+  { t: 'Define claramente', d: 'Quién será responsable y qué esperas como resultado.', f: <img src="/User-1.png" alt={i18n.t('spin')} className="w-7 h-6" /> },
+  { t: 'Realiza seguimiento', d: 'Comienza registrando la primera acción de control.', f: <img src="/t1.png" alt={i18n.t('spin')} className="w-6 h-6" /> },
+  { t: 'Confirma el resultado', d: 'Solo tú puedes marcar una delegación como cumplida.', f: <img src="/KAN.png" alt={i18n.t('spin')} className="w-6 h-6" /> },
+  { t: 'Recupera si es necesario', d: 'Si no avanza, recupera y reasigna o ejecútala tú.', f: <img src="/Spin-1.png" alt={i18n.t('spin')} className="w-7 h-8" /> },
 ];
 
 function fmtAt(iso: string): string {
@@ -168,7 +169,7 @@ function DelegationRow({ deleg, expanded, responsables, onToggle, onChanged }: {
           <p className="text-sm text-[#8a93b2]">Enviada desde {ORIGEN_LABEL[deleg.origen] || deleg.origen}</p>
         </div>
         <span className={`text-xs font-medium px-3 py-1.5 rounded-lg shrink-0 ${pill.cls}`}>{pill.label}</span>
-        <button type="button" onClick={onToggle} className="text-[#1e1b4b] hover:text-[#4338ca] p-1" title="Contraer">
+        <button type="button" onClick={onToggle} className="text-[#1e1b4b] hover:text-[#4338ca] p-1" title={i18n.t('contraer')}>
           <MoreVertical className="w-5 h-5" />
         </button>
       </div>
@@ -177,7 +178,7 @@ function DelegationRow({ deleg, expanded, responsables, onToggle, onChanged }: {
       <div className="grid md:grid-cols-[1fr_1.5fr_1.2fr] px-3 py-2 gap-4 md:gap-0 md:divide-x md:divide-[#eef1f7]">
         {/* Responsable */}
         <div className="md:pr-6">
-          <p className="text-xs font-bold text-[#4338ca] mb-3">Responsable</p>
+          <p className="text-xs font-bold text-[#4338ca] mb-3">{i18n.t('responsable')}</p>
           <div className="flex items-center gap-2 bg-[#f8fafc] border border-[#e3e8f5] rounded-md px-1 py-1">
             <User className="w-5 h-5 text-[#8a93b2] shrink-0" />
             <input
@@ -185,7 +186,7 @@ function DelegationRow({ deleg, expanded, responsables, onToggle, onChanged }: {
               type="text"
               value={editingResp ? respDraft : (deleg.responsable || '')}
               list={`responsables-${deleg.id}`}
-              placeholder="Sin responsable"
+              placeholder={i18n.t('sin_responsable')}
               onFocus={() => { setEditingResp(true); setRespDraft(deleg.responsable); }}
               onChange={e => setRespDraft(e.target.value)}
               onKeyDown={e => {
@@ -206,7 +207,7 @@ function DelegationRow({ deleg, expanded, responsables, onToggle, onChanged }: {
         {/* Qué haremos a continuación */}
         <div className="md:px-6">
           <button type="button" onClick={onToggle} className="flex items-center gap-2 mb-3 group">
-            <span className="text-sm font-bold text-[#4338ca]">¿Qué haremos a continuación?</span>
+            <span className="text-sm font-bold text-[#4338ca]">{i18n.t('que_haremos_a_continuacion')}</span>
             <ChevronDown className="w-4 h-4 text-[#4338ca] group-hover:translate-y-0.5 transition-transform" />
           </button>
           <div className="grid grid-cols-4 gap-2">
@@ -229,7 +230,7 @@ function DelegationRow({ deleg, expanded, responsables, onToggle, onChanged }: {
         {/* Seguimiento realizado */}
         <div className="md:pl-6">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-bold text-[#4338ca]">Seguimiento realizado</p>
+            <p className="text-xs font-bold text-[#4338ca]">{i18n.t('seguimiento_realizado')}</p>
             <button type="button" onClick={() => setShowHistory(v => !v)} className="flex items-center gap-1 text-xs font-medium text-[#4338ca] hover:underline">
               Ver historial
               <RefreshCw className="w-3.5 h-3.5" />
@@ -273,9 +274,9 @@ function DelegationRow({ deleg, expanded, responsables, onToggle, onChanged }: {
         <ProcessActionButton
           onClick={async () => { setBusy(true); try { await delegacionProcesoService.recover(deleg.id); onChanged(); } finally { setBusy(false); } }}
           disabled={busy}
-          Img="./Spin-1.png"
+          Img="/Spin-1.png"
           iconCls="text-[#6d28d9]"
-          label="Recuperar acción"
+          label={i18n.t('recuperar_accion')}
           desc="Aparecerá nuevamente en mi planificación."
           className="md:pr-6 "
         />
@@ -284,7 +285,7 @@ function DelegationRow({ deleg, expanded, responsables, onToggle, onChanged }: {
           disabled={busy}
           Icon={User}
           iconCls="text-[#2563eb]"
-          label="Cambiar responsable"
+          label={i18n.t('cambiar_responsable')}
           desc="Asigna esta acción a otra persona."
           className="md:px-6"
         />
@@ -293,7 +294,7 @@ function DelegationRow({ deleg, expanded, responsables, onToggle, onChanged }: {
           disabled={busy}
           Icon={CheckCircle2}
           iconCls="text-[#16a34a]"
-          label="Marcar como completada"
+          label={i18n.t('marcar_como_completada')}
           desc="La acción será cerrada y registrada como cumplida."
           className="md:pl-6"
         />
@@ -382,8 +383,8 @@ export default function DelegarModule({ username, avatarUrl, onNavigate, onClose
   return (
     <AppShell
       activeNav="delegar"
-      title="Acciones por Delegar"
-      subtitle="Supervisa las tareas que has delegado y acompaña el proceso hasta su culminación."
+      title={i18n.t('acciones_por_delegar_u9gb')}
+      subtitle={i18n.t('supervisa_las_tareas_que_has_delegado_y_')}
       username={username}
       avatarUrl={avatarUrl}
       onNavigate={shellNav}
@@ -394,7 +395,7 @@ export default function DelegarModule({ username, avatarUrl, onNavigate, onClose
     >
       {/* Hero */}
       <div className="relative mb-6 overflow-hidden rounded-xl h-50">
-        <img src="./delegar.jpg" alt="" className="absolute inset-0 h-80 w-250 object-cover" />
+        <img src="/delegar.jpg" alt="" className="absolute inset-0 h-80 w-250 object-cover" />
         <div className="absolute inset-0 bg-[#101433]/20" />
         <div className="absolute -right-16 -top-24 w-72 h-72 rounded-full bg-white/10 mt-2" />
         <div className="absolute right-24 -bottom-28 w-80 h-80 rounded-full border-[3px] border-white/15" />
@@ -417,7 +418,7 @@ export default function DelegarModule({ username, avatarUrl, onNavigate, onClose
               <input
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                placeholder="Buscar acción delegada..."
+                placeholder={i18n.t('buscar_accion_delegada')}
                 className="flex-1 min-w-0 text-sm text-[#101433] placeholder:text-[#8a93b2] outline-none bg-transparent"
               />
             </div>
@@ -425,21 +426,21 @@ export default function DelegarModule({ username, avatarUrl, onNavigate, onClose
               <ListFilter className="w-4 h-4 text-[#8a93b2]" />
               <select value={filtro} onChange={e => setFiltro(e.target.value as any)}
                 className="text-xs font-bold text-[#101433] outline-none bg-transparent">
-                <option value="todas">Todas las acciones</option>
-                <option value="pendientes">Pendientes</option>
-                <option value="seguimiento">En seguimiento</option>
-                <option value="completadas">Completadas</option>
+                <option value="todas">{i18n.t('todas_las_acciones')}</option>
+                <option value="pendientes">{i18n.t('pendientes_4fyp')}</option>
+                <option value="seguimiento">{i18n.t('en_seguimiento')}</option>
+                <option value="completadas">{i18n.t('completadas')}</option>
               </select>
             </div>
           </div>
 
           {loading ? (
-            <p className="text-sm text-gray-400 text-center py-10">Cargando delegaciones...</p>
+            <p className="text-sm text-gray-400 text-center py-10">{i18n.t('cargando_delegaciones')}</p>
           ) : visibles.length === 0 ? (
             <div className="bg-white rounded-2xl border border-[#e3e8f5] p-10 text-center">
               <UserPlus className="w-10 h-10 text-[#c6d2f5] mx-auto mb-3" />
-              <p className="font-bold text-[#101433]">Sin acciones delegadas</p>
-              <p className="text-sm text-[#8a93b2] mt-1">Marca una acción con D en el Kanban o delégala desde tu semana y aparecerá aquí.</p>
+              <p className="font-bold text-[#101433]">{i18n.t('sin_acciones_delegadas')}</p>
+              <p className="text-sm text-[#8a93b2] mt-1">{i18n.t('marca_una_accion_con_d_en_el_kanban_o_de')}</p>
             </div>
           ) : (
             visibles.map(d => (
@@ -458,37 +459,37 @@ export default function DelegarModule({ username, avatarUrl, onNavigate, onClose
         {/* Resumen lateral */}
         <div className="space-y-4">
           <div className="bg-white rounded-md w-72 border border-[#e3e8f5] p-5 ml-13">
-            <p className="text-[11px] font-bold tracking-widest text-[#5b6b8c] mb-3">Resumen de delegaciones</p>
+            <p className="text-[11px] font-bold tracking-widest text-[#5b6b8c] mb-3">{i18n.t('resumen_de_delegaciones')}</p>
             <div className="grid grid-cols-2 gap-2">
               <div className="bg-[#f0fdf4] rounded-md p-3 text-center">
                 <p className="text-xl font-bold text-[#16a34a] flex items-center justify-center gap-1">
                   <CheckCircle2 className="w-4 h-4" /> {enSeguimiento}
                 </p>
-                <p className="text-[10px] font-bold text-[#5b6b8c] mt-0.5">En seguimiento</p>
+                <p className="text-[10px] font-bold text-[#5b6b8c] mt-0.5">{i18n.t('en_seguimiento')}</p>
               </div>
               <div className="bg-[#eef4ff] rounded-md p-3 text-center">
                 <p className="text-xl font-bold text-[#1f6feb] flex items-center justify-center gap-1">
-                  <img className="w-6 h-7" src="./wait.png" alt="Spin" /> {pendientes}
+                  <img className="w-6 h-7" src="/wait.png" alt={i18n.t('spin')} /> {pendientes}
                 </p>
-                <p className="text-[10px] font-bold text-[#5b6b8c] mt-0.5">Pendientes</p>
+                <p className="text-[10px] font-bold text-[#5b6b8c] mt-0.5">{i18n.t('pendientes_4fyp')}</p>
               </div>
               <div className="bg-[#fff7ed] rounded-md p-3 text-center">
                 <p className="text-xl font-bold text-[#ea580c] flex items-center justify-center gap-1">
-                  <img className="w-4 h-4" src="./Spin-2.png" alt="Spin" /> {porRecuperar}
+                  <img className="w-4 h-4" src="/Spin-2.png" alt={i18n.t('spin')} /> {porRecuperar}
                 </p>
-                <p className="text-[10px] font-bold text-[#5b6b8c] mt-0.5">Por recuperar</p>
+                <p className="text-[10px] font-bold text-[#5b6b8c] mt-0.5">{i18n.t('por_recuperar')}</p>
               </div>
               <div className="bg-[#faf5ff] rounded-md p-3 text-center">
                 <p className="text-xl font-bold text-[#9333ea] flex items-center justify-center gap-1">
                   <Check className="w-4 h-4" /> {completadas}
                 </p>
-                <p className="text-[10px] font-bold text-[#5b6b8c] mt-0.5">Completadas</p>
+                <p className="text-[10px] font-bold text-[#5b6b8c] mt-0.5">{i18n.t('completadas')}</p>
               </div>
             </div>
           </div>
 
           <div className="bg-white rounded-md  w-72 border border-[#e3e8f5] p-5 ml-13">
-            <p className="text-[11px] font-bold tracking-widest text-black mb-3">Buenas prácticas de delegación</p>
+            <p className="text-[11px] font-bold tracking-widest text-black mb-3">{i18n.t('buenas_practicas_de_delegacion')}</p>
             <div className="space-y-2.5">
               {BUENAS_PRACTICAS.map(b => (
                 <div key={b.t} className="flex items-start gap-2">
@@ -502,8 +503,8 @@ export default function DelegarModule({ username, avatarUrl, onNavigate, onClose
           </div>
 
           <div className="rounded-md bg-gradient-to-br from-[#DFE2EB]  w-72 p-5 text-indigo text-center ml-13">
-            <img src="./apostrofe.png" alt="" className='w-10 h-10' />
-            <p className="text-sm font-bold leading-relaxed text-[#7C0DA8]">La confianza construye equipos: supervisa sin controlar y celebra cada avance.</p>
+            <img src="/apostrofe.png" alt="" className='w-10 h-10' />
+            <p className="text-sm font-bold leading-relaxed text-[#7C0DA8]">{i18n.t('la_confianza_construye_equipos_supervisa')}</p>
           </div>
         </div>
       </div>

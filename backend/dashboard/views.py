@@ -35,6 +35,7 @@ from .models import (
     CuentaColumna, CuentaRegistro, CuentaValor, Suplemento, SuplementoToma,
     HoraOroExperiencia, HoraOroAjustes,
     FocusSession,
+    normalizar_nivel_exigencia,
 )
 from .serializers import (
     UserSerializer, UserDetailSerializer, RuedaVidaSerializer, TimeBlockSerializer,
@@ -91,8 +92,24 @@ from .engine.phase4_generator import generar_payload_coach
 logger = logging.getLogger('focusia.security')
 
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
+    """Registro de usuarios y perfil propio.
+
+    `/api/users/` es el endpoint de registro (POST, AllowAny) y `/me/` el del
+    perfil. Antes el queryset era `User.objects.all()`, de modo que cualquier
+    usuario autenticado podía leer, modificar o borrar la cuenta de otro con
+    `GET/PATCH/DELETE /api/users/<id>/` (IDOR). Ahora el queryset se limita
+    siempre al usuario de la petición: cualquier otro id responde 404 y
+    `list` sigue deshabilitado.
+    """
     serializer_class = UserSerializer
+
+    def get_queryset(self):
+        user = getattr(self.request, 'user', None)
+        if user is None or not user.is_authenticated:
+            # El alta (POST) es AllowAny y no usa el queryset, pero si alguien
+            # llama a un endpoint de detalle sin sesión no debe ver nada.
+            return User.objects.none()
+        return User.objects.filter(pk=user.pk)
 
     def get_permissions(self):
         if self.action == 'create':
@@ -403,11 +420,17 @@ class SuplementoViewSet(BaseUserViewSet):
         inicio_dia = timezone.make_aware(datetime.combine(hoy, time(0, 0)))
         fin_dia = inicio_dia + timedelta(days=1)
 
-        tomas_hoy = suplemento.tomas.filter(
-            programada__gte=inicio_dia, programada__lt=fin_dia
-        ).order_by('programada')
-        pendiente = suplemento.tomas.filter(tomado=False, programada__lte=ahora).order_by('programada').first()
-        restante_hoy = tomas_hoy.filter(tomado=False).first()
+        # Usa la relación prefetcheada (si existe) para evitar N+1.
+        _tomas = list(getattr(suplemento, '_prefetched_objects_cache', {}).get('tomas', suplemento.tomas.all()))
+        tomas_hoy = sorted(
+            [t for t in _tomas if inicio_dia <= t.programada < fin_dia],
+            key=lambda t: t.programada,
+        )
+        pendiente = min(
+            (t for t in _tomas if (not t.tomado) and t.programada <= ahora),
+            key=lambda t: t.programada, default=None,
+        )
+        restante_hoy = next((t for t in tomas_hoy if not t.tomado), None)
 
         # §II.3 — Estado visual de la tarjeta.
         if pendiente:
@@ -418,7 +441,10 @@ class SuplementoViewSet(BaseUserViewSet):
             estado, referencia, retraso = 'proxima', restante_hoy.programada, 0
         else:
             # «Al día»: todas las tomas registradas y la siguiente aún no se acerca.
-            proxima = suplemento.tomas.filter(tomado=False, programada__gt=ahora).order_by('programada').first()
+            proxima = min(
+                (t for t in _tomas if (not t.tomado) and t.programada > ahora),
+                key=lambda t: t.programada, default=None,
+            )
             estado, referencia, retraso = 'al_dia', (proxima.programada if proxima else None), 0
 
         dia_ref = None
@@ -461,7 +487,7 @@ class SuplementoViewSet(BaseUserViewSet):
                 }
                 for t in tomas_hoy
             ],
-            'total_tomado': suplemento.tomas.filter(tomado=True).count(),
+            'total_tomado': sum(1 for t in _tomas if t.tomado),
         }
 
     # ── Endpoints ─────────────────────────────────────────────────
@@ -475,7 +501,8 @@ class SuplementoViewSet(BaseUserViewSet):
     @action(detail=False, methods=['get'])
     def tablero(self, request):
         activos, historial = [], []
-        for suplemento in self.get_queryset():
+        qs = self.get_queryset().prefetch_related('tomas')
+        for suplemento in qs:
             tarjeta = self._tarjeta(suplemento)
             if tarjeta['finalizado'] or not suplemento.activo:
                 if tarjeta['finalizado'] and suplemento.activo:
@@ -492,7 +519,21 @@ class SuplementoViewSet(BaseUserViewSet):
         suplemento = self.get_object()
         self._asegurar_tomas(suplemento)
         ahora = timezone.now()
-        toma = suplemento.tomas.filter(tomado=False, programada__lte=ahora).order_by('programada').first()
+        tz = timezone.get_current_timezone()
+        hoy = timezone.localdate()
+        inicio_dia = timezone.make_aware(datetime.combine(hoy, time(0, 0)), tz)
+        fin_dia = inicio_dia + timedelta(days=1)
+        # Prefiere la dosis de hoy que ya venció (la que muestra la tarjeta
+        # como "pendiente de hoy"); si no hay, la más antigua vencida; si
+        # tampoco, la próxima futura.
+        toma = suplemento.tomas.filter(
+            tomado=False, programada__gte=inicio_dia, programada__lt=fin_dia,
+            programada__lte=ahora,
+        ).order_by('programada').first()
+        if toma is None:
+            toma = suplemento.tomas.filter(tomado=False, programada__lte=ahora).order_by('programada').first()
+        if toma is None:
+            toma = suplemento.tomas.filter(tomado=False, programada__gte=inicio_dia, programada__lt=fin_dia).order_by('programada').first()
         if toma is None:
             toma = suplemento.tomas.filter(tomado=False).order_by('programada').first()
         if toma is None:
@@ -500,12 +541,28 @@ class SuplementoViewSet(BaseUserViewSet):
         toma.tomado = True
         toma.tomado_en = ahora
         toma.save(update_fields=['tomado', 'tomado_en'])
+        # El aviso de esa dosis deja de ser cierto: se retira de la campana
+        # para que solo se vean las notificaciones vigentes.
+        Notification.objects.filter(
+            user=request.user,
+            dedupe_key=f'toma:{toma.id}',
+            cancelled_at__isnull=True,
+        ).update(cancelled_at=ahora)
         return Response(self._tarjeta(suplemento))
 
     @action(detail=True, methods=['post'])
     def eliminar(self, request, pk=None):
         suplemento = self.get_object()
+        tomas = list(suplemento.tomas.values_list('id', flat=True))
         suplemento.delete()
+        # Sin esto, los avisos de las dosis de un suplemento borrado quedaban
+        # huérfanos en la campana.
+        if tomas:
+            Notification.objects.filter(
+                user=request.user,
+                dedupe_key__in=[f'toma:{i}' for i in tomas],
+                cancelled_at__isnull=True,
+            ).update(cancelled_at=timezone.now())
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -554,6 +611,11 @@ class FocusSessionViewSet(BaseUserViewSet):
             actual.ended_at = timezone.now()
             actual.focused_minutes = self._minutos_reales(actual)
             actual.save(update_fields=['estado', 'ended_at', 'focused_minutes'])
+            try:
+                from .services.notification_dispatcher import entregar_pendientes
+                entregar_pendientes(request.user)
+            except Exception:
+                pass
         config = request.data.get('config') if isinstance(request.data.get('config'), dict) else {}
         planned = self._duracion_plan(config)
         sesion = FocusSession.objects.create(
@@ -581,6 +643,11 @@ class FocusSessionViewSet(BaseUserViewSet):
                 minutos = self._minutos_reales(sesion)
             sesion.focused_minutes = minutos
             sesion.save(update_fields=['estado', 'ended_at', 'focused_minutes'])
+            try:
+                from .services.notification_dispatcher import entregar_pendientes
+                entregar_pendientes(request.user)
+            except Exception:
+                pass
         return Response(self.get_serializer(sesion).data)
 
     def _duracion_plan(self, config):
@@ -1169,11 +1236,11 @@ def decline_invitation(request):
 def rueda_vida_completa(request):
     if request.method == 'GET':
         categorias = CategoriaRueda.objects.filter(activo=True).order_by('orden')
-        registros = RegistroRueda.objects.filter(user=request.user)
+        registros = {r.categoria_id: r for r in RegistroRueda.objects.filter(user=request.user)}
 
         result = []
         for cat in categorias:
-            reg = registros.filter(categoria=cat).first()
+            reg = registros.get(cat.id)
             result.append({
                 'id': cat.id,
                 'nombre': cat.nombre,
@@ -2159,6 +2226,14 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
             cancelled_at__isnull=True,
         )
 
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        # La campana no debe servirse nunca desde caché: si el navegador
+        # reutiliza una respuesta vieja, el usuario ve avisos de días atrás
+        # como si fueran los de hoy (pasó en pruebas reales).
+        response['Cache-Control'] = 'no-store'
+        return response
+
     @action(detail=True, methods=['post'])
     def leer(self, request, pk=None):
         """Marca una notificación como leída."""
@@ -2173,6 +2248,17 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
         """Marca como leídas las del usuario (el panel lo hace al abrirse)."""
         actualizadas = self.get_queryset().filter(is_read=False).update(is_read=True)
         return Response({'ok': True, 'actualizadas': actualizadas})
+
+    @action(detail=False, methods=['post'], url_path='flush')
+    def flush(self, request):
+        """Entrega avisos postergados del Sistema Proactivo ahora mismo."""
+        try:
+            from .services.notification_dispatcher import entregar_pendientes
+            resultado = entregar_pendientes(request.user)
+            return Response({'ok': True, **resultado})
+        except Exception as e:
+            logger.exception('notifications.flush falló')
+            return Response({'ok': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
@@ -4176,8 +4262,6 @@ AVATAR_GROQ_VOICE_MAP = {
     6: 'hannah',
 }
 
-COQUI_TTS_URL = getattr(settings, 'COQUI_TTS_URL', 'http://localhost:8760')
-
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def avatar_tts(request):
@@ -4233,6 +4317,12 @@ class FocusiaReportViewSet(BaseUserViewSet):
             if report:
                 results.append(FocusiaReportSerializer(report).data)
         return Response(results)
+
+    @action(detail=False, methods=['get', 'post'])
+    def reconciliar(self, request):
+        from dashboard.tasks import reconciliar_reportes
+        resultados = reconciliar_reportes(request.user)
+        return Response({'reconciliado': True, 'resultados': resultados})
 
     @action(detail=False, methods=['get'])
     def resumen(self, request):
@@ -4633,18 +4723,41 @@ def onboarding_confirm(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def onboarding_complete(request):
-    profile = _get_or_create_onboarding(request.user)
-    profile.status = OnboardingProfile.Status.ONBOARDING_FINALIZADO
-    profile.onboarding_completed_at = timezone.now()
-    profile.guided_tour_status = OnboardingProfile.GuidedTour.PENDING
-    profile.save(update_fields=['status', 'onboarding_completed_at', 'guided_tour_status'])
-    # Sync legacy config
-    config, _ = ConfiguracionUsuario.objects.get_or_create(user=request.user)
-    config.onboarding_completado = True
-    if profile.avatar:
-        config.avatar_index = profile.avatar.id
-    config.nivel_exigencia = profile.intensity.upper() if profile.intensity else 'MEDIO'
-    config.save(update_fields=['onboarding_completado', 'avatar_index', 'nivel_exigencia'])
+    try:
+        profile = _get_or_create_onboarding(request.user)
+        profile.status = OnboardingProfile.Status.ONBOARDING_FINALIZADO
+        profile.onboarding_completed_at = timezone.now()
+        try:
+            profile.guided_tour_status = OnboardingProfile.GuidedTour.PENDING
+        except Exception:
+            pass
+        try:
+            profile.save(update_fields=['status', 'onboarding_completed_at', 'guided_tour_status'])
+        except Exception:
+            profile.save(update_fields=['status', 'onboarding_completed_at'])
+    except Exception as e:
+        import logging, traceback
+        logging.getLogger(__name__).exception("Error completing onboarding: %s", e)
+        return Response({'error': str(e), 'detail': traceback.format_exc()[-1000:]}, status=500)
+    try:
+        config, _ = ConfiguracionUsuario.objects.get_or_create(user=request.user)
+        config.onboarding_completado = True
+        try:
+            if getattr(profile, 'avatar', None):
+                config.avatar_index = profile.avatar.id
+        except Exception:
+            pass
+        try:
+            config.nivel_exigencia = normalizar_nivel_exigencia(getattr(profile, 'intensity', None))
+        except Exception:
+            pass
+        try:
+            config.save(update_fields=['onboarding_completado', 'avatar_index', 'nivel_exigencia'])
+        except Exception:
+            config.save()
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).exception("Error syncing legacy config on onboarding complete: %s", e)
     return Response({'status': 'onboarding_finalizado'})
 
 
@@ -4678,16 +4791,26 @@ def onboarding_guided_tour_defer(request):
 @permission_classes([permissions.IsAuthenticated])
 def onboarding_status(request):
     profile = _get_or_create_onboarding(request.user)
+    completed = profile.status in [
+        OnboardingProfile.Status.ONBOARDING_FINALIZADO,
+        OnboardingProfile.Status.VISITA_GUIADA_PENDIENTE,
+        OnboardingProfile.Status.VISITA_GUIADA_INICIADA,
+        OnboardingProfile.Status.VISITA_GUIADA_COMPLETADA,
+    ]
+    try:
+        from dashboard.models import ConfiguracionUsuario
+        cfg = ConfiguracionUsuario.objects.filter(user=request.user).first()
+        if cfg and getattr(cfg, 'onboarding_completado', False):
+            completed = True
+    except Exception:
+        pass
+    if not completed and profile.onboarding_completed_at:
+        completed = True
     return Response({
         'status': profile.status,
         'guided_tour_status': profile.guided_tour_status,
         'onboarding_completed_at': profile.onboarding_completed_at,
-        'onboarding_completado': profile.status in [
-            OnboardingProfile.Status.ONBOARDING_FINALIZADO,
-            OnboardingProfile.Status.VISITA_GUIADA_PENDIENTE,
-            OnboardingProfile.Status.VISITA_GUIADA_INICIADA,
-            OnboardingProfile.Status.VISITA_GUIADA_COMPLETADA,
-        ],
+        'onboarding_completado': completed,
     })
 
 
@@ -5010,6 +5133,7 @@ def config_profile(request):
     data['email'] = request.user.email
     data['username'] = request.user.username
     data['date_joined'] = request.user.date_joined
+    data['current_avatar_id'] = profile.avatar_id
     return Response(data)
 
 
@@ -5033,6 +5157,15 @@ def config_avatar(request):
     previous_id = profile.avatar_id
     profile.avatar = avatar
     profile.save(update_fields=['avatar'])
+    # Sync legacy config
+    try:
+        config = request.user.configuracion
+    except Exception:
+        config = None
+    if config is None:
+        config, _ = ConfiguracionUsuario.objects.get_or_create(user=request.user)
+    config.avatar_index = avatar.id
+    config.save(update_fields=['avatar_index'])
     _log_config_change(request.user, 'avatar', {
         'avatar_anterior': previous_id,
         'nuevo_avatar': avatar.id,
@@ -5325,17 +5458,35 @@ def config_privacy_delete_data(request):
         )
     _log_inicio_event(request.user, 'data_deletion_executed', 'config')
     user = request.user
-    InicioEventLog.objects.filter(user=user).delete()
-    InicioState.objects.filter(user=user).delete()
-    InicioPrivacyPreferences.objects.filter(user=user).delete()
-    AccompanimentPreferences.objects.filter(user=user).delete()
-    NotificationPreference.objects.filter(user=user).delete()
-    ScheduleException.objects.filter(user=user).delete()
-    AccountChangeLog.objects.filter(user=user).delete()
-    RuedaVida.objects.filter(user=user).delete()
-    RegistroRueda.objects.filter(user=user).delete()
-    DiagnosticoRueda.objects.filter(user=user).delete()
+    # Eliminación completa: cubre todos los modelos con datos personales
+    # (paridad con config_privacy_export). Orden: hijos antes que padres.
+    SubaccionKanban.objects.filter(accion__user=user).delete()
+    EventoAccion.objects.filter(accion__user=user).delete()
+    HistorialMovimiento.objects.filter(accion__user=user).delete()
+    SubaccionKanban.objects.filter(accion__user=user).delete()
+    AccionKanban.objects.filter(user=user).delete()
+    SuplementoToma.objects.filter(suplemento__user=user).delete()
+    Suplemento.objects.filter(user=user).delete()
+    CuentaValor.objects.filter(registro__user=user).delete()
+    CuentaRegistro.objects.filter(user=user).delete()
+    CuentaColumna.objects.filter(user=user).delete()
+    HoraOroExperiencia.objects.filter(user=user).delete()
+    HoraOroAjustes.objects.filter(user=user).delete()
+    FocusSession.objects.filter(user=user).delete()
+    CoachingEntry.objects.filter(user=user).delete()
+    TribuCompromiso.objects.filter(user=user).delete()
+    PushSubscription.objects.filter(user=user).delete()
+    AgentSchedule.objects.filter(user=user).delete()
+    AgentConfig.objects.filter(user=user).delete()
+    AgentConversation.objects.filter(user=user).delete()
+    FocusiaReport.objects.filter(user=user).delete()
+    Notification.objects.filter(user=user).delete()
+    Activacion.objects.filter(user=user).delete()
+    HoraOroAjustes.objects.filter(user=user).delete()
     FocusArea.objects.filter(diagnostico__user=user).delete()
+    DiagnosticoRueda.objects.filter(user=user).delete()
+    RegistroRueda.objects.filter(user=user).delete()
+    RuedaVida.objects.filter(user=user).delete()
     TimeBlock.objects.filter(user=user).delete()
     KanbanTask.objects.filter(user=user).delete()
     Recordatorio.objects.filter(user=user).delete()
@@ -5347,14 +5498,21 @@ def config_privacy_delete_data(request):
     ObjetivoSemanal.objects.filter(user=user).delete()
     PropuestaIA.objects.filter(user=user).delete()
     KanbanAction.objects.filter(user=user).delete()
-    AccionKanban.objects.filter(user=user).delete()
+    SubaccionKanban.objects.filter(accion__user=user).delete()
     MonthlyPlan.objects.filter(user=user).delete()
+    MonthlyGoal.objects.filter(plan__user=user).delete()
     WeeklyPlan.objects.filter(user=user).delete()
     Action.objects.filter(weekly_plan__user=user).delete()
+    ActionDelegation.objects.filter(user=user).delete()
+    AccompanimentPreferences.objects.filter(user=user).delete()
+    NotificationPreference.objects.filter(user=user).delete()
+    ScheduleException.objects.filter(user=user).delete()
+    InicioPrivacyPreferences.objects.filter(user=user).delete()
+    InicioState.objects.filter(user=user).delete()
+    InicioEventLog.objects.filter(user=user).delete()
     ConfiguracionUsuario.objects.filter(user=user).delete()
-    AgentConversation.objects.filter(user=user).delete()
-    FocusiaReport.objects.filter(user=user).delete()
     InteraccionUsuario.objects.filter(user=user).delete()
+    AccountChangeLog.objects.filter(user=user).delete()
     AccountChangeLog.objects.create(
         user=user, change_type='data_deleted',
         origin='configuracion/privacidad', metadata={'confirmed': True},
@@ -5406,7 +5564,15 @@ def config_change_password(request):
     AccountChangeLog.objects.create(
         user=request.user, change_type='password_changed', origin='config'
     )
-    return Response({'status': 'password_changed'})
+    # Cambiar la contraseña cierra todas las sesiones (incluida la actual): si
+    # el motivo del cambio es que se filtró, nada de lo emitido antes sirve.
+    from .services.sesiones import cerrar_sesiones
+
+    cerradas = cerrar_sesiones(request.user)
+    response = Response({'status': 'password_changed', 'sesiones_cerradas': cerradas})
+    response.delete_cookie('access_token')
+    response.delete_cookie('refresh_token')
+    return response
 
 
 @api_view(['GET'])
@@ -5428,9 +5594,21 @@ def config_devices(request):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def config_devices_logout_all(request):
-    request.user.session_set.all().delete()
+    """Cierra todas las sesiones del usuario.
+
+    Antes llamaba a `request.user.session_set`, un accesor que no existe en
+    `User` (Session no tiene FK al usuario): el endpoint devolvía 500 y, aunque
+    no fallara, no invalidaba nada porque el JWT es stateless.
+    """
+    from .services.sesiones import cerrar_sesiones
+
+    cerradas = cerrar_sesiones(request.user)
+
     _log_inicio_event(request.user, 'logout_all_devices', 'config')
-    return Response({'status': 'all_devices_logged_out'})
+    response = Response({'status': 'all_devices_logged_out', 'sesiones_cerradas': cerradas})
+    response.delete_cookie('access_token')
+    response.delete_cookie('refresh_token')
+    return response
 
 
 @api_view(['GET'])

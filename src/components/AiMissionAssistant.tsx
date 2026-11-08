@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useState } from 'react';
 import { X, Sparkles, RefreshCw, Send, Lightbulb, Target, Check } from 'lucide-react';
 import { api } from '../services/api';
@@ -86,7 +87,7 @@ Responde ÚNICAMENTE con 3 ideas numeradas (1., 2., 3.), una por línea. Sin sal
         <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-[#7c3aed] to-[#a855f7] shrink-0">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-white" />
-            <h2 className="text-lg font-bold uppercase text-white">Asistente IA - Misión de Hoy</h2>
+            <h2 className="text-lg font-bold uppercase text-white">{i18n.t('asistente_ia_mision_de_hoy')}</h2>
           </div>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-white/30 transition-colors">
             <X className="w-5 h-5 text-white" />
@@ -99,9 +100,9 @@ Responde ÚNICAMENTE con 3 ideas numeradas (1., 2., 3.), una por línea. Sin sal
               <Target className="w-3 h-3" /> Mis Objetivos
             </h3>
             <div className="space-y-1 text-[11px] text-gray-600">
-              <p><span className="font-semibold">Anual:</span> {metaAnual.join(', ')}</p>
-              <p><span className="font-semibold">Semanal:</span> {metaSemanal.join(', ')}</p>
-              <p><span className="font-semibold">Diaria:</span> {metaDiaria.join(', ')}</p>
+              <p><span className="font-semibold">{i18n.t('anual')}</span> {metaAnual.join(', ')}</p>
+              <p><span className="font-semibold">{i18n.t('semanal')}</span> {metaSemanal.join(', ')}</p>
+              <p><span className="font-semibold">{i18n.t('diaria')}</span> {metaDiaria.join(', ')}</p>
             </div>
           </div>
 
@@ -151,7 +152,7 @@ Responde ÚNICAMENTE con 3 ideas numeradas (1., 2., 3.), una por línea. Sin sal
             <div className="flex items-center justify-center py-8">
               <div className="flex items-center gap-2 text-purple-600">
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span className="text-sm font-medium">Analizando tus objetivos y generando ideas...</span>
+                <span className="text-sm font-medium">{i18n.t('analizando_tus_objetivos_y_generando_ide')}</span>
               </div>
             </div>
           )}
@@ -176,7 +177,7 @@ Responde ÚNICAMENTE con 3 ideas numeradas (1., 2., 3.), una por línea. Sin sal
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder="Pide un ajuste o nueva idea..."
+              placeholder={i18n.t('pide_un_ajuste_o_nueva_idea')}
               className="flex-1 px-4 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-300 bg-white text-sm"
             />
             <button

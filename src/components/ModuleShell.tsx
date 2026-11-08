@@ -206,11 +206,11 @@ const Header = ({ userName, photoUrl, profile, onBack, onLogout, titulo, subtitu
         </button>
         {titulo && IconoTitulo && (
           <div className="flex items-center gap-3 min-w-0">
-            <span className="w-11 h-11 rounded-md bg-[#F3F0FF] dark:bg-white/10 flex items-center justify-center text-[#6236FF] dark:text-purple-300 shrink-0">
+            <span className="w-15 h-15 rounded-md  dark:bg-white/10 flex items-center justify-center text-[#6236FF] dark:text-purple-300 shrink-0">
               <IconoTitulo className="w-5 h-5" />
             </span>
             <div className="min-w-0">
-              <h1 className="text-xl sm:text-xl font-bold bg-gradient-to-r from-[#6236FF] to-[#8A2BE2] bg-clip-text text-transparent truncate">
+              <h1 className="text-xl sm:text-xl font-bold bg-black dark:text-white bg-clip-text text-transparent truncate -ml-1">
                 {titulo}
               </h1>
               <p className="hidden sm:block text-sm text-slate-500 dark:text-gray-400 truncate">
@@ -226,12 +226,10 @@ const Header = ({ userName, photoUrl, profile, onBack, onLogout, titulo, subtitu
       </div>
 
       <div className="w-40 sm:w-auto shrink-0 flex items-center justify-end gap-5">
-        <button onClick={() => setShowHelp(true)} title="Ayuda de IA" className="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors">
-          <CircleHelp className="w-5 h-5" />
-        </button>
+        
 
         <div className="relative">
-          <button onClick={toggleNotifications} title="Notificaciones" className="relative text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors">
+          <button onClick={toggleNotifications} title="Notificaciones" className="relative text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white transition-colors mt-1">
             <Bell className="w-5 h-5" />
             {notifications.length > 0 && (
               <span className="absolute -top-1 -right-1 min-w-4 h-4 px-0.5 bg-[#6236FF] text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white dark:border-[#14142e]">

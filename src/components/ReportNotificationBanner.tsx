@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import { useState, useEffect } from 'react';
 import { ChevronRight, Info } from 'lucide-react';
 import { reportService, FocusiaReportData } from '../services/api';
@@ -42,8 +43,8 @@ export function ReportNotificationsScreen({
           avatarIndex={avatarIndex}
           backLabel="Volver al inicio"
           onBack={onBack}
-          title="Notificaciones"
-          subtitle="Un aviso por cada reporte disponible"
+          title={i18n.t('notificaciones_uwch')}
+          subtitle={i18n.t('un_aviso_por_cada_reporte_disponible')}
         />
 
         <div className="mt-8 space-y-4">

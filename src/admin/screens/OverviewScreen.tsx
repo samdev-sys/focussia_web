@@ -1,3 +1,4 @@
+import i18n from '../../i18n';
 import { Link2 } from 'lucide-react';
 import { adminService } from '../lib/adminApi';
 import { Card, PageHeader, Cargando, Aviso, Vacio, useCarga } from '../components/ui';
@@ -158,7 +159,7 @@ export default function OverviewScreen({ onIr }: { onIr: (s: Seccion) => void })
               <p className="text-[10px] text-gray-400">Total de temas: {tribu.temas}</p>
             </div>
           ) : (
-            <Vacio>No hay ningún tema de Tribu activo.</Vacio>
+            <Vacio>{i18n.t('no_hay_ningun_tema_de_tribu_activo')}</Vacio>
           )}
         </Card>
 

@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useState } from 'react';
 import { useOnboarding, INTENSITY_OPTIONS, CHANNEL_OPTIONS, TONE_OPTIONS, AVATAR_OPTIONS } from '../hooks/useOnboarding';
 import { ArrowRight, ArrowLeft, Check, User, Target, MessageSquare, Zap, Brain, Sparkles, Loader2 } from 'lucide-react';
@@ -26,7 +27,7 @@ function WelcomeStep({ nextStep }: OnboardingStepProps) {
         <Sparkles className="w-12 h-12 text-white" />
       </div>
       <div>
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Bienvenido a Focusia</h2>
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">{i18n.t('bienvenido_a_focusia')}</h2>
         <p className="text-lg text-gray-600 dark:text-gray-300 max-w-md mx-auto">
           Tu sistema de dirección estratégica personal. Configuraremos tu IA compañera en 7 pasos rápidos.
         </p>
@@ -44,12 +45,12 @@ function WelcomeStep({ nextStep }: OnboardingStepProps) {
 function NameStep({ profile, updateProfile, nextStep, prevStep }: OnboardingStepProps) {
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">¿Cómo te llamas?</h2>
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{i18n.t('como_te_llamas')}</h2>
       <input
         type="text"
         value={profile.full_name}
         onChange={e => updateProfile({ full_name: e.target.value })}
-        placeholder="Tu nombre completo"
+        placeholder={i18n.t('tu_nombre_completo')}
         className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
         autoFocus
       />
@@ -72,8 +73,8 @@ function NameStep({ profile, updateProfile, nextStep, prevStep }: OnboardingStep
 function AvatarStep({ profile, updateProfile, nextStep, prevStep }: OnboardingStepProps) {
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Elige tu Avatar</h2>
-      <p className="text-gray-600 dark:text-gray-400">Tu IA usará esta imagen para identificarse contigo</p>
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{i18n.t('elige_tu_avatar')}</h2>
+      <p className="text-gray-600 dark:text-gray-400">{i18n.t('tu_ia_usara_esta_imagen_para_identificar')}</p>
       <div className="grid grid-cols-3 gap-4">
         {AVATAR_OPTIONS.map(avatar => (
           <button
@@ -113,8 +114,8 @@ function AvatarStep({ profile, updateProfile, nextStep, prevStep }: OnboardingSt
 function IntensityStep({ profile, updateProfile, nextStep, prevStep }: OnboardingStepProps) {
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Nivel de Intensidad de la IA</h2>
-      <p className="text-gray-600 dark:text-gray-400">¿Qué tan exigente quieres que sea tu acompañante?</p>
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{i18n.t('nivel_de_intensidad_de_la_ia')}</h2>
+      <p className="text-gray-600 dark:text-gray-400">{i18n.t('que_tan_exigente_quieres_que_sea_tu_acom')}</p>
       <div className="space-y-3">
         {INTENSITY_OPTIONS.map(opt => (
           <button
@@ -161,7 +162,7 @@ function ChannelsStep({ profile, updateProfile, nextStep, prevStep }: Onboarding
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Canales de Notificación</h2>
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{i18n.t('canales_de_notificacion')}</h2>
       <p className="text-gray-600 dark:text-gray-400">Selecciona cómo quieres recibir avisos de tu IA (mínimo 1)</p>
       <div className="space-y-3">
         {CHANNEL_OPTIONS.map(opt => (
@@ -206,8 +207,8 @@ function ChannelsStep({ profile, updateProfile, nextStep, prevStep }: Onboarding
 function ToneStep({ profile, updateProfile, nextStep, prevStep }: OnboardingStepProps) {
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Tono de tu Avatar</h2>
-      <p className="text-gray-600 dark:text-gray-400">Define la personalidad de tu IA acompañante</p>
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{i18n.t('tono_de_tu_avatar')}</h2>
+      <p className="text-gray-600 dark:text-gray-400">{i18n.t('define_la_personalidad_de_tu_ia_acompana')}</p>
       <div className="space-y-3">
         {TONE_OPTIONS.map(opt => (
           <button
@@ -249,30 +250,30 @@ function ConfirmStep({ profile, updateProfile, nextStep, prevStep }: OnboardingS
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Confirmar Configuración</h2>
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{i18n.t('confirmar_configuracion')}</h2>
       <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 space-y-4">
         <div className="flex items-center gap-4">
-          <img src={avatar?.file} alt="Avatar" className="w-16 h-16 rounded-full object-cover" />
+          <img src={avatar?.file} alt={i18n.t('avatar_9697')} className="w-16 h-16 rounded-full object-cover" />
           <div>
             <p className="text-lg font-semibold text-gray-900 dark:text-white">{profile.full_name}</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Tu nombre</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{i18n.t('tu_nombre')}</p>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <p className="text-gray-500 dark:text-gray-400">Intensidad</p>
+            <p className="text-gray-500 dark:text-gray-400">{i18n.t('intensidad')}</p>
             <p className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
               {intensity?.icon} {intensity?.label}
             </p>
           </div>
           <div>
-            <p className="text-gray-500 dark:text-gray-400">Tono</p>
+            <p className="text-gray-500 dark:text-gray-400">{i18n.t('tono')}</p>
             <p className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
               {tone?.icon} {tone?.label}
             </p>
           </div>
           <div>
-            <p className="text-gray-500 dark:text-gray-400">Canales</p>
+            <p className="text-gray-500 dark:text-gray-400">{i18n.t('canales')}</p>
             <p className="font-medium text-gray-900 dark:text-white">
               {profile.allowed_channels?.join(', ')}
             </p>

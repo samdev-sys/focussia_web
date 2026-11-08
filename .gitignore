@@ -5,6 +5,9 @@ build/
 coverage/
 .coverage
 
+# Carpeta efímera de los tests de media
+backend/.test_media/
+
 # Environment variables
 .env
 .env.local

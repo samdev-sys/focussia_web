@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Check, ChevronRight, ChevronDown, GripVertical,
@@ -94,70 +95,7 @@ export const TimeBlockingCard: React.FC<TimeBlockingCardProps> = ({
               (a.fecha_seleccionada || todayStr) === todayStr,
           ),
         );
-        // Datos de ejemplo para visualización digitalizada (fotos Time Blocking)
-        if ((all.filter(
-          a =>
-            a.estado_actual === 'AGENDA_DIARIA' &&
-            (a.fecha_seleccionada || todayStr) === todayStr,
-        )).length === 0) {
-          const ejemploFecha = todayStr || '2026-06-05';
-          const ejemplos: AccionKanban[] = [
-            {
-              id: 'demo-08', texto_accion: 'Revisar prioridades',
-              estado_actual: 'AGENDA_DIARIA', fecha_seleccionada: ejemploFecha,
-              hora_seleccionada: '08:00', estado: 'Completada', subacciones: [],
-            } as unknown as AccionKanban,
-            {
-              id: 'demo-09', texto_accion: 'Organizar carpetas',
-              estado_actual: 'AGENDA_DIARIA', fecha_seleccionada: ejemploFecha,
-              hora_seleccionada: '09:00', estado: 'Haciendo', subacciones: [
-                { id: 'demo-sub-09-1', texto: 'Clasificar documentos', estado: 'Completada' },
-                { id: 'demo-sub-09-2', texto: 'Eliminar duplicados', estado: 'Pendiente' },
-              ] as Subaccion[],
-            } as unknown as AccionKanban,
-            {
-              id: 'demo-10', texto_accion: 'Pagar cuentas',
-              estado_actual: 'AGENDA_DIARIA', fecha_seleccionada: ejemploFecha,
-              hora_seleccionada: '10:00', estado: 'Pendiente', subacciones: [],
-            } as unknown as AccionKanban,
-            {
-              id: 'demo-11', texto_accion: 'Enviar propuesta',
-              estado_actual: 'AGENDA_DIARIA', fecha_seleccionada: ejemploFecha,
-              hora_seleccionada: '11:00', estado: 'Pendiente', subacciones: [],
-            } as unknown as AccionKanban,
-            {
-              id: 'demo-12', texto_accion: 'Lavar auto',
-              estado_actual: 'AGENDA_DIARIA', fecha_seleccionada: ejemploFecha,
-              hora_seleccionada: '12:00', estado: 'Pendiente', subacciones: [],
-            } as unknown as AccionKanban,
-            {
-              id: 'demo-14', texto_accion: 'Almorzar',
-              estado_actual: 'AGENDA_DIARIA', fecha_seleccionada: ejemploFecha,
-              hora_seleccionada: '14:00', estado: 'Pendiente', subacciones: [],
-            } as unknown as AccionKanban,
-            {
-              id: 'demo-16', texto_accion: 'Preparar una reunión',
-              estado_actual: 'AGENDA_DIARIA', fecha_seleccionada: ejemploFecha,
-              hora_seleccionada: '16:00', estado: 'Pendiente', subacciones: [
-                { id: 'demo-sub-16-1', texto: 'Definir agenda', estado: 'Completada' },
-                { id: 'demo-sub-16-2', texto: 'Revisar documentos', estado: 'Completada' },
-                { id: 'demo-sub-16-3', texto: 'Confirmar participantes', estado: 'Completada' },
-                { id: 'demo-sub-16-4', texto: 'Reservar sala', estado: 'Pendiente' },
-              ] as Subaccion[],
-            } as unknown as AccionKanban,
-            {
-              id: 'demo-18', texto_accion: 'Comprar supermercado',
-              estado_actual: 'AGENDA_DIARIA', fecha_seleccionada: ejemploFecha,
-              hora_seleccionada: '18:00', estado: 'Pendiente', subacciones: [],
-            } as unknown as AccionKanban,
-            {
-              id: 'demo-19', texto_accion: 'Juego familiar de mesa',
-              estado_actual: 'AGENDA_DIARIA', fecha_seleccionada: ejemploFecha,
-              hora_seleccionada: '19:00', estado: 'Pendiente', subacciones: [],
-            } as unknown as AccionKanban,
-          ];
-          setDayActions(ejemplos);
-        }
+        // Sin datos de ejemplo para visualización digitalizada.
       } catch (err) {
         console.error('Error loading time blocking actions:', err);
       }
@@ -495,35 +433,37 @@ export const TimeBlockingCard: React.FC<TimeBlockingCardProps> = ({
   };
 
   return (
-    <div className="w-[410px] flex flex-col overflow-hidden rounded-md border border-slate-200/80 bg-white shadow-sm -ml-2 font-montserrat">
+    <div className="w-full h-full min-h-0 flex flex-col overflow-hidden rounded-md border border-slate-200/80 bg-white dark:bg-transparent dark:border-transparent shadow-sm dark:shadow-none font-montserrat">
       {/* BARRA HEADER DEL TIME BLOCKING */}
-      <div className="bg-[linear-gradient(90deg,#0044e8_0%,#19227c_55%,#26021e_100%)] rounded-md text-white text-center py-2 text-[15px] font-extrabold tracking-wider uppercase select-none">
-        TIME BLOCKING
+      <div className="bg-[linear-gradient(90deg,#0044e8_0%,#19227c_55%,#26021e_100%)] dark:bg-none dark:bg-[#060208] dark:border dark:border-white/10 rounded-md text-white text-center py-1 text-[15px] font-extrabold tracking-wider uppercase select-none">
+        <span className="dark:bg-[linear-gradient(90deg,#f472b6_0%,#fb923c_45%,#fde047_100%)] dark:bg-clip-text dark:text-transparent">
+          TIME BLOCKING
+        </span>
       </div>
 
       {/* FECHA */}
-      <div className="text-center text-[13px] font-bold text-[#1a2340] py-1.5 bg-white select-none">
+      <div className="text-center text-[13px] font-bold text-[#1a2340] dark:text-[#fda4af] py-0.5 bg-white dark:bg-transparent select-none">
         {formatDateLong(todayStr)}
       </div>
 
       {/* ENCABEZADOS DE COLUMNA (PILLS) */}
       <div
         id="tour-wip-status"
-        className="flex items-center gap-1.5 px-2 pb-1.5 bg-white select-none"
+        className="flex items-center gap-1.5 px-2 pb-0.5 bg-white dark:bg-transparent select-none"
       >
-        <div className="w-[98px] shrink-0 bg-[linear-gradient(90deg,#ffe39f_0%,#fda68c_55%,#f6789c_100%)] border border-[#d68594] rounded-md py-1 text-[10px] font-extrabold tracking-wider uppercase text-[#1e1b2e] text-center shadow-2xs">
+        <div className="w-[98px] shrink-0 bg-[linear-gradient(90deg,#ffe39f_0%,#fda68c_55%,#f6789c_100%)] dark:bg-[linear-gradient(90deg,#fb923c_0%,#f472b6_55%,#d946ef_100%)] border border-[#d68594] dark:border-pink-400/50 rounded-md py-1 text-[10px] font-extrabold tracking-wider uppercase text-[#1e1b2e] dark:text-[#14050c] text-center shadow-2xs">
           HORA
         </div>
-        <div className="flex-1 min-w-0 bg-[linear-gradient(90deg,#ffe39f_0%,#fda68c_55%,#f6789c_100%)] border border-[#d68594] rounded-md py-1 text-[10px] font-extrabold tracking-wider uppercase text-[#1e1b2e] text-center shadow-2xs">
+        <div className="flex-1 min-w-0 bg-[linear-gradient(90deg,#ffe39f_0%,#fda68c_55%,#f6789c_100%)] dark:bg-[linear-gradient(90deg,#fb923c_0%,#f472b6_55%,#d946ef_100%)] border border-[#d68594] dark:border-pink-400/50 rounded-md py-1 text-[10px] font-extrabold tracking-wider uppercase text-[#1e1b2e] dark:text-[#14050c] text-center shadow-2xs">
           ACCIÓN
         </div>
-        <div className="w-[132px] shrink-0 bg-[linear-gradient(90deg,#ffe39f_0%,#fda68c_55%,#f6789c_100%)] border border-[#d68594] rounded-md py-1 text-[10px] font-extrabold tracking-wider uppercase text-[#1e1b2e] text-center shadow-2xs">
+        <div className="w-[132px] shrink-0 bg-[linear-gradient(90deg,#ffe39f_0%,#fda68c_55%,#f6789c_100%)] dark:bg-[linear-gradient(90deg,#fb923c_0%,#f472b6_55%,#d946ef_100%)] border border-[#d68594] dark:border-pink-400/50 rounded-md py-1 text-[10px] font-extrabold tracking-wider uppercase text-[#1e1b2e] dark:text-[#14050c] text-center shadow-2xs">
           ESTADO
         </div>
       </div>
 
       {/* FILAS DE HORARIOS */}
-      <div className="overflow-y-auto max-h-[500px] px-2 py-0.5 space-y-1 bg-[#f9fafc]">
+      <div className="overflow-y-auto flex-1 min-h-0 px-2 py-0.5 space-y-0.5 bg-[#f9fafc] dark:bg-transparent">
         {HOURS.map(h => {
           const label = `${pad(h)}:00 – ${pad((h + 1) % 24)}:00`;
           const accion = placed.get(h) || null;
@@ -588,14 +528,14 @@ export const TimeBlockingCard: React.FC<TimeBlockingCardProps> = ({
                   setDragAccionId(null);
                   setDragOverHour(null);
                 }}
-                className={`w-[98px] shrink-0 rounded-md border border-slate-100 px-1.5 py-1.5 flex items-center gap-1 select-none ${
+                className={`w-[98px] shrink-0 rounded-md border border-slate-100 px-1 py-0.5 flex items-center gap-1 select-none ${
                   highlightLavender ? 'bg-[#efeaff]' : 'bg-white'
                 } ${showRedLeftBar ? 'border-l-[3px] border-l-[#dc2626]' : ''}`}
               >
-                <span className="w-3.5 shrink-0 flex items-center justify-center">
+                <span className="w-3 shrink-0 flex items-center justify-center">
                   {accion && !enEjecucion && (
                     <GripVertical
-                      className="w-3.5 h-3.5 text-slate-500 cursor-grab active:cursor-grabbing"
+                      className="w-3 h-3 text-slate-500 cursor-grab active:cursor-grabbing"
                     />
                   )}
                 </span>
@@ -643,7 +583,7 @@ export const TimeBlockingCard: React.FC<TimeBlockingCardProps> = ({
                         setDragAccionId(null);
                         setDragOverHour(null);
                       }}
-                      className={`flex-1 min-w-0 rounded-md border border-slate-100 px-2.5 py-1.5 flex flex-col justify-center ${
+                      className={`flex-1 min-w-0 rounded-md border border-slate-100 px-2 py-0.5 flex flex-col justify-center ${
                         highlightLavender ? 'bg-[#efeaff]' : 'bg-white'
                       }`}
                     >
@@ -756,14 +696,14 @@ export const TimeBlockingCard: React.FC<TimeBlockingCardProps> = ({
                               terminarEdicionHora(h, false);
                             }
                           }}
-                          placeholder="Escriba una acción"
+                          placeholder={i18n.t('escriba_una_accion_dy4c')}
                           className="w-full rounded-md border-2 border-[#6366f1] bg-white px-2 py-0.5 text-[11.5px] text-[#1e293b] outline-none"
                         />
                       ) : (
                         <button
                           type="button"
                           onClick={() => iniciarEdicionHora(h)}
-                          className="w-full text-left text-[11px] italic text-slate-400 hover:text-slate-600 transition-colors"
+                          className="w-full text-left text-[11px] italic text-slate-400 hover:text-slate-600 transition-colors truncate whitespace-nowrap"
                         >
                           + Escriba una acción
                         </button>
@@ -772,7 +712,7 @@ export const TimeBlockingCard: React.FC<TimeBlockingCardProps> = ({
 
                     {/* CELDA ESTADO */}
                     <div
-                      className={`w-[132px] shrink-0 rounded-md border border-slate-100 px-1.5 py-1 flex items-center justify-between gap-1 ${
+                      className={`w-[132px] shrink-0 rounded-md border border-slate-100 px-1 py-0.5 flex items-center justify-between gap-1 ${
                         highlightLavender ? 'bg-[#efeaff]' : 'bg-white'
                       }`}
                     >
@@ -813,10 +753,10 @@ export const TimeBlockingCard: React.FC<TimeBlockingCardProps> = ({
                             <button
                               type="button"
                               onClick={() => abrirSubInput(accion.id)}
-                              className="w-5 h-5 rounded border border-[#c7d2fe] bg-white hover:bg-[#eef2ff] text-[#3730a3] flex items-center justify-center transition-colors"
-                              title="Añadir subacción"
+                              className="w-4 h-4 rounded border border-[#c7d2fe] bg-white hover:bg-[#eef2ff] text-[#3730a3] flex items-center justify-center transition-colors"
+                              title={i18n.t('anadir_subaccion_ss5m')}
                             >
-                              <Plus className="w-3.5 h-3.5" strokeWidth={2.5} />
+                              <Plus className="w-3 h-3" strokeWidth={2.5} />
                             </button>
                             <button
                               type="button"
@@ -825,8 +765,8 @@ export const TimeBlockingCard: React.FC<TimeBlockingCardProps> = ({
                                   ? setConfirmDelete(accion.id)
                                   : eliminarAccion(accion)
                               }
-                              className="w-5 h-5 rounded flex items-center justify-center text-[#dc2626] hover:bg-red-50 transition-colors"
-                              title="Eliminar acción"
+                              className="w-4 h-4 rounded flex items-center justify-center text-[#dc2626] hover:bg-red-50 transition-colors"
+                              title={i18n.t('eliminar_accion_qysi')}
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -895,7 +835,7 @@ export const TimeBlockingCard: React.FC<TimeBlockingCardProps> = ({
                               skipBlur.current = false;
                               setEditingSub({ id: sub.id, texto: sub.texto });
                             }}
-                            title="Doble clic para editar"
+                            title={i18n.t('doble_clic_para_editar_4qah')}
                             className="flex-1 min-w-0 text-[11.5px] font-medium text-[#283566] truncate cursor-text"
                           >
                             {sub.texto}
@@ -905,7 +845,7 @@ export const TimeBlockingCard: React.FC<TimeBlockingCardProps> = ({
                           type="button"
                           onClick={() => eliminarSubaccion(accion.id, sub.id)}
                           className="w-5 h-5 rounded flex items-center justify-center text-[#dc2626] hover:bg-red-50 shrink-0"
-                          title="Eliminar subacción"
+                          title={i18n.t('eliminar_subaccion_5i90')}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -917,7 +857,7 @@ export const TimeBlockingCard: React.FC<TimeBlockingCardProps> = ({
                         <input
                           autoFocus
                           value={subInput.texto}
-                          placeholder="Escriba una subacción"
+                          placeholder={i18n.t('escriba_una_subaccion_tilc')}
                           onChange={e =>
                             setSubInput({ accionId: accion.id, texto: e.target.value })
                           }
@@ -1012,10 +952,8 @@ export const TimeBlockingCard: React.FC<TimeBlockingCardProps> = ({
         })}
       </div>
 
-      {/* PIE DE INSTRUCCIONES */}
-      <p className="text-center text-[11px] italic text-[#475569] py-1.5 bg-white border-t border-slate-100 select-none">
-        Doble clic: editar · Clic en el estado: avanzar
-      </p>
+      {/* Pie de instrucciones retirado (FASE 5): ocupaba altura y duplicaba
+          la info del tooltip de cada fila. */}
     </div>
   );
 };

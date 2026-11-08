@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Home, CircleDot, LayoutGrid, Calendar, CalendarDays, Kanban,
@@ -158,8 +159,8 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
       <aside className="w-48 bg-[#0A0A26] h-full hidden md:flex flex-col z-20 shrink-0">
         <div className="h-16 flex items-center px-6 pt-4 pb-2">
           <div className="flex items-center gap-3 text-white">
-            <img src="./focussia.png" alt="Focusia" className="w-4 h-4 text-white" />
-            <span className="text-xl font-bold tracking-wide">Focusia</span>
+            <img src="/focussia.png" alt={i18n.t('focusia_46rw')} className="w-4 h-4 text-white" />
+            <span className="text-xl font-bold tracking-wide">{i18n.t('focusia_46rw')}</span>
           </div>
         </div>
         <nav className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
@@ -179,17 +180,17 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
           ))}
           <button className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors w-full text-left text-white/60 hover:text-white hover:bg-white/5">
             <MoreHorizontal className="w-5 h-5 text-center shrink-0" />
-            <span className="truncate">Más</span>
+            <span className="truncate">{i18n.t('mas_q22o')}</span>
           </button>
         </nav>
         <div className="p-4">
           <button onClick={onBack} className="flex items-center w-full p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-colors">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-sm font-bold">
-             {avatarUrl && <img src={avatarUrl} alt="profile" className="w-full h-full object-cover" />}
+             {avatarUrl && <img src={avatarUrl} alt={i18n.t('profile_op2a')} className="w-full h-full object-cover" />}
             </div>
             <div className="ml-3 text-left flex-1">
               <p className="text-sm font-semibold text-white">{userName || 'Usuario'}</p>
-              <p className="text-xs text-white/50">Ver perfil</p>
+              <p className="text-xs text-white/50">{i18n.t('ver_perfil_wi76')}</p>
             </div>
             <ChevronDown className="w-4 h-4 text-white/50" />
           </button>
@@ -205,18 +206,18 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
             <Link2 className="w-6 h-6 text-white" />
           </span>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold text-slate-900">Redes Sociales</h1>
-            <p className="text-sm text-slate-500">Accede rápidamente a tus perfiles personales desde Focusia.</p>
+            <h1 className="text-xl font-bold text-slate-900">{i18n.t('redes_sociales')}</h1>
+            <p className="text-sm text-slate-500">{i18n.t('accede_rapidamente_a_tus_perfiles_person')}</p>
           </div>
           <div className="hidden sm:flex items-center gap-2">
             <button
-              title="Ayuda de IA"
+              title={i18n.t('ayuda_de_ia_pg4k')}
               onClick={() => setShowHelp(true)}
               className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:shadow-md transition-shadow font-black"
             >?</button>
             <div className="relative">
               <button
-                title="Notificaciones"
+                title={i18n.t('notificaciones_jtdm')}
                 onClick={async () => {
                   if (!showNotifications) {
                     try { setNotifications(await notificationService.getAll()); } catch { /* noop */ }
@@ -236,9 +237,9 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
                   <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-white rounded-xl shadow-2xl border border-slate-100 z-50">
-                    <p className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">Notificaciones</p>
+                    <p className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">{i18n.t('notificaciones_jtdm')}</p>
                     {notifications.length === 0 ? (
-                      <p className="px-4 py-6 text-sm text-slate-400 text-center">Sin notificaciones.</p>
+                      <p className="px-4 py-6 text-sm text-slate-400 text-center">{i18n.t('sin_notificaciones_pem4')}</p>
                     ) : notifications.map(n => (
                       <div key={n.id} className="px-4 py-3 border-b border-slate-50 last:border-0 hover:bg-slate-50">
                         <p className="text-sm font-semibold text-slate-800">{n.title}</p>
@@ -249,7 +250,7 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
                 </>
               )}
             </div>
-            <button title="Configuración" onClick={() => setShowConfig(true)} className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:shadow-md transition-shadow">
+            <button title={i18n.t('configuracion_hfss')} onClick={() => setShowConfig(true)} className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:shadow-md transition-shadow">
               <Settings className="w-5 h-5" />
             </button>
           </div>
@@ -262,8 +263,8 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
               <section className="bg-white rounded-md border border-slate-100 shadow-sm p-5">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div>
-                    <h2 className="text-lg font-extrabold text-slate-900">Mis accesos directos</h2>
-                    <p className="text-sm text-slate-500">Solo se muestran las redes sociales que has configurado.</p>
+                    <h2 className="text-lg font-extrabold text-slate-900">{i18n.t('mis_accesos_directos')}</h2>
+                    <p className="text-sm text-slate-500">{i18n.t('solo_se_muestran_las_redes_sociales_que_')}</p>
                   </div>
                   <button
                     onClick={irAConfiguracion}
@@ -274,8 +275,8 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
                 </div>
                 {configuradas.length === 0 ? (
                   <div className="mt-4 rounded-xl bg-[#f4f6fb] p-6 text-center">
-                    <p className="text-sm text-slate-500">Aún no tienes accesos directos.</p>
-                    <p className="text-sm text-slate-500">Agrega tus enlaces abajo y aparecerán aquí.</p>
+                    <p className="text-sm text-slate-500">{i18n.t('aun_no_tienes_accesos_directos')}</p>
+                    <p className="text-sm text-slate-500">{i18n.t('agrega_tus_enlaces_abajo_y_apareceran_aq')}</p>
                     <button onClick={irAConfiguracion} className="mt-3 text-sm font-bold text-white bg-gradient-to-r from-[#6236FF] to-[#8A2BE2] rounded-xl px-5 py-2.5 hover:brightness-110 active:scale-95 transition-all">
                       Ir a Mis Redes Sociales
                     </button>
@@ -301,13 +302,13 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
 
               {/* Configuración */}
               <section ref={configRef} className="bg-white rounded-md border border-slate-100 shadow-sm p-5 scroll-mt-4">
-                <h2 className="text-lg font-extrabold text-slate-900">Configuración de mis redes sociales</h2>
-                <p className="text-sm text-slate-500">Agrega los enlaces de tus perfiles. Solo toma unos segundos.</p>
+                <h2 className="text-lg font-extrabold text-slate-900">{i18n.t('configuracion_de_mis_redes_sociales')}</h2>
+                <p className="text-sm text-slate-500">{i18n.t('agrega_los_enlaces_de_tus_perfiles_solo_')}</p>
                 <div className="hidden md:grid grid-cols-[170px_210px_1fr_110px] gap-3 mt-4 pb-2 text-xs font-bold text-slate-500">
-                  <span>Red social</span>
-                  <span>¿Cómo obtener tu enlace?</span>
-                  <span>Enlace de tu perfil</span>
-                  <span className="text-center">Acción</span>
+                  <span>{i18n.t('red_social')}</span>
+                  <span>{i18n.t('como_obtener_tu_enlace')}</span>
+                  <span>{i18n.t('enlace_de_tu_perfil')}</span>
+                  <span className="text-center">{i18n.t('accion_s42n')}</span>
                 </div>
                 <div className="flex flex-col gap-2 mt-1">
                   {REDES.map(r => {
@@ -352,7 +353,7 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
                         {abierto && (
                           <ol className="md:ml-[180px] rounded-xl bg-[#eef2ff] p-3 pl-8 text-[13px] text-slate-700 list-decimal space-y-1 mb-2">
                             {r.tutorial.map((paso, i) => <li key={i}>{paso}</li>)}
-                            <li className="font-bold text-[#6236FF]">Tarda unos 10 segundos.</li>
+                            <li className="font-bold text-[#6236FF]">{i18n.t('tarda_unos_10_segundos_ym3o')}</li>
                           </ol>
                         )}
                       </div>
@@ -369,7 +370,7 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
                   <span className="w-10 h-10 rounded-full bg-[#ede9fe] flex items-center justify-center">
                     <HelpCircle className="w-5 h-5 text-[#6236FF]" />
                   </span>
-                  <h3 className="font-extrabold text-[#6236FF]">¿Cómo funciona?</h3>
+                  <h3 className="font-extrabold text-[#6236FF]">{i18n.t('como_funciona_107d')}</h3>
                 </div>
                 <div className="flex flex-col gap-4 mt-4">
                   {COMO_FUNCIONA.map((c, i) => (
@@ -389,8 +390,8 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
                   <ShieldCheck className="w-5 h-5 text-emerald-600" />
                 </span>
                 <div>
-                  <p className="text-sm font-extrabold text-slate-900">Tus enlaces son privados</p>
-                  <p className="text-[13px] text-slate-500 leading-snug">Focusia no accede ni almacena contenido de tus redes sociales.</p>
+                  <p className="text-sm font-extrabold text-slate-900">{i18n.t('tus_enlaces_son_privados')}</p>
+                  <p className="text-[13px] text-slate-500 leading-snug">{i18n.t('focusia_no_accede_ni_almacena_contenido_')}</p>
                 </div>
               </section>
 
@@ -399,9 +400,9 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
                   <span className="w-10 h-10 rounded-full bg-[#e2d9fb] flex items-center justify-center">
                     <Star className="w-5 h-5 text-[#6236FF]" />
                   </span>
-                  <h3 className="font-extrabold text-[#6236FF] text-[15px]">¿Aún no configuras tus redes?</h3>
+                  <h3 className="font-extrabold text-[#6236FF] text-[15px]">{i18n.t('aun_no_configuras_tus_redes')}</h3>
                 </div>
-                <p className="text-[13px] text-[#6d5bd0] mt-2">Agrega tus enlaces y tendrás acceso rápido a tus perfiles desde aquí.</p>
+                <p className="text-[13px] text-[#6d5bd0] mt-2">{i18n.t('agrega_tus_enlaces_y_tendras_acceso_rapi')}</p>
                 <div className="relative h-24 mt-3 mb-1" aria-hidden>
                   <div className="absolute left-2 top-3 w-24 h-16 rounded-lg bg-white/70 border border-[#d5c9f5]" />
                   <div className="absolute right-2 top-3 w-24 h-16 rounded-lg bg-white/70 border border-[#d5c9f5]" />

@@ -1,3 +1,4 @@
+import i18n from '../../i18n';
 import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { api } from '../../services/api';
@@ -52,9 +53,9 @@ export default function HoraAgendaModal({ accion, fecha, onPick, onCancel }: {
         <span className="mx-auto w-14 h-14 rounded-full bg-[#1f6feb] text-white text-2xl font-black flex items-center justify-center">
           H
         </span>
-        <h2 className="mt-4 text-xl sm:text-2xl font-black text-[#101433]">¿EN QUÉ BLOQUE HACES ESTA ACCIÓN HOY?</h2>
+        <h2 className="mt-4 text-xl sm:text-2xl font-black text-[#101433]">{i18n.t('en_que_bloque_haces_esta_accion_hoy')}</h2>
         <p className="mt-1 text-lg text-[#101433] font-medium">{accion.texto_accion}</p>
-        <p className="mt-1 text-sm text-[#5b6b8c]">Cada bloque horario admite una sola acción.</p>
+        <p className="mt-1 text-sm text-[#5b6b8c]">{i18n.t('cada_bloque_horario_admite_una_sola_acci')}</p>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-6">
           {HOURS.map(h => {
@@ -72,7 +73,7 @@ export default function HoraAgendaModal({ accion, fecha, onPick, onCancel }: {
                 }`}
               >
                 {pad(h)}:00 – {pad((h + 1) % 24)}:00
-                {ocupada && <span className="block text-[11px] font-semibold">Ocupada</span>}
+                {ocupada && <span className="block text-[11px] font-semibold">{i18n.t('ocupada')}</span>}
               </button>
             );
           })}

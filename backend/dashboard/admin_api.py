@@ -288,7 +288,7 @@ class AdminUsuarioViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         qs = User.objects.order_by('id').prefetch_related(
-            'membresias', 'training_progress')
+            'membresias', 'training_progress__training__month')
         staff = self.request.query_params.get('staff')
         if staff in ('true', 'false'):
             qs = qs.filter(is_staff=(staff == 'true'))

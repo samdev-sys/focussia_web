@@ -1,6 +1,7 @@
+import i18n from '../i18n';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  AlertCircle, Bell, Briefcase, Cake, CalendarDays, Check, ChevronLeft, ChevronRight,
+  AlertCircle, Bell, Briefcase, Cake, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight,
   Gift, Heart, Loader2, PartyPopper, Phone, Plus, Trash2, User, Users, X,
 } from 'lucide-react';
 import {
@@ -76,9 +77,12 @@ function estadoRecordatorio(c: CumpleanosData): string {
   return `🔔 Recordatorio programado dentro de ${diasAviso} días.`;
 }
 
-/** Tarjeta de un cumpleaños registrado. */
-function CumpleanosCard({ cumple, onEliminar, onAccion }: {
+
+/** Fila compacta de un cumpleaños (mockup: avatar, nombre, fecha, días, campana, chevron). */
+function CumpleanosRow({ cumple, open, onToggle, onEliminar, onAccion }: {
   cumple: CumpleanosData;
+  open: boolean;
+  onToggle: () => void;
   onEliminar: (id: number) => void;
   onAccion: (id: number, accion: CumpleanosAccion, detalle?: string) => Promise<void>;
 }) {
@@ -102,110 +106,136 @@ function CumpleanosCard({ cumple, onEliminar, onAccion }: {
     }
   };
 
+  const inicial = (cumple.nombre || '?').trim().charAt(0).toUpperCase();
+
   return (
-    <article className="bg-white dark:bg-[#1a1a3a] rounded-2xl border border-[#ECE7F8] dark:border-white/10 p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3 min-w-0">
-          <span className="text-xl leading-none shrink-0" aria-hidden>🎂</span>
-          <div className="min-w-0">
-            <h3 className="text-base font-bold text-[#1B1440] dark:text-white truncate">
-              {cumple.nombre}
-            </h3>
-            <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-[#F1EBFF] dark:bg-white/10 text-[11px] font-semibold text-[#6236FF] dark:text-purple-300">
-              {categoriaLabel(cumple.categoria)}
-            </span>
-          </div>
+    <li className="relative" onClick={e => e.stopPropagation()}>
+      <div className="flex items-center gap-3 px-4 py-3">
+        <span className="w-11 h-11 rounded-full bg-[#F1EBFF] dark:bg-white/10 text-[#6236FF] dark:text-purple-300 text-base font-bold flex items-center justify-center shrink-0">
+          {inicial}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="flex items-center gap-1.5 text-sm font-bold text-[#1B1440] dark:text-white truncate">
+            <span className="truncate">{cumple.nombre}</span>
+            <Heart className="w-3.5 h-3.5 text-pink-500 fill-pink-500 shrink-0" />
+          </p>
+          <p className="mt-0.5 flex items-center gap-1.5 text-[12px] text-slate-500 dark:text-gray-400 truncate">
+            <CalendarDays className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{fechaCumple(cumple.fecha_proxima)} · Cumple cada año</span>
+          </p>
         </div>
+        <div className="hidden sm:block text-right shrink-0">
+          <p className={`text-sm font-bold ${dias <= 0 ? 'text-rose-500' : 'text-rose-500'}`}>
+            {dias <= 0 ? '¡Es hoy!' : dias === 1 ? 'Falta 1 día' : `Faltan ${dias} días`}
+          </p>
+          <p className="text-[11px] text-slate-400 dark:text-gray-500 truncate max-w-[220px]">
+            {estadoRecordatorio(cumple)}
+          </p>
+        </div>
+        <p className="sm:hidden text-[11px] font-bold text-rose-500 shrink-0">
+          {dias <= 0 ? 'Hoy' : `${dias}d`}
+        </p>
         <button
-          onClick={() => onEliminar(cumple.id)}
-          title="Eliminar cumpleaños"
-          className="text-slate-300 hover:text-rose-500 dark:text-gray-500 dark:hover:text-rose-400 transition-colors shrink-0"
+          onClick={onToggle}
+          title="Programar recordatorio"
+          className="p-1.5 rounded-full bg-amber-100 dark:bg-amber-400/20 text-amber-500 hover:bg-amber-200 dark:hover:bg-amber-400/30 transition-colors shrink-0"
         >
-          <Trash2 className="w-4 h-4" />
+          <Bell className="w-4 h-4" />
+        </button>
+        <button
+          onClick={onToggle}
+          aria-label={i18n.t('ver_mas')}
+          className="p-1 text-slate-400 hover:text-[#6236FF] dark:text-gray-500 dark:hover:text-purple-300 transition-colors shrink-0"
+        >
+          <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
         </button>
       </div>
 
-      <p className="mt-3 text-sm font-medium text-[#2B2350] dark:text-gray-200">
-        {fechaCumple(cumple.fecha_proxima)}
-      </p>
-      <p className="text-sm text-slate-500 dark:text-gray-400">
-        ⏳ {dias <= 0 ? '¡Es hoy!' : dias === 1 ? 'Falta 1 día.' : `Faltan ${dias} días.`}
-      </p>
-      <p className="mt-1.5 text-[12.5px] text-slate-500 dark:text-gray-400">
-        {estadoRecordatorio(cumple)}
-      </p>
-
-      {recordatorioVigente && (
-        <div className="mt-4 pt-4 border-t border-[#ECE7F8] dark:border-white/10">
-          <p className="text-[13px] font-semibold text-[#1B1440] dark:text-white">
-            ¿Te gustaría comenzar a prepararlo desde ahora?
-          </p>
-          <div className="mt-2.5 flex flex-wrap gap-2">
-            {ACCIONES.map(({ key, label, Icon }) => (
-              key === 'otra' ? (
-                <button
-                  key={key}
-                  onClick={() => setOtraAbierta(v => !v)}
-                  disabled={ocupado}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#E4DEF5] dark:border-white/15 text-[12.5px] font-semibold text-[#2B2350] dark:text-gray-200 hover:bg-[#F8F5FF] dark:hover:bg-white/5 transition-colors"
+      {open && (
+        <div className="px-4 pb-4 pt-1 pl-[68px]">
+          {recordatorioVigente ? (
+            <>
+              <p className="text-[13px] font-semibold text-[#1B1440] dark:text-white">
+                ¿Te gustaría comenzar a prepararlo desde ahora?
+              </p>
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                {ACCIONES.map(({ key, label, Icon }) => (
+                  key === 'otra' ? (
+                    <button
+                      key={key}
+                      onClick={() => setOtraAbierta(v => !v)}
+                      disabled={ocupado}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#E4DEF5] dark:border-white/15 text-[12.5px] font-semibold text-[#2B2350] dark:text-gray-200 hover:bg-[#F8F5FF] dark:hover:bg-white/5 transition-colors"
+                    >
+                      <Icon className="w-3.5 h-3.5" /> {label}
+                    </button>
+                  ) : (
+                    <button
+                      key={key}
+                      onClick={() => ejecutar(key)}
+                      disabled={ocupado}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#E4DEF5] dark:border-white/15 text-[12.5px] font-semibold text-[#2B2350] dark:text-gray-200 hover:bg-[#F8F5FF] dark:hover:bg-white/5 transition-colors disabled:opacity-50"
+                    >
+                      <Icon className="w-3.5 h-3.5" /> {label}
+                    </button>
+                  )
+                ))}
+              </div>
+              {otraAbierta && (
+                <form
+                  className="mt-2.5 flex gap-2"
+                  onSubmit={e => {
+                    e.preventDefault();
+                    if (otraTexto.trim()) ejecutar('otra', otraTexto);
+                  }}
                 >
-                  <Icon className="w-3.5 h-3.5" /> {label}
-                </button>
-              ) : (
-                <button
-                  key={key}
-                  onClick={() => ejecutar(key)}
-                  disabled={ocupado}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#E4DEF5] dark:border-white/15 text-[12.5px] font-semibold text-[#2B2350] dark:text-gray-200 hover:bg-[#F8F5FF] dark:hover:bg-white/5 transition-colors disabled:opacity-50"
-                >
-                  <Icon className="w-3.5 h-3.5" /> {label}
-                </button>
-              )
-            ))}
-          </div>
-          {otraAbierta && (
-            <form
-              className="mt-2.5 flex gap-2"
-              onSubmit={e => {
-                e.preventDefault();
-                if (otraTexto.trim()) ejecutar('otra', otraTexto);
-              }}
-            >
-              <input
-                autoFocus
-                value={otraTexto}
-                onChange={e => setOtraTexto(e.target.value)}
-                placeholder="Describe la acción…"
-                maxLength={120}
-                className="flex-1 min-w-0 rounded-lg border border-[#E4DEF5] dark:border-white/10 bg-white dark:bg-white/5 px-3 py-1.5 text-[13px] text-[#1B1440] dark:text-white placeholder:text-slate-400 outline-none focus:border-[#6236FF]"
-              />
-              <button
-                type="submit"
-                disabled={ocupado || !otraTexto.trim()}
-                className="px-3 py-1.5 rounded-lg bg-[#6236FF] text-white text-[12.5px] font-semibold hover:brightness-110 disabled:opacity-40"
-              >
-                Enviar
-              </button>
-            </form>
-          )}
-          {enviadas.length > 0 && (
-            <ul className="mt-2.5 space-y-1">
-              {enviadas.map((t, i) => (
-                <li key={i} className="flex items-center gap-1.5 text-[12px] text-emerald-600 dark:text-emerald-400">
-                  <Check className="w-3.5 h-3.5 shrink-0" />
-                  «{t}» enviada al Kanban Backlog.
-                </li>
-              ))}
-            </ul>
-          )}
-          {ocupado && (
-            <p className="mt-2 flex items-center gap-1.5 text-[12px] text-slate-400">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Enviando al Kanban Backlog…
+                  <input
+                    autoFocus
+                    value={otraTexto}
+                    onChange={e => setOtraTexto(e.target.value)}
+                    placeholder={i18n.t('describe_la_accion')}
+                    maxLength={120}
+                    className="flex-1 min-w-0 rounded-lg border border-[#E4DEF5] dark:border-white/10 bg-white dark:bg-white/5 px-3 py-1.5 text-[13px] text-[#1B1440] dark:text-white placeholder:text-slate-400 outline-none focus:border-[#6236FF]"
+                  />
+                  <button
+                    type="submit"
+                    disabled={ocupado || !otraTexto.trim()}
+                    className="px-3 py-1.5 rounded-lg bg-[#6236FF] text-white text-[12.5px] font-semibold hover:brightness-110 disabled:opacity-40"
+                  >
+                    Enviar
+                  </button>
+                </form>
+              )}
+              {enviadas.length > 0 && (
+                <ul className="mt-2.5 space-y-1">
+                  {enviadas.map((t, i) => (
+                    <li key={i} className="flex items-center gap-1.5 text-[12px] text-emerald-600 dark:text-emerald-400">
+                      <Check className="w-3.5 h-3.5 shrink-0" />
+                      «{t}» enviada al Kanban Backlog.
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {ocupado && (
+                <p className="mt-2 flex items-center gap-1.5 text-[12px] text-slate-400">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Enviando al Kanban Backlog…
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-[13px] text-slate-500 dark:text-gray-400">
+              {estadoRecordatorio(cumple)}
             </p>
           )}
+          <button
+            onClick={() => onEliminar(cumple.id)}
+            className="mt-3 flex items-center gap-1.5 text-[12px] font-semibold text-rose-500 hover:text-rose-600 transition-colors"
+          >
+            <Trash2 className="w-3.5 h-3.5" /> Eliminar
+          </button>
         </div>
       )}
-    </article>
+    </li>
   );
 }
 
@@ -242,7 +272,7 @@ function Calendario({ fecha, onSeleccionar }: {
         <button
           onClick={() => mover(-1)}
           className="p-1 text-[#6236FF] hover:opacity-70 transition-opacity"
-          aria-label="Mes anterior"
+          aria-label={i18n.t('mes_anterior')}
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
@@ -252,7 +282,7 @@ function Calendario({ fecha, onSeleccionar }: {
         <button
           onClick={() => mover(1)}
           className="p-1 text-[#6236FF] hover:opacity-70 transition-opacity"
-          aria-label="Mes siguiente"
+          aria-label={i18n.t('mes_siguiente')}
         >
           <ChevronRight className="w-5 h-5" />
         </button>
@@ -382,7 +412,7 @@ function Asistente({ onCerrar, onListo }: {
           <div className="relative mx-auto mt-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500 shadow-lg">
             <Check className="h-10 w-10 text-white" strokeWidth={3} />
           </div>
-          <h2 className="mt-6 text-xl font-bold text-[#1B1440] dark:text-white">¡Listo!</h2>
+          <h2 className="mt-6 text-xl font-bold text-[#1B1440] dark:text-white">{i18n.t('listo')}</h2>
           <p className="mt-2 text-sm text-slate-500 dark:text-gray-400">
             El cumpleaños ha sido registrado. Focusia te acompañará para que nunca olvides una fecha importante.
           </p>
@@ -402,7 +432,7 @@ function Asistente({ onCerrar, onListo }: {
       <div className="relative w-full max-w-sm max-h-[92vh] overflow-y-auto rounded-3xl bg-white dark:bg-[#1a1a3a] p-6 shadow-2xl">
         <button
           onClick={onCerrar}
-          aria-label="Cerrar"
+          aria-label={i18n.t('cerrar_8ra2')}
           className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
         >
           <X className="w-5 h-5" />
@@ -455,11 +485,11 @@ function Asistente({ onCerrar, onListo }: {
                   onChange={e => setNombre(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') siguiente(); }}
                   maxLength={160}
-                  placeholder="Escribe el nombre"
+                  placeholder={i18n.t('escribe_el_nombre')}
                   className="w-full rounded-xl border-2 border-[#E4DEF5] dark:border-white/10 bg-white dark:bg-white/5 py-3 pl-12 pr-4 text-[15px] text-[#1B1440] dark:text-white placeholder:text-slate-400 outline-none focus:border-[#6236FF]"
                 />
               </div>
-              <p className="mt-2 text-center text-xs text-slate-400">Ejemplo: Juan, María, Carla</p>
+              <p className="mt-2 text-center text-xs text-slate-400">{i18n.t('ejemplo_juan_maria_carla')}</p>
             </div>
           )}
 
@@ -492,7 +522,7 @@ function Asistente({ onCerrar, onListo }: {
                   placeholder="0"
                   className="w-20 rounded-md border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 px-2.5 py-1.5 text-sm text-[#1B1440] dark:text-white outline-none focus:border-[#6236FF] disabled:bg-slate-100 disabled:text-slate-400 dark:disabled:bg-white/5"
                 />
-                <span className="text-sm text-slate-500 dark:text-gray-400">días antes</span>
+                <span className="text-sm text-slate-500 dark:text-gray-400">{i18n.t('dias_antes')}</span>
               </div>
             </div>
           )}
@@ -556,6 +586,8 @@ export default function CumpleanosScreen({ userName, onBack, onNavigate }: {
   const [items, setItems] = useState<CumpleanosData[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [asistente, setAsistente] = useState(false);
+  const [verTodos, setVerTodos] = useState(false);
+  const [filaAbierta, setFilaAbierta] = useState<number | null>(null);
 
   const cargar = () => {
     cumpleanosService.listar()
@@ -594,7 +626,7 @@ export default function CumpleanosScreen({ userName, onBack, onNavigate }: {
       iconoTitulo={Cake}
     >
       <div className="px-4 pb-4 md:px-4 lg:pb-4 pt-6">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-4xl mx-auto">
 
           <section className="w-full relative overflow-hidden rounded-md bg-[radial-gradient(circle_at_85%_20%,#8A2BE2_0%,#6236FF_45%,#2A1745_100%)] p-4 sm:p-6 text-white shadow-[0_12px_34px_rgba(58,20,90,0.25)]">
             <h2 className="flex items-center gap-3 text-xs sm:text-xs font-bold leading-snug max-w-3xl">
@@ -603,15 +635,17 @@ export default function CumpleanosScreen({ userName, onBack, onNavigate }: {
             </h2>
           </section>
 
-          <p className="mt-3 text-sm text-black/80">
-            Comencemos registrando las personas que son importantes para ti.
-          </p>
-          <button
-            onClick={() => setAsistente(true)}
-            className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-white text-[#6236FF] text-sm font-bold shadow-md hover:brightness-95 active:scale-[0.98] transition"
-          >
-            <Plus className="w-4 h-4" /> Agregar cumpleaños
-          </button>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-black/80">
+              Comencemos registrando las personas que son importantes para ti.
+            </p>
+            <button
+              onClick={() => setAsistente(true)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-[#6C4CF1] text-white text-sm font-bold shadow-md hover:brightness-110 active:scale-[0.98] transition"
+            >
+              <Plus className="w-4 h-4" /> Agregar cumpleaños
+            </button>
+          </div>
 
           <h3 className="mt-8 mb-3 text-base font-bold text-[#1B1440] dark:text-white">
             Próximos cumpleaños
@@ -644,16 +678,32 @@ export default function CumpleanosScreen({ userName, onBack, onNavigate }: {
           )}
 
           {items !== null && items.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {items.map(c => (
-                <CumpleanosCard
-                  key={c.id}
-                  cumple={c}
-                  onEliminar={eliminar}
-                  onAccion={enviarAccion}
-                />
-              ))}
-            </div>
+            <>
+              <div className="bg-white dark:bg-[#1a1a3a] rounded-2xl border border-[#ECE7F8] dark:border-white/10 divide-y divide-[#ECE7F8] dark:divide-white/10 shadow-sm overflow-hidden">
+                <ul className="divide-y divide-[#ECE7F8] dark:divide-white/10">
+                  {(verTodos ? items : items.slice(0, 4)).map(c => (
+                    <CumpleanosRow
+                      key={c.id}
+                      cumple={c}
+                      open={filaAbierta === c.id}
+                      onToggle={() => setFilaAbierta(actual => (actual === c.id ? null : c.id))}
+                      onEliminar={eliminar}
+                      onAccion={enviarAccion}
+                    />
+                  ))}
+                </ul>
+              </div>
+
+              {items.length > 4 && (
+                <button
+                  onClick={() => setVerTodos(v => !v)}
+                  className="mt-3 mx-auto flex items-center gap-1.5 text-[13px] font-semibold text-[#6236FF] dark:text-purple-300 hover:opacity-75 transition-opacity"
+                >
+                  {verTodos ? 'Mostrar menos' : 'Ver todos los cumpleaños'}
+                  <ChevronDown className={`w-4 h-4 transition-transform ${verTodos ? 'rotate-180' : ''}`} />
+                </button>
+              )}
+            </>
           )}
 
           <p className="mt-6 text-center text-[12px] text-slate-400 dark:text-gray-500">

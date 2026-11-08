@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React from 'react';
 // FotoIntro / FotoGuia: pantallas del flujo Rueda de la Vida (shell: RuedaShell v2).
 import {
@@ -7,7 +8,7 @@ import {
 
 function MiniWheel() {
   return (
-    <img src="/rueda.png" alt="Rueda de la Vida" className="w-full h-full object-contain" />
+    <img src="/rueda.png" alt={i18n.t('rueda_de_la_vida_5d3k')} className="w-full h-full object-contain" />
   );
 }
 
@@ -31,38 +32,38 @@ export const FotoIntro: React.FC<FotoIntroProps> = ({
   const puedeContinuar = playing;
   return (
     <div>
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3 sm:p-5 grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-5">
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3 sm:p-5 grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] gap-5">
         {/* Coach + burbuja (foto 1 izquierda) */}
         <div className="relative rounded-xl overflow-hidden bg-gradient-to-b from-[#2b3fd4] via-[#4b3fd6] to-[#7a5af8] min-h-[400px] flex items-end">
-          <img src={avatarImg || '/avatars/Sophya.jpeg'} alt="Coach Focusia" className="absolute inset-0 w-full h-full object-cover object-top" onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('Sophya.jpeg')) t.src = '/avatars/Sophya.jpeg'; else t.style.display = 'none'; }} />
+          <img src={avatarImg || '/avatars/Sophya.jpeg'} alt={i18n.t('coach_focusia_ghtx')} className="absolute inset-0 w-full h-full object-cover object-top" onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('Sophya.jpeg')) t.src = '/avatars/Sophya.jpeg'; else t.style.display = 'none'; }} />
           <div className="absolute inset-0 bg-gradient-to-t from-[#2b3fd4]/30 via-transparent to-white/10" />
           <div className="absolute top-14 right-2 left-32 sm:left-36 bg-white rounded-xl rounded-bl-none shadow-xl p-4 text-left mt-40">
             <div className="absolute left-[-8px] top-1/2 -translate-y-1/2 w-4 h-4 bg-white rotate-45" />
-            <p className="text-[13px] text-gray-800 leading-snug">Tu diagnóstico<br />comienza aquí{nombre ? `,` : ''}<br />{nombre ? `${nombre}.` : ''}</p>
-            <p className="mt-4 text-[13px] text-gray-800 leading-snug">La <span className="text-[#4f46e5] font-bold">Rueda de la Vida</span><br />te mostrará qué<br />áreas están fuertes<br />y cuáles necesitan<br />atención.</p>
+            <p className="text-[13px] text-gray-800 leading-snug">{i18n.t('tu_diagnostico_9fp0')}<br />comienza aquí{nombre ? `,` : ''}<br />{nombre ? `${nombre}.` : ''}</p>
+            <p className="mt-4 text-[13px] text-gray-800 leading-snug">La <span className="text-[#4f46e5] font-bold">{i18n.t('rueda_de_la_vida_5d3k')}</span><br />{i18n.t('te_mostrara_que_qe5t')}<br />{i18n.t('areas_estan_fuertes_dy92')}<br />{i18n.t('y_cuales_necesitan_lqdi')}<br />{i18n.t('atencion_ep5i')}</p>
           </div>
           <div className="relative p-3 flex items-center gap-2">
             <span className="inline-flex items-center gap-1 bg-white/90 rounded-full px-2 py-1 text-[10px] font-bold text-[#4f46e5]">
               <img src="/focusia-logo.png" alt="" className="w-4 h-4 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
               Focusia
             </span>
-            {avatarImg && <img src={avatarImg} alt="tu avatar" className="w-7 h-7 rounded-full object-cover border-2 border-white shadow" title="Tu avatar" />}
+            {avatarImg && <img src={avatarImg} alt={i18n.t('tu_avatar_pqjs')} className="w-7 h-7 rounded-full object-cover border-2 border-white shadow" title={i18n.t('tu_avatar_s3do')} />}
           </div>
         </div>
 
         {/* Reproductor (foto 1 derecha) */}
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 min-w-0">
           <div className="rounded-xl overflow-hidden bg-[#070c2b] border border-[#1a2456] shadow-lg">
             <div className="px-3 pt-3">
               <div className="rounded-lg bg-gradient-to-r from-[#1d3de8] via-[#2b1d8f] to-[#3d0f4f] border border-[#3b3fd4]/40 text-center py-2">
-                <span className="text-white font-extrabold tracking-widest text-sm sm:text-lg">RUEDA DE LA VIDA</span>
+                <span className="text-white font-extrabold tracking-widest text-sm sm:text-lg">{i18n.t('rueda_de_la_vida_4hl1')}</span>
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-[1fr_200px] gap-3 p-4 items-center">
-              <div className="relative mx-auto w-[230px] h-[230px] sm:w-[260px] sm:h-[260px]">
+            <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_180px] gap-3 p-4 items-center min-w-0">
+              <div className="relative mx-auto w-full max-w-[230px] aspect-square sm:max-w-[260px]">
                 <MiniWheel />
                 {!playing ? (
-                  <button onClick={onPlay} aria-label="Reproducir video" className="absolute right-0 bottom-8 w-16 h-16 rounded-full bg-[#8b5cf6] hover:bg-[#7c3aed] shadow-[0_8px_30px_rgba(139,92,246,0.6)] flex items-center justify-center transition-all hover:scale-105">
+                  <button onClick={onPlay} aria-label={i18n.t('reproducir_video_13sk')} className="absolute right-0 bottom-8 w-16 h-16 rounded-full bg-[#8b5cf6] hover:bg-[#7c3aed] shadow-[0_8px_30px_rgba(139,92,246,0.6)] flex items-center justify-center transition-all hover:scale-105">
                     <Play className="w-8 h-8 text-white fill-white ml-1" />
                   </button>
                 ) : (
@@ -80,7 +81,7 @@ export const FotoIntro: React.FC<FotoIntroProps> = ({
               </div>
             </div>
             <div className="bg-black/90 px-4 py-2.5 flex items-center gap-3 text-white">
-              <button onClick={onPlay} className="hover:opacity-80" aria-label="Play">
+              <button onClick={onPlay} className="hover:opacity-80" aria-label={i18n.t('play')}>
                 <Play className="w-5 h-5 fill-white" />
               </button>
               <span className="text-xs font-medium whitespace-nowrap">0:{String(videoAvance).padStart(2, '0')} / 0:{videoSegundos}</span>
@@ -105,7 +106,7 @@ export const FotoIntro: React.FC<FotoIntroProps> = ({
             Comenzar evaluación
           </button>
           {!playing && <p className="text-xs text-gray-400 text-center -mt-2">Presiona play para ver el video de 0:{videoSegundos} seg. Podrás continuar después de iniciarlo.</p>}
-          <button onClick={onSaltar} className="text-xs text-gray-400 hover:text-gray-600 mx-auto">Saltar video</button>
+          <button onClick={onSaltar} className="text-xs text-gray-400 hover:text-gray-600 mx-auto">{i18n.t('saltar_video')}</button>
         </div>
       </div>
     </div>
@@ -115,7 +116,7 @@ export const FotoIntro: React.FC<FotoIntroProps> = ({
 // ---------- Rueda 10 áreas estática (foto 2) ----------
 function Rueda10() {
   return (
-    <img src="/Rueda3.png" alt="Rueda de la Vida" className="w-full h-auto max-w-[480px] mx-auto object-contain" />
+    <img src="/Rueda3.png" alt={i18n.t('rueda_de_la_vida_5d3k')} className="w-full h-auto max-w-[480px] mx-auto object-contain" />
   );
 }
 const LEYENDA = [
@@ -158,8 +159,8 @@ export const FotoGuia: React.FC<FotoGuiaProps> = ({ onBack, onContinue }) => {
             </div>
           ))}
           <div className="pt-4 flex flex-col gap-2">
-            <button onClick={onContinue} className="w-full rounded-xl bg-gradient-to-r from-[#2547f4] to-[#6d28d9] text-white font-semibold py-3 hover:brightness-110 transition-all">Continuar a la evaluación</button>
-            <button onClick={onBack} className="w-full rounded-xl border border-gray-200 text-gray-500 text-sm py-2 hover:bg-gray-50">Volver al video</button>
+            <button onClick={onContinue} className="w-full rounded-xl bg-gradient-to-r from-[#2547f4] to-[#6d28d9] text-white font-semibold py-3 hover:brightness-110 transition-all">{i18n.t('continuar_a_la_evaluacion_c3k3')}</button>
+            <button onClick={onBack} className="w-full rounded-xl border border-gray-200 text-gray-500 text-sm py-2 hover:bg-gray-50">{i18n.t('volver_al_video_l9bd')}</button>
           </div>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useEffect, useState } from 'react';
 import { X, Sparkles, CheckCircle, AlertTriangle, Lightbulb, TrendingUp, MessageCircle } from 'lucide-react';
 import { agentService } from '../services/api';
@@ -46,7 +47,7 @@ const FocusIAFeedback: React.FC<Props> = ({ userName, onOpenChat, onDismiss }) =
             <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
               <Sparkles className="w-3.5 h-3.5 text-white" />
             </div>
-            <span className="text-white font-bold text-xs">FocusIA</span>
+            <span className="text-white font-bold text-xs">{i18n.t('focusia_llw2')}</span>
           </div>
           <button onClick={onDismiss} className="p-1 rounded-full hover:bg-white/20 transition-colors">
             <X className="w-3.5 h-3.5 text-white" />
@@ -86,7 +87,7 @@ const FocusIAFeedback: React.FC<Props> = ({ userName, onOpenChat, onDismiss }) =
           {!msgAlerta && !sugerencia && (
             <div className="flex items-start gap-1.5 text-xs p-2 rounded bg-green-50 text-green-700">
               <CheckCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-              <span>Todo en orden por ahora. Sigue así y avísame si necesitas algo.</span>
+              <span>{i18n.t('todo_en_orden_por_ahora_sigue_asi_y_avis')}</span>
             </div>
           )}
 

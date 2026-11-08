@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React from 'react';
 import {
   X, ChevronDown,
@@ -69,8 +70,8 @@ export default function AppShell({ activeNav, title, subtitle, username, avatarU
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 text-white">
-         <img src="./focussia.png" alt="Focusia" className='w-8 h-8' />
-          <span className="text-xl font-bold tracking-wide">Focusia</span>
+         <img src="/focussia.png" alt={i18n.t('focusia_dty1')} className='w-8 h-8' />
+          <span className="text-xl font-bold tracking-wide">{i18n.t('focusia_dty1')}</span>
         </div>
         <nav className="flex-1 overflow-y-auto space-y-0.5 pr-0.5">
           {NAV_ITEMS.map(({ key, label, Icon }) => {
@@ -78,7 +79,7 @@ export default function AppShell({ activeNav, title, subtitle, username, avatarU
             return (
               <React.Fragment key={key}>
                 <button
-                  onClick={() => { if (!active) onNavigate?.(key); }}
+                  onClick={() => onNavigate?.(key)}
                   className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-semibold transition-colors ${
                     active
                       ? 'bg-gradient-to-r from-[#1f6feb] to-[#a21caf] text-white shadow-lg'
@@ -97,7 +98,7 @@ export default function AppShell({ activeNav, title, subtitle, username, avatarU
                         : 'text-white/55 hover:bg-white/10 hover:text-white'
                     }`}
                   >
-                    <span className="truncate">Acciones por Delegar</span>
+                    <span className="truncate">{i18n.t('acciones_por_delegar')}</span>
                   </button>
                 )}
               </React.Fragment>
@@ -108,7 +109,7 @@ export default function AppShell({ activeNav, title, subtitle, username, avatarU
           <UserAvatar src={avatarUrl} name={displayName} />
           <div className="flex-1 min-w-0">
             <p className="text-white text-sm font-bold truncate">{displayName}</p>
-            <p className="text-white/50 text-[11px]">Ver perfil</p>
+            <p className="text-white/50 text-[11px]">{i18n.t('ver_perfil_v4ky')}</p>
           </div>
           <ChevronDown className="w-4 h-4 text-white/60" />
         </div>
@@ -134,13 +135,13 @@ export default function AppShell({ activeNav, title, subtitle, username, avatarU
               {subtitle && <p className="text-[#5b6b8c] text-base sm:text-xl mt-1">{subtitle}</p>}
             </div>
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              <button onClick={() => onOpenNotifications?.()} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow flex items-center justify-center" title="Notificaciones">
+              <button onClick={() => onOpenNotifications?.()} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow flex items-center justify-center" title={i18n.t('notificaciones_3t7w')}>
                 <Bell className="w-5 h-5 text-[#101433]" fill="currentColor" />
               </button>
-              <button onClick={() => onOpenSettings?.()} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow hidden sm:flex items-center justify-center" title="Ajustes">
+              <button onClick={() => onOpenSettings?.()} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow hidden sm:flex items-center justify-center" title={i18n.t('ajustes')}>
                 <Settings className="w-5 h-5 text-[#101433]" />
               </button>
-              <button onClick={() => onOpenHelp?.()} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow hidden sm:flex items-center justify-center" title="Ayuda">
+              <button onClick={() => onOpenHelp?.()} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow hidden sm:flex items-center justify-center" title={i18n.t('ayuda')}>
                 <CircleHelp className="w-5 h-5 text-[#101433]" />
               </button>
               <button onClick={onClose} className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white shadow flex md:hidden items-center justify-center">

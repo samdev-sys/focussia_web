@@ -293,7 +293,11 @@ def _enviar_externos(user, titulo: str, mensaje: str, canales, critica: bool) ->
     agent_cfg = AgentConfig.objects.filter(user=user).first()
 
     if 'push' in canales and puede_enviar(user, 'push', critica):
-        resultado['push'] = PushService.enviar(user, titulo, mensaje)
+        try:
+            resultado['push'] = PushService.enviar(user, titulo, mensaje)
+        except Exception as e:
+            logger.error(f'Push falló para {user.id}: {e}')
+            resultado['push'] = {'success': False, 'error': str(e)}
 
     if 'email' in canales and puede_enviar(user, 'email', critica) and user.email:
         try:
@@ -393,16 +397,16 @@ def notificar(user, titulo: str, mensaje: str, critica: bool = False,
     puede_app = 'app' in canales and puede_enviar(user, 'app', critica)
     channel = next((c for c in canales if c != 'app'), 'app')
 
-    notificacion = None
-    if puede_app or data.get('canales_pendientes'):
-        notificacion, creada = _crear_o_actualizar(
-            user, titulo, mensaje, data, prioridad, channel,
-            scheduled_for, dedupe_key, in_bell=puede_app,
-            pendiente=not entrega_ahora,
-            entregado=entrega_ahora and puede_app,
-        )
-        if puede_app:
-            resultado['app'] = {'success': True, 'notification_id': notificacion.id}
+    # Siempre se deja constancia en la campana (in_bell=True), aunque no haya
+    # canales externos disponibles o la entrega deba postergarse.
+    notificacion, creada = _crear_o_actualizar(
+        user, titulo, mensaje, data, prioridad, channel,
+        scheduled_for, dedupe_key, in_bell=True,
+        pendiente=not entrega_ahora,
+        entregado=entrega_ahora and puede_app,
+    )
+    if puede_app:
+        resultado['app'] = {'success': True, 'notification_id': notificacion.id}
 
     if entrega_ahora:
         resultado.update(_enviar_externos(

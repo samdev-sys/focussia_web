@@ -1,3 +1,4 @@
+import i18n from '../../i18n';
 import React from 'react';
 
 const PALETTE = [
@@ -29,7 +30,7 @@ export default function DayPill({ title, colorIdx, pending, onClick }: {
     >
       <span className="flex items-center gap-1.5">
         {pending && (
-          <span className="w-6 h-6 rounded-full bg-[#c026d3] text-white text-xs font-black flex items-center justify-center shrink-0">P</span>
+          <span className="w-6 h-6 rounded-full bg-[#c026d3] text-white text-xs font-black flex items-center justify-center shrink-0">{i18n.t('p_tvdp')}</span>
         )}
         <span className="flex-1">{title}</span>
       </span>

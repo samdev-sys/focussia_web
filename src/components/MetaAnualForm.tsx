@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2, CheckCircle, Target, Calendar } from 'lucide-react';
 import { metaAnualService, objetivoMensualService, MetaAnualData, ObjetivoMensualData } from '../services/api';
@@ -103,7 +104,7 @@ export const MetaAnualForm: React.FC<MetaAnualFormProps> = ({ isOpen, onClose })
         <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-emerald-600 to-teal-500 shrink-0">
           <div className="flex items-center gap-2">
             <Target className="w-5 h-5 text-white" />
-            <h2 className="text-lg font-bold uppercase text-white">Gran Meta Anual</h2>
+            <h2 className="text-lg font-bold uppercase text-white">{i18n.t('gran_meta_anual_0ipc')}</h2>
           </div>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-white/30 transition-colors">
             <X className="w-5 h-5 text-white" />
@@ -119,20 +120,20 @@ export const MetaAnualForm: React.FC<MetaAnualFormProps> = ({ isOpen, onClose })
               type="text"
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
-              placeholder="Título de tu gran meta (ej: Crear mi negocio online)"
+              placeholder={i18n.t('titulo_de_tu_gran_meta_ej_crear_mi_negoc')}
               className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-300 bg-white text-sm"
               required
             />
             <textarea
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
-              placeholder="Descripción detallada..."
+              placeholder={i18n.t('descripcion_detallada')}
               className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-300 bg-white text-sm resize-none"
               rows={3}
             />
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-gray-500 font-medium">Fecha Inicio</label>
+                <label className="text-xs text-gray-500 font-medium">{i18n.t('fecha_inicio')}</label>
                 <input
                   type="date"
                   value={fechaInicio}
@@ -142,7 +143,7 @@ export const MetaAnualForm: React.FC<MetaAnualFormProps> = ({ isOpen, onClose })
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-500 font-medium">Fecha Fin</label>
+                <label className="text-xs text-gray-500 font-medium">{i18n.t('fecha_fin')}</label>
                 <input
                   type="date"
                   value={fechaFin}
@@ -172,7 +173,7 @@ export const MetaAnualForm: React.FC<MetaAnualFormProps> = ({ isOpen, onClose })
           </form>
 
           {loading ? (
-            <div className="text-center py-8 text-sm text-gray-500">Cargando...</div>
+            <div className="text-center py-8 text-sm text-gray-500">{i18n.t('cargando_jnva')}</div>
           ) : (
             <div className="space-y-3">
               {metas.length === 0 && (

@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { weeklyPlanService } from '../services/api';
 
@@ -233,22 +234,22 @@ export default function WeeklyMissionWidget({
   return (
     <div
       ref={containerRef}
-      className="w-[170px]"
+      className="w-full"
       onMouseEnter={() => { hexHoverRef.current = true; }}
       onMouseLeave={() => { hexHoverRef.current = false; }}
     >
-      <div className="relative rounded-md overflow-hidden -mt-78 ml-10 w-[170px]">
+      <div className="relative rounded-md overflow-hidden w-full">
         <canvas
           ref={hexCanvasRef}
           className="absolute -inset-6 rounded-md pointer-events-none z-0"
         />
-        <div className="relative pointer-events-none select-none bg-white rounded-md overflow-hidden">
+        <div className="relative pointer-events-none select-none bg-white dark:bg-transparent rounded-md overflow-hidden">
           {/* Título del widget (Doc 11: "MI MISIÓN DE ESTA SEMANA") */}
-          <div className="bg-[#1e2540] text-white text-center py-2 font-bold text-[10px] uppercase tracking-wider rounded-md flex items-center justify-center gap-1.5">
+          <div className="bg-[#1e2540] dark:bg-[#070309] dark:border dark:border-white/10 text-white dark:text-[#fdba74] text-center py-2 font-bold text-[10px] uppercase tracking-wider rounded-md flex items-center justify-center gap-1.5">
             MI MISIÓN DE ESTA SEMANA
           </div>
 
-          <div className="bg-gradient-to-br from-[#ff7c90] to-[#ffe1a4] h-[180px] relative flex flex-col items-center px-2 py-3 overflow-hidden mt-2 rounded-md">
+          <div className="bg-gradient-to-br from-[#ff7c90] to-[#ffe1a4] dark:from-[#f472b6] dark:via-[#fb923c] dark:to-[#fde68a] dark:border dark:border-pink-400/50 h-[180px] relative flex flex-col items-center px-2 py-3 overflow-hidden mt-2 rounded-md">
             {/* Fotografía de perfil del usuario (Doc 11: imagen de perfil del onboarding) */}
             {loading ? (
               <div className="flex items-center justify-center h-full w-full py-8">
@@ -269,7 +270,7 @@ export default function WeeklyMissionWidget({
                     {photoUrl ? (
                       <img
                         src={photoUrl}
-                        alt="Perfil usuario"
+                        alt={i18n.t('perfil_usuario')}
                         className="w-full h-full object-cover"
                       />
                     ) : (

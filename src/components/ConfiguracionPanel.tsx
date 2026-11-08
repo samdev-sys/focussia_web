@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Save, Volume2, MessageSquare, Bell, Gauge, Clock, Wifi, Lock, Target, CalendarDays, Calendar } from 'lucide-react';
@@ -86,7 +87,7 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
         <div className="flex items-center justify-between p-4 border-b border-white/50 bg-gradient-to-r from-slate-700 to-slate-600 shrink-0">
           <div className="flex items-center gap-2">
             <Gauge className="w-5 h-5 text-white" />
-            <h2 className="text-lg font-bold uppercase text-white">Configuración del Sistema</h2>
+            <h2 className="text-lg font-bold uppercase text-white">{i18n.t('configuracion_del_sistema')}</h2>
           </div>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-white/30 transition-colors">
             <X className="w-5 h-5 text-white" />
@@ -95,7 +96,7 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
 
         <div className="flex-1 overflow-y-auto p-4 space-y-5">
           {loading && !config.voz_genero ? (
-            <div className="text-center py-8 text-sm text-gray-500">Cargando...</div>
+            <div className="text-center py-8 text-sm text-gray-500">{i18n.t('cargando')}</div>
           ) : (
             <>
               <div className="bg-white/60 rounded-xl p-4 border border-white/50">
@@ -104,7 +105,7 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
                 </h3>
                 <div className="space-y-3">
                   <div>
-                    <label className="text-xs text-gray-500 font-medium">Género de la Voz</label>
+                    <label className="text-xs text-gray-500 font-medium">{i18n.t('genero_de_la_voz')}</label>
                     <div className="flex gap-2 mt-1">
                       {(['femenino', 'masculino'] as const).map((g) => (
                         <button
@@ -122,7 +123,7 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs text-gray-500 font-medium">Estilo de Comunicación</label>
+                    <label className="text-xs text-gray-500 font-medium">{i18n.t('estilo_de_comunicacion')}</label>
                     <div className="flex gap-2 mt-1">
                       {([{ id: 'suave', label: 'Suave' }, { id: 'directo', label: 'Directo / Estructurado' }] as const).map((e) => (
                         <button
@@ -161,8 +162,8 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
                 </div>
                 {config.avatar_index > 0 && (
                   <div className="flex items-center gap-3 mt-3 p-3 bg-white/60 rounded-xl">
-                    <img src={AVATARS.find(a => a.index === config.avatar_index)?.file} alt="preview" className="w-10 h-10 rounded-xl object-cover" />
-                    <p className="text-xs text-gray-500">Tu coach actual</p>
+                    <img src={AVATARS.find(a => a.index === config.avatar_index)?.file} alt={i18n.t('preview')} className="w-10 h-10 rounded-xl object-cover" />
+                    <p className="text-xs text-gray-500">{i18n.t('tu_coach_actual')}</p>
                   </div>
                 )}
               </div>
@@ -216,7 +217,7 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
                 </h3>
                 <div className="space-y-3">
                   <div>
-                    <label className="text-xs text-gray-500 font-medium">Nivel de Exigencia</label>
+                    <label className="text-xs text-gray-500 font-medium">{i18n.t('nivel_de_exigencia')}</label>
                     <div className="flex gap-2 mt-1">
                       {([{ id: 'bajo', label: 'Bajo' }, { id: 'medio', label: 'Medio' }, { id: 'alto', label: 'Alto' }] as const).map((n) => (
                         <button
@@ -247,9 +248,9 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
                       className="w-full mt-1"
                     />
                     <div className="flex justify-between text-xs text-gray-400">
-                      <span>6h</span>
-                      <span>24h</span>
-                      <span>72h</span>
+                      <span>{i18n.t('6h')}</span>
+                      <span>{i18n.t('24h')}</span>
+                      <span>{i18n.t('72h')}</span>
                     </div>
                   </div>
                 </div>
@@ -261,7 +262,7 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-gray-500 font-medium">Inicio</label>
+                    <label className="text-xs text-gray-500 font-medium">{i18n.t('inicio')}</label>
                     <input
                       type="time"
                       value={config.ventana_inicio}
@@ -270,7 +271,7 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-500 font-medium">Fin</label>
+                    <label className="text-xs text-gray-500 font-medium">{i18n.t('fin')}</label>
                     <input
                       type="time"
                       value={config.ventana_fin}
@@ -300,8 +301,8 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
                     >
                       <Target className="w-4 h-4 text-[#2b44ff]" />
                       <div>
-                        <p className="text-sm font-semibold text-gray-800">Gran Meta Anual</p>
-                        <p className="text-[10px] text-gray-500">Reconstruir tu meta SMART</p>
+                        <p className="text-sm font-semibold text-gray-800">{i18n.t('gran_meta_anual')}</p>
+                        <p className="text-[10px] text-gray-500">{i18n.t('reconstruir_tu_meta_smart')}</p>
                       </div>
                     </button>
                     <button
@@ -310,8 +311,8 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
                     >
                       <CalendarDays className="w-4 h-4 text-purple-500" />
                       <div>
-                        <p className="text-sm font-semibold text-gray-800">Metas Mensuales</p>
-                        <p className="text-[10px] text-gray-500">Ajustar tus 12 objetivos</p>
+                        <p className="text-sm font-semibold text-gray-800">{i18n.t('metas_mensuales')}</p>
+                        <p className="text-[10px] text-gray-500">{i18n.t('ajustar_tus_12_objetivos')}</p>
                       </div>
                     </button>
                     <button
@@ -320,8 +321,8 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
                     >
                       <Calendar className="w-4 h-4 text-amber-500" />
                       <div>
-                        <p className="text-sm font-semibold text-gray-800">Misiones Semanales</p>
-                        <p className="text-[10px] text-gray-500">Planificar tu semana</p>
+                        <p className="text-sm font-semibold text-gray-800">{i18n.t('misiones_semanales')}</p>
+                        <p className="text-[10px] text-gray-500">{i18n.t('planificar_tu_semana')}</p>
                       </div>
                     </button>
                   </div>
