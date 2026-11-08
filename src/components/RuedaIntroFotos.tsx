@@ -24,7 +24,7 @@ export const FotoIntro: React.FC<FotoIntroProps> = ({
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-3 sm:p-5 grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] gap-5">
         {/* Coach + burbuja (foto 1 izquierda) */}
         <div className="relative rounded-xl overflow-hidden bg-gradient-to-b from-[#2b3fd4] via-[#4b3fd6] to-[#7a5af8] min-h-[400px] flex items-end">
-          <img src={avatarImg || '/avartars/Sophya.jpeg'} alt={i18n.t('coach_focusia_ghtx')} className="absolute inset-0 w-full h-full object-cover object-top" onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('Sophya.jpeg')) t.src = '/avartars/Sophya.jpeg'; else t.style.display = 'none'; }} />
+          <img src={avatarImg || '/avatars/Sophya.jpeg'} alt={i18n.t('coach_focusia_ghtx')} className="absolute inset-0 w-full h-full object-cover object-top" onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('Sophya.jpeg')) t.src = '/avatars/Sophya.jpeg'; else t.style.display = 'none'; }} />
           <div className="absolute inset-0 bg-gradient-to-t from-[#2b3fd4]/30 via-transparent to-white/10" />
           <div className="absolute top-14 right-2 left-32 sm:left-36 bg-white rounded-xl rounded-bl-none shadow-xl p-4 text-left mt-40">
             <div className="absolute left-[-8px] top-1/2 -translate-y-1/2 w-4 h-4 bg-white rotate-45" />
