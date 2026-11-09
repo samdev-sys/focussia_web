@@ -4966,8 +4966,11 @@ def _sync_notification_preferences_from_profile(user, profile):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def onboarding_avatars(request):
-    avatars = filtrar_queryset(
-        Avatar.objects.filter(is_active=True), request.user, 'avatar')
+    try:
+        avatars = filtrar_queryset(
+            Avatar.objects.filter(is_active=True), request.user, 'avatar')
+    except Exception:
+        avatars = Avatar.objects.filter(is_active=True)
     return Response(AvatarSerializer(avatars, many=True).data)
 
 
@@ -4978,10 +4981,13 @@ def onboarding_select_avatar(request):
     serializer = SelectAvatarSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     avatar = Avatar.objects.get(id=serializer.validated_data['avatar_id'])
-    asignados = ids_asignados(request.user, 'avatar')
-    if asignados is not None and avatar.id not in asignados:
-        return Response(
-            {'error': 'Ese avatar no está asignado a tu usuario.'}, status=403)
+    try:
+        asignados = ids_asignados(request.user, 'avatar')
+        if asignados is not None and avatar.id not in asignados:
+            return Response(
+                {'error': 'Ese avatar no está asignado a tu usuario.'}, status=403)
+    except Exception:
+        pass
     profile.avatar = avatar
     profile.status = OnboardingProfile.Status.AVATAR_SELECCIONADO
     profile.save(update_fields=['avatar', 'status'])

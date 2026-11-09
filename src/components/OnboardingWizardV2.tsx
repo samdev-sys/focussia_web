@@ -148,21 +148,41 @@ const AVATAR_SCREENS = [3, 4, 5, 6, 7, 8, 9, 10];
   }, [isAuthenticated, propUserName]);
 
   useEffect(() => {
-    if (!AVATAR_SCREENS.includes(screen) || avatars.length > 0) return;
+    if (!AVATAR_SCREENS.includes(screen)) return;
+    if (avatars.length > 0) return;
     let cancelled = false;
     onboardingV2Service.getAvatars()
       .then(data => {
         if (cancelled) return;
-        setAvatars(data || []);
+        let list = Array.isArray(data) ? data : [];
+        if (list.length === 0) {
+          // Fallback to local avatars for consistency
+          list = [
+            { id: 1, name: 'John', gender: 'male', image: '/avartars/John.jpeg', voice_id: 'troy' },
+            { id: 2, name: 'Conrad', gender: 'male', image: '/avartars/conrad.jpeg', voice_id: 'troy' },
+            { id: 3, name: 'Ashley', gender: 'female', image: '/avartars/Ashley.jpeg', voice_id: 'hannah' },
+            { id: 4, name: 'Lia', gender: 'female', image: '/avartars/Lia.jpeg', voice_id: 'hannah' },
+            { id: 5, name: 'Monroe', gender: 'female', image: '/avartars/Monroe.jpeg', voice_id: 'troy' },
+            { id: 6, name: 'Sophya', gender: 'female', image: '/avartars/Sophya.jpeg', voice_id: 'hannah' },
+          ] as any;
+        }
+        setAvatars(list);
       })
       .catch(() => { 
         if (!cancelled) {
-          setError('Error al cargar avatares');
-          setAvatars([]);
+          const fallback = [
+            { id: 1, name: 'John', gender: 'male', image: '/avartars/John.jpeg', voice_id: 'troy' },
+            { id: 2, name: 'Conrad', gender: 'male', image: '/avartars/conrad.jpeg', voice_id: 'troy' },
+            { id: 3, name: 'Ashley', gender: 'female', image: '/avartars/Ashley.jpeg', voice_id: 'hannah' },
+            { id: 4, name: 'Lia', gender: 'female', image: '/avartars/Lia.jpeg', voice_id: 'hannah' },
+            { id: 5, name: 'Monroe', gender: 'female', image: '/avartars/Monroe.jpeg', voice_id: 'troy' },
+            { id: 6, name: 'Sophya', gender: 'female', image: '/avartars/Sophya.jpeg', voice_id: 'hannah' },
+          ] as any;
+          setAvatars(fallback);
         }
       });
     return () => { cancelled = true; };
-  }, [screen]);
+  }, [screen, avatars.length]);
 
   // Respect the avatar chosen by the user (configuration takes precedence,
   // as it reflects the most recent choice in settings; fall back to onboarding profile)

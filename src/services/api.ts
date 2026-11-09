@@ -28,6 +28,17 @@ export const api = axios.create({
   xsrfHeaderName: 'X-CSRFToken',
 });
 
+api.interceptors.request.use((config) => {
+  try {
+    const token = tokenStore.get();
+    if (token) {
+      config.headers = config.headers || {};
+      (config.headers as any).Authorization = `Bearer ${token}`;
+    }
+  } catch {}
+  return config;
+});
+
 // ---------------------------------------------------------------------------
 // Autenticación por cabecera (respaldo de las cookies httpOnly).
 // Cuando el navegador bloquea cookies de terceros (netlify -> railway), las
