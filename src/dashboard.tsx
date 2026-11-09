@@ -854,22 +854,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
 
   const [xpStats, setXpStats] = useState<XPStats>(() => {
     const saved = localStorage.getItem('focusia_xp_stats');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      const today = new Date().toDateString();
-      if (parsed.lastActiveDate !== today) {
-        const yesterday = new Date(Date.now() - 86400000).toDateString();
-        if (parsed.lastActiveDate === yesterday) {
-          parsed.streak = (parsed.streak || 0) + 1;
-        } else {
-          parsed.streak = 1;
-        }
-        parsed.lastActiveDate = today;
-        parsed.todayXP = 0;
-      }
-      return parsed;
-    }
-    return {
+    const base: XPStats = {
       totalXP: 0,
       level: 0,
       streak: 1,
@@ -881,7 +866,26 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
       medicationsTaken: 0,
       unlockedBadges: [] as string[],
     };
+    if (saved) {
+      try {
+        const parsed = { ...base, ...JSON.parse(saved) } as XPStats;
+        const today = new Date().toDateString();
+        if (parsed.lastActiveDate !== today) {
+          const yesterday = new Date(Date.now() - 86400000).toDateString();
+          parsed.streak = parsed.lastActiveDate === yesterday ? (parsed.streak || 0) + 1 : 1;
+          parsed.lastActiveDate = today;
+          parsed.todayXP = 0;
+        }
+        return parsed;
+      } catch {
+        return base;
+      }
+    }
+    return base;
   });
+  const xpStatsRef = React.useRef(xpStats);
+  React.useEffect(() => { xpStatsRef.current = xpStats; }, [xpStats]);
+
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [levelUpData, setLevelUpData] = useState({ level: 0, newBadge: null as typeof BADGES[0] | null });
   const [xpPopUp, setXpPopUp] = useState<{ amount: number; message: string } | null>(null);
@@ -894,37 +898,44 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
     }
   });
 
-  const addXP = (amount: number, reason: string, badgeCondition?: (stats: any, level: number) => boolean) => {
-    const newXP = xpStats.totalXP + amount;
-    const newTodayXP = xpStats.todayXP + amount;
-    const newLevel = getLevelFromXP(newXP).level;
-    const oldLevel = getLevelFromXP(xpStats.totalXP).level;
+  type XPStatCounters = Partial<Pick<XPStats, 'tasksCompleted' | 'kanbanCompleted' | 'ruedaCompleted' | 'medicationsTaken'>>;
 
-    let newBadge: typeof BADGES[0] | null = null;
-    let newUnlockedBadges = [...xpStats.unlockedBadges];
-
-    if (badgeCondition) {
-      for (const badge of BADGES) {
-        if (!newUnlockedBadges.includes(badge.id) && badge.condition({ ...xpStats, tasksCompleted: xpStats.tasksCompleted + 1 }, newLevel)) {
-          newUnlockedBadges.push(badge.id);
-          newBadge = badge;
-          break;
+  const addXP = (amount: number, reason: string, counters?: XPStatCounters) => {
+    const prev = xpStatsRef.current;
+    const safeAmount = Math.max(0, Math.floor(amount));
+    const merged: XPStats = { ...prev };
+    if (counters) {
+      for (const [key, delta] of Object.entries(counters) as [keyof XPStatCounters, number][]) {
+        if (typeof delta === 'number' && Number.isFinite(delta)) {
+          (merged[key] as number) = Math.max(0, (Number(prev[key]) || 0) + delta);
         }
       }
     }
-
-    const newStats = {
-      ...xpStats,
-      totalXP: newXP,
+    const totalXP = merged.totalXP + safeAmount;
+    const levelInfo = getLevelFromXP(totalXP);
+    const newLevel = levelInfo.level;
+    const oldLevel = getLevelFromXP(prev.totalXP).level;
+    const unlockedBadges = [...merged.unlockedBadges];
+    let newBadge: typeof BADGES[0] | null = null;
+    const badgeStats = { ...merged, totalXP, level: newLevel };
+    for (const badge of BADGES) {
+      if (!unlockedBadges.includes(badge.id) && badge.condition(badgeStats, newLevel)) {
+        unlockedBadges.push(badge.id);
+        if (!newBadge) newBadge = badge;
+      }
+    }
+    const newStats: XPStats = {
+      ...merged,
+      totalXP,
       level: newLevel,
-      todayXP: newTodayXP,
-      unlockedBadges: newUnlockedBadges,
+      todayXP: merged.todayXP + safeAmount,
+      unlockedBadges,
     };
-
+    xpStatsRef.current = newStats;
     setXpStats(newStats);
-    localStorage.setItem('focusia_xp_stats', JSON.stringify(newStats));
+    try { localStorage.setItem('focusia_xp_stats', JSON.stringify(newStats)); } catch {}
 
-    setXpPopUp({ amount, message: reason });
+    setXpPopUp({ amount: safeAmount, message: reason });
     setTimeout(() => setXpPopUp(null), 2000);
 
     if (newLevel > oldLevel) {
@@ -1508,11 +1519,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
     setProgreso(res);
   };
 
-  // Nivel XP (gamificación) y progreso real de actividades para la barra.
-  // La barra muestra el avance real del backend (kanban + timeblock + acciones);
-  // si el backend no responde, cae al avance de XP acumulado.
+  // Nivel/XP (gamificación, localStorage) + progreso real de actividades (backend).
   const nivelXP = getLevelFromXP(xpStats.totalXP);
-  const progresoBarra = progreso ? Math.round(progreso.porcentaje) : nivelXP.progress;
+  const progresoActividades = progreso ? Math.round(progreso.porcentaje) : null;
 
   const refreshTimeBlocks = async () => {
     try {
@@ -2248,14 +2257,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
           </div>
         </div>
 
-        {/* COLUMNA 5 — PROGRESO XP + SUPLEMENTOS/CUMPLEAÑOS/FOCUS + HORA DE ORO + CLIMA */}
+        {/* COLUMNA 5 — XP/NIVEL + ACTIVIDADES + SUPLEMENTOS/CUMPLEAÑOS/FOCUS + HORA DE ORO + CLIMA */}
         <div className="col-start-5 row-start-2 flex flex-col gap-2">
           <div className="w-40 shrink-0 ml-35 -mt-8">
           <CyberProgressBar
             level={nivelXP.level}
             currentXP={nivelXP.currentXP}
             nextLevelXP={nivelXP.nextLevelXP}
-            progress={progresoBarra}
+            progress={nivelXP.progress}
+            activityProgress={progresoActividades}
           />
           </div>
           <div className="bg-white dark:bg-transparent backdrop-blur-sm dark:backdrop-blur-none border border-white/20 dark:border-transparent rounded-md p-1 flex flex-col gap-5 w-40 shadow-[0_4px_10px_rgba(0,0,0,0.02)] dark:shadow-none justify-between items-center shrink-0 ml-35">
@@ -2459,8 +2469,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
                 onClose={() => setShowRuedaModal(false)}
                 onSaved={() => {
                   ruedaService.getCompleta().then(setRuedaCompleta).catch(console.error);
-                  addXP(XP_CONFIG.RUEDA_COMPLETE, 'Rueda de la Vida completada');
-                  setXpStats(prev => ({ ...prev, ruedaCompleted: prev.ruedaCompleted + 1 }));
+                  addXP(XP_CONFIG.RUEDA_COMPLETE, 'Rueda de la Vida completada', { ruedaCompleted: 1 });
                 }}
               />
             </div>
@@ -2557,8 +2566,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
                   <div key={index} className="flex items-center gap-3 bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-white/40">
                     <button
                       onClick={() => {
-                        setXpStats((prev: XPStats) => ({ ...prev, tasksCompleted: prev.tasksCompleted + 1 }));
-                        addXP(500, 'Meta anual completada');
+                        addXP(500, 'Meta anual completada', { tasksCompleted: 1 });
                         setMetaAnual(metaAnual.filter((_: string, i: number) => i !== index));
                       }}
                       className="w-6 h-6 rounded-full border-2 border-[#0d9488] flex items-center justify-center hover:bg-[#0d9488]/20 transition-colors flex-shrink-0"
@@ -2638,8 +2646,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
                   <div key={index} className="flex items-center gap-3 bg-white/50 backdrop-blur-sm rounded-xl p-3 border border-white/40">
                     <button
                       onClick={() => {
-                        setXpStats((prev: XPStats) => ({ ...prev, tasksCompleted: prev.tasksCompleted + 1 }));
-                        addXP(XP_CONFIG.MONTHLY_GOAL, 'Meta mensual completada');
+                        addXP(XP_CONFIG.MONTHLY_GOAL, 'Meta mensual completada', { tasksCompleted: 1 });
                         setMetaMensual(metaMensual.filter((_: string, i: number) => i !== index));
                       }}
                       className="w-6 h-6 rounded-full border-2 border-[#7c3aed] flex items-center justify-center hover:bg-[#7c3aed]/20 transition-colors flex-shrink-0"
