@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosHeaders } from 'axios';
 
 // En desarrollo usamos rutas relativas y el proxy de Vite (/api -> backend) para
 // evitar problemas CORS/CSRF cross-origin con cookies entre localhost:3000 y :8000.
@@ -32,8 +32,8 @@ api.interceptors.request.use((config) => {
   try {
     const token = tokenStore.get();
     if (token) {
-      config.headers = config.headers || {};
-      (config.headers as any).Authorization = `Bearer ${token}`;
+      config.headers = AxiosHeaders.from(config.headers ?? {});
+      config.headers.set('Authorization', `Bearer ${token}`);
     }
   } catch {}
   return config;
