@@ -28,17 +28,6 @@ export const api = axios.create({
   xsrfHeaderName: 'X-CSRFToken',
 });
 
-api.interceptors.request.use((config) => {
-  try {
-    const token = tokenStore.get();
-    if (token) {
-      config.headers = AxiosHeaders.from(config.headers ?? {});
-      config.headers.set('Authorization', `Bearer ${token}`);
-    }
-  } catch {}
-  return config;
-});
-
 // ---------------------------------------------------------------------------
 // Autenticación por cabecera (respaldo de las cookies httpOnly).
 // Cuando el navegador bloquea cookies de terceros (netlify -> railway), las
@@ -74,16 +63,15 @@ export const tokenStore = {
 
 api.interceptors.request.use((config) => {
   const method = (config.method || 'get').toLowerCase();
-  const headers: Record<string, string> = { ...(config.headers as any) };
+  config.headers = AxiosHeaders.from(config.headers ?? {});
   if (!['get', 'head', 'options', 'trace'].includes(method)) {
     const csrf = getCookie('csrftoken');
-    if (csrf) headers['X-CSRFToken'] = csrf;
+    if (csrf) config.headers.set('X-CSRFToken', csrf);
   }
-  if (!headers.Authorization) {
+  if (!config.headers.has('Authorization')) {
     const token = tokenStore.get();
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (token) config.headers.set('Authorization', `Bearer ${token}`);
   }
-  config.headers = headers as any;
   return config;
 });
 
