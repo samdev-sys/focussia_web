@@ -4,7 +4,8 @@
 Ejecuta en orden, cada paso como subproceso con timeout:
   1. sync_migrations_state --apply  (repara el registro si el esquema va adelantado)
   2. migrate --noinput
-  3. collectstatic --noinput
+  3. seed_content                   (re-siembra el contenido maestro, idempotente)
+  4. collectstatic --noinput
 y al final reemplaza su propio proceso con Gunicorn (exec) para que el PID que
 Railway vigila sea exactamente el servidor HTTP.
 
@@ -43,6 +44,11 @@ def run_step(label, args):
 def main():
     run_step('sync_migrations_state', ['sync_migrations_state', '--apply'])
     run_step('migrate', ['migrate', '--noinput'])
+    # Las semillas de contenido (ProgramDay, frases, avatares, videos, etc.)
+    # viven en migraciones RunPython; si en produccion quedaron marcadas como
+    # aplicadas sin ejecutarse, la frase del dia cae al respaldo ("El exito es
+    # la suma de..."). seed_content es idempotente: re-siembra cada deploy.
+    run_step('seed_content', ['seed_content'])
     run_step('collectstatic', ['collectstatic', '--noinput'])
 
     port = os.environ.get('PORT', '8000')
