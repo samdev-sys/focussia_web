@@ -1,99 +1,141 @@
 /* Dashboard Styling - Integration from Design Prototype */
-@reference "./index.css";
 
 /* Button Base Styles */
 .action-button {
-  @apply border-2 border-black px-4 py-1 text-xs font-bold uppercase;
-  @apply shadow-[2px_2px_0px_0px_rgba(0,0,0,1)];
-  @apply hover:translate-y-0.5 active:shadow-none transition-all;
+  border: 2px solid #000000;
+  padding: 0.25rem 1rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+  transition: all 0.15s ease-in-out;
+}
+.action-button:hover {
+  transform: translateY(0.125rem);
+}
+.action-button:active {
+  box-shadow: none;
 }
 
 .action-button.pink {
-  @apply bg-pink-100;
+  background-color: #fce7f3;
 }
 
 .action-button.blue {
-  @apply bg-blue-200;
+  background-color: #bfdbfe;
 }
 
 .action-button.orange {
-  @apply bg-orange-50;
+  background-color: #fff7ed;
 }
 
 /* Card Styles */
 .dashboard-card {
-  @apply border-2 border-black p-2;
-  @apply bg-orange-50;
+  border: 2px solid #000000;
+  padding: 0.5rem;
+  background-color: #fff7ed;
 }
 
 .dashboard-card-header {
-  @apply bg-black text-white text-[10px] p-1 text-center font-bold uppercase;
+  background-color: #000000;
+  color: #ffffff;
+  font-size: 10px;
+  padding: 0.25rem;
+  text-align: center;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 /* Grid Layout */
 .dashboard-grid {
-  @apply grid grid-cols-12 gap-4 h-[80vh];
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 1rem;
+  height: 80vh;
 }
 
 .dashboard-column {
-  @apply flex flex-col gap-4;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 /* Color Variants */
 .card-orange {
-  @apply bg-orange-50 border-2 border-black;
+  background-color: #fff7ed;
+  border: 2px solid #000000;
 }
 
 .card-orange-light {
-  @apply bg-orange-100 border-2 border-black;
+  background-color: #ffedd5;
+  border: 2px solid #000000;
 }
 
 .card-blue {
-  @apply bg-blue-50 border-2 border-black;
+  background-color: #eff6ff;
+  border: 2px solid #000000;
 }
 
 .card-pink {
-  @apply bg-pink-100 border-2 border-black;
+  background-color: #fce7f3;
+  border: 2px solid #000000;
 }
 
 /* Gradient Circle */
 .gradient-circle {
-  @apply rounded-full border-2 border-black bg-gradient-to-tr from-orange-400 via-pink-400 to-blue-400;
+  border-radius: 9999px;
+  border: 2px solid #000000;
+  background-image: linear-gradient(to top right, #fb923c, #f472b6, #60a5fa);
 }
 
 /* Table Styles */
 .dashboard-table {
-  @apply w-full text-[10px];
+  width: 100%;
+  font-size: 10px;
 }
 
 .dashboard-table thead {
-  @apply bg-blue-300 border-b-2 border-black;
+  background-color: #93c5fd;
+  border-bottom: 2px solid #000000;
 }
 
 .dashboard-table th,
 .dashboard-table td {
-  @apply border-black p-1;
+  border: 1px solid #000000;
+  padding: 0.25rem;
 }
 
 /* Footer Navigation */
 .footer-button {
-  @apply bg-orange-50 border-2 border-black px-4 py-1 text-[10px] font-bold uppercase;
-  @apply cursor-pointer hover:bg-white transition-colors;
-  @apply shadow-[2px_2px_0px_0px_rgba(0,0,0,1)];
+  background-color: #fff7ed;
+  border: 2px solid #000000;
+  padding: 0.25rem 1rem;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out;
+  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+}
+.footer-button:hover {
+  background-color: #ffffff;
 }
 
 .footer-block {
-  @apply bg-blue-200 border-2 border-black p-2;
-  @apply shadow-[2px_2px_0px_0px_rgba(0,0,0,1)];
+  background-color: #bfdbfe;
+  border: 2px solid #000000;
+  padding: 0.5rem;
+  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
 }
 
 /* Text Styles */
 .text-tiny {
-  @apply text-[9px];
+  font-size: 9px;
 }
 
 .text-small {
-  @apply text-[10px];
+  font-size: 10px;
 }
 
 /* Animation */
