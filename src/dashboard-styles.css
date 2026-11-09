@@ -1,4 +1,5 @@
 /* Dashboard Styling - Integration from Design Prototype */
+@reference "./index.css";
 
 /* Button Base Styles */
 .action-button {
