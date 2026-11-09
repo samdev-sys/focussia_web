@@ -243,7 +243,23 @@ const AVATAR_SCREENS = [3, 4, 5, 6, 7, 8, 9, 10];
 
   const goTo = useCallback((s: number) => setScreen(s), []);
 
+  // If no avatars loaded yet, show avatar selection loading
+  useEffect(() => {
+    if (screen === 3 && avatars.length === 0) {
+      const t = setTimeout(() => {
+        goTo(4);
+      }, 3000);
+      return () => clearTimeout(t);
+    }
+  }, [screen, avatars.length, goTo]);
+
   // Navegación por step points (Pasos 1-11) — usada por todos los steppers
+  useEffect(() => {
+    if (screen === 2) {
+      goTo(3);
+    }
+  }, [screen, goTo]);
+
   const goToPaso = useCallback((p: number) => {
     setError(null);
     if (p === 2) { goTo(3); return; }
@@ -575,21 +591,9 @@ const AVATAR_SCREENS = [3, 4, 5, 6, 7, 8, 9, 10];
   }
 
   // Screen 2 (registro) eliminada del onboarding: el registro vive en Auth.
-  // Si algún estado antiguo apunta aquí, se muestra el paso 3.
   if (screen === 2) {
-    setScreen(3);
     return null;
   }
-
-  // If no avatars loaded yet, show avatar selection loading
-  useEffect(() => {
-    if (screen === 3 && avatars.length === 0) {
-      const t = setTimeout(() => {
-        goTo(4);
-      }, 3000);
-      return () => clearTimeout(t);
-    }
-  }, [screen, avatars.length, goTo]);
 
   if (screen === 3 && avatars.length === 0) {
     return (
