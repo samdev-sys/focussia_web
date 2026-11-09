@@ -340,9 +340,28 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
       setFocusConfirmCerrar(false);
       setShowFocusScreen(false);
     } catch (e) {
-      const status = (e as { response?: { status?: number } }).response?.status;
+      const response = (e as { response?: { status?: number; data?: any } }).response;
+      const status = response?.status;
       if (status === 409) {
         // Ya existe una sesión de enfoque en ejecución (Doc 23 §III).
+        // Restaurar la sesión activa devuelta por el backend para que el widget
+        // aparezca (evita quedar sin widget si el estado local se perdió).
+        const sesionActiva = response?.data?.sesion;
+        if (sesionActiva?.id && sesionActiva?.started_at) {
+          const local: FocusSesionLocal = {
+            id: sesionActiva.id,
+            herramienta: sesionActiva.herramienta,
+            config: sesionActiva.config || {},
+            startedAtMs: new Date(sesionActiva.started_at).getTime(),
+            planoMin: sesionActiva.planned_minutes,
+            pausedAt: null,
+            pausedAccum: 0,
+          };
+          setFocusSesion(local);
+          guardarSesionLocal(local);
+          guardarMinimizadoLocal(false);
+          setFocusMinimizado(false);
+        }
         setShowFocusScreen(false);
         setFocusGuardNueva({ herramienta, config });
       } else {
