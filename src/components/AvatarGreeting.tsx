@@ -1,5 +1,6 @@
 import i18n from '../i18n';
 import React, { useEffect, useRef, useState } from 'react';
+import { getCsrfToken } from '../services/api';
 
 // En dev usa ruta relativa (proxy de Vite) para evitar CORS/CSRF cross-origin.
 const TTS_API_URL = import.meta.env.DEV
@@ -111,9 +112,9 @@ export default function AvatarGreeting({
 
     const playAvatarSample = async () => {
       try {
-        const csrfMatch = document.cookie.match(/csrftoken=([^;]+)/);
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (csrfMatch) headers['X-CSRFToken'] = csrfMatch[1];
+        const csrf = await getCsrfToken();
+        if (csrf) headers['X-CSRFToken'] = csrf;
 
         const res = await fetch(AVATAR_TTS_URL, {
           method: 'POST',

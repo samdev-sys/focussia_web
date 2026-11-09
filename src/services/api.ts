@@ -4,19 +4,41 @@ import axios, { AxiosHeaders } from 'axios';
 // evitar problemas CORS/CSRF cross-origin con cookies entre localhost:3000 y :8000.
 const API_BASE_URL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:8000');
 
-// Intentar obtener el token CSRF al arrancar para que las peticiones POST
-// con cookies funcionen correctamente en entornos cross-site.
-if (typeof window !== 'undefined') {
-  try {
-    axios.get(`${API_BASE_URL}/api/csrf/`, { withCredentials: true }).catch(() => {});
-  } catch {}
-}
-
 const getCookie = (name: string): string | null => {
   if (typeof document === 'undefined') return null;
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
   return match ? decodeURIComponent(match[1]) : null;
 };
+
+let csrfTokenCache: string | null = getCookie('csrftoken');
+let csrfTokenPromise: Promise<string | null> | null = null;
+
+export const getCsrfToken = async (): Promise<string | null> => {
+  if (csrfTokenCache) return csrfTokenCache;
+  const cookie = getCookie('csrftoken');
+  if (cookie) {
+    csrfTokenCache = cookie;
+    return cookie;
+  }
+  if (!csrfTokenPromise) {
+    csrfTokenPromise = axios
+      .get(`${API_BASE_URL}/api/csrf/`, { withCredentials: true })
+      .then((res) => {
+        const token = res.data?.csrfToken || getCookie('csrftoken') || null;
+        csrfTokenCache = token;
+        return token;
+      })
+      .catch(() => getCookie('csrftoken'))
+      .finally(() => { csrfTokenPromise = null; });
+  }
+  return csrfTokenPromise;
+};
+
+// Obtener token CSRF al arrancar: en cross-origin (Netlify -> Railway) no se puede
+// leer la cookie del backend, así que usamos el token devuelto en el body.
+if (typeof window !== 'undefined') {
+  void getCsrfToken();
+}
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -61,11 +83,11 @@ export const tokenStore = {
   },
 };
 
-api.interceptors.request.use((config) => {
+api.interceptors.request.use(async (config) => {
   const method = (config.method || 'get').toLowerCase();
   config.headers = AxiosHeaders.from(config.headers ?? {});
-  if (!['get', 'head', 'options', 'trace'].includes(method)) {
-    const csrf = getCookie('csrftoken');
+  if (!['get', 'head', 'options', 'trace'].includes(method) && !config.headers.has('X-CSRFToken')) {
+    const csrf = csrfTokenCache || getCookie('csrftoken') || await getCsrfToken();
     if (csrf) config.headers.set('X-CSRFToken', csrf);
   }
   if (!config.headers.has('Authorization')) {
