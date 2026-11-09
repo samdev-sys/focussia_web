@@ -1727,7 +1727,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
           con el mismo gap en las cinco columnas). 
           En tablet / ventana < 1024 u orientación vertical, MobileOrientationPrompt
           muestra la pantalla de rotación antes de llegar aquí. */}
-      <div className="relative z-10 w-full grid grid-rows-[auto_auto] grid-cols-[146fr_295fr_432fr_268fr_299fr] gap-2 px-2 pb-2 pt-1 [&>*]:min-w-0">
+      <div className="relative z-10 w-full grid grid-rows-[auto_auto] grid-cols-[minmax(146px,146fr)_minmax(295px,295fr)_minmax(432px,432fr)_minmax(268px,268fr)_minmax(299px,299fr)] gap-2 px-2 pb-2 pt-1 [&>*]:min-w-0">
 
       {/* FRANJA SUPERIOR · centro: logo Focusia */}
       <div className="col-start-3 row-start-1 flex justify-center items-center py-1 ml-8">
@@ -4558,7 +4558,7 @@ const BlockDeNotas: React.FC = () => {
         <div className="absolute bottom-0 right-0 w-[55px] h-[55px] pointer-events-none z-10 flex items-center justify-center">
           <img
             alt={i18n.t('bulb')}
-            src="public/foco.png"
+            src="/foco.png"
             className="w-[200px] h-[200px] object-contain select-none filter drop-shadow-sm -mt-18"
           />
         </div>
@@ -4955,7 +4955,7 @@ function CalendarWidget(): React.ReactElement {
       <div className="bg-gradient-to-r from-[#000000] to-[#3533cd] dark:bg-none dark:bg-[#070309] dark:border dark:border-white/10 px-2 py-2 flex items-center justify-center gap-6 border-b border-white/5 shrink-0 rounded-md ml-2 mt-1 w-35">
                  <img
             alt={i18n.t('calendar2')}
-            src="public/calendar2.png"
+            src="/calendar2.png"
             className="w-[20px] h-full object-contain select-none filter drop-shadow-sm"
           /><span className="text-white dark:text-[#fde047] font-bold text-[13px] tracking-wide">{hora}</span>
                
