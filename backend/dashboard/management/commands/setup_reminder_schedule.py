@@ -1,10 +1,11 @@
 """Registra en django-q2 las tareas periódicas del Sistema Proactivo.
 
-Lo ejecuta el servicio `schedule` del compose al levantar el stack. Es
-idempotente: si la tarea ya está registrada solo actualiza su cadencia.
+Lo ejecuta el worker/stack al levantar. Es idempotente: si la tarea ya está
+registrada actualiza su cadencia.
 
-Ojo: django-q2 evalúa `args` con ast.literal_eval, así que tiene que ser un
-literal de Python (una tupla con el nombre del comando), no el nombre suelto.
+Ojo: django-q2 evalúa `args`/`kwargs` con ast.literal_eval, así que tienen que
+ser literales de Python válidos (p. ej. args="('cmd',)", kwargs="{}"). Un valor
+suelto/malformado hace que el scheduler falle con "Could not create task".
 """
 from django.core.management.base import BaseCommand
 from django_q.models import Schedule
@@ -47,8 +48,41 @@ TAREAS = (
 class Command(BaseCommand):
     help = 'Registra las tareas programadas de recordatorios en django-q2'
 
+    def _literal_valido(self, value):
+        import ast
+        if value in (None, ''):
+            return False
+        try:
+            ast.literal_eval(value)
+            return True
+        except Exception:
+            return False
+
     def handle(self, *args, **options):
         fallidas = []
+        comandos = {comando for _, comando, *_ in TAREAS}
+
+        # Limpia filas antiguas/malformadas de nuestras tareas: si quedaron con
+        # args inválidos (p. ej. un nombre suelto), el scheduler de django-q2
+        # falla en TODAS las pasadas al hacer ast.literal_eval(s.args).
+        qs = Schedule.objects.filter(func=FUNC)
+        for s in qs:
+            args_raw = (s.args or '').strip()
+            kwargs_raw = (s.kwargs or '').strip()
+            es_nuestra = (s.name in {n for n, *_ in TAREAS}) or any(c in args_raw for c in comandos)
+            if es_nuestra and not self._literal_valido(args_raw):
+                s.delete()
+                self.stdout.write(self.style.WARNING(
+                    f'Eliminada tarea con args inválidos: {s.name!r} args={s.args!r}'
+                ))
+                continue
+            if es_nuestra and kwargs_raw and not self._literal_valido(kwargs_raw):
+                s.kwargs = '{}'
+                s.save(update_fields=['kwargs'])
+                self.stdout.write(self.style.WARNING(
+                    f'Normalizado kwargs inválido: {s.name!r}'
+                ))
+
         for nombre, comando, tipo, minutos, cron in TAREAS:
             if cron:
                 cadencia = f'cron «{cron}»'
@@ -59,16 +93,21 @@ class Command(BaseCommand):
             # Un fallo en una tarea no debe impedir registrar las demás: sin
             # este try/except, un entorno sin `croniter` abortaba el bucle y
             # dejaba fuera también las tareas de intervalo posteriores.
+            args_literal = f"('{comando}',)"
             try:
+                # Borra duplicados gestionados por nombre/función antes de upsert
+                # (p. ej. filas previas con args mal formados no halladas por lookup).
+                Schedule.objects.filter(func=FUNC, name=nombre).exclude(args=args_literal).delete()
                 _, created = Schedule.objects.update_or_create(
                     func=FUNC,
-                    args=f"('{comando}',)",
+                    args=args_literal,
                     defaults={
                         'name': nombre,
                         'schedule_type': tipo,
                         'minutes': minutos,
                         'cron': cron,
                         'repeats': -1,
+                        'kwargs': '{}',
                     },
                 )
             except Exception as exc:
