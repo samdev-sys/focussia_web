@@ -8,6 +8,8 @@ import urllib.error
 from datetime import timedelta, datetime, time, date
 from django.conf import settings
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
@@ -99,6 +101,7 @@ from .engine.phase4_generator import generar_payload_coach
 
 logger = logging.getLogger('focusia.security')
 
+@method_decorator(csrf_exempt, name='dispatch')
 class UserViewSet(viewsets.ModelViewSet):
     """Registro de usuarios y perfil propio.
 

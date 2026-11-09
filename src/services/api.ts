@@ -4,6 +4,14 @@ import axios from 'axios';
 // evitar problemas CORS/CSRF cross-origin con cookies entre localhost:3000 y :8000.
 const API_BASE_URL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:8000');
 
+// Intentar obtener el token CSRF al arrancar para que las peticiones POST
+// con cookies funcionen correctamente en entornos cross-site.
+if (typeof window !== 'undefined') {
+  try {
+    axios.get(`${API_BASE_URL}/api/csrf/`, { withCredentials: true }).catch(() => {});
+  } catch {}
+}
+
 const getCookie = (name: string): string | null => {
   if (typeof document === 'undefined') return null;
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));

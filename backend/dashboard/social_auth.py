@@ -3,6 +3,7 @@ import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
@@ -105,6 +106,7 @@ def _verify_google_token(id_token):
     }
 
 
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def google_login(request):
@@ -166,6 +168,7 @@ def _verify_microsoft_token(access_token):
     }
 
 
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def microsoft_login(request):

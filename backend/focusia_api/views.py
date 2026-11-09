@@ -8,6 +8,8 @@ from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.contrib.auth import get_user_model
 from django.db import DatabaseError, connection
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -40,6 +42,7 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
                 attrs['username'] = user.username
         return super().validate(attrs)
 
+@method_decorator(csrf_exempt, name='dispatch')
 class EmailTokenObtainPairView(TokenObtainPairView):
     serializer_class = EmailTokenObtainPairSerializer
     throttle_classes = [LoginRateThrottle]
@@ -104,6 +107,7 @@ class EmailTokenObtainPairView(TokenObtainPairView):
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
 
+@method_decorator(csrf_exempt, name='dispatch')
 class CookieTokenRefreshView(TokenRefreshView):
     throttle_classes = [LoginRateThrottle]
 
@@ -136,6 +140,7 @@ class CookieTokenRefreshView(TokenRefreshView):
         )
         return response
 
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def logout_view(request):
@@ -156,6 +161,7 @@ def logout_view(request):
     return response
 
 
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @throttle_classes([PasswordResetRequestThrottle])
@@ -195,6 +201,7 @@ def password_reset_request(request):
     return Response(generic.data)
 
 
+@csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @throttle_classes([PasswordResetConfirmThrottle])

@@ -77,8 +77,9 @@ export default function AuthPanel({ onLogin, onRegister, initialMode = 'login' }
       });
       await authService.microsoftLogin(response.accessToken);
       onLogin('');
-    } catch {
-      setErrors({ social: 'Error al iniciar sesión con Microsoft' });
+    } catch (err: any) {
+      const detail = err.response?.data?.error || err.response?.data?.detail;
+      setErrors({ social: typeof detail === 'string' && detail ? detail : 'Error al iniciar sesión con Microsoft' });
     } finally {
       setSocialLoading(null);
     }
@@ -355,6 +356,7 @@ export default function AuthPanel({ onLogin, onRegister, initialMode = 'login' }
           {/* Google */}
           <BotonGoogle
             onListo={() => onLogin('')}
+            onError={(msg) => setErrors({ social: msg })}
             fallback={
               <button
                 type="button"
@@ -380,10 +382,12 @@ export default function AuthPanel({ onLogin, onRegister, initialMode = 'login' }
   );
 }
 
-function BotonGoogle({ onListo, fallback }: { onListo: () => void; fallback: React.ReactNode }) {
+function BotonGoogle({ onListo, fallback, onError }: { onListo: () => void; fallback: React.ReactNode; onError?: (msg: string) => void }) {
   const btnRef = useRef<HTMLDivElement>(null);
   const listoRef = useRef(onListo);
+  const errorRef = useRef(onError);
   listoRef.current = onListo;
+  errorRef.current = onError;
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID) return;
@@ -395,10 +399,13 @@ function BotonGoogle({ onListo, fallback }: { onListo: () => void; fallback: Rea
         callback: async (response: any) => {
           try {
             await authService.googleLogin(response.credential);
-          } catch {
-            // cae al flujo normal
+            listoRef.current();
+          } catch (err: any) {
+            const detail = err.response?.data?.error || err.response?.data?.detail;
+            if (errorRef.current) {
+              errorRef.current(typeof detail === 'string' && detail ? detail : 'Error al iniciar sesión con Google');
+            }
           }
-          listoRef.current();
         },
       });
       if (btnRef.current) {
@@ -587,6 +594,7 @@ export function RegistroCuenta({ onExito, onIrLogin, onRecuperar, paso }: {
 
           <BotonGoogle
             onListo={() => onExito({ nombre: nombre.trim(), email: email.trim() })}
+            onError={(msg) => setError(msg)}
             fallback={
               <button type="button" title={i18n.t('inicio_de_sesion_con_otras_aplicaciones_')}
                 className="w-100 py-2.5 rounded-md border border-slate-200 bg-white text-slate-700 font-medium text-sm flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors cursor-pointer">
