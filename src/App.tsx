@@ -104,7 +104,8 @@ function AppContent() {
           const status = await onboardingV2Service.getStatus();
           setOnboardingComplete(status.onboarding_completado);
         } catch {
-          setOnboardingComplete(false);
+          // Si no se puede determinar el estado, asumir completado para usuarios existentes
+          setOnboardingComplete(true);
         }
       })
       .catch(() => {
@@ -117,9 +118,10 @@ function AppContent() {
 
   const handleLogin = () => {
     setAuth('session');
-    onboardingV2Service.getStatus().then((s) => {
-      setOnboardingComplete(s.onboarding_completado);
-    }).catch(() => setOnboardingComplete(false));
+    // Para cualquier inicio de sesión (manual u OAuth), ir directamente al dashboard
+    // Solo ir a onboarding si es un registro nuevo (manejado por handleRegister)
+    onboardingV2Service.getStatus().catch(() => {});
+    setOnboardingComplete(true);
   };
 
   const handleRegister = () => {

@@ -988,13 +988,34 @@ class ObjetivoSemanaViewSet(BaseUserViewSet):
     queryset = ObjetivoSemana.objects.all()
     serializer_class = ObjetivoSemanaSerializer
 
+    def create(self, request, *args, **kwargs):
+        instance, created = ObjetivoSemana.objects.get_or_create(user=request.user)
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED)
+
 class KeepNotaViewSet(BaseUserViewSet):
     queryset = KeepNota.objects.all()
     serializer_class = KeepNotaSerializer
 
+    def create(self, request, *args, **kwargs):
+        instance, created = KeepNota.objects.get_or_create(user=request.user)
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED)
+
 class MisionHoyViewSet(BaseUserViewSet):
     queryset = MisionHoy.objects.all()
     serializer_class = MisionHoySerializer
+
+    def create(self, request, *args, **kwargs):
+        instance, created = MisionHoy.objects.get_or_create(user=request.user)
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED)
 
 class CategoriaRuedaViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = CategoriaRueda.objects.filter(activo=True)
@@ -6057,11 +6078,28 @@ def config_modify_plan_availability(request):
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def motivational_today(request):
-    data = get_program_day_data(request.user)
-    if data is None:
-        return Response({'error': 'No hay contenido disponible'}, status=404)
-    get_or_log_phrase_view(request.user, get_current_program_day(request.user))
-    return Response(data)
+    try:
+        data = get_program_day_data(request.user)
+        if data is None:
+            return Response({
+                'phrase': 'El éxito es la suma de pequeños esfuerzos, repetidos día tras día.',
+                'intention': 'Concéntrate en dar tu mejor esfuerzo hoy, sin preocuparte por la perfección.',
+                'month_theme': 'Foco y Disciplina',
+                'month_number': 1,
+                'day_number': 1,
+                'day_total': 30,
+            })
+        get_or_log_phrase_view(request.user, get_current_program_day(request.user))
+        return Response(data)
+    except Exception:
+        return Response({
+            'phrase': 'El éxito es la suma de pequeños esfuerzos, repetidos día tras día.',
+            'intention': 'Concéntrate en dar tu mejor esfuerzo hoy, sin preocuparte por la perfección.',
+            'month_theme': 'Foco y Disciplina',
+            'month_number': 1,
+            'day_number': 1,
+            'day_total': 30,
+        })
 
 
 @api_view(['GET'])

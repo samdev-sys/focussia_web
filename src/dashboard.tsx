@@ -1,5 +1,6 @@
 import i18n from './i18n';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import './dashboard-styles.css';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useUiStore } from './stores/uiStore';
 import { useNotificationStore } from './stores/notificationStore';
@@ -1033,18 +1034,31 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
     const fetchClima = async (lat: number, lon: number) => {
       try {
         // Reverse geocoding con Nominatim
-        const geoRes = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=es`,
-          { signal: controller.signal }
-        );
-        const geoData = await geoRes.json();
-        const lugar =
-          geoData.address?.suburb ||
-          geoData.address?.neighbourhood ||
-          geoData.address?.town ||
-          geoData.address?.city ||
-          geoData.address?.county ||
-          'Mi ubicación';
+        let lugar = 'Mi ubicación';
+        try {
+          const geoRes = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=es`,
+            { 
+              signal: controller.signal,
+              headers: {
+                'User-Agent': 'FocusiaApp/1.0'
+              }
+            }
+          );
+          if (geoRes.ok) {
+            const geoData = await geoRes.json();
+            lugar =
+              geoData.address?.suburb ||
+              geoData.address?.neighbourhood ||
+              geoData.address?.town ||
+              geoData.address?.city ||
+              geoData.address?.county ||
+              geoData.address?.state ||
+              'Mi ubicación';
+          }
+        } catch {
+          // Fallback silencioso si falla la geocodificación
+        }
 
         // Clima con Open-Meteo (sin API key)
         const weatherRes = await fetch(

@@ -367,6 +367,7 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
       setAcciones(prev => [response.data, ...prev]);
       setNuevaAccion('');
       setActiveIndex(0);
+      onClassified?.('H', response.data.texto_accion);
       // §17.5: advertir duplicada sin bloquear (igual se guarda).
       setSimilarWarning(!!response.data?.similar_warning);
     } catch (err) {
@@ -661,6 +662,30 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
         <div className="bg-[linear-gradient(90deg,#ffe29f,#ffc997)] dark:bg-[linear-gradient(90deg,#fde68a,#f9a8d4)] text-slate-800 dark:text-[#14050c] text-center py-1 px-2 uppercase border border-black-300/50 dark:border-pink-300/40 rounded-md w-full">
           Matriz
         </div>
+      </div>
+
+      <div className="flex items-center gap-1 px-1 py-1 border-b border-gray-100 dark:border-white/10 shrink-0">
+        <input
+          type="text"
+          value={nuevaAccion}
+          onChange={(e) => setNuevaAccion(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handleCrearAccion();
+            }
+          }}
+          placeholder={i18n.t('escriba_aqui') || 'Escribe aquí...'}
+          className="flex-1 border border-gray-200 dark:border-white/80 rounded text-[10px] px-1.5 py-1 h-6 flex items-center text-gray-700 placeholder:text-gray-400 bg-white truncate"
+        />
+        <button
+          type="button"
+          onClick={handleCrearAccion}
+          disabled={!nuevaAccion.trim()}
+          className="px-2 h-6 text-[9px] font-bold rounded bg-[#143ccc] text-white disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          +
+        </button>
       </div>
 
       
