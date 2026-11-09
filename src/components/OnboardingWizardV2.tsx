@@ -105,10 +105,10 @@ export default function OnboardingWizardV2({ onComplete, isAuthenticated, userNa
     let mounted = true;
     const timeout = setTimeout(() => {
       if (mounted) {
-        setScreen(1);
         setLoading(false);
+        setScreen(1);
       }
-    }, 5000);
+    }, 8000);
     onboardingV2Service.getStatus()
       .then(statusData => {
         if (!mounted) return;
@@ -116,11 +116,7 @@ export default function OnboardingWizardV2({ onComplete, isAuthenticated, userNa
         setScreen(target);
       })
       .catch((err: any) => {
-        // 401 is expected for unauthenticated/expired sessions - handle silently without console spam
         if (!mounted) return;
-        if (err?.response?.status !== 401) {
-          // non-401 errors could be logged if needed
-        }
         setScreen(1);
       })
       .finally(() => {
@@ -157,9 +153,14 @@ const AVATAR_SCREENS = [3, 4, 5, 6, 7, 8, 9, 10];
     onboardingV2Service.getAvatars()
       .then(data => {
         if (cancelled) return;
-        setAvatars(data);
+        setAvatars(data || []);
       })
-      .catch(() => { if (!cancelled) setError('Error al cargar avatares'); });
+      .catch(() => { 
+        if (!cancelled) {
+          setError('Error al cargar avatares');
+          setAvatars([]);
+        }
+      });
     return () => { cancelled = true; };
   }, [screen]);
 
@@ -561,6 +562,15 @@ const AVATAR_SCREENS = [3, 4, 5, 6, 7, 8, 9, 10];
   }
 
   // If no avatars loaded yet, show avatar selection loading
+  useEffect(() => {
+    if (screen === 3 && avatars.length === 0) {
+      const t = setTimeout(() => {
+        goTo(4);
+      }, 3000);
+      return () => clearTimeout(t);
+    }
+  }, [screen, avatars.length, goTo]);
+
   if (screen === 3 && avatars.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white font-montserrat">
