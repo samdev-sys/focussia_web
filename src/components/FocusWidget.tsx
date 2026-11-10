@@ -146,19 +146,21 @@ export default function FocusWidget({ sesion, minimizado, onMinimizar, onCerrarS
     return () => clearInterval(t);
   }, []);
 
-  // Al arrancar sin posición previa: esquina inferior derecha.
-  useEffect(() => {
-    if (!pos && sesion) {
-      setPos({
-        x: Math.max(12, window.innerWidth - 260),
-        y: Math.max(12, window.innerHeight - 230),
-      });
-    }
-  }, [sesion, pos]);
+  // Posición por defecto: esquina inferior derecha, dentro del viewport.
+  const posPorDefecto = () => ({
+    x: Math.max(12, window.innerWidth - 260),
+    y: Math.max(12, window.innerHeight - 230),
+  });
 
-  // Reanuda desde cero cuando cambia la sesión.
+  // Reanuda desde cero cuando cambia la sesión y coloca el widget en su
+  // posición por defecto EN EL MISMO PASO. Antes había dos efectos que se
+  // pisaban: uno ponía (x, y) y el de «reanudar» volvía la posición a null
+  // en el mismo ciclo de efectos; el resultado era pos = null y el widget
+  // se renderizaba en su posición estática del DOM (esquina inferior
+  // izquierda, cortado por el borde de la ventana).
   useEffect(() => {
-    if (sesion) { finalAvisado.current = false; setPos(null); setSilencio(false); }
+    if (sesion) { finalAvisado.current = false; setSilencio(false); setPos(posPorDefecto()); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sesion?.id, sesion?.herramienta, sesion?.startedAtMs]);
 
   const pausado = !!sesion?.pausedAt;
