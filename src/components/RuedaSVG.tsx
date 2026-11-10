@@ -163,7 +163,7 @@ const RuedaSVG: React.FC<RuedaSVGProps> = ({
         const [x0, y0] = polar(cx, cy, rExt, a0);
         const [x1, y1] = polar(cx, cy, rExt, a1);
         const grande = a1 - a0 > 180 ? 1 : 0;
-        const [lx, ly] = polar(cx, cy, rExt * 0.6, mid);
+        const [lx, ly] = polar(cx, cy, rExt * 0.72, mid);
         const sel = seleccionId === d.id;
         const guardada = guardadasIds?.has(d.id ?? -1);
         const fill = colorPorArea(d.nombre, i);
@@ -190,23 +190,23 @@ const RuedaSVG: React.FC<RuedaSVGProps> = ({
               style={sel && interactiva ? { filter: 'brightness(1.1) drop-shadow(0 8px 16px rgba(139,92,246,0.65))' } : undefined}
             />
             {etiquetasExternas && (
-              <text x={tx} y={ty} textAnchor={anchor} dominantBaseline="middle" fontSize="9.5" fontWeight="700" fill="#101433">
+              <text x={tx} y={ty} textAnchor={anchor} dominantBaseline="middle" fontSize="7.5" fontWeight="700" fill="#101433">
                 {d.nombre}
               </text>
             )}
             {etiquetasInternas && (
-              <text x={lx} y={ly - 3} textAnchor="middle" dominantBaseline="middle" fontSize="10" fontWeight="700" fill="#ffffff">
+              <text x={lx} y={ly - 3} textAnchor="middle" dominantBaseline="middle" fontSize={d.nombre.length > 10 ? 6.5 : 8} fontWeight="700" fill="#ffffff">
                 {d.nombre}
               </text>
             )}
             {etiquetasInternas && (
-              <text x={lx} y={ly + 11} textAnchor="middle" dominantBaseline="middle" fontSize="15" fontWeight="800" fill="#ffffff">
+              <text x={lx} y={ly + 11} textAnchor="middle" dominantBaseline="middle" fontSize="12" fontWeight="800" fill="#ffffff">
                 {d.puntaje > 0 ? d.puntaje : ''}
               </text>
             )}
             <foreignObject x={lx - 17} y={ly - 17} width={34} height={34} style={{ pointerEvents: 'none' }}>
               {mostrarPuntajes ? (
-                <div style={{ width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontWeight: 800, fontSize: 17 }}>
+                <div style={{ width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontWeight: 800, fontSize: 14 }}>
                   {d.puntaje > 0 ? d.puntaje : ''}
                 </div>
               ) : !etiquetasInternas ? (
@@ -235,7 +235,7 @@ const RuedaSVG: React.FC<RuedaSVGProps> = ({
           <text x={cx} y={cy + 12} textAnchor="middle" fill="#fff" fontSize="26" fontWeight="800">
             {centroDiagnostico.promedio}
           </text>
-          <text x={cx} y={cy + 28} textAnchor="middle" fill="#fbbf24" fontSize="9" fontWeight="700">
+          <text x={cx} y={cy + 28} textAnchor="middle" fill="#fbbf24" fontSize="6" fontWeight="700">
             {centroDiagnostico.nivel}
           </text>
         </>

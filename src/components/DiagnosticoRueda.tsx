@@ -480,15 +480,15 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
         'Excelente': 'bg-emerald-100 text-emerald-700',
       };
       return (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6">
-          <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight mb-4">
+        <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4 sm:p-6">
+          <h2 className="text-xl sm:text-xl font-bold text-gray-900 tracking-tight mb-4">
             DIAGNÓSTICO DE TU <span className="text-[#1d4ed8]">{i18n.t('rueda_de_la_vida')}</span>
           </h2>
           <div className="grid lg:grid-cols-[1fr_300px_300px] gap-4 items-start">
             <div className="flex justify-center">
               <RuedaSVG
                 datos={datosRueda}
-                size={340}
+                size={380}
                 etiquetasInternas
                 centroDiagnostico={{ promedio: prom, nivel: `EQUILIBRIO ${diagnostico.nivel_equilibrio.toUpperCase()}` }}
               />
@@ -503,8 +503,8 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
                       <span className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: colorPorArea(d.nombre, i) }}>
                         <AreaIcon nombre={d.nombre} className="w-4 h-4 text-white" />
                       </span>
-                      <span className="flex-1 text-sm text-gray-600">{d.nombre}</span>
-                      <span className="font-extrabold text-gray-800 text-sm w-5 text-right">{d.puntaje}</span>
+                      <span className="flex-1 text-xs text-gray-600">{d.nombre}</span>
+                      <span className="font-bold text-gray-800 text-sm w-5 text-right">{d.puntaje}</span>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${NIVEL_PILL[niv.label] || 'bg-gray-100 text-gray-500'}`}>
                         {niv.label}
                       </span>
