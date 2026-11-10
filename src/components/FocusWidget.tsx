@@ -146,10 +146,11 @@ export default function FocusWidget({ sesion, minimizado, onMinimizar, onCerrarS
     return () => clearInterval(t);
   }, []);
 
-  // Posición por defecto: esquina inferior derecha, dentro del viewport.
+  // Posición por defecto: zona superior central del dashboard, dentro del
+  // viewport (el widget mide w-52 = 208 px de ancho).
   const posPorDefecto = () => ({
-    x: Math.max(12, window.innerWidth - 260),
-    y: Math.max(12, window.innerHeight - 230),
+    x: Math.max(12, Math.round((window.innerWidth - 208) / 2)),
+    y: Math.max(12, 16),
   });
 
   // Reanuda desde cero cuando cambia la sesión y coloca el widget en su
