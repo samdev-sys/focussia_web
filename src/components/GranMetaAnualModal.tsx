@@ -240,7 +240,7 @@ export function GranMetaAnualModal({
   const shellTitle = stage === 'smart' ? 'Gran Meta Anual propuesta' : 'Gran Meta Anual';
 
   const AvatarPanel = () => (
-    <div className="relative rounded-2xl overflow-hidden min-h-[300px] lg:min-h-[480px] bg-gradient-to-b from-[#2b3fd4] via-[#4b3fd6] to-[#7a5af8]">
+    <div className="relative rounded-md overflow-hidden min-h-[300px] lg:min-h-[520px] bg-gradient-to-b from-[#2b3fd4] via-[#4b3fd6] to-[#7a5af8]">
       <img
         src={avatarSrc}
         alt={i18n.t('avatar_hbx8')}
@@ -264,16 +264,16 @@ export function GranMetaAnualModal({
     kicker?: string; question: string; value: string; onChange: (v: string) => void;
     onSubmit: () => void; placeholder: string;
   }) => (
-    <div className="grid lg:grid-cols-[320px_1fr] gap-5 items-start">
+    <div className="grid lg:grid-cols-[400px_1fr] gap-5 items-start">
       <AvatarPanel />
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6">
+      <div className="bg-white rounded-md border border-gray-200 shadow-sm p-7 sm:p-7 w-150">
         {kicker && (
           <span className="inline-block px-4 py-1.5 rounded-full bg-[#f1eaff] text-[#7c3aed] text-sm font-bold mb-4">
             {kicker}
           </span>
         )}
-        <div className="rounded-2xl border border-[#d9ccff] bg-[#fbfaff] px-6 py-8 text-center mb-4 shadow-sm">
-          <h2 className="text-2xl sm:text-[34px] font-black leading-tight">
+        <div className="rounded-md border border-[#d9ccff] bg-[#fbfaff] px-4 py-6 text-center mb-2 shadow-sm -mt-2">
+          <h2 className="text-xl sm:text-[20px] font-bold leading-tight">
             <span className="bg-gradient-to-r from-[#2b5cff] to-[#7c3aed] bg-clip-text text-transparent">{question.split('?')[0]}?</span>
             {question.includes('?') && question.split('?').slice(1).join('?') && (
               <span className="block text-[#1a1446]">{question.split('?').slice(1).join('?')}</span>
@@ -303,9 +303,9 @@ export function GranMetaAnualModal({
   const renderContent = () => {
     if (stage === 'intro') {
       return (
-        <div className="grid lg:grid-cols-[320px_1fr] gap-5 items-start">
+        <div className="grid lg:grid-cols-[400px_1fr] gap-5 items-start">
           <AvatarPanel />
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6">
+          <div className="">
             <MessageBubble text="Llegó el momento de convertir tu Rueda de la Vida en una Gran Meta Anual clara, poderosa y alcanzable. Comencemos con tres preguntas." />
             <button
               onClick={() => setStage('p1')}
@@ -321,18 +321,15 @@ export function GranMetaAnualModal({
     if (stage === 'p1') {
       return (
         <>
-          <div className="grid lg:grid-cols-[320px_1fr] gap-5 items-start">
-            <AvatarPanel />
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6">
-              <QuestionStage
-                kicker="Pregunta 1 de 3"
-                question="Tomando en cuenta los resultados de tu Rueda de la Vida, ¿qué área o aspecto de tu vida sientes que necesita mayor transformación este año?"
-                value={p1}
-                onChange={setP1}
-                onSubmit={() => handleAnswer('p1', p1)}
-                placeholder={i18n.t('escribe_aqui_tu_respuesta')}
-              />
-            </div>
+          <div className="grid lg:grid-cols-[400px_1fr] gap-5 items-start">
+            <QuestionStage
+              kicker="Pregunta 1 de 3"
+              question="Tomando en cuenta los resultados de tu Rueda de la Vida, ¿qué área o aspecto de tu vida sientes que necesita mayor transformación este año?"
+              value={p1}
+              onChange={setP1}
+              onSubmit={() => handleAnswer('p1', p1)}
+              placeholder={i18n.t('escribe_aqui_tu_respuesta')}
+            />
           </div>
         </>
       );
@@ -340,11 +337,12 @@ export function GranMetaAnualModal({
 
     if (stage === 'p2') {
       return (
-        <div className="grid lg:grid-cols-[320px_1fr] gap-5 items-start">
-          <AvatarPanel />
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6">
+        <div className="grid lg:grid-cols-[400px_1fr] gap-5 items-start">
+
+          <div className="bg-white rounded-md w-270 border border-gray-200 shadow-sm p-4 sm:p-6">
             <MessageBubble text={`Gracias, ${username}. Esta respuesta nos ayuda a construir una meta más clara y conectada contigo.`} />
             <QuestionStage
+            
               kicker="Pregunta 2 de 3"
               question="¿Qué gran resultado te gustaría alcanzar antes de terminar este año?"
               value={p2}
@@ -359,9 +357,9 @@ export function GranMetaAnualModal({
 
     if (stage === 'p3') {
       return (
-        <div className="grid lg:grid-cols-[320px_1fr] gap-5 items-start">
-          <AvatarPanel />
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6">
+        <div className="grid lg:grid-cols-[400px_1fr] gap-5 items-start">
+          
+          <div className="bg-white rounded-md w-270 border border-gray-200 shadow-sm p-4 sm:p-6">
             <MessageBubble text={`Gracias, ${username}. Esta respuesta nos ayuda a construir una meta más clara y conectada contigo.`} />
             <QuestionStage
               kicker="Pregunta 3 de 3"
@@ -378,12 +376,12 @@ export function GranMetaAnualModal({
 
     if (stage === 'preSmart') {
       return (
-        <div className="grid lg:grid-cols-[320px_1fr] gap-5 items-start">
+        <div className="grid lg:grid-cols-[400px_1fr] gap-5 items-start">
           <AvatarPanel />
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6">
+          <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4 sm:p-6">
             <MessageBubble text={`Gracias, ${username}. Esta respuesta nos ayuda a construir una meta más clara y conectada contigo.`} />
-            <div className="rounded-2xl border border-[#d9ccff] bg-[#fbfaff] px-6 py-10 text-center shadow-sm">
-              <h2 className="text-2xl sm:text-4xl font-black text-[#1a1446] leading-tight">
+            <div className="rounded-md border border-[#d9ccff] bg-[#fbfaff] px-6 py-10 text-center shadow-sm">
+              <h2 className="text-xl sm:text-xl font-bold text-[#1a1446] leading-tight">
                 Ya tengo la información<br />necesaria.
               </h2>
               <p className="text-xl sm:text-3xl text-[#1a1446] leading-snug mt-6">
@@ -403,7 +401,7 @@ export function GranMetaAnualModal({
 
     if (stage === 'generating') {
       return (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-12 flex flex-col items-center justify-center min-h-[300px]">
+        <div className="bg-white rounded-md border border-gray-200 shadow-sm p-12 flex flex-col items-center justify-center min-h-[300px]">
           <div className="w-12 h-12 border-4 border-[#2b5cff] border-t-transparent rounded-full animate-spin mb-4" />
           <p className="text-sm text-gray-500 font-medium">
             {editMode && !savedMetaId
@@ -428,9 +426,9 @@ export function GranMetaAnualModal({
         { label: 'Temporal', key: 'T', color: 'from-purple-500 to-purple-600' },
       ];
       return (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6">
-          <div className="grid lg:grid-cols-[300px_1fr] gap-5 items-start">
-            <div className="relative rounded-2xl overflow-hidden min-h-[300px] lg:min-h-[460px] bg-[#101331]">
+        <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4 sm:p-6">
+          <div className="grid lg:grid-cols-[400px_1fr] gap-5 items-start">
+            <div className="relative rounded-md overflow-hidden min-h-[300px] lg:min-h-[520px] bg-[#101331]">
               <img
                 src={avatarSrc}
                 alt={i18n.t('avatar_hbx8')}
@@ -439,7 +437,7 @@ export function GranMetaAnualModal({
               />
             </div>
             <div>
-              <div className="rounded-2xl bg-[#f4f1ff] border border-[#e5e0ff] px-5 py-4 mb-3">
+              <div className="rounded-md bg-[#f4f1ff] border border-[#e5e0ff] px-5 py-4 mb-3">
                 <p className="text-[17px] sm:text-lg font-bold text-[#2b2a6b] leading-relaxed">{smartData.texto_meta}</p>
                 {smartData.frase_resumen && (
                   <p className="text-sm italic text-[#6d5bd0] mt-2">&ldquo;{smartData.frase_resumen}&rdquo;</p>
@@ -469,7 +467,7 @@ export function GranMetaAnualModal({
             </button>
             <button
               onClick={handleApprove}
-              className="px-10 py-3.5 rounded-xl bg-gradient-to-r from-[#2b5cff] to-[#7c3aed] text-white font-bold hover:brightness-110 transition-all flex items-center justify-center gap-2 shadow-lg"
+              className="px-10 py-3.5 rounded-md bg-gradient-to-r from-[#2b5cff] to-[#7c3aed] text-white font-bold hover:brightness-110 transition-all flex items-center justify-center gap-2 shadow-lg"
             >
               <Check className="w-5 h-5" /> Aprobar Gran Meta Anual
             </button>
@@ -480,9 +478,9 @@ export function GranMetaAnualModal({
 
     if (stage === 'edit') {
       return (
-        <div className="grid lg:grid-cols-[320px_1fr] gap-5 items-start">
+        <div className="grid lg:grid-cols-[400px_1fr] gap-5 items-start">
           <AvatarPanel />
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6">
+          <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4 sm:p-6">
             <MessageBubble text="Vamos a mejorarla. Escríbeme qué quieres cambiar y reconstruiré tu meta con esa nueva dirección." />
             <textarea
               id="gma-edit-input"
@@ -490,7 +488,7 @@ export function GranMetaAnualModal({
               onChange={(e) => setEditComment(e.target.value)}
               placeholder={i18n.t('escribe_aqui_tu_respuesta')}
               rows={7}
-              className="w-full px-4 py-3 rounded-xl border border-[#c4b5fd] bg-white text-[15px] outline-none focus:ring-2 focus:ring-[#7c3aed]/30 focus:border-[#7c3aed] placeholder:text-[#a5b4fc] resize-y"
+              className="w-full px-4 py-3 rounded-md border border-[#c4b5fd] bg-white text-[15px] outline-none focus:ring-2 focus:ring-[#7c3aed]/30 focus:border-[#7c3aed] placeholder:text-[#a5b4fc] resize-y"
             />
             <button
               id="gma-edit-send"
@@ -507,14 +505,14 @@ export function GranMetaAnualModal({
     }
 
     return (
-      <div className="grid lg:grid-cols-[320px_1fr] gap-5 items-stretch">
+      <div className="grid lg:grid-cols-[400px_1fr] gap-5 items-stretch">
         <AvatarPanel />
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-10 flex flex-col items-center text-center relative overflow-hidden">
+        <div className="bg-white rounded-md border border-gray-200 shadow-sm p-6 sm:p-10 flex flex-col items-center text-center relative overflow-hidden">
           <div className="absolute inset-0 pointer-events-none opacity-60" style={{ background: 'radial-gradient(ellipse 60% 45% at 50% 18%, rgba(124,58,237,0.16), transparent)' }} />
           <div className="relative w-28 h-28 rounded-full bg-gradient-to-br from-[#2b9fff] to-[#7c3aed] flex items-center justify-center shadow-xl mb-2 ring-8 ring-[#efe9ff]">
             <Check className="w-14 h-14 text-white" strokeWidth={3} />
           </div>
-          <h2 className="text-3xl sm:text-4xl font-black text-[#1a1446] mt-4">Felicitaciones, {username}.</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold text-[#201097] mt-4">Felicitaciones, {username}.</h2>
           <p className="text-lg text-[#2b2a6b] leading-relaxed mt-3 max-w-xl">
             Acabas de definir una dirección clara para tu año. Focusia usará esta meta para ayudarte a avanzar con foco.
           </p>

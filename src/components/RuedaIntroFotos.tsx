@@ -127,8 +127,8 @@ export const FotoGuia: React.FC<FotoGuiaProps> = ({ onBack, onContinue }) => {
             </div>
           ))}
           <div className="pt-4 flex flex-col gap-2">
-            <button onClick={onContinue} className="w-full rounded-xl bg-gradient-to-r from-[#2547f4] to-[#6d28d9] text-white font-semibold py-3 hover:brightness-110 transition-all">{i18n.t('continuar_a_la_evaluacion_c3k3')}</button>
-            <button onClick={onBack} className="w-full rounded-xl border border-gray-200 text-gray-500 text-sm py-2 hover:bg-gray-50">{i18n.t('volver_al_video_l9bd')}</button>
+            <button onClick={onContinue} className="w-full rounded-md bg-gradient-to-r from-[#2547f4] to-[#6d28d9] text-white font-semibold py-3 hover:brightness-110 transition-all">{i18n.t('continuar_a_la_evaluacion_c3k3')}</button>
+            <button onClick={onBack} className="w-full rounded-md border border-gray-200 text-gray-500 text-sm py-2 hover:bg-gray-50">{i18n.t('volver_al_video_l9bd')}</button>
           </div>
         </div>
       </div>

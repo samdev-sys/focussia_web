@@ -382,6 +382,8 @@ export default function AuthPanel({ onLogin, onRegister, initialMode = 'login' }
   );
 }
 
+let gsiInitializedClientId: string | null = null;
+
 function BotonGoogle({ onListo, fallback, onError }: { onListo: () => void; fallback: React.ReactNode; onError?: (msg: string) => void }) {
   const btnRef = useRef<HTMLDivElement>(null);
   const listoRef = useRef(onListo);
@@ -393,31 +395,32 @@ function BotonGoogle({ onListo, fallback, onError }: { onListo: () => void; fall
     if (!GOOGLE_CLIENT_ID) return;
     const GSI_SRC = 'https://accounts.google.com/gsi/client';
     const init = () => {
-      if (!window.google) return;
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: async (response: any) => {
-          try {
-            await authService.googleLogin(response.credential);
-            listoRef.current();
-          } catch (err: any) {
-            const detail = err.response?.data?.error || err.response?.data?.detail;
-            if (errorRef.current) {
-              errorRef.current(typeof detail === 'string' && detail ? detail : 'Error al iniciar sesión con Google');
+      if (!window.google || !btnRef.current) return;
+      if (gsiInitializedClientId !== GOOGLE_CLIENT_ID) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: async (response: any) => {
+            try {
+              await authService.googleLogin(response.credential);
+              listoRef.current();
+            } catch (err: any) {
+              const detail = err.response?.data?.error || err.response?.data?.detail;
+              if (errorRef.current) {
+                errorRef.current(typeof detail === 'string' && detail ? detail : 'Error al iniciar sesión con Google');
+              }
             }
-          }
-        },
-      });
-      if (btnRef.current) {
-        btnRef.current.replaceChildren();
-        window.google.accounts.id.renderButton(btnRef.current, {
-          theme: 'outline',
-          size: 'large',
-          width: btnRef.current.offsetWidth || 320,
-          text: 'continue_with',
-          shape: 'rectangular',
+          },
         });
+        gsiInitializedClientId = GOOGLE_CLIENT_ID;
       }
+      btnRef.current.replaceChildren();
+      window.google.accounts.id.renderButton(btnRef.current, {
+        theme: 'outline',
+        size: 'large',
+        width: btnRef.current.offsetWidth || 320,
+        text: 'continue_with',
+        shape: 'rectangular',
+      });
     };
     const existing = document.querySelector(`script[src="${GSI_SRC}"]`);
     if (existing) {

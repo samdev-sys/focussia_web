@@ -85,9 +85,9 @@ export const RuedaIntroVideo: React.FC<IntroVideoProps> = ({ userName = 'Don Rob
     <div className="min-h-screen bg-[#f2f4f7] overflow-y-auto">
       <div className="max-w-[1120px] mx-auto px-3 sm:px-6 py-4">
         {/* Header */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 sm:px-6 py-3 flex items-center justify-between mb-3">
+        <div className="bg-white rounded-md border border-gray-200 shadow-sm px-4 sm:px-6 py-3 flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0">
+            <div className="w-9 h-9 rounded-md overflow-hidden shrink-0">
               <svg viewBox="0 0 100 100" className="w-full h-full">
                 <path d="M 50 50 L 50 2 A 48 48 0 0 1 83.94 16.06 Z" fill="#911d33" />
                 <path d="M 50 50 L 83.94 16.06 A 48 48 0 0 1 98 50 Z" fill="#0c5a75" />
@@ -99,7 +99,7 @@ export const RuedaIntroVideo: React.FC<IntroVideoProps> = ({ userName = 'Don Rob
                 <path d="M 50 50 L 16.06 16.06 A 48 48 0 0 1 50 2 Z" fill="#f43f5e" />
               </svg>
             </div>
-            <h1 className="text-lg sm:text-2xl font-extrabold text-[#101331]">{i18n.t('rueda_de_la_vida_acc2')}</h1>
+            <h1 className="text-lg sm:text-xl font-bold text-[#101331]">{i18n.t('rueda_de_la_vida_acc2')}</h1>
           </div>
           <div className="flex items-center gap-2">
             <RuedaHeaderActions />
@@ -107,13 +107,13 @@ export const RuedaIntroVideo: React.FC<IntroVideoProps> = ({ userName = 'Don Rob
         </div>
 
         {/* Body card */}
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] gap-5">
+        <div className="bg-white rounded-md border border-gray-200 shadow-sm p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] gap-5">
           {/* Coach */}
-          <div className="relative rounded-2xl overflow-hidden bg-gradient-to-b from-[#2b3fd4] via-[#4b3fd6] to-[#7a5af8] min-h-[420px] flex items-end">
+          <div className="relative rounded-md overflow-hidden bg-gradient-to-b from-[#2b3fd4] via-[#4b3fd6] to-[#7a5af8] min-h-[420px] flex items-end">
             <img src="/avartars/Sophya.jpeg" alt={i18n.t('coach_focusia')} className="absolute inset-0 w-full h-full object-cover object-top" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             <div className="absolute inset-0 bg-gradient-to-t from-[#2b3fd4]/30 via-transparent to-white/10" />
             {/* Speech bubble */}
-            <div className="absolute top-16 right-2 left-32 sm:left-36 bg-white rounded-2xl rounded-bl-none shadow-xl p-4 text-left">
+            <div className="absolute top-16 right-2 left-32 sm:left-36 bg-white rounded-md rounded-bl-none shadow-xl p-4 text-left">
               <div className="absolute left-[-8px] top-1/2 -translate-y-1/2 w-4 h-4 bg-white rotate-45" />
               <p className="text-[15px] text-gray-800 leading-snug">{i18n.t('tu_diagnostico')}<br />{i18n.t('comienza_aqui')}<br />{userName}.</p>
               <p className="mt-4 text-[15px] text-gray-800 leading-snug">La <span className="text-[#4f46e5] font-bold">{i18n.t('rueda_de_la_vida_acc2')}</span><br />{i18n.t('te_mostrara_que')}<br />{i18n.t('areas_estan_fuertes')}<br />{i18n.t('y_cuales_necesitan')}<br />{i18n.t('atencion')}</p>
@@ -131,7 +131,7 @@ export const RuedaIntroVideo: React.FC<IntroVideoProps> = ({ userName = 'Don Rob
             <div className="rounded-xl overflow-hidden bg-[#070c2b] border border-[#1a2456] shadow-lg">
               <div className="px-3 pt-3">
                 <div className="rounded-lg bg-gradient-to-r from-[#1d3de8] via-[#2b1d8f] to-[#3d0f4f] border border-[#3b3fd4]/40 text-center py-2">
-                  <span className="text-white font-extrabold tracking-widest text-sm sm:text-lg">{i18n.t('rueda_de_la_vida_ysfh')}</span>
+                  <span className="text-white font-bold tracking-widest text-sm sm:text-lg">{i18n.t('rueda_de_la_vida_ysfh')}</span>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_180px] gap-3 p-4 items-center min-w-0">
@@ -143,8 +143,8 @@ export const RuedaIntroVideo: React.FC<IntroVideoProps> = ({ userName = 'Don Rob
                 </div>
                 <div className="flex flex-col gap-3">
                   {['SALUD', 'FAMILIA', 'DINERO'].map((t) => (
-                    <div key={t} className="rounded-xl border border-white/40 bg-gradient-to-r from-[#fcd9a0] to-[#f78f8f] py-3 text-center shadow">
-                      <span className="font-extrabold tracking-wide text-[#1e1b3a] text-lg">{t}</span>
+                    <div key={t} className="rounded-md border border-white/40 bg-gradient-to-r from-[#fcd9a0] to-[#f78f8f] py-3 text-center shadow">
+                      <span className="font-bold tracking-wide text-[#1e1b3a] text-lg">{t}</span>
                     </div>
                   ))}
                 </div>
@@ -237,7 +237,7 @@ export const RuedaGuiaEvaluacion: React.FC<GuiaProps> = ({ onBack, onContinue, o
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-3">
-          <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-8 overflow-x-auto">
+          <div className="bg-white border border-gray-200 rounded-md p-4 sm:p-8 overflow-x-auto">
             <Rueda10 />
           </div>
           <div className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col divide-y divide-gray-100">
@@ -248,8 +248,8 @@ export const RuedaGuiaEvaluacion: React.FC<GuiaProps> = ({ onBack, onContinue, o
               </div>
             ))}
             <div className="pt-5 flex flex-col gap-2">
-              <button onClick={onContinue} className="w-full rounded-xl bg-gradient-to-r from-[#2547f4] to-[#6d28d9] text-white font-semibold py-3 hover:brightness-110 transition-all">{i18n.t('continuar_a_la_evaluacion')}</button>
-              <button onClick={onBack} className="w-full rounded-xl border border-gray-200 text-gray-500 text-sm py-2 hover:bg-gray-50">{i18n.t('volver_al_video')}</button>
+              <button onClick={onContinue} className="w-full rounded-md bg-gradient-to-r from-[#2547f4] to-[#6d28d9] text-white font-semibold py-3 hover:brightness-110 transition-all">{i18n.t('continuar_a_la_evaluacion')}</button>
+              <button onClick={onBack} className="w-full rounded-md border border-gray-200 text-gray-500 text-sm py-2 hover:bg-gray-50">{i18n.t('volver_al_video')}</button>
             </div>
           </div>
         </div>

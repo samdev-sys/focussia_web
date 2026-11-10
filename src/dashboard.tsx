@@ -1767,7 +1767,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
 
       {/* FRANJA SUPERIOR · derecha: CURSOS / R.R.S.S. / CUENTAS alineados sobre
           el BLOCK DE NOTAS (inicio de la col 4); avatar anclado al borde derecho */}
-      <div className="col-start-4 col-span-2 -mt-6 row-start-1 flex items-center justify-between gap-2 z-20 ml-20 ">
+      <div className="col-start-4 col-span-2 -mt-6 row-start-1 flex items-center justify-between gap-2 z-20 ml-10 ">
     <div className="flex items-center gap-2">
     <span id="tour-cursos-btn" className="contents"><ActionButton label={i18n.t('cursos_2jiy')} color=
     "bg-gradient-to-r from-[#000000] to-[#3533cd] text-white py-1 px-3 rounded-md text-[9px] sm:text-xs font-semibold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-18 " onClick={() => navigate('/app/cursos')} /></span>
@@ -1776,10 +1776,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
     </div>
 
     {/* User Menu */}
-    <div className="relative shrink-0">
+    <div className="relative shrink-0 ">
       <CyberButton
         onClick={() => setShowUserMenu(!showUserMenu)}
-        className="flex items-center gap-1.5 bg-[#0a0a0f] bg-opacity-80 dark:bg-[linear-gradient(90deg,#9333ea_0%,#4f46e5_55%,#17153b_100%)] backdrop-blur-md rounded-full px-3 py-1.5  hover:bg-[#0a0a0f] hover:bg-opacity-60 transition-colors shadow-sm active:scale-95 border border-white/5 dark:border-purple-400/40"
+        className="flex items-center gap-1.5 bg-[#0a0a0f] bg-opacity-80 dark:bg-[linear-gradient(90deg,#9333ea_0%,#4f46e5_55%,#17153b_100%)] backdrop-blur-md rounded-full px-3 py-1.5  hover:bg-[#0a0a0f] hover:bg-opacity-60 transition-colors shadow-sm active:scale-95 border border-white/5 dark:border-purple-400/40 mr-35"
       >
         <div className="w-7 h-7 rounded-full overflow-hidden shadow-sm border-2 border-white/30">
           <img src={userData.avatar_url || undefined} alt={i18n.t('profile_r4x9')} className="w-full h-full object-cover" />
@@ -1836,7 +1836,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
   </div>
       
         {/* FRANJA SUPERIOR · izquierda: modo oscuro, ajustes, notificaciones y REPORTES */}
-        <div className="col-start-1 row-start-1 flex items-center gap-2 z-20 -mt-12 ">
+        <div className="col-start-1 row-start-1 flex items-center gap-2 z-20 -mt-12  ">
     {/* Botón Modo Oscuro */}
     <CyberToggle checked={isDarkMode} onChange={setIsDarkMode} />
 
@@ -1977,7 +1977,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
   </div>
 
       {/* FRANJA SUPERIOR · columna 2: INICIO / RUEDA / MATRIZ */}
-      <div className="col-start-2 row-start-1 flex items-center gap-1.5 w-60 -mt-6 ml-15">
+      <div className="col-start-2 row-start-1 flex items-center gap-1.5 w-60 -mt-6 ml-8">
                 <button
                   id="tour-inicio-btn"
                   onClick={onBackToHub}
@@ -2032,7 +2032,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
   </div>
 
         <div ref={kanbanRef} className="shrink-0">
-          <div id="tour-kanban" className="w-60 h-[430px] mt-2"><KanbanBacklog refreshTrigger={kanbanWidgetRefresh} onExpand={() => openKanban()} onClassified={async (clasificacion, texto) => {
+          <div id="tour-kanban" className="w-60 h-[400px] mt-4"><KanbanBacklog refreshTrigger={kanbanWidgetRefresh} onExpand={() => openKanban()} onClassified={async (clasificacion, texto) => {
           await refreshAccionesClasificadas();
           setKanbanWidgetRefresh((n) => n + 1);
         }} /></div>
@@ -2048,7 +2048,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         <div className="col-start-2 row-start-2 flex flex-col gap-2">
              
 
-            <div className="bg-white/60 dark:bg-transparent backdrop-blur-sm dark:backdrop-blur-none border border-white/30 dark:border-transparent rounded-md p-2 flex flex-col gap-3 w-60 h-40 shadow-[0_8px_32px_rgba(31,38,135,0.03)] dark:shadow-none shrink-0 -mt-10 ml-15">
+            <div className="bg-white/60 dark:bg-transparent backdrop-blur-sm dark:backdrop-blur-none border border-white/30 dark:border-transparent rounded-md p-2 flex flex-col gap-3 w-60 h-40 shadow-[0_8px_32px_rgba(31,38,135,0.03)] dark:shadow-none shrink-0 -mt-10 ml-8">
               
               
               
@@ -2088,7 +2088,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
             </div>
 
   <div
-    className="backdrop-blur-sm dark:backdrop-blur-none rounded-md flex flex-col w-50 shadow-[0_0_0px_rgb(255,255,255)] dark:shadow-none relative overflow-hidden shrink-0 ml-30 mt-8"
+    className="backdrop-blur-sm dark:backdrop-blur-none rounded-md flex flex-col w-50 shadow-[0_0_0px_rgb(255,255,255)] dark:shadow-none relative overflow-hidden shrink-0 ml-30 mt-12"
   >
     <div className="bg-white dark:bg-transparent shadow-[0_2px_4px_rgb(247,243,243)] dark:shadow-none rounded-md overflow-hidden flex flex-col mt-2 w-45 h-40">
       
@@ -2139,7 +2139,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         </div>
 
         {/* CENTER COLUMN */}
-<div className="col-start-3 row-start-2 flex flex-col gap-3 w-full relative ml-9">
+<div className="col-start-3 row-start-2 flex flex-col gap-3 w-full relative ml-1">
           <div className="bg-white/60 dark:bg-[#080206]/90 backdrop-blur-sm border border-white/30 dark:border-[#4c1127] rounded-md p-3 flex flex-col gap-3 w-full shadow-[0_8px_32px_rgba(31,38,135,0.03)] dark:shadow-[0_0_20px_rgba(122,8,38,0.2)]">
             <p className="text-[14px] font-semibold text-[#1e293b] dark:text-[#fce7f3] dark:italic text-center leading-tight">
               {dailyPhrase?.phrase || fraseRespaldo}
@@ -2242,12 +2242,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
 
         {/* COLUMNA 4 — BLOCK DE NOTAS (borde izquierdo alineado con CURSOS/RRSS/CUENTAS de la franja superior) */}
         <div className="col-start-4 row-start-2 flex flex-col gap-2">
-              <div id="tour-notas" className="bg-white/60 dark:bg-transparent backdrop-blur-sm dark:backdrop-blur-none border border-white/30 dark:border-transparent rounded-md p-2 flex flex-col gap-3 w-60 h-40 shadow-[0_8px_32px_rgba(31,38,135,0.03)] dark:shadow-none -mt-9 ml-19">
+              <div id="tour-notas" className="bg-white/60 dark:bg-transparent backdrop-blur-sm dark:backdrop-blur-none border border-white/30 dark:border-transparent rounded-md p-2 flex flex-col gap-3 w-60 h-40 shadow-[0_8px_32px_rgba(31,38,135,0.03)] dark:shadow-none -mt-9 ml-6">
                 <BlockDeNotas />
               </div>
 
           {/* Bloque Calendario */}
-          <div className="shrink-0 flex flex-col items-center w-full mt-6">
+          <div className="shrink-0 flex flex-col items-center w-full -ml-18 mt-20">
             <CalendarWidget />
           </div>
 
@@ -2259,16 +2259,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
 
         {/* COLUMNA 5 — XP/NIVEL + ACTIVIDADES + SUPLEMENTOS/CUMPLEAÑOS/FOCUS + HORA DE ORO + CLIMA */}
         <div className="col-start-5 row-start-2 flex flex-col gap-2">
-          <div className="w-40 shrink-0 ml-35 -mt-8">
+          <div className="w-37 h-20  ml-3 -mt-8">
           <CyberProgressBar
             level={nivelXP.level}
             currentXP={nivelXP.currentXP}
             nextLevelXP={nivelXP.nextLevelXP}
             progress={nivelXP.progress}
-            activityProgress={progresoActividades}
+            
           />
           </div>
-          <div className="bg-white dark:bg-transparent backdrop-blur-sm dark:backdrop-blur-none border border-white/20 dark:border-transparent rounded-md p-1 flex flex-col gap-5 w-40 shadow-[0_4px_10px_rgba(0,0,0,0.02)] dark:shadow-none justify-between items-center shrink-0 ml-35">
+          <div className="bg-white dark:bg-transparent backdrop-blur-sm dark:backdrop-blur-none border border-white/20 dark:border-transparent rounded-md p-1 flex flex-col gap-5 w-40 shadow-[0_4px_10px_rgba(0,0,0,0.02)] dark:shadow-none justify-between items-center shrink-0 ml-2 -mt-12">
               <span id="tour-suplementos-btn" className="contents"><ActionButton label={i18n.t('suplementos')} color="bg-gradient-to-r from-[#3533cd] to-[#040817] dark:from-[#ec4899] dark:via-[#fb923c] dark:to-[#fde047] dark:!text-[#14050c] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern"  onClick={() => navigate('/app/suplementos')} /></span>
               <span id="tour-cumpleanos-btn" className="contents"><ActionButton label={i18n.t('cumpleanos_n7de')} color="bg-gradient-to-r from-[#3533cd] to-[#040817] dark:from-[#ec4899] dark:via-[#fb923c] dark:to-[#fde047] dark:!text-[#14050c] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"  variant="modern" onClick={() => navigate('/app/cumpleanos')} /></span>
               <span id="tour-focus-btn" className="contents"><ActionButton label={i18n.t('focus')} color="bg-gradient-to-r from-[#3533cd] to-[#040817] dark:from-[#ec4899] dark:via-[#fb923c] dark:to-[#fde047] dark:!text-[#14050c] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"  variant="modern" onClick={() => navigate('/app/focus')} /></span>
@@ -4623,7 +4623,7 @@ function HoraDeOroFamiliar({ refreshKey, onOpenSlot, onOpenModule }: {
     dias.find(d => d.dia === dia)?.experiencias[posicion];
 
   return (
-    <div className="bg-white dark:bg-transparent border-2 border-gray-100 dark:border-transparent card-shadow dark:shadow-none overflow-hidden w-full flex flex-col select-none rounded-md mt-2">
+    <div className="bg-white dark:bg-transparent border-2 border-gray-100 dark:border-transparent card-shadow dark:shadow-none overflow-hidden w-60 h-[400px] flex flex-col select-none rounded-md mt-3 -ml-20">
       <button
         type="button"
         onClick={onOpenModule}
@@ -4643,7 +4643,7 @@ function HoraDeOroFamiliar({ refreshKey, onOpenSlot, onOpenModule }: {
   </div>
 
 </div>
-      <div className="px-2 pb-2 pt-1 space-y-1 flex-1 flex flex-col justify-between">
+      <div className="px-2 pb-2 pt-1 space-y-1 flex-1 min-h-0 overflow-y-auto flex flex-col">
         {goldHours.map((day, index) => {
           const posicion = index % 2;
           const experiencia = experienciaDe(day.dia, posicion);
@@ -4680,7 +4680,7 @@ function ClimaComuna({ temp, descripcion, lugar, loading, error, icono, humedad,
 }): React.ReactElement {
   return (
   <div
-    className="bg-white dark:bg-transparent rounded-md border-2 border-gray-100 dark:border-transparent shadow-md dark:shadow-none overflow-hidden w-full h-auto mx-0 cursor-pointer hover:shadow-lg transition-shadow"
+    className="bg-white dark:bg-transparent rounded-md border-2 border-gray-100 dark:border-transparent shadow-md dark:shadow-none overflow-hidden w-full h-35 mx-0 cursor-pointer hover:shadow-lg transition-shadow -ml-35"
     onClick={onAbrir}
     title="Ver pronóstico completo"
   >
@@ -4712,12 +4712,7 @@ function ClimaComuna({ temp, descripcion, lugar, loading, error, icono, humedad,
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td className="p-1 dark:bg-white dark:rounded-md">
-                  <span className="font-bold text-slate-900">{icono}</span> {descripcion}
-                </td>
-                <td className="p-1 text-gray-400 dark:text-slate-700 italic dark:bg-white dark:rounded-md">{i18n.t('ahora')}</td>
-              </tr>
+              
               <tr>
                 <td className="p-1 dark:bg-white dark:rounded-md">
                   <span className="font-black text-slate-900">{temp}°C</span> Temperatura
@@ -4976,7 +4971,7 @@ function CalendarWidget(): React.ReactElement {
   }, []); 
 
   return (
-  <div className="bg-white dark:bg-transparent rounded-md border-2 border-gray-100 dark:border-transparent shadow-md dark:shadow-none overflow-hidden w-40 h-45 ml-15 mt-2">
+  <div className="bg-white dark:bg-transparent rounded-md border-2 border-gray-100 dark:border-transparent shadow-md dark:shadow-none overflow-hidden w-40 h-45 ml-15 -mt-7">
     <div className="bg-white dark:bg-transparent rounded-md  dark:border-transparent shadow-[0_4px_20px_rgba(0,0,0,0.05)] dark:shadow-none overflow-hidden w-[170px] h-[170px] select-none flex flex-col">
       <div className="bg-gradient-to-r from-[#000000] to-[#3533cd] dark:bg-none dark:bg-[#070309] dark:border dark:border-white/10 px-2 py-2 flex items-center justify-center gap-6 border-b border-white/5 shrink-0 rounded-md ml-2 mt-1 w-35">
                  <img

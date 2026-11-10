@@ -433,7 +433,7 @@ export const TimeBlockingCard: React.FC<TimeBlockingCardProps> = ({
   };
 
   return (
-    <div className="w-100 flex flex-col overflow-hidden rounded-md border border-slate-200/80 bg-white dark:bg-transparent dark:border-transparent shadow-sm dark:shadow-none font-montserrat ml-1 mt-4">
+    <div className="w-100 flex flex-col overflow-hidden rounded-md border border-slate-200/80 bg-white dark:bg-transparent dark:border-transparent shadow-sm dark:shadow-none font-montserrat ml-1 -mt-2">
       {/* BARRA HEADER DEL TIME BLOCKING */}
       <div className="bg-[linear-gradient(90deg,#0044e8_0%,#19227c_55%,#26021e_100%)] dark:bg-none dark:bg-[#060208] dark:border dark:border-white/10 rounded-md text-white text-center py-1 text-[15px] font-extrabold tracking-wider uppercase select-none">
         <span className="dark:bg-[linear-gradient(90deg,#f472b6_0%,#fb923c_45%,#fde047_100%)] dark:bg-clip-text dark:text-transparent">

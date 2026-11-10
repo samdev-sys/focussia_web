@@ -369,7 +369,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
             </p>
           </div>
           <div className="grid lg:grid-cols-[1fr_380px] gap-4 items-start">
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-8 flex justify-center">
+            <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4 sm:p-8 flex justify-center w-140">
               <RuedaSVG
                 datos={datosRueda}
                 size={480}
@@ -381,7 +381,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
                 etiquetasExternas
               />
             </div>
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 sm:p-6 min-h-[280px]">
+            <div className="bg-white rounded-md border border-gray-200 shadow-sm p-5 sm:p-2 h-113 w-130 -ml-35">
               {catSel ? (
                 <>
                   <div className="flex items-center gap-2.5 mb-3">
@@ -493,8 +493,8 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
                 centroDiagnostico={{ promedio: prom, nivel: `EQUILIBRIO ${diagnostico.nivel_equilibrio.toUpperCase()}` }}
               />
             </div>
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-              <h3 className="font-black text-gray-900 tracking-wide mb-3">{i18n.t('resultados')}</h3>
+            <div className="bg-white rounded-md border border-gray-100 shadow-sm p-4">
+              <h3 className="font-bold text-gray-900 tracking-wide mb-3">{i18n.t('resultados')}</h3>
               <div className="space-y-1.5">
                 {datosRueda.map((d, i) => {
                   const niv = nivelStr(d.puntaje);
@@ -513,8 +513,8 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
                 })}
               </div>
             </div>
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-              <h3 className="font-black tracking-wide mb-3">
+            <div className="bg-white rounded-md border border-gray-100 shadow-sm p-4">
+              <h3 className="font-bold tracking-wide mb-3">
                 INTERPRETACIÓN DE <span className="text-[#6d28d9]">{nombreAvatar || 'LÍA'}</span>
               </h3>
               <div className="flex gap-3 mb-3">
@@ -531,8 +531,8 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
               <p className="text-[13px] text-indigo-900/80 leading-relaxed bg-purple-50/60 rounded-xl p-3">{sintesis}</p>
             </div>
           </div>
-          <div className="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-            <h3 className="font-black tracking-wide mb-3">
+          <div className="mt-4 bg-white rounded-md border border-gray-100 shadow-sm p-4">
+            <h3 className="font-bold tracking-wide mb-3">
               ÁREAS FOCO <span className="text-[#1d4ed8]">{i18n.t('prioritarias')}</span>
             </h3>
             <div className="grid sm:grid-cols-4 gap-3 items-stretch">
@@ -558,7 +558,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
               })}
               <button
                 onClick={onClose}
-                className="py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#2b5cff] to-[#a855f7] text-white text-sm font-bold hover:shadow-lg transition-all"
+                className="py-3.5 px-4 rounded-md bg-gradient-to-r from-[#2b5cff] to-[#a855f7] text-white text-sm font-bold hover:shadow-lg transition-all"
               >
                 IR AL DASHBOARD PRINCIPAL
               </button>

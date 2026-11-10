@@ -100,29 +100,11 @@ api.interceptors.request.use(async (config) => {
 const asArray = <T = any>(data: any): T[] =>
   Array.isArray(data) ? data : Array.isArray(data?.results) ? data.results : [];
 
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
+let refreshPromise: Promise<void> | null = null;
 
-    // URLs where 401 is expected for unauthenticated users - do NOT attempt refresh and suppress retry
-    // Covers /api/users/me/, /api/onboarding/profile/status/, /api/onboarding/profile/summary/ and generic /onboarding/status
-    const isExpectedUnauthorized =
-      originalRequest?.url?.includes('/users/me') ||
-      originalRequest?.url?.includes('/onboarding/profile/status') ||
-      originalRequest?.url?.includes('/onboarding/profile/summary') ||
-      originalRequest?.url?.includes('/onboarding/status');
-
-    if (
-      error.response?.status === 401 &&
-      !originalRequest._retry &&
-      !originalRequest.url?.includes('/token/') &&
-      !isExpectedUnauthorized
-    ) {
-      originalRequest._retry = true;
-
-      // Sin token de refresh guardado no hay nada que refrescar: reintentar solo
-      // genera una tormenta de 401/429 contra /token/refresh/.
+const performTokenRefresh = async (): Promise<void> => {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
       let storedRefresh: string | null = null;
       try {
         storedRefresh = localStorage.getItem(REFRESH_TOKEN_KEY);
@@ -130,29 +112,53 @@ api.interceptors.response.use(
         storedRefresh = null;
       }
       if (!storedRefresh) {
-        return Promise.reject(error);
+        throw new Error('No refresh token');
       }
+      const refreshResponse = await axios.post(
+        `${API_BASE_URL}/api/token/refresh/`,
+        { refresh: storedRefresh },
+        { withCredentials: true },
+      );
+      tokenStore.setAll(refreshResponse.data?.access, refreshResponse.data?.refresh);
+    })().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+};
 
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config || {};
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !String(originalRequest.url || '').includes('/token/')
+    ) {
+      let storedRefresh: string | null = null;
       try {
-        // El refresh acepta el token en el cuerpo: imprescindible cuando el
-        // navegador bloquea la cookie de terceros.
-        await axios.post(`${API_BASE_URL}/api/token/refresh/`, {
-          refresh: storedRefresh,
-        }, { withCredentials: true }).then((refreshResponse) => {
-          tokenStore.setAll(refreshResponse.data?.access, refreshResponse.data?.refresh);
-        });
-        return api(originalRequest);
+        storedRefresh = localStorage.getItem(REFRESH_TOKEN_KEY);
       } catch {
-        // El refresh caduco: limpiamos para no volver a intentar en bucle.
-        tokenStore.clear();
-        return Promise.reject(error);
+        storedRefresh = null;
       }
-    }
-
-    // For expected 401s (unauthenticated initial checks), silently reject without triggering retry
-    // This prevents "Failed to load resource: 401" spam in console for unauthenticated users
-    if (error.response?.status === 401 && isExpectedUnauthorized) {
-      return Promise.reject(error);
+      if (storedRefresh) {
+        originalRequest._retry = true;
+        try {
+          await performTokenRefresh();
+          if (originalRequest.headers) {
+            delete (originalRequest.headers as any).Authorization;
+            if (typeof (originalRequest.headers as any).delete === 'function') {
+              (originalRequest.headers as any).delete('Authorization');
+            }
+          }
+          return api(originalRequest);
+        } catch {
+          tokenStore.clear();
+          return Promise.reject(error);
+        }
+      }
     }
 
     return Promise.reject(error);
