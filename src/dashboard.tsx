@@ -1789,7 +1789,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
 
       {/* Dropdown Usuario */}
       {showUserMenu && (
-        <div className="absolute top-full mt-2 right-0 bg-white/95 dark:bg-[#140711]/95 backdrop-blur-xl rounded-2xl shadow-xl border border-white/50 dark:border-purple-500/30 p-4 w-48 z-50 animate-in fade-in slide-in-from-top-2">
+        <div className="absolute top-full mt-2 right-0 bg-white/95 dark:bg-[#140711]/95 backdrop-blur-xl rounded-md shadow-xl border border-white/50 dark:border-purple-500/30 p-4 w-48  mr-35 z-50 animate-in fade-in slide-in-from-top-2 ">
           <div className="space-y-2">
             <button
               onClick={() => {
