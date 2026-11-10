@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import ModuleShell from './ModuleShell';
 import { desbloquearAudio } from './focusAudio';
+import { focusService } from '../services/api';
 
 /* ──────────────────────────────────────────────────────────────────────────
    Doc 23 · Modo Focus (módulo BOTÓN FOCUS)
@@ -318,10 +319,26 @@ export default function FocusModeScreen({ userName, sesionActiva, onIniciar, onB
 }) {
   const [configurando, setConfigurando] = useState<FocusHerramienta | null>(null);
   const [estadoVisible, setEstadoVisible] = useState(true);
+  // Doc 23 · Sesión activa: si el padre no pasa `sesionActiva` (ruta /app/focus
+  // en App.tsx), se consulta al backend para que la tarjeta «Estado Focus»
+  // refleje la sesión en curso (antes siempre decía «No hay sesión activa»).
+  const [sesionActivaRemota, setSesionActivaRemota] = useState<FocusHerramienta | 'descanso' | null>(null);
 
-  useEffect(() => { setEstadoVisible(true); }, [sesionActiva]);
+  useEffect(() => {
+    let vivo = true;
+    focusService.activa()
+      .then(({ activa, sesion }) => {
+        if (vivo && activa && sesion) setSesionActivaRemota(sesion.herramienta);
+        else if (vivo) setSesionActivaRemota(null);
+      })
+      .catch(() => {});
+    return () => { vivo = false; };
+  }, []);
 
-  const enCurso = sesionActiva ? (ETIQUETA_HERRAMIENTA[sesionActiva] || sesionActiva) : null;
+  useEffect(() => { setEstadoVisible(true); }, [sesionActiva, sesionActivaRemota]);
+
+  const sesionEnCurso = sesionActiva ?? sesionActivaRemota;
+  const enCurso = sesionEnCurso ? (ETIQUETA_HERRAMIENTA[sesionEnCurso] || sesionEnCurso) : null;
 
   return (
     <>
@@ -404,10 +421,17 @@ export default function FocusModeScreen({ userName, sesionActiva, onIniciar, onB
                       <img src="/archer.png" alt={i18n.t('archer')} className="h-9 w-9" />
                     </span>
                     {enCurso ? (
-                      <p className="text-[13px] leading-relaxed text-slate-700">
-                        <strong className="text-slate-900">Sesión activa: {enCurso}.</strong>{' '}
-                        Tu sesión sigue corriendo en el widget flotante; sigue trabajando con normalidad.
-                      </p>
+                      <div className="flex-1">
+                        <p className="text-[13px] leading-relaxed text-slate-700">
+                          <strong className="text-slate-900">Sesión activa: {enCurso}.</strong>{' '}
+                          Tu sesión sigue corriendo en el widget flotante; sigue trabajando con normalidad.
+                        </p>
+                        <button
+                          onClick={() => (onBack ? onBack() : onNavigate?.('inicio'))}
+                          className="mt-3 rounded-lg bg-[#059669] px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:brightness-110 active:scale-[0.98]">
+                          Ver el widget flotante
+                        </button>
+                      </div>
                     ) : (
                       <p className="text-[13px] leading-relaxed text-slate-700">
                         <strong className="text-slate-900">{i18n.t('no_hay_sesion_activa')}</strong><br />
