@@ -684,10 +684,39 @@ class FocusSessionViewSet(BaseUserViewSet):
     serializer_class = FocusSessionSerializer
     http_method_names = ['get', 'post']
     MAX_MINUTOS = 12 * 60
+    # Margen tras el fin planificado antes de declarar vencida una sesión:
+    # el widget la finaliza él mismo en cuanto la cuenta llega a cero; si no
+    # pudo (pestaña cerrada, fallo de red), dejamos este colchón para no
+    # cerrarle la sesión por debajo.
+    MARGEN_EXPIRACION = timedelta(minutes=5)
+
+    def _sesion_activa_vigente(self):
+        """Sesión activa del usuario, cerrando antes las vencidas.
+
+        Las sesiones no expiraban solas: una sesión de días atrás seguía
+        «activa» y respondía 409 en cada intento nuevo hasta que alguien la
+        finalizara a mano. Si su duración planificada ya venció (o superó el
+        máximo global en el reloj, que no tiene plan), se cierra como
+        cancelada con sus minutos reales y se deja iniciar otra.
+        """
+        sesion = self.get_queryset().filter(estado='activa').first()
+        if not sesion:
+            return None
+        if sesion.planned_minutes:
+            fin = sesion.started_at + timedelta(minutes=sesion.planned_minutes)
+        else:
+            fin = sesion.started_at + timedelta(minutes=self.MAX_MINUTOS)
+        if timezone.now() > fin + self.MARGEN_EXPIRACION:
+            sesion.estado = 'cancelada'
+            sesion.ended_at = timezone.now()
+            sesion.focused_minutes = self._minutos_reales(sesion)
+            sesion.save(update_fields=['estado', 'ended_at', 'focused_minutes'])
+            return None
+        return sesion
 
     @action(detail=False, methods=['get'])
     def activa(self, request):
-        sesion = self.get_queryset().filter(estado='activa').first()
+        sesion = self._sesion_activa_vigente()
         if not sesion:
             return Response({'activa': False})
         return Response({'activa': True, 'sesion': self.get_serializer(sesion).data})
@@ -698,7 +727,7 @@ class FocusSessionViewSet(BaseUserViewSet):
         if herramienta not in dict(FocusSession.HERRAMIENTAS):
             return Response({'detalle': 'Herramienta de enfoque no reconocida.'},
                             status=status.HTTP_400_BAD_REQUEST)
-        actual = self.get_queryset().filter(estado='activa').first()
+        actual = self._sesion_activa_vigente()
         forzar = str(request.data.get('forzar', '')).lower() in ('true', '1', 'si', 'sí')
         if actual and not forzar:
             return Response(

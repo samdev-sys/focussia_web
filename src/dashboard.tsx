@@ -11,6 +11,7 @@ import {
   horaOroService, HoraOroDia
 } from './services/api';
 import { AVATAR_FILES } from './constants/avatars';
+import { sileo } from 'sileo';
 
 
 import { KanbanBoard } from './components/KanbanBoard';
@@ -366,6 +367,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         setFocusGuardNueva({ herramienta, config });
       } else {
         console.error('No se pudo iniciar la sesión de Focus', e);
+        // Aviso visible: antes el fallo (401/403/5xx/red) pasaba en silencio y
+        // parecía que «la sesión inició pero no aparece el widget».
+        sileo.error({
+          title: 'No se pudo iniciar la sesión de Focus',
+          description: status
+            ? `El servidor respondió ${status}. Inténtalo de nuevo en unos segundos.`
+            : 'Revisa tu conexión e inténtalo de nuevo.',
+        });
       }
     } finally {
       setFocusOcupado(false);
