@@ -18,9 +18,10 @@ NODE_VERSION = "22"
 
 # Panel de administración del frontend (index-admin.html del build).
 [[redirects]]
-from = "/admin"
-to = "/index-admin.html"
-status = 200
+ from = "http://focusia.netlify.app/*"
+  to = "https://focusia.netlify.app/:splat"
+  status = 301
+  force = true
 
 # Rutas del frontend que resuelven al SPA (react-router con BrowserRouter):
 # /app/*, /hub, /onboarding, etc. caen acá.
@@ -37,6 +38,9 @@ X-Content-Type-Options = "nosniff"
 X-Frame-Options = "DENY"
 X-XSS-Protection = "1; mode=block"
 Referrer-Policy = "strict-origin-when-cross-origin"
+/*
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; report-uri /csp-report
+    Permissions-Policy = "camera=(), geolocation=(), microphone=(), payment=(), usb=(), interest-cohort=()"
 
 # Headers para assets con hash (cache inmutable)
 [[headers]]
