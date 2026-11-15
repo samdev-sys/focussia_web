@@ -1356,7 +1356,7 @@ const AVATAR_SCREENS = [3, 4, 5, 6, 7, 8, 9, 10];
           {/* Steps */}
           <nav className="flex-1 px-4 pt-2 flex flex-col gap-0 relative">
             {/* vertical line */}
-            <div className="absolute left-[40px] top-[14px] bottom-[40px] w-px bg-white/[0.08]" />
+            <div className="absolute left-[40px] top-[12px] bottom-[40px] w-px h-50 mt-1 bg-white/[0.08]" />
             {customizationSteps.map((step) => (
               <div key={step.num} className="flex items-center gap-3 px-2 py-3 relative">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 relative z-10 ${step.active ? 'bg-[#7c3aed] text-white shadow-[0_0_12px_rgba(124,58,237,0.6)] ring-4 ring-[#7c3aed]/20' : 'bg-[#0f0f2a] border border-white/15 text-white/40'}`}>
@@ -2465,7 +2465,7 @@ const AVATAR_SCREENS = [3, 4, 5, 6, 7, 8, 9, 10];
             <span className="text-[22px] font-bold text-white tracking-tight">{i18n.t('focusia_yg42')}</span>
           </div>
           <nav className="flex-1 px-4 pt-2 flex flex-col gap-0 relative">
-            <div className="absolute left-[40px] top-[16px] bottom-[40px] w-px bg-white/[0.08]" />
+            <div className="absolute left-[40px] top-[16px] bottom-[40px] w-px  h-50 mt-1 bg-white/[0.08]" />
             {[
               { num: 1, label: 'Intensidad del acompañamiento', done: true },
               { num: 2, label: 'Tipo de activaciones', done: true },

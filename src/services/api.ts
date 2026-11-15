@@ -1802,9 +1802,9 @@ export const granMetaAnualService = {
     });
     return response.data;
   },
-  current: async (): Promise<Record<string, unknown>> => {
+  current: async (): Promise<Record<string, unknown> | null> => {
     const response = await api.get('/api/gran-meta-anual/current/');
-    return response.data;
+    return response.data ?? null;
   },
   history: async (): Promise<Record<string, unknown>[]> => {
     const response = await api.get('/api/gran-meta-anual/history/');

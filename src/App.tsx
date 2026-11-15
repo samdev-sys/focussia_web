@@ -468,7 +468,7 @@ function AppContent() {
             if (s === 'cumpleanos' || s === 'cumple') return navigate('/app/cumpleanos');
             if (s === 'redes' || s === 'rrss') return navigate('/app/redes');
             return navigate(`/app?section=${s}`);
-          }} onEdit={() => navigate('/app')} /></FitGeneral></MobileOrientationPrompt>} />
+          }} onEdit={() => navigate('/app', { state: { ajustarGranMetaAnual: true } })} /></FitGeneral></MobileOrientationPrompt>} />
           <Route path="/app/mensual" element={<MobileOrientationPrompt><FitGeneral><MonthlyWizard onClose={() => navigate('/app')} onApproved={() => navigate('/app')} onNavigate={(s: string) => {
             if (s === 'inicio') return navigate('/app');
             if (s === 'rueda') return navigate('/app/rueda');

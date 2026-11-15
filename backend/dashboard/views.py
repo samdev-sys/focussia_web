@@ -2670,7 +2670,7 @@ class GranMetaAnualViewSet(BaseUserViewSet):
     def current(self, request):
         meta = self.get_queryset().filter(is_active=True).first()
         if not meta:
-            return Response({'detail': 'No hay una meta activa'}, status=status.HTTP_404_NOT_FOUND)
+            return Response(None, status=status.HTTP_200_OK)
         serializer = self.get_serializer(meta)
         return Response(serializer.data)
 

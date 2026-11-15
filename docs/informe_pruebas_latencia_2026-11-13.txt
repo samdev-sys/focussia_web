@@ -1,0 +1,294 @@
+INFORME DE PRUEBAS DE LATENCIA Y COMPORTAMIENTO BAJO CARGA
+Aplicación: Focussia (SPA en Netlify + API REST Django/Gunicorn en Railway + Postgres)
+Fecha de elaboración: 2026-11-13
+Elaborado por: asistencia técnica (análisis sobre mediciones ejecutadas y registros Locust adjuntos)
+
+================================================================================
+1. OBJETIVO Y ALCANCE
+================================================================================
+Evaluar la latencia y el comportamiento de la aplicación ante solicitudes
+concurrentes, a partir de:
+- Mediciones puntuales contra los entornos desplegados (producción).
+- Una micro-prueba de carga con Locust contra producción (endpoint público).
+- Una corrida local con Locust (1 usuario).
+- Dos corridas con Locust contra producción a baja carga (registros analizados).
+- Revisión de la configuración de despliegue presente en el repositorio.
+
+No se ejecutaron pruebas de carga alta contra producción (para no afectar a
+usuarios reales) ni pruebas autenticadas de flujos completos de negocio sobre
+el entorno productivo.
+
+================================================================================
+2. ENTORNO Y CONFIGURACIÓN RELEVANTE (según repositorio)
+================================================================================
+Arquitectura:
+- Frontend: SPA (Vite/React) servida por Netlify (https://focussia.netlify.app).
+- API: Django/DRF en Railway (https://focussiaweb-production.up.railway.app).
+- Base de datos: PostgreSQL (Railway). Caché: Redis si REDIS_URL está definido;
+  en caso contrario LocMemCache (no compartida entre procesos).
+- Worker: proceso aparte (django-q2, recordatorios). Sin WebSockets/SSE para el
+  estado general: el cliente usa polling (p. ej. notificaciones ~cada 60 s).
+
+Servidor de aplicación (Railway, backend/start.py):
+- Gunicorn: --workers ${GUNICORN_WORKERS:-2} --threads ${GUNICORN_THREADS:-4}
+  --timeout 120. Worker por defecto "sync" (las hebras no aportan concurrencia
+  real sin gthread/gevent).
+
+Límites (rate limiting, producción, backend/focusia_api/settings.py):
+- Anónimo: 30 req/min (THROTTLE_RATE_ANON). Usuario autenticado: 300 req/min.
+- Login: 5 req/min.
+
+Nota: la capacidad y la latencia reales dependen del plan/tamaño de Railway y
+Postgres (CPU, RAM, conexiones), de la configuración efectiva en producción y de
+la red/ubicación del cliente. Este informe no constituye una garantía de
+capacidad; para un número fiable se requiere prueba de carga controlada.
+
+================================================================================
+3. METODOLOGÍA Y HERRAMIENTAS
+================================================================================
+Prueba A - Medición secuencial puntual (producción)
+  Herramienta : PowerShell Invoke-WebRequest (1 petición a la vez).
+  Objetivos   : GET /api/health/, GET /api/csrf/ (Railway) y GET / (Netlify).
+  Muestras    : 12 por endpoint. Fecha/hora de ejecución: 2026-11-13 (aprox. 05:50).
+  Métrica     : tiempo total de respuesta (ms) por muestra; promedio, mín, máx,
+                p95 aproximado (percentil 95 de las 12 muestras). Incluye red/TLS
+                desde el entorno de ejecución y posible efecto de warmup.
+
+Prueba B - Micro-prueba de carga (producción, endpoint público)
+  Herramienta : Locust 2.46.3 (headless), script temporal (solo GET /api/health/).
+  Objetivo    : https://focussiaweb-production.up.railway.app
+  Carga       : 10 usuarios concurrentes, ramp-up 2 usuarios/s, duración 30 s.
+  Fecha       : 2026-11-13 (aprox. 05:53). Finalidad: observar latencia bajo
+                concurrencia ligera en un endpoint público.
+
+Prueba C - Corrida local (1 usuario)
+  Herramienta : Locust 2.46.3 (UI), script tests/load/locustfile_simulacion.py.
+  Objetivo    : http://localhost:8000 (backend local).
+  Carga       : 1 usuario, ~3 min, RPS agregada ~1,78. Sin credenciales
+                (LOCUST_USERNAME/PASSWORD no configurados).
+  Fuente      : registros/CSV exportados (Locust_2026-11-13-06h58_*).
+
+Prueba D - Corrida producción 1 (baja carga)
+  Herramienta : Locust, script locustfile_simulacion.py.
+  Objetivo    : https://focussiaweb-production.up.railway.app
+  Duración    : ~36 s. Carga baja (~2 RPS). Sin autenticación efectiva.
+  Fuente      : Locust_prod.md (adjunto).
+
+Prueba E - Corrida producción 2 (baja carga sostenida)
+  Herramienta : Locust, script locustfile_simulacion.py.
+  Objetivo    : https://focussiaweb-production.up.railway.app
+  Ventana     : 2026-11-13 08:52:04–08:54:19 (2 min 15 s).
+  Carga       : ~3,56 req/s agregadas. Sin autenticación efectiva.
+  Fuente      : Locust_prod (1).md (adjunto).
+
+================================================================================
+4. RESULTADOS
+================================================================================
+4.1 Prueba A - Medición secuencial puntual (producción, 12 muestras c/u)
+--------------------------------------------------------------------------------
+Endpoint / URL                                   OK/Total  Prom.   Mín    Máx   p95~   Estado
+GET /api/health/ (Railway)                       12/12     228 ms  123   919    919    200
+GET /api/csrf/   (Railway)                       12/12     183 ms  116   254    254    200
+GET /           (Netlify, frontend)              12/12     286 ms  126   743    743    200
+
+Muestras (ms):
+- health  : [919, 140, 123, 124, 179, 137, 232, 192, 142, 211, 204, 134]
+- csrf    : [161, 254, 128, 243, 129, 206, 198, 126, 212, 203, 116, 217]
+- frontend: [743, 308, 405, 156, 176, 133, 256, 238, 176, 151, 565, 126]
+
+Observación: la primera muestra de cada serie presenta mayor latencia (warmup/
+establecimiento de conexión). Descartando picos iniciales, el API respondió en
+su mayoría entre ~120-250 ms y el frontend entre ~130-400 ms desde la ubicación
+de prueba.
+
+4.2 Prueba B - Micro-prueba de carga Locust (prod, GET /api/health/, 10 usuarios, 30 s)
+--------------------------------------------------------------------------------
+Métrica                 Valor
+Solicitudes totales     234
+Fallos                  138 (58,97%) - todos HTTP 429 "Too Many Requests"
+Tasa                    ~8,6 req/s
+Latencia promedio       99 ms
+Mín / Máx               74 ms / 645 ms
+Mediana (p50)           89 ms
+p66 / p75 / p80         95 / 97 / 99 ms
+p90 / p95 / p99         110 / 120 / 270 ms
+p99.9 / Máx             650 / 650 ms
+
+Interpretación: las peticiones atendidas (no limitadas) mostraron latencia baja
+(~90 ms mediana, ~120 ms p95). Los 429 reflejan la activación del throttle
+anónimo de producción (30 req/min) ante ráfagas desde una misma IP, no una caída
+de rendimiento del servidor.
+
+4.3 Prueba C - Corrida local (1 usuario, ~3 min, sin autenticación)
+--------------------------------------------------------------------------------
+Condiciones: sin LOCUST_USERNAME/PASSWORD; solo se ejercitaron endpoints
+anónimos (/api/health/, /api/csrf/, /api/csrf/ anon como fallback). No se
+probaron /api/users/me/, /api/focus-sessions/activa/ ni /api/notifications/
+autenticado. Excepciones: 0.
+
+Endpoint              Req   Fallos  Fallos(%)  Mediana  Prom.   p90   p95   p99   Máx   RPS
+GET /api/csrf/         70      25     35,7%     15 ms  15,8   18 ms  20 ms  24 ms  24 ms  0,37
+GET /api/csrf/ (anon) 157      48     30,6%     15 ms  23,5   19 ms  21 ms 580 ms 621 ms  0,84
+GET /api/health/      107      32     29,9%     17 ms  22,3   35 ms  38 ms 110 ms 123 ms  0,57
+Agregado              334     105     31,4%     16 ms  21,5   21 ms  34 ms 110 ms 621 ms  1,78
+
+Fallos (100% de los fallos): 429 Too Many Requests en /api/csrf/ (25),
+/api/csrf/ (anon) (47) y /api/health/ (32). Causa: rate limiting por IP (Anon
+Throttle) ante ~1,8 req/s desde un único origen; no hubo 5xx ni timeouts.
+Los picos aislados (p99/máx 110-621 ms) se consideran valores atípicos con bajo
+número de muestras.
+
+4.4 Prueba D - Producción, corrida 1 (~36 s, baja carga, sin autenticación)
+--------------------------------------------------------------------------------
+Hallazgos principales (Locust_prod.md):
+- Endpoints públicos atendidos correctamente (GET /api/health/, GET /api/csrf/,
+  GET /api/csrf/ anon): 0 fallos, latencia estable ~80-120 ms (promedios ~91-98
+  ms), consistente con baja carga y sin contención.
+- POST /api/token/: 36 solicitudes, 36 fallos (100%) -> 13 x "login 401"
+  (08:52:05-08:52:26) seguidos de 23 x "login 429" (08:52:14-08:52:19) por
+  throttle de login (5/min) tras intentos con credenciales rechazadas.
+- Al no haber login exitoso, no se ejecutaron las tareas autenticadas
+  (/api/users/me/, /api/focus-sessions/activa/, /api/notifications/ autenticado).
+
+4.5 Prueba E - Producción, corrida 2 (2 min 15 s, ~3,56 RPS, sin autenticación)
+--------------------------------------------------------------------------------
+Ventana: 2026-11-13 08:52:04-08:54:19. Total: 481 solicitudes, 244 fallos
+(50,7%), 3,56 req/s, 1,8 fallos/s.
+
+Endpoint              Req  Fallos  Fallos(%)  Avg     Mín  Máx   p50  p90  p95  p99   RPS  Fallos/s
+GET /api/csrf/         72     29    40,3%   107,6 ms  76  267   95  140  230  270  0,53   0,21
+GET /api/csrf/ (anon) 170     52    30,6%   101,1 ms  75  300   94  120  160  260  1,26   0,38
+GET /api/health/      104     28    26,9%   104,4 ms  75  261  100  130  140  240  0,77   0,21
+POST /api/token/      135    135   100,0%   291,6 ms 184  648  250  450  490  580  1,00   1,00
+Agregado              481    244    50,7%   156,2 ms  75  648  100  270  400  550  3,56   1,80
+
+Detalle de fallos:
+- 29 x GET /api/csrf/       -> 429 Too Many Requests (08:53:18-08:54:19)
+- 52 x GET /api/csrf/ (anon)-> 429 Too Many Requests (08:53:12-08:53:19 inicio,
+                               hasta 08:54:19)
+- 28 x GET /api/health/     -> 429 Too Many Requests (08:53:19-08:54:19)
+- 14 x POST /api/token/     -> login 401 (08:52:05-08:52:26)
+- 121 x POST /api/token/    -> login 429 (08:52:14-08:54:19)
+
+Observaciones:
+- Los GET públicos mantienen p50 ~94-100 ms y máximos acotados (261-300 ms) sin
+  5xx/timeouts: latencia estable cuando no interviene el throttle.
+- Los 429 en endpoints públicos aparecen tras ~1 minuto de tráfico sostenido
+  desde la misma IP: efecto del rate limit anónimo, no saturación.
+- POST /api/token/ vuelve a fallar al 100% (credenciales no válidas -> 401 y
+  posterior bloqueo 429); su mayor coste (p50 250 ms) eleva el agregado.
+- Sin login exitoso no se midieron endpoints autenticados (users/me,
+  focus-sessions/activa, notifications autenticado).
+
+================================================================================
+5. ANÁLISIS
+================================================================================
+5.1 Latencia observada
+- Producción, endpoints públicos simples (health, csrf), atendidos sin throttle:
+  ~90-110 ms de mediana (p50) en las corridas Locust y ~120-250 ms en mediciones
+  secuenciales puntuales (Prueba A), con variabilidad atribuible a red/ubicación
+  del cliente y warmup. No se observaron 5xx ni timeouts en las pruebas
+  realizadas.
+- Frontend (Netlify): ~130-400 ms en la mayoría de muestras secuenciales, con
+  picos puntuales (p95~ aprox. 743 ms en 12 muestras), coherente con entrega
+  CDN y condiciones de red.
+- Local (Prueba C): ~16 ms de mediana como piso del coste del handler en
+  condiciones ideales (loopback); no es extrapolable a latencia percibida en
+  producción.
+
+5.2 Comportamiento bajo concurrencia (evidencia disponible)
+- A baja carga sostenida desde una misma IP (~3,6-8,6 req/s, Pruebas B y E) el
+  factor limitante observado fue el rate limiting (401/429), no la capacidad del
+  servidor: las respuestas atendidas mantuvieron latencias estables y sin errores
+  de servidor.
+- La micro-prueba B (10 usuarios concurrentes, 30 s) mostró p95 ~120 ms en
+  /api/health/ para las peticiones no limitadas, confirmando buena respuesta del
+  endpoint bajo concurrencia ligera.
+
+5.3 Escenario de 1.000 usuarios conectados (estimación, no medido)
+Con la configuración por defecto del repositorio (Gunicorn 2 workers "sync"),
+la capacidad de atención simultánea es de ~2 requests en paralelo. Suponiendo
+polling ~1 petición/60 s por usuario, 1.000 usuarios implican ~17 req/s de base
+(sin contar acciones del usuario), lo que supera el techo teórico de 2 workers
+para respuestas no triviales.
+Comportamiento esperado:
+- Por debajo de la capacidad: latencia estable (orden de las mediciones en
+  reposo).
+- En el límite: colas intermitentes, latencia variable (cientos de ms a
+  segundos).
+- Por encima de la capacidad (escenario probable con 2 workers y 1.000 usuarios
+  activos): la espera en cola domina, la latencia crece de forma sostenida
+  (segundos), p95/p99 se dispara y pueden aparecer timeouts (timeout Gunicorn
+  120 s), 502/503 y reintentos que agravan la carga.
+El frontend (Netlify/CDN) no se degrada por el número de usuarios conectados;
+el cuello está en API + base de datos.
+
+5.4 Limitaciones de las pruebas realizadas
+- Ninguna corrida ejercitó flujos autenticados reales (login fallido en D y E);
+  no se midieron endpoints que consultan BD con sesión de usuario en producción.
+- Carga baja y desde una sola IP: no representa concurrencia multiusuario real ni
+  presión sobre workers/BD; los 429 por IP sesgan tasas de fallo.
+- Mediciones puntuales dependientes de red/ubicación del ejecutor y momento
+  (posible cold start/redeploy).
+- No se realizaron pruebas de carga progresiva hasta el punto de quiebre ni
+  contra un entorno equivalente a producción con autenticación válida.
+
+================================================================================
+6. CONCLUSIONES
+================================================================================
+1. En las condiciones probadas, la API de producción responde con latencia baja y
+   estable para endpoints públicos simples (~95-110 ms p50 en producción desde la
+   red de prueba; ~120-250 ms en muestras secuenciales), sin errores de servidor
+   (5xx/timeouts) observados.
+2. Los fallos registrados en las corridas de carga ligera se explican por
+   mecanismos de control esperados (rate limiting anónimo 30 req/min y de login
+   5/min, y credenciales de prueba no válidas), no por degradación de capacidad.
+3. No existe evidencia medida en este informe que respalde el comportamiento con
+   100, 500 o 1.000 usuarios conectados concurrentes en flujos autenticados: ese
+   escenario no fue ejecutado. Con 2 workers "sync" y polling, 1.000 usuarios
+   activos se estiman por encima de la capacidad confortable y con riesgo alto de
+   degradación de latencia.
+4. Para validar capacidad y latencia bajo concurrencia real se requieren pruebas
+   autenticadas, con rampa de usuarios y contra un entorno controlado (staging/
+   local con configuración equivalente a producción), midiendo p50/p95/p99, RPS
+   y tasa de errores no asociados a throttle.
+
+================================================================================
+7. RECOMENDACIONES
+================================================================================
+Pruebas:
+- Ejecutar Locust/k6 en staging (o local) con configuración similar a producción
+  (Gunicorn workers/BD/Redis, DEBUG=False), usando credenciales válidas de un
+  usuario de prueba, y subir usuarios de forma gradual (p. ej. 10 -> 50 -> 100
+  -> 200 -> ...) hasta identificar el punto de quiebre (p95/p99 y errores).
+- Incluir endpoints representativos autenticados (login, /api/users/me/,
+  notificaciones, inicio/fin de Focus) y, si aplica, escrituras controladas.
+- Distinguir 429 (throttling) de saturación (latencia creciente sostenida,
+  timeouts, 5xx). Distribuir carga si se desea evitar sesgo por IP/cuenta.
+
+Capacidad (si se busca soportar mayor concurrencia):
+- Revisar concurrencia real de Gunicorn (workers y clase de worker, p. ej.
+  gthread con hilos efectivos) y escalar CPU/RAM del servicio y del Postgres.
+- Asegurar REDIS_URL en despliegues multi-proceso para caché/estado compartido.
+- Reducir carga por usuario (frecuencia de polling o uso de SSE para
+  notificaciones) y optimizar endpoints costosos.
+- Monitorear en producción (métricas de Railway/BD, p95, tasa de errores) y
+  repetir mediciones tras cambios de configuración.
+
+Precaución: no realizar pruebas de carga alta contra producción sin coordinación,
+ventana controlada y monitoreo, ya que pueden impactar la disponibilidad del
+servicio.
+
+================================================================================
+8. ANEXOS (referencias)
+================================================================================
+- Script de simulación generado: tests/load/locustfile_simulacion.py
+- Scripts de carga existentes en repositorio: tests/load/locustfile.py,
+  tests/load/k6_load_test.js
+- Configuración consultada: backend/start.py, backend/Procfile,
+  backend/focusia_api/settings.py, backend/requirements.txt,
+  docker-compose.prod.yml
+- Registros analizados: Locust_prod.md, Locust_prod (1).md, y exportaciones CSV
+  de corrida local (Locust_2026-11-13-06h58_*).
+
+Fin del informe.

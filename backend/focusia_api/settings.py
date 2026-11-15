@@ -165,6 +165,10 @@ EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+# Timeout del socket SMTP: sin él, un EMAIL_HOST inalcanzable (p. ej. red
+# bloqueada en Railway) deja send_mail() colgado hasta el límite del SO, y la
+# petición de "reset contraseña" no responde nunca (el botón queda cargando).
+EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', '10'))
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Focusia <no-reply@focusia.app>')
 
 # ── Notificaciones: WhatsApp conmutable (log|twilio|meta) ──

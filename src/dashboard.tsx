@@ -312,6 +312,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
     if (state?.iniciarFocus) {
       iniciarFocusSesion(state.iniciarFocus.herramienta, state.iniciarFocus.config || {});
       navigate(location.pathname, { replace: true, state: {} });
+      return;
+    }
+    if (state?.ajustarGranMetaAnual) {
+      navigate(location.pathname, { replace: true, state: {} });
+      setShowEditGoalWarning(true);
     }
   }, [location.state]);
 
