@@ -2238,7 +2238,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
 
         </div>
           {/* Time Blocking Table (digitalización fotos Time Blocking) */}
-        <div id="tour-timeblocking" className="p-3 flex flex-col w-full shrink-0 shadow-[0_8px_32px_rgba(31,38,135,0.03)] dark:shadow-none overflow-hidden">
+        <div id="tour-timeblocking" className="p-3 flex flex-col w-full h-190 shrink-0 shadow-[0_8px_32px_rgba(31,38,135,0.03)] dark:shadow-none overflow-hidden">
           <TimeBlockingCard
             todayStr={todayStr}
             refreshTrigger={accionesClasificadas}
@@ -4114,7 +4114,7 @@ export const FechasImportantesCard: React.FC<FechasImportantesProps> = ({ dayAct
   const selectedRecordatorios = selectedDay ? recordatoriosPorDia[selectedDay] || [] : [];
 
   return (
-  <div className="flex flex-col h-55 w-50 mt-2 ml-28 rounded-md items-center overflow-hidden">
+  <div className="flex flex-col h-55 w-50 -mt-2 ml-28 rounded-md items-center overflow-hidden">
       <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] dark:bg-none dark:bg-[#070309] dark:border dark:border-white/10 text-white dark:text-[#fdba74] text-center py-1 text-[11px] font-bold tracking-[0.2em] uppercase mt-1.5 mx-2 w-[186px] rounded-sm select-none shrink-0">
         FECHAS IMPORTANTES
       </div>
@@ -4326,7 +4326,7 @@ const CategoriasMenu: React.FC = () => {
   const abrir = (id: string) => navigate(`/app/inspiracion?categoria=${id}`);
 
   return (
-    <div className="flex justify-between items-center gap-1.5 w-150 -ml-19">
+    <div className="flex justify-between items-center gap-1.5 w-150 -ml-19 -mt-60">
       {categorias.slice(0, 3).map((cat) => (
         <button
           key={cat.id}
@@ -4449,7 +4449,7 @@ const CardAyudaIA: React.FC<{ onOpenSettings?: () => void; open?: boolean; onClo
   };
 
   return (
-    <div className="p-2 rounded-md border border-purple-500/40 bg-white dark:bg-[linear-gradient(90deg,#f472b6_0%,#fb923c_50%,#fef08a_100%)] dark:border-pink-400/50 shadow-[0_18px_40px_rgba(27,20,64,0.18)] flex flex-col w-150 -ml-20">
+    <div className="p-2 rounded-md border border-purple-500/40 bg-white dark:bg-[linear-gradient(90deg,#f472b6_0%,#fb923c_50%,#fef08a_100%)] dark:border-pink-400/50 shadow-[0_18px_40px_rgba(27,20,64,0.18)] flex flex-col w-150 -ml-20 -mt-80">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase text-gray-800 dark:text-[#14050c] select-none mb-2"
@@ -4637,7 +4637,7 @@ function HoraDeOroFamiliar({ refreshKey, onOpenSlot, onOpenModule }: {
     dias.find(d => d.dia === dia)?.experiencias[posicion];
 
   return (
-    <div className="bg-white dark:bg-transparent border-2 border-gray-100 dark:border-transparent card-shadow dark:shadow-none overflow-hidden w-60 h-[400px] flex flex-col select-none rounded-md mt-3 -ml-20">
+    <div className="bg-white dark:bg-transparent border-2 border-gray-100 dark:border-transparent card-shadow dark:shadow-none overflow-hidden w-60 h-[358px] flex flex-col select-none rounded-md mt-3 -ml-20">
       <button
         type="button"
         onClick={onOpenModule}
@@ -4694,7 +4694,7 @@ function ClimaComuna({ temp, descripcion, lugar, loading, error, icono, humedad,
 }): React.ReactElement {
   return (
   <div
-    className="bg-white dark:bg-transparent rounded-md border-2 border-gray-100 dark:border-transparent shadow-md dark:shadow-none overflow-hidden w-full h-35 mx-0 cursor-pointer hover:shadow-lg transition-shadow -ml-35"
+    className="bg-white dark:bg-transparent rounded-md border-2 border-gray-100 dark:border-transparent shadow-md dark:shadow-none overflow-hidden w-full h-35 mx-0 mt-8 cursor-pointer hover:shadow-lg transition-shadow -ml-35"
     onClick={onAbrir}
     title="Ver pronóstico completo"
   >

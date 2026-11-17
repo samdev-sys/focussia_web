@@ -5,9 +5,11 @@ import {
   MoreVertical, Clock, Repeat2, Users, Trash2, Sparkles, ShoppingCart, Dumbbell, CalendarDays,
 } from 'lucide-react';
 import {
-  weeklyPlanService, weeklyActionService, timeBlockService, kanbanActionService, monthlyService,
+  api, weeklyPlanService, weeklyActionService, timeBlockService, monthlyService,
 } from '../../services/api';
-import type { WeeklyPlanData, ActionData, SubactionData, TimeBlockData, KanbanActionData } from '../../services/api';
+import type { WeeklyPlanData, ActionData, SubactionData, TimeBlockData } from '../../services/api';
+import { notify } from '../../services/notify';
+import type { AccionKanban } from './types';
 
 const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 const DAY_FULL = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
@@ -120,7 +122,7 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
   const [sugDerivadasHidden, setSugDerivadasHidden] = useState(false);
   const [sugComprasHidden, setSugComprasHidden] = useState(false);
   const [sugFisicaHidden, setSugFisicaHidden] = useState(false);
-  const [kanbanPlanificar, setKanbanPlanificar] = useState<KanbanActionData[]>([]);
+  const [kanbanPlanificar, setKanbanPlanificar] = useState<AccionKanban[]>([]);
   const [derivadaAdded, setDerivadaAdded] = useState<Set<string>>(new Set());
   const [derivadaMode, setDerivadaMode] = useState<'idle' | 'choose'>('idle');
   const [derivadaDays, setDerivadaDays] = useState<Record<string, number>>({});
@@ -168,9 +170,12 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
   }, [refreshKey]);
 
   useEffect(() => {
-    kanbanActionService.getActive()
-      .then(list => setKanbanPlanificar(list.filter(k => k.classification_status === 'PLANIFICAR')))
-      .catch(() => {});
+    api.get('/api/acciones-kanban/')
+      .then(res => setKanbanPlanificar(Array.isArray(res.data) ? res.data : []))
+      .catch(err => {
+        console.error('Error cargando acciones del Kanban:', err);
+        setKanbanPlanificar([]);
+      });
   }, [refreshKey]);
 
   // Metas mensuales por calendario (mes × año), para el cambio de meta en semanas intermensuales.
@@ -509,18 +514,49 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
   const importFromKanban = async () => {
     if (reviewMode) return;
     try {
-      const kanbanActions = await kanbanActionService.getActive();
+      const res = await api.get('/api/acciones-kanban/');
+      const kanbanActions: AccionKanban[] = Array.isArray(res.data) ? res.data : [];
+      if (kanbanActions.length === 0) {
+        notify.info('Kanban', 'No hay acciones pendientes en el Kanban para añadir.');
+        setActiveDropdownId(null);
+        return;
+      }
+
+      const existentes = new Set(
+        safeActions
+          .filter(a => a.assigned_calendar_date === currentDayKey)
+          .map(a => a.title.trim().toLowerCase()),
+      );
+      let añadidas = 0;
       for (const kb of kanbanActions) {
+        const title = (kb.texto_accion || '').trim();
+        if (!title) continue;
+        if (existentes.has(title.toLowerCase())) continue;
         await weeklyActionService.addAction({
-          title: kb.title,
+          title,
           assigned_calendar_date: currentDayKey,
           origin_module: 'KANBAN_BACKLOG',
         });
+        existentes.add(title.toLowerCase());
+        añadidas += 1;
       }
+
       const updated = await weeklyActionService.list();
       setActions(updated);
-    } catch { /* ignore */ }
-    setActiveDropdownId(null);
+      // Lo ya importado deja de ofrecerse como pendiente.
+      setDerivadaAdded(prev => new Set([...prev, ...kanbanActions.map(k => k.id)]));
+      setKanbanPlanificar([]);
+      if (añadidas > 0) {
+        notify.success('Planificación semanal', `${añadidas} ${añadidas === 1 ? 'acción añadida' : 'acciones añadidas'} desde el Kanban.`);
+      } else {
+        notify.info('Planificación semanal', 'Esas acciones del Kanban ya estaban en este día.');
+      }
+    } catch (err) {
+      console.error('Error al añadir desde Kanban:', err);
+      notify.error('No se pudo añadir desde el Kanban', 'Verifica tu conexión o vuelve a iniciar sesión.');
+    } finally {
+      setActiveDropdownId(null);
+    }
   };
 
   const confirmTimeBlock = async (action: ActionData) => {
@@ -584,15 +620,17 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
 
   const addDerivadaActions = async (kbIds: string[]) => {
     try {
+      let añadidas = 0;
       for (const id of kbIds) {
         const kb = kanbanPlanificar.find(k => k.id === id);
         if (!kb) continue;
         const dayIdx = derivadaDays[id] ?? selectedDayIdx;
         await weeklyActionService.addAction({
-          title: kb.title,
+          title: kb.texto_accion,
           assigned_calendar_date: formatDateKey(weekDays[dayIdx]),
           origin_module: 'KANBAN_BACKLOG',
         });
+        añadidas += 1;
       }
       setDerivadaAdded(prev => new Set([...prev, ...kbIds]));
       const updated = await weeklyActionService.list();
@@ -600,7 +638,11 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
       setDerivadaMode('idle');
       setDerivadaSel(new Set());
       setSugDerivadasHidden(true);
-    } catch { /* ignore */ }
+      if (añadidas > 0) notify.success('Planificación semanal', `${añadidas} ${añadidas === 1 ? 'acción añadida' : 'acciones añadidas'} desde el Kanban.`);
+    } catch (err) {
+      console.error('Error al añadir acciones derivadas:', err);
+      notify.error('No se pudieron añadir las acciones', 'Verifica tu conexión o vuelve a iniciar sesión.');
+    }
   };
 
   const pendingDerivadas = kanbanPlanificar.filter(k => !derivadaAdded.has(k.id));
@@ -1192,7 +1234,7 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
                       <div key={kb.id} className="border border-slate-100 rounded-lg px-2 py-1.5">
                         <label className="flex items-center gap-2 text-[11px] font-semibold text-slate-600 cursor-pointer">
                           <input type="checkbox" checked={derivadaSel.has(kb.id)} onChange={() => toggleDerivada(kb.id)} className="accent-violet-600" />
-                          <span className="flex-1 min-w-0 truncate">{kb.title}</span>
+                          <span className="flex-1 min-w-0 truncate">{kb.texto_accion}</span>
                         </label>
                         {derivadaMode === 'choose' && derivadaSel.has(kb.id) && (
                           <div className="flex gap-1 mt-1.5 flex-wrap">

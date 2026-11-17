@@ -95,7 +95,7 @@ export default function WeeklyMissionWidget({
   
 
   return (
-      <div className="relative rounded-md overflow-hidden w-40 h-50 ml-3">
+      <div className="relative rounded-md overflow-hidden w-40 h-45 ml-3">
         <canvas
           ref={hexCanvasRef}
           className="absolute -inset-6 rounded-md pointer-events-none z-0"
@@ -106,7 +106,7 @@ export default function WeeklyMissionWidget({
             MI MISIÓN DE ESTA SEMANA
           </div>
 
-          <div className="bg-gradient-to-br from-[#ff7c90] to-[#ffe1a4] dark:from-[#f472b6] dark:via-[#fb923c] dark:to-[#fde68a] dark:border dark:border-pink-400/50 h-[120px] relative flex flex-col items-center px-2 py-3 overflow-hidden mt-2 rounded-md">
+          <div className="bg-gradient-to-br from-[#ff7c90] to-[#ffe1a4] dark:from-[#f472b6] dark:via-[#fb923c] dark:to-[#fde68a] dark:border dark:border-pink-400/50 h-[135px] relative flex flex-col items-center px-2 py-3 overflow-hidden mt-2 rounded-md">
             {/* Fotografía de perfil del usuario (Doc 11: imagen de perfil del onboarding) */}
             {loading ? (
               <div className="flex items-center justify-center h-40 w-40 py-2">

@@ -102,6 +102,14 @@ const asArray = <T = any>(data: any): T[] =>
 
 let refreshPromise: Promise<void> | null = null;
 
+const hasSessionFlag = (): boolean => {
+  try {
+    return localStorage.getItem(SESSION_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+
 const performTokenRefresh = async (): Promise<void> => {
   if (!refreshPromise) {
     refreshPromise = (async () => {
@@ -111,12 +119,12 @@ const performTokenRefresh = async (): Promise<void> => {
       } catch {
         storedRefresh = null;
       }
-      if (!storedRefresh) {
-        throw new Error('No refresh token');
-      }
+      // Cookies HttpOnly: el backend acepta la cookie `refresh_token` aunque el
+      // localStorage esté vacío. Sin este camino, un acceso caducado deriva en
+      // 401 y el usuario pierde la sesión sin oportunidad de refrescar.
       const refreshResponse = await axios.post(
         `${API_BASE_URL}/api/token/refresh/`,
-        { refresh: storedRefresh },
+        storedRefresh ? { refresh: storedRefresh } : {},
         { withCredentials: true },
       );
       tokenStore.setAll(refreshResponse.data?.access, refreshResponse.data?.refresh);
@@ -143,7 +151,9 @@ api.interceptors.response.use(
       } catch {
         storedRefresh = null;
       }
-      if (storedRefresh) {
+      // Si hay sesión previa pero no refresh en localStorage, aún puede quedar
+      // la cookie HttpOnly: intenta refrescar antes de dar la sesión por perdida.
+      if (storedRefresh || hasSessionFlag()) {
         originalRequest._retry = true;
         try {
           await performTokenRefresh();

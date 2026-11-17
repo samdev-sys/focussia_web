@@ -16,9 +16,15 @@ NODE_VERSION = "22"
 # │ de la UI y dejar el placeholder horneado en producción.                    │
 # └───────────────────────────────────────────────────────────────────────────┘
 
-# Panel de administración del frontend (index-admin.html del build).
+# Redirección HTTP -> HTTPS (cubre dominios conocidos de despliegue)
 [[redirects]]
- from = "http://focusia.netlify.app/*"
+  from = "http://focussia.netlify.app/*"
+  to = "https://focussia.netlify.app/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://focusia.netlify.app/*"
   to = "https://focusia.netlify.app/:splat"
   status = 301
   force = true
@@ -26,21 +32,21 @@ NODE_VERSION = "22"
 # Rutas del frontend que resuelven al SPA (react-router con BrowserRouter):
 # /app/*, /hub, /onboarding, etc. caen acá.
 [[redirects]]
-from = "/*"
-to = "/index.html"
-status = 200
+  from = "/*"
+  to = "/index.html"
+  status = 200
 
 # Headers de seguridad
+# Nota: CSP en modo Report-Only para validar antes de bloquear. Ajustar dominios según necesidades reales.
 [[headers]]
-for = "/*"
-[headers.values]
-X-Content-Type-Options = "nosniff"
-X-Frame-Options = "DENY"
-X-XSS-Protection = "1; mode=block"
-Referrer-Policy = "strict-origin-when-cross-origin"
-/*
-  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; report-uri /csp-report
-    Permissions-Policy = "camera=(), geolocation=(), microphone=(), payment=(), usb=(), interest-cohort=()"
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-XSS-Protection = "0"
+    Permissions-Policy = "geolocation=(self), camera=(), microphone=(), payment=(), usb=()"
+    Content-Security-Policy-Report-Only = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://focussiaweb-production.up.railway.app https://nominatim.openstreetmap.org https://api.open-meteo.com https://accounts.google.com https://oauth2.googleapis.com; frame-src 'self' https://accounts.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 
 # Headers para assets con hash (cache inmutable)
 [[headers]]
