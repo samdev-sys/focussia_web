@@ -96,6 +96,13 @@ from .services.program_service import (
 )
 from .services.asignaciones import filtrar_queryset, ids_asignados
 from .services.agenda_eventos import registrar_evento
+from .services.timeblock_agenda_sync import (
+    remove_accion_for_timeblock,
+    remove_accion_slot,
+    remove_timeblock_slot,
+    sync_accion_from_timeblock,
+    sync_timeblock_from_accion,
+)
 from .engine import DecisionEngine
 from .engine.phase4_generator import generar_payload_coach
 
@@ -207,6 +214,20 @@ class BaseUserViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
 
+def get_or_create_user_row(model, user):
+    """get_or_create tolerante a peticiones concurrentes (modelos 1:1 por usuario).
+
+    Bajo dos POST simultáneos, ambos pueden pasar el `get` sin encontrar fila y
+    chocar en el `create` (IntegrityError por la unique de user_id). En ese caso
+    re-leemos la fila que creó el otro request y devolvemos `created=False`.
+    """
+    try:
+        with transaction.atomic():
+            return model.objects.get_or_create(user=user)
+    except IntegrityError:
+        return model.objects.get(user=user), False
+
+
 class WorkspaceScopedMixin:
     """Scope de workspace para recursos con FK `workspace` (nullable) y `user`.
 
@@ -298,7 +319,7 @@ class TimeBlockViewSet(BaseUserViewSet):
         serializer.is_valid(raise_exception=True)
         fecha = serializer.validated_data.get('fecha')
         hora = serializer.validated_data.get('hora')
-        if fecha and hora:
+        if fecha is not None and hora is not None:
             instance, created = TimeBlock.objects.update_or_create(
                 user=request.user,
                 fecha=fecha,
@@ -308,9 +329,28 @@ class TimeBlockViewSet(BaseUserViewSet):
                     'estado': serializer.validated_data.get('estado', 'pending'),
                 }
             )
+            sync_accion_from_timeblock(instance)
             output_serializer = self.get_serializer(instance)
-            return Response(output_serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
-        return super().create(request, *args, **kwargs)
+            return Response(
+                output_serializer.data,
+                status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+            )
+        self.perform_create(serializer)
+        sync_accion_from_timeblock(serializer.instance)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def perform_update(self, serializer):
+        old_fecha = serializer.instance.fecha
+        old_hora = serializer.instance.hora
+        instance = serializer.save()
+        if old_fecha != instance.fecha or old_hora != instance.hora:
+            remove_accion_slot(instance.user_id, old_fecha, old_hora)
+        sync_accion_from_timeblock(instance)
+
+    def perform_destroy(self, instance):
+        remove_accion_for_timeblock(instance)
+        instance.delete()
 
 class KanbanTaskViewSet(WorkspaceScopedMixin, viewsets.ModelViewSet):
     queryset = KanbanTask.objects.all()
@@ -1021,7 +1061,7 @@ class ObjetivoSemanaViewSet(BaseUserViewSet):
     serializer_class = ObjetivoSemanaSerializer
 
     def create(self, request, *args, **kwargs):
-        instance, created = ObjetivoSemana.objects.get_or_create(user=request.user)
+        instance, created = get_or_create_user_row(ObjetivoSemana, request.user)
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -1032,7 +1072,7 @@ class KeepNotaViewSet(BaseUserViewSet):
     serializer_class = KeepNotaSerializer
 
     def create(self, request, *args, **kwargs):
-        instance, created = KeepNota.objects.get_or_create(user=request.user)
+        instance, created = get_or_create_user_row(KeepNota, request.user)
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -1043,7 +1083,7 @@ class MisionHoyViewSet(BaseUserViewSet):
     serializer_class = MisionHoySerializer
 
     def create(self, request, *args, **kwargs):
-        instance, created = MisionHoy.objects.get_or_create(user=request.user)
+        instance, created = get_or_create_user_row(MisionHoy, request.user)
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -3265,7 +3305,7 @@ class MatrizEisenhowerViewSet(BaseUserViewSet):
 
     @action(detail=False, methods=['get', 'patch'])
     def progress(self, request):
-        obj, created = MatrizEisenhower.objects.get_or_create(user=request.user)
+        obj, created = get_or_create_user_row(MatrizEisenhower, request.user)
         if created and not obj.started_at:
             # §14: el primer contacto deja el módulo "en progreso" con inicio fechado.
             obj.started_at = timezone.now()
@@ -3677,6 +3717,7 @@ class AccionKanbanViewSet(BaseUserViewSet):
                 clasificacion_nueva=clasificacion,
             )
 
+        sync_timeblock_from_accion(accion)
         return Response(AccionKanbanSerializer(accion).data)
 
     @action(detail=True, methods=['patch'], url_path='fijar')
@@ -3727,6 +3768,8 @@ class AccionKanbanViewSet(BaseUserViewSet):
             )
         estado_anterior = accion.estado_actual
         clasificacion_anterior = accion.clasificacion
+        # Las ideas desechadas ya no ocupan bloque, pero limpiamos por seguridad.
+        remove_timeblock_slot(request.user.id, accion.fecha_seleccionada, accion.hora_seleccionada)
         accion.estado_actual = AccionKanban.EstadoChoices.KANBAN_ACTIVO
         accion.clasificacion = None
         accion.destino_asignado = AccionKanban.DestinoChoices.SIN_DESTINO
@@ -3773,6 +3816,8 @@ class AccionKanbanViewSet(BaseUserViewSet):
                 KanbanTask.objects.filter(pk=kid, user=request.user).delete()
             estado_anterior = accion.estado_actual
             clasificacion_anterior = accion.clasificacion
+            if estado_anterior == AccionKanban.EstadoChoices.AGENDA_DIARIA:
+                remove_timeblock_slot(request.user.id, accion.fecha_seleccionada, accion.hora_seleccionada)
             accion.estado_actual = AccionKanban.EstadoChoices.KANBAN_ACTIVO
             accion.clasificacion = None
             accion.destino_asignado = AccionKanban.DestinoChoices.SIN_DESTINO
@@ -3832,6 +3877,7 @@ class AccionKanbanViewSet(BaseUserViewSet):
             'estado': instance.estado,
             'fecha': instance.fecha_seleccionada,
             'hora': instance.hora_seleccionada,
+            'estado_actual': instance.estado_actual,
         }
 
         if 'texto_accion' in request.data:
@@ -3884,6 +3930,14 @@ class AccionKanbanViewSet(BaseUserViewSet):
             registrar_evento(instance, EventoAccion.Tipo.DROP_ACTION,
                              desde_fecha=str(anterior['fecha']), desde_hora=str(anterior['hora']),
                              hasta_fecha=str(instance.fecha_seleccionada), hasta_hora=str(instance.hora_seleccionada))
+        # Mantener sincronizado el TimeBlock legacy con la agenda diaria.
+        if anterior.get('estado_actual') == AccionKanban.EstadoChoices.AGENDA_DIARIA and (
+            instance.estado_actual != AccionKanban.EstadoChoices.AGENDA_DIARIA
+            or instance.fecha_seleccionada != anterior['fecha']
+            or instance.hora_seleccionada != anterior['hora']
+        ):
+            remove_timeblock_slot(request.user.id, anterior['fecha'], anterior['hora'])
+        sync_timeblock_from_accion(instance)
         return Response(AccionKanbanSerializer(instance).data)
 
     def _validar_bloque_libre(self, user, fecha, hora, excluir_pk=None):
@@ -4000,6 +4054,7 @@ class AccionKanbanViewSet(BaseUserViewSet):
             self._reflejar_en_semanal(request.user, texto, fecha)
             registrar_evento(accion, EventoAccion.Tipo.CREATE_ACTION,
                              origen='agenda', fecha=str(fecha), hora=str(hora))
+        sync_timeblock_from_accion(accion)
         return Response(AccionKanbanSerializer(accion).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'], url_path='subacciones')
@@ -4064,6 +4119,8 @@ class AccionKanbanViewSet(BaseUserViewSet):
             return Response({'detail': 'Acción no encontrada'}, status=status.HTTP_404_NOT_FOUND)
 
         estado_anterior = instance.estado_actual
+        fecha_slot = instance.fecha_seleccionada
+        hora_slot = instance.hora_seleccionada
         instance.estado_actual = AccionKanban.EstadoChoices.ELIMINADA
         instance.destino_asignado = AccionKanban.DestinoChoices.PAPELERA
         instance.save()
@@ -4076,6 +4133,7 @@ class AccionKanbanViewSet(BaseUserViewSet):
         if estado_anterior == AccionKanban.EstadoChoices.AGENDA_DIARIA:
             registrar_evento(instance, EventoAccion.Tipo.DELETE_ACTION,
                              texto=instance.texto_accion, subacciones=instance.subacciones.count())
+            remove_timeblock_slot(request.user.id, fecha_slot, hora_slot)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

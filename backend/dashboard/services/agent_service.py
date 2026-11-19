@@ -506,6 +506,8 @@ class AgentService:
                 try:
                     tarea = titulo[:255] if i > 0 or not etiqueta else f'{titulo[:240]} ({etiqueta})'
                     b = TimeBlock.objects.create(user=self.user, fecha=ff, hora=hh, tarea=tarea)
+                    from .timeblock_agenda_sync import sync_accion_from_timeblock
+                    sync_accion_from_timeblock(b)
                     creadas.append(b)
                     break
                 except IntegrityError:
@@ -536,6 +538,8 @@ class AgentService:
                 try:
                     bloque = TimeBlock.objects.create(
                         user=self.user, fecha=fecha, hora=hora, tarea=titulo[:255])
+                    from .timeblock_agenda_sync import sync_accion_from_timeblock
+                    sync_accion_from_timeblock(bloque)
                     break
                 except IntegrityError:
                     hora += 1

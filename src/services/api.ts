@@ -411,7 +411,10 @@ export interface MisionHoyData {
 export const objetivoSemanaService = {
   get: async (): Promise<ObjetivoSemanaData[]> => {
     const response = await api.get('/api/objetivo-semana/');
-    return response.data;
+    // DRF pagina la respuesta ({count, results}): sin normalizar, el widget
+    // nunca ve el `id` y cree que no hay fila, disparando POSTs que chocan
+    // con el unique(user_id) -> 500.
+    return asArray<ObjetivoSemanaData>(response.data);
   },
   update: async (id: number, data: Partial<ObjetivoSemanaData>): Promise<ObjetivoSemanaData> => {
     const response = await api.patch(`/api/objetivo-semana/${id}/`, data);
@@ -426,7 +429,10 @@ export const objetivoSemanaService = {
 export const keepNotaService = {
   get: async (): Promise<KeepNotaData[]> => {
     const response = await api.get('/api/keep-nota/');
-    return response.data;
+    // DRF pagina la respuesta ({count, results:[...]}): sin normalizar, el
+    // widget ve `data.length === undefined` y cree que no hay nota, disparando
+    // POSTs duplicados que chocan con el unique(user_id) -> 500.
+    return asArray<KeepNotaData>(response.data);
   },
   update: async (id: number, data: Partial<KeepNotaData>): Promise<KeepNotaData> => {
     const response = await api.patch(`/api/keep-nota/${id}/`, data);
@@ -441,7 +447,9 @@ export const keepNotaService = {
 export const misionHoyService = {
   get: async (): Promise<MisionHoyData[]> => {
     const response = await api.get('/api/mision-hoy/');
-    return response.data;
+    // Mismo 1:1 por usuario: normalizar la página para que el widget
+    // encuentre el `id` y edite con PATCH en lugar de duplicar el POST.
+    return asArray<MisionHoyData>(response.data);
   },
   update: async (id: number, data: Partial<MisionHoyData>): Promise<MisionHoyData> => {
     const response = await api.patch(`/api/mision-hoy/${id}/`, data);

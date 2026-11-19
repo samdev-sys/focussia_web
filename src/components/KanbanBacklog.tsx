@@ -2,6 +2,7 @@ import i18n from '../i18n';
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Loader2, Undo2, Target, CalendarDays, Calendar, Clock, X, Check, Sparkles, HelpCircle, Trash2, Users, Maximize2 } from 'lucide-react';
 import { api } from '../services/api';
+import HoraAgendaModal from './kanban/HoraAgendaModal';
 
 
 export type ActionOrigin = 'MANUAL' | 'RUEDA_VIDA' | 'OTRO_MODULO';
@@ -64,6 +65,14 @@ interface PendingClassification {
 interface PlanificacionModal {
   accion: AccionKanban;
   clasificacion: 'H' | 'P' | 'D' | 'E';
+}
+
+interface HoraPendiente {
+  accion: AccionKanban;
+  fecha: string;
+  /** Si viene de "Planificar -> Meta Diaria", tras elegir hora se clasifica como H. */
+  fromPlan?: boolean;
+  note?: string;
 }
 
 
@@ -298,6 +307,7 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
   const [error, setError] = useState<string | null>(null);
   const [pendingClassification, setPendingClassification] = useState<PendingClassification | null>(null);
   const [planificacionModal, setPlanificacionModal] = useState<PlanificacionModal | null>(null);
+  const [horaPendiente, setHoraPendiente] = useState<HoraPendiente | null>(null);
   const [nuevaAccion, setNuevaAccion] = useState('');
   const [similarWarning, setSimilarWarning] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -309,6 +319,8 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
   const [animatingEId, setAnimatingEId] = useState<string | null>(null);
   const [lottieDeleteAction, setLottieDeleteAction] = useState<AccionKanban | null>(null);
   const [activeIndex, setActiveIndex] = useState<number>(0);
+
+  const isoToday = () => new Date().toISOString().slice(0, 10);
 
   useEffect(() => {
     loadAcciones();
@@ -348,7 +360,9 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
       setLoading(true);
       const response = await api.get('/api/acciones-kanban/');
       const data = response.data;
-      setAcciones(Array.isArray(data) ? data : Array.isArray(data?.results) ? data.results : []);
+      const list: AccionKanban[] = Array.isArray(data) ? data : Array.isArray(data?.results) ? data.results : [];
+      const seen = new Set<string>();
+      setAcciones(list.filter(a => a?.id && !seen.has(a.id) && seen.add(a.id)));
       await refreshSections();
     } catch (err) {
       console.error('Error loading acciones:', err);
@@ -364,7 +378,7 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
       const response = await api.post('/api/acciones-kanban/', {
         texto_accion: nuevaAccion.trim(),
       });
-      setAcciones(prev => [response.data, ...prev]);
+      setAcciones(prev => (prev.some(a => a.id === response.data.id) ? prev : [response.data, ...prev]));
       setNuevaAccion('');
       setActiveIndex(0);
       onClassified?.('H', response.data.texto_accion);
@@ -376,7 +390,14 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
     }
   };
 
-  const executeClassification = async (accion: AccionKanban, clasificacion: 'H' | 'P' | 'D' | 'E', destinoPlanificacion?: string, note?: string, fechaSeleccionada?: string) => {
+  const executeClassification = async (
+    accion: AccionKanban,
+    clasificacion: 'H' | 'P' | 'D' | 'E',
+    destinoPlanificacion?: string,
+    note?: string,
+    fechaSeleccionada?: string,
+    horaSeleccionada?: string,
+  ) => {
     const previousStatus = accion.estado_actual;
     const newStatus: ActionStatus =
       clasificacion === 'H' ? 'ENVIADA_DIARIA' :
@@ -391,14 +412,19 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
         clasificacion,
         destino_planificacion: destinoPlanificacion || null,
         ...(fechaSeleccionada ? { fecha_seleccionada: fechaSeleccionada } : {}),
+        ...(horaSeleccionada ? { hora_seleccionada: horaSeleccionada } : {}),
       });
       if (response.data) {
         setAcciones(prev => prev.map(a => a.id === accion.id ? { ...response.data, movement_history: a.movement_history } : a));
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error classifying:', err);
-      setAcciones(prev => [accion, ...prev]);
-      setError('Error al clasificar la acción');
+      const detail = err?.response?.data?.detail;
+      setError(typeof detail === 'string' ? detail : 'Error al clasificar la acción');
+      // Re-sincronizar con el servidor para reflejar el estado real (p. ej. si ya
+      // no está activa o si el bloque quedó ocupado) sin duplicar elementos.
+      await loadAcciones();
+      return;
     }
     refreshSections();
   };
@@ -428,6 +454,7 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
     destinoPlanificacion?: string;
     note?: string;
     fechaSeleccionada?: string;
+    horaSeleccionada?: string;
   }) => {
     setAcciones(prev => prev.filter(a => a.id !== accion.id));
     onClassified?.(clasificacion, accion.texto_accion);
@@ -438,11 +465,42 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
         extras?.destinoPlanificacion,
         extras?.note,
         extras?.fechaSeleccionada,
+        extras?.horaSeleccionada,
       );
       setPendingClassification(null);
     }, UNDO_TIMEOUT);
     setPendingClassification({ accion, clasificacion, ...extras, timerId });
   }, [onClassified]);
+
+  const beginClassifyWithAnimation = useCallback((accion: AccionKanban, clasificacion: 'H' | 'P' | 'D' | 'E', extras?: {
+    destinoPlanificacion?: string;
+    note?: string;
+    fechaSeleccionada?: string;
+    horaSeleccionada?: string;
+  }) => {
+    setLeavingIds(prev => new Set(prev).add(accion.id));
+    setTimeout(() => {
+      setLeavingIds(prev => {
+        const next = new Set(prev);
+        next.delete(accion.id);
+        return next;
+      });
+      startUndo(accion, clasificacion, extras);
+    }, FADE_DURATION);
+  }, [startUndo]);
+
+  const handleHoraPick = useCallback(async (hora: number): Promise<string | null> => {
+    if (!horaPendiente) return 'No hay acción seleccionada.';
+    const { accion, fecha, note } = horaPendiente;
+    const horaSeleccionada = `${String(hora).padStart(2, '0')}:00`;
+    setHoraPendiente(null);
+    beginClassifyWithAnimation(accion, 'H', {
+      fechaSeleccionada: fecha,
+      horaSeleccionada,
+      note: note || 'Enviada a agenda diaria',
+    });
+    return null;
+  }, [horaPendiente, beginClassifyWithAnimation]);
 
   useEffect(() => {
     if (!lottieDeleteAction) return;
@@ -465,11 +523,17 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
   }, [lottieDeleteAction, startUndo]);
 
   const handleClasificar = useCallback((accion: AccionKanban, clasificacion: 'H' | 'P' | 'D' | 'E') => {
-    if (pendingClassification) return;
+    if (pendingClassification || horaPendiente) return;
     if (leavingIds.has(accion.id)) return;
 
     if (clasificacion === 'P') {
       setPlanificacionModal({ accion, clasificacion });
+      return;
+    }
+
+    if (clasificacion === 'H') {
+      // Hacia agenda diaria se requiere hora (backend valida bloque libre).
+      setHoraPendiente({ accion, fecha: isoToday() });
       return;
     }
 
@@ -478,16 +542,8 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
       return;
     }
 
-    setLeavingIds(prev => new Set(prev).add(accion.id));
-    setTimeout(() => {
-      setLeavingIds(prev => {
-        const next = new Set(prev);
-        next.delete(accion.id);
-        return next;
-      });
-      startUndo(accion, clasificacion);
-    }, FADE_DURATION);
-  }, [pendingClassification, leavingIds, startUndo]);
+    beginClassifyWithAnimation(accion, clasificacion);
+  }, [pendingClassification, horaPendiente, leavingIds, beginClassifyWithAnimation]);
 
   const handleUndo = useCallback(() => {
     if (!pendingClassification) return;
@@ -501,7 +557,7 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
       const response = await api.patch(`/api/acciones-kanban/${id}/restaurar/`);
       setPapelera(prev => prev.filter(a => a.id !== id));
       if (response.data) {
-        setAcciones(prev => [response.data, ...prev]);
+        setAcciones(prev => (prev.some(a => a.id === response.data.id) ? prev : [response.data, ...prev]));
         setActiveIndex(0);
       }
       refreshSections();
@@ -515,25 +571,26 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
     if (!planificacionModal) return;
 
     const { accion } = planificacionModal;
-    // §17.3: si cancela, la acción sigue en el Kanban (el modal solo se cierra).
-    const clasificacionFinal = destino === 'DIARIA' ? 'H' : 'P';
-    const destinoPlanificacion = destino === 'DIARIA' ? undefined : destino;
+    const fechaSeleccionada = fecha || isoToday();
 
-    setLeavingIds(prev => new Set(prev).add(accion.id));
+    // "Meta Diaria" va a la agenda y requiere hora obligatoria.
+    if (destino === 'DIARIA') {
+      setPlanificacionModal(null);
+      setHoraPendiente({
+        accion,
+        fecha: fechaSeleccionada,
+        fromPlan: true,
+        note: 'Planificado: DIARIA',
+      });
+      return;
+    }
+
     setPlanificacionModal(null);
-
-    setTimeout(() => {
-      setLeavingIds(prev => {
-        const next = new Set(prev);
-        next.delete(accion.id);
-        return next;
-      });
-      startUndo(accion, clasificacionFinal, {
-        destinoPlanificacion,
-        note: `Planificado: ${destino}`,
-        fechaSeleccionada: fecha,
-      });
-    }, FADE_DURATION);
+    beginClassifyWithAnimation(accion, 'P', {
+      destinoPlanificacion: destino,
+      note: `Planificado: ${destino}`,
+      fechaSeleccionada,
+    });
   };
 
   const handlePlanificacionCancel = () => {
@@ -559,7 +616,7 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
       const target = e.target as HTMLElement;
       const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
       if (isInput) return;
-      if (planificacionModal) return;
+      if (planificacionModal || horaPendiente) return;
       if (pendingClassification) return;
 
       const key = e.key.toUpperCase();
@@ -584,7 +641,7 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [acciones, activeIndex, planificacionModal, pendingClassification, handleClasificar]);
+  }, [acciones, activeIndex, planificacionModal, horaPendiente, pendingClassification, handleClasificar]);
 
   return (
     <div
@@ -737,7 +794,7 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
                 key={`empty-${i}`}
                 onClassified={onClassified}
                 onCreated={(accion) => {
-                  setAcciones((prev) => [accion, ...prev]);
+                  setAcciones((prev) => (prev.some(a => a.id === accion.id) ? prev : [accion, ...prev]));
                   setActiveIndex(0);
                 }}
               />
@@ -870,6 +927,15 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
             <p className="text-sm font-medium text-gray-600">{i18n.t('eliminando_accion')}</p>
           </div>
         </div>
+      )}
+
+      {horaPendiente && (
+        <HoraAgendaModal
+          accion={horaPendiente.accion as any}
+          fecha={horaPendiente.fecha}
+          onPick={handleHoraPick}
+          onCancel={() => setHoraPendiente(null)}
+        />
       )}
 
       {planificacionModal && (

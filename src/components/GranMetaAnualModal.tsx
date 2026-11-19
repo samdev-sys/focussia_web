@@ -40,10 +40,79 @@ const AREA_ICONS: Record<string, IconComp> = {
 };
 
 function areaIcon(nombre: string): IconComp {
-  const key = (nombre || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(' ')[0];
+  const key = (nombre || '').toLowerCase().normalize('NFD').replace(/[ÃƒÆ’Ã†â€™Ãƒâ€¦Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬-ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯]/g, '').split(' ')[0];
   if (key.includes('salud')) return Dumbbell;
   return AREA_ICONS[key] || Target;
 }
+
+
+const AvatarPanel = ({ avatarSrc }: { avatarSrc: string }) => (
+  <div className="relative rounded-md overflow-hidden min-h-[300px] lg:min-h-[520px] bg-gradient-to-b from-[#2b3fd4] via-[#4b3fd6] to-[#7a5af8]">
+    <img
+      src={avatarSrc}
+      alt={i18n.t('avatar_hbx8')}
+      className="absolute inset-0 w-full h-full object-cover object-top"
+      onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('Sophya.jpeg')) t.src = '/avartars/Sophya.jpeg'; }}
+    />
+  </div>
+);
+
+const MessageBubble = ({ text }: { text: string }) => (
+  <div className="flex justify-start mb-3">
+    <div className="max-w-[640px] px-5 py-3.5 rounded-2xl rounded-tl-md bg-[#f4f1ff] border border-[#e5e0ff] text-[15px] leading-relaxed text-indigo-950 shadow-sm">
+      {text}
+    </div>
+  </div>
+);
+
+const QuestionStage = ({
+  kicker, question, value, onChange, onSubmit, placeholder, avatarSrc, message,
+}: {
+  kicker?: string;
+  question: string;
+  value: string;
+  onChange: (v: string) => void;
+  onSubmit: () => void;
+  placeholder: string;
+  avatarSrc: string;
+  message?: string;
+}) => (
+  <div className="grid lg:grid-cols-[400px_1fr] gap-5 items-start">
+    <AvatarPanel avatarSrc={avatarSrc} />
+    <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4 sm:p-6">
+      {message && <MessageBubble text={message} />}
+      {kicker && (
+        <span className="inline-block px-4 py-1.5 rounded-full bg-[#f1eaff] text-[#7c3aed] text-sm font-bold mb-4">
+          {kicker}
+        </span>
+      )}
+      <div className="rounded-md border border-[#d9ccff] bg-[#fbfaff] px-4 py-6 text-center mb-2 shadow-sm">
+        <h2 className="text-xl sm:text-[20px] font-bold leading-tight">
+          <span className="bg-gradient-to-r from-[#2b5cff] to-[#7c3aed] bg-clip-text text-transparent">{question.split('?')[0]}?</span>
+          {question.includes('?') && question.split('?').slice(1).join('?') && (
+            <span className="block text-[#1a1446]">{question.split('?').slice(1).join('?')}</span>
+          )}
+        </h2>
+      </div>
+      <textarea
+        id="gma-answer-input"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={6}
+        className="w-full px-4 py-3 rounded-md border border-[#c4b5fd] bg-white text-[15px] outline-none focus:ring-2 focus:ring-[#7c3aed]/30 focus:border-[#7c3aed] placeholder:text-[#a5b4fc] resize-y"
+      />
+      <button
+        id="gma-send-btn"
+        onClick={onSubmit}
+        disabled={!value.trim()}
+        className="w-full mt-3 py-3.5 bg-gradient-to-r from-[#2b5cff] to-[#7c3aed] text-white text-[15px] font-medium rounded-xl hover:brightness-110 active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+      >
+        Enviar respuesta
+      </button>
+    </div>
+  </div>
+);
 
 export function GranMetaAnualModal({
   isOpen,
@@ -70,7 +139,7 @@ export function GranMetaAnualModal({
 
   const avatarSrc = avatarUrl || '/avartars/Sophya.jpeg';
 
-  // Tres focos = áreas con puntaje más bajo (foto 4: chips con icono)
+  // Tres focos = ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡reas con puntaje mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡s bajo (foto 4: chips con icono)
   const focosTop = useMemo(() => {
     if (!ruedaData || ruedaData.length === 0) return [];
     return [...ruedaData].sort((a, b) => a.puntaje - b.puntaje).slice(0, 3);
@@ -96,7 +165,7 @@ export function GranMetaAnualModal({
           setSavedMetaId(saved.id);
           setStage('edit');
         }).catch(() => {
-          setError('Error al preparar la edición.');
+          setError('Error al preparar la ediciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n.');
           setStage('edit');
         });
       } else {
@@ -164,7 +233,7 @@ export function GranMetaAnualModal({
     if (!editComment.trim()) return;
     const metaId = savedMetaId || existingMeta?.id;
     if (!metaId) {
-      setError('No se encontró la meta. Vuelve a intentarlo.');
+      setError('No se encontrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ la meta. Vuelve a intentarlo.');
       return;
     }
     setStage('generating');
@@ -239,74 +308,13 @@ export function GranMetaAnualModal({
 
   const shellTitle = stage === 'smart' ? 'Gran Meta Anual propuesta' : 'Gran Meta Anual';
 
-  const AvatarPanel = () => (
-    <div className="relative rounded-md overflow-hidden min-h-[300px] lg:min-h-[520px] bg-gradient-to-b from-[#2b3fd4] via-[#4b3fd6] to-[#7a5af8]">
-      <img
-        src={avatarSrc}
-        alt={i18n.t('avatar_hbx8')}
-        className="absolute inset-0 w-full h-full object-cover object-top"
-        onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.includes('Sophya.jpeg')) t.src = '/avartars/Sophya.jpeg'; }}
-      />
-    </div>
-  );
-
-  const MessageBubble = ({ text }: { text: string }) => (
-    <div className="flex justify-start mb-3">
-      <div className="max-w-[640px] px-5 py-3.5 rounded-2xl rounded-tl-md bg-[#f4f1ff] border border-[#e5e0ff] text-[15px] leading-relaxed text-indigo-950 shadow-sm">
-        {text}
-      </div>
-    </div>
-  );
-
-  const QuestionStage = ({
-    kicker, question, value, onChange, onSubmit, placeholder,
-  }: {
-    kicker?: string; question: string; value: string; onChange: (v: string) => void;
-    onSubmit: () => void; placeholder: string;
-  }) => (
-    <div className="grid lg:grid-cols-[400px_1fr] gap-5 items-start">
-      <AvatarPanel />
-      <div className="bg-white rounded-md border border-gray-200 shadow-sm p-7 sm:p-7 w-150">
-        {kicker && (
-          <span className="inline-block px-4 py-1.5 rounded-full bg-[#f1eaff] text-[#7c3aed] text-sm font-bold mb-4">
-            {kicker}
-          </span>
-        )}
-        <div className="rounded-md border border-[#d9ccff] bg-[#fbfaff] px-4 py-6 text-center mb-2 shadow-sm -mt-2">
-          <h2 className="text-xl sm:text-[20px] font-bold leading-tight">
-            <span className="bg-gradient-to-r from-[#2b5cff] to-[#7c3aed] bg-clip-text text-transparent">{question.split('?')[0]}?</span>
-            {question.includes('?') && question.split('?').slice(1).join('?') && (
-              <span className="block text-[#1a1446]">{question.split('?').slice(1).join('?')}</span>
-            )}
-          </h2>
-        </div>
-        <textarea
-          id="gma-q-input"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          rows={5}
-          className="w-full px-4 py-3 rounded-xl border border-[#c4b5fd] bg-white text-[15px] outline-none focus:ring-2 focus:ring-[#7c3aed]/30 focus:border-[#7c3aed] placeholder:text-[#a5b4fc] resize-y"
-        />
-        <button
-          id="gma-q-send"
-          onClick={onSubmit}
-          disabled={!value.trim()}
-          className="w-full mt-3 py-3.5 bg-gradient-to-r from-[#2b5cff] to-[#7c3aed] text-white text-[15px] font-medium rounded-xl hover:brightness-110 active:scale-[0.99] transition-all disabled:opacity-50 shadow-lg"
-        >
-          Enviar respuesta
-        </button>
-      </div>
-    </div>
-  );
-
   const renderContent = () => {
     if (stage === 'intro') {
       return (
         <div className="grid lg:grid-cols-[400px_1fr] gap-5 items-start">
-          <AvatarPanel />
+          <AvatarPanel avatarSrc={avatarSrc} />
           <div className="">
-            <MessageBubble text="Llegó el momento de convertir tu Rueda de la Vida en una Gran Meta Anual clara, poderosa y alcanzable. Comencemos con tres preguntas." />
+            <MessageBubble text="LlegÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ el momento de convertir tu Rueda de la Vida en una Gran Meta Anual clara, poderosa y alcanzable. Comencemos con tres preguntas." />
             <button
               onClick={() => setStage('p1')}
               className="w-full mt-2 py-3.5 bg-gradient-to-r from-[#2b5cff] to-[#7c3aed] text-white text-[15px] font-medium rounded-xl hover:brightness-110 active:scale-[0.99] transition-all shadow-lg"
@@ -320,72 +328,60 @@ export function GranMetaAnualModal({
 
     if (stage === 'p1') {
       return (
-        <>
-          <div className="grid lg:grid-cols-[400px_1fr] gap-5 items-start">
-            <QuestionStage
-              kicker="Pregunta 1 de 3"
-              question="Tomando en cuenta los resultados de tu Rueda de la Vida, ¿qué área o aspecto de tu vida sientes que necesita mayor transformación este año?"
-              value={p1}
-              onChange={setP1}
-              onSubmit={() => handleAnswer('p1', p1)}
-              placeholder={i18n.t('escribe_aqui_tu_respuesta')}
-            />
-          </div>
-        </>
+        <QuestionStage
+          kicker="Pregunta 1 de 3"
+          question="Tomando en cuenta los resultados de tu Rueda de la Vida, Ãƒâ€šÃ‚Â¿quÃƒÆ’Ã‚Â© ÃƒÆ’Ã‚Â¡rea o aspecto de tu vida sientes que necesita mayor transformaciÃƒÆ’Ã‚Â³n este aÃƒÆ’Ã‚Â±o?"
+          value={p1}
+          onChange={setP1}
+          onSubmit={() => handleAnswer('p1', p1)}
+          placeholder={i18n.t('escribe_aqui_tu_respuesta')}
+          avatarSrc={avatarSrc}
+        />
       );
     }
 
     if (stage === 'p2') {
       return (
-        <div className="grid lg:grid-cols-[400px_1fr] gap-5 items-start">
-
-          <div className="bg-white rounded-md w-270 border border-gray-200 shadow-sm p-4 sm:p-6">
-            <MessageBubble text={`Gracias, ${username}. Esta respuesta nos ayuda a construir una meta más clara y conectada contigo.`} />
-            <QuestionStage
-            
-              kicker="Pregunta 2 de 3"
-              question="¿Qué gran resultado te gustaría alcanzar antes de terminar este año?"
-              value={p2}
-              onChange={setP2}
-              onSubmit={() => handleAnswer('p2', p2)}
-              placeholder={i18n.t('escribe_aqui_tu_respuesta')}
-            />
-          </div>
-        </div>
+        <QuestionStage
+          kicker="Pregunta 2 de 3"
+          question="Ãƒâ€šÃ‚Â¿QuÃƒÆ’Ã‚Â© gran resultado te gustarÃƒÆ’Ã‚Â­a alcanzar antes de terminar este aÃƒÆ’Ã‚Â±o?"
+          value={p2}
+          onChange={setP2}
+          onSubmit={() => handleAnswer('p2', p2)}
+          placeholder={i18n.t('escribe_aqui_tu_respuesta')}
+          avatarSrc={avatarSrc}
+          message={`Gracias, ${username}. Esta respuesta nos ayuda a construir una meta mÃƒÆ’Ã‚Â¡s clara y conectada contigo.`}
+        />
       );
     }
 
     if (stage === 'p3') {
       return (
-        <div className="grid lg:grid-cols-[400px_1fr] gap-5 items-start">
-          
-          <div className="bg-white rounded-md w-270 border border-gray-200 shadow-sm p-4 sm:p-6">
-            <MessageBubble text={`Gracias, ${username}. Esta respuesta nos ayuda a construir una meta más clara y conectada contigo.`} />
-            <QuestionStage
-              kicker="Pregunta 3 de 3"
-              question="¿Qué cambiaría en tu vida si lograras ese resultado?"
-              value={p3}
-              onChange={setP3}
-              onSubmit={() => handleAnswer('p3', p3)}
-              placeholder={i18n.t('escribe_aqui_tu_respuesta')}
-            />
-          </div>
-        </div>
+        <QuestionStage
+          kicker="Pregunta 3 de 3"
+          question="Ãƒâ€šÃ‚Â¿QuÃƒÆ’Ã‚Â© cambiarÃƒÆ’Ã‚Â­a en tu vida si lograras ese resultado?"
+          value={p3}
+          onChange={setP3}
+          onSubmit={() => handleAnswer('p3', p3)}
+          placeholder={i18n.t('escribe_aqui_tu_respuesta')}
+          avatarSrc={avatarSrc}
+          message={`Gracias, ${username}. Esta respuesta nos ayuda a construir una meta mÃƒÆ’Ã‚Â¡s clara y conectada contigo.`}
+        />
       );
     }
 
     if (stage === 'preSmart') {
       return (
         <div className="grid lg:grid-cols-[400px_1fr] gap-5 items-start">
-          <AvatarPanel />
+          <AvatarPanel avatarSrc={avatarSrc} />
           <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4 sm:p-6">
-            <MessageBubble text={`Gracias, ${username}. Esta respuesta nos ayuda a construir una meta más clara y conectada contigo.`} />
+            <MessageBubble text={`Gracias, ${username}. Esta respuesta nos ayuda a construir una meta mÃƒÂ¡s clara y conectada contigo.`} />
             <div className="rounded-md border border-[#d9ccff] bg-[#fbfaff] px-6 py-10 text-center shadow-sm">
               <h2 className="text-xl sm:text-xl font-bold text-[#1a1446] leading-tight">
-                Ya tengo la información<br />necesaria.
+                Ya tengo la informaciÃƒÂ³n<br />necesaria.
               </h2>
               <p className="text-xl sm:text-3xl text-[#1a1446] leading-snug mt-6">
-                Ahora transformaré tus respuestas<br />
+                Ahora transformarÃƒÂ© tus respuestas<br />
                 en una <span className="font-black bg-gradient-to-r from-[#2b5cff] to-[#7c3aed] bg-clip-text text-transparent">{i18n.t('gran_meta_anual_jij0')}</span><br />
                 usando el modelo <span className="font-black bg-gradient-to-r from-[#2b5cff] to-[#7c3aed] bg-clip-text text-transparent">{i18n.t('smart')}</span>
               </p>
@@ -405,12 +401,12 @@ export function GranMetaAnualModal({
           <div className="w-12 h-12 border-4 border-[#2b5cff] border-t-transparent rounded-full animate-spin mb-4" />
           <p className="text-sm text-gray-500 font-medium">
             {editMode && !savedMetaId
-              ? 'Preparando edición...'
+              ? 'Preparando ediciÃƒÂ³n...'
               : savedMetaId
                 ? 'Aprobando meta...'
                 : editMode
                   ? 'Reconstruyendo meta...'
-                  : 'La IA está analizando tus respuestas y generando tu meta SMART...'}
+                  : 'La IA estÃƒÂ¡ analizando tus respuestas y generando tu meta SMART...'}
           </p>
           {error && <p className="text-red-500 text-xs text-center mt-2">{error}</p>}
         </div>
@@ -419,7 +415,7 @@ export function GranMetaAnualModal({
 
     if (stage === 'smart' && smartData) {
       const items = [
-        { label: 'Específica', key: 'S', color: 'from-blue-500 to-blue-600' },
+        { label: 'EspecÃƒÂ­fica', key: 'S', color: 'from-blue-500 to-blue-600' },
         { label: 'Medible', key: 'M', color: 'from-indigo-500 to-indigo-600' },
         { label: 'Alcanzable', key: 'A', color: 'from-purple-500 to-purple-600' },
         { label: 'Relevante', key: 'R', color: 'from-fuchsia-500 to-fuchsia-600' },
@@ -479,9 +475,9 @@ export function GranMetaAnualModal({
     if (stage === 'edit') {
       return (
         <div className="grid lg:grid-cols-[400px_1fr] gap-5 items-start">
-          <AvatarPanel />
+          <AvatarPanel avatarSrc={avatarSrc} />
           <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4 sm:p-6">
-            <MessageBubble text="Vamos a mejorarla. Escríbeme qué quieres cambiar y reconstruiré tu meta con esa nueva dirección." />
+            <MessageBubble text="Vamos a mejorarla. EscrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­beme quÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© quieres cambiar y reconstruirÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© tu meta con esa nueva direcciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n." />
             <textarea
               id="gma-edit-input"
               value={editComment}
@@ -506,7 +502,7 @@ export function GranMetaAnualModal({
 
     return (
       <div className="grid lg:grid-cols-[400px_1fr] gap-5 items-stretch">
-        <AvatarPanel />
+        <AvatarPanel avatarSrc={avatarSrc} />
         <div className="bg-white rounded-md border border-gray-200 shadow-sm p-6 sm:p-10 flex flex-col items-center text-center relative overflow-hidden">
           <div className="absolute inset-0 pointer-events-none opacity-60" style={{ background: 'radial-gradient(ellipse 60% 45% at 50% 18%, rgba(124,58,237,0.16), transparent)' }} />
           <div className="relative w-28 h-28 rounded-full bg-gradient-to-br from-[#2b9fff] to-[#7c3aed] flex items-center justify-center shadow-xl mb-2 ring-8 ring-[#efe9ff]">
@@ -514,7 +510,7 @@ export function GranMetaAnualModal({
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold text-[#201097] mt-4">Felicitaciones, {username}.</h2>
           <p className="text-lg text-[#2b2a6b] leading-relaxed mt-3 max-w-xl">
-            Acabas de definir una dirección clara para tu año. Focusia usará esta meta para ayudarte a avanzar con foco.
+            Acabas de definir una direcciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n clara para tu aÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â±o. Focusia usarÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ esta meta para ayudarte a avanzar con foco.
           </p>
           {focosTop.length > 0 && (
             <div className="flex items-center justify-center gap-0 mt-8 w-full max-w-xl">
