@@ -40,11 +40,10 @@ const AREA_ICONS: Record<string, IconComp> = {
 };
 
 function areaIcon(nombre: string): IconComp {
-  const key = (nombre || '').toLowerCase().normalize('NFD').replace(/[ÃƒÆ’Ã†â€™Ãƒâ€¦Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬-ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯]/g, '').split(' ')[0];
+  const key = (nombre || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(' ')[0];
   if (key.includes('salud')) return Dumbbell;
   return AREA_ICONS[key] || Target;
 }
-
 
 const AvatarPanel = ({ avatarSrc }: { avatarSrc: string }) => (
   <div className="relative rounded-md overflow-hidden min-h-[300px] lg:min-h-[520px] bg-gradient-to-b from-[#2b3fd4] via-[#4b3fd6] to-[#7a5af8]">
@@ -139,7 +138,7 @@ export function GranMetaAnualModal({
 
   const avatarSrc = avatarUrl || '/avartars/Sophya.jpeg';
 
-  // Tres focos = ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡reas con puntaje mÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡s bajo (foto 4: chips con icono)
+  // Tres focos = áreas con puntaje más bajo (foto 4: chips con icono)
   const focosTop = useMemo(() => {
     if (!ruedaData || ruedaData.length === 0) return [];
     return [...ruedaData].sort((a, b) => a.puntaje - b.puntaje).slice(0, 3);
@@ -165,7 +164,7 @@ export function GranMetaAnualModal({
           setSavedMetaId(saved.id);
           setStage('edit');
         }).catch(() => {
-          setError('Error al preparar la ediciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n.');
+          setError('Error al preparar la edición.');
           setStage('edit');
         });
       } else {
@@ -233,7 +232,7 @@ export function GranMetaAnualModal({
     if (!editComment.trim()) return;
     const metaId = savedMetaId || existingMeta?.id;
     if (!metaId) {
-      setError('No se encontrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ la meta. Vuelve a intentarlo.');
+      setError('No se encontró la meta. Vuelve a intentarlo.');
       return;
     }
     setStage('generating');
@@ -314,7 +313,7 @@ export function GranMetaAnualModal({
         <div className="grid lg:grid-cols-[400px_1fr] gap-5 items-start">
           <AvatarPanel avatarSrc={avatarSrc} />
           <div className="">
-            <MessageBubble text="LlegÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³ el momento de convertir tu Rueda de la Vida en una Gran Meta Anual clara, poderosa y alcanzable. Comencemos con tres preguntas." />
+            <MessageBubble text="Llegó el momento de convertir tu Rueda de la Vida en una Gran Meta Anual clara, poderosa y alcanzable. Comencemos con tres preguntas." />
             <button
               onClick={() => setStage('p1')}
               className="w-full mt-2 py-3.5 bg-gradient-to-r from-[#2b5cff] to-[#7c3aed] text-white text-[15px] font-medium rounded-xl hover:brightness-110 active:scale-[0.99] transition-all shadow-lg"
@@ -330,7 +329,7 @@ export function GranMetaAnualModal({
       return (
         <QuestionStage
           kicker="Pregunta 1 de 3"
-          question="Tomando en cuenta los resultados de tu Rueda de la Vida, Ãƒâ€šÃ‚Â¿quÃƒÆ’Ã‚Â© ÃƒÆ’Ã‚Â¡rea o aspecto de tu vida sientes que necesita mayor transformaciÃƒÆ’Ã‚Â³n este aÃƒÆ’Ã‚Â±o?"
+          question="Tomando en cuenta los resultados de tu Rueda de la Vida, ¿qué área o aspecto de tu vida sientes que necesita mayor transformación este año?"
           value={p1}
           onChange={setP1}
           onSubmit={() => handleAnswer('p1', p1)}
@@ -344,13 +343,13 @@ export function GranMetaAnualModal({
       return (
         <QuestionStage
           kicker="Pregunta 2 de 3"
-          question="Ãƒâ€šÃ‚Â¿QuÃƒÆ’Ã‚Â© gran resultado te gustarÃƒÆ’Ã‚Â­a alcanzar antes de terminar este aÃƒÆ’Ã‚Â±o?"
+          question="¿Qué gran resultado te gustaría alcanzar antes de terminar este año?"
           value={p2}
           onChange={setP2}
           onSubmit={() => handleAnswer('p2', p2)}
           placeholder={i18n.t('escribe_aqui_tu_respuesta')}
           avatarSrc={avatarSrc}
-          message={`Gracias, ${username}. Esta respuesta nos ayuda a construir una meta mÃƒÆ’Ã‚Â¡s clara y conectada contigo.`}
+          message={`Gracias, ${username}. Esta respuesta nos ayuda a construir una meta más clara y conectada contigo.`}
         />
       );
     }
@@ -359,13 +358,13 @@ export function GranMetaAnualModal({
       return (
         <QuestionStage
           kicker="Pregunta 3 de 3"
-          question="Ãƒâ€šÃ‚Â¿QuÃƒÆ’Ã‚Â© cambiarÃƒÆ’Ã‚Â­a en tu vida si lograras ese resultado?"
+          question="¿Qué cambiaría en tu vida si lograras ese resultado?"
           value={p3}
           onChange={setP3}
           onSubmit={() => handleAnswer('p3', p3)}
           placeholder={i18n.t('escribe_aqui_tu_respuesta')}
           avatarSrc={avatarSrc}
-          message={`Gracias, ${username}. Esta respuesta nos ayuda a construir una meta mÃƒÆ’Ã‚Â¡s clara y conectada contigo.`}
+          message={`Gracias, ${username}. Esta respuesta nos ayuda a construir una meta más clara y conectada contigo.`}
         />
       );
     }
@@ -375,13 +374,13 @@ export function GranMetaAnualModal({
         <div className="grid lg:grid-cols-[400px_1fr] gap-5 items-start">
           <AvatarPanel avatarSrc={avatarSrc} />
           <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4 sm:p-6">
-            <MessageBubble text={`Gracias, ${username}. Esta respuesta nos ayuda a construir una meta mÃƒÂ¡s clara y conectada contigo.`} />
+            <MessageBubble text={`Gracias, ${username}. Esta respuesta nos ayuda a construir una meta más clara y conectada contigo.`} />
             <div className="rounded-md border border-[#d9ccff] bg-[#fbfaff] px-6 py-10 text-center shadow-sm">
               <h2 className="text-xl sm:text-xl font-bold text-[#1a1446] leading-tight">
-                Ya tengo la informaciÃƒÂ³n<br />necesaria.
+                Ya tengo la información<br />necesaria.
               </h2>
               <p className="text-xl sm:text-3xl text-[#1a1446] leading-snug mt-6">
-                Ahora transformarÃƒÂ© tus respuestas<br />
+                Ahora transformaré tus respuestas<br />
                 en una <span className="font-black bg-gradient-to-r from-[#2b5cff] to-[#7c3aed] bg-clip-text text-transparent">{i18n.t('gran_meta_anual_jij0')}</span><br />
                 usando el modelo <span className="font-black bg-gradient-to-r from-[#2b5cff] to-[#7c3aed] bg-clip-text text-transparent">{i18n.t('smart')}</span>
               </p>
@@ -401,12 +400,12 @@ export function GranMetaAnualModal({
           <div className="w-12 h-12 border-4 border-[#2b5cff] border-t-transparent rounded-full animate-spin mb-4" />
           <p className="text-sm text-gray-500 font-medium">
             {editMode && !savedMetaId
-              ? 'Preparando ediciÃƒÂ³n...'
+              ? 'Preparando edición...'
               : savedMetaId
                 ? 'Aprobando meta...'
                 : editMode
                   ? 'Reconstruyendo meta...'
-                  : 'La IA estÃƒÂ¡ analizando tus respuestas y generando tu meta SMART...'}
+                  : 'La IA está analizando tus respuestas y generando tu meta SMART...'}
           </p>
           {error && <p className="text-red-500 text-xs text-center mt-2">{error}</p>}
         </div>
@@ -415,7 +414,7 @@ export function GranMetaAnualModal({
 
     if (stage === 'smart' && smartData) {
       const items = [
-        { label: 'EspecÃƒÂ­fica', key: 'S', color: 'from-blue-500 to-blue-600' },
+        { label: 'Específica', key: 'S', color: 'from-blue-500 to-blue-600' },
         { label: 'Medible', key: 'M', color: 'from-indigo-500 to-indigo-600' },
         { label: 'Alcanzable', key: 'A', color: 'from-purple-500 to-purple-600' },
         { label: 'Relevante', key: 'R', color: 'from-fuchsia-500 to-fuchsia-600' },
@@ -477,7 +476,7 @@ export function GranMetaAnualModal({
         <div className="grid lg:grid-cols-[400px_1fr] gap-5 items-start">
           <AvatarPanel avatarSrc={avatarSrc} />
           <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4 sm:p-6">
-            <MessageBubble text="Vamos a mejorarla. EscrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­beme quÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© quieres cambiar y reconstruirÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© tu meta con esa nueva direcciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n." />
+            <MessageBubble text="Vamos a mejorarla. Escríbeme qué quieres cambiar y reconstruiré tu meta con esa nueva dirección." />
             <textarea
               id="gma-edit-input"
               value={editComment}
@@ -510,7 +509,7 @@ export function GranMetaAnualModal({
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold text-[#201097] mt-4">Felicitaciones, {username}.</h2>
           <p className="text-lg text-[#2b2a6b] leading-relaxed mt-3 max-w-xl">
-            Acabas de definir una direcciÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³n clara para tu aÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â±o. Focusia usarÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ esta meta para ayudarte a avanzar con foco.
+            Acabas de definir una dirección clara para tu año. Focusia usará esta meta para ayudarte a avanzar con foco.
           </p>
           {focosTop.length > 0 && (
             <div className="flex items-center justify-center gap-0 mt-8 w-full max-w-xl">

@@ -65,6 +65,8 @@ interface PendingClassification {
 interface PlanificacionModal {
   accion: AccionKanban;
   clasificacion: 'H' | 'P' | 'D' | 'E';
+  /** Si la acción se creó desde una fila vacía y aún no está en el backlog local. */
+  restoreOnCancel?: boolean;
 }
 
 interface HoraPendiente {
@@ -73,6 +75,8 @@ interface HoraPendiente {
   /** Si viene de "Planificar -> Meta Diaria", tras elegir hora se clasifica como H. */
   fromPlan?: boolean;
   note?: string;
+  /** Si la acción se creó desde una fila vacía y aún no está en el backlog local. */
+  restoreOnCancel?: boolean;
 }
 
 
@@ -239,22 +243,18 @@ const PlanificacionModalComponent: React.FC<PlanificacionModalInnerProps> = ({ a
   );
 };
 
-const EmptyRow: React.FC<{ onClassified?: (clasificacion: string, texto: string) => void; onCreated?: (accion: AccionKanban) => void }> = ({ onClassified, onCreated }) => {
+const EmptyRow: React.FC<{
+  onCreateAndClassify?: (texto: string, tipo: 'H' | 'P' | 'D' | 'E') => Promise<void> | void;
+}> = ({ onCreateAndClassify }) => {
   const [text, setText] = useState('');
   const [saving, setSaving] = useState(false);
-  const [similarWarning, setSimilarWarning] = useState(false);
 
   const handleCreate = async (tipo: 'H' | 'P' | 'D' | 'E') => {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed || saving) return;
     setSaving(true);
     try {
-      const response = await api.post('/api/acciones-kanban/', { texto_accion: trimmed });
-      const created = response.data as AccionKanban;
-      // §17.5: advertir duplicada sin bloquear (igual se guarda).
-      setSimilarWarning(!!(created as any)?.similar_warning);
-      if (created?.id) onCreated?.(created);
-      onClassified?.(tipo, trimmed);
+      await onCreateAndClassify?.(trimmed, tipo);
       setText('');
     } catch {}
     setSaving(false);
@@ -280,8 +280,9 @@ const EmptyRow: React.FC<{ onClassified?: (clasificacion: string, texto: string)
               type="button"
               title={tipo === 'H' ? 'Hacer' : tipo === 'P' ? 'Planificar' : tipo === 'D' ? 'Delegar' : 'Eliminar'}
               onClick={() => handleCreate(tipo)}
+              disabled={saving || !text.trim()}
               style={{ background: cfg.color }}
-              className="w-3.5 h-3.5 xl:w-[18px] xl:h-[18px] rounded-full text-[8px] font-bold flex items-center justify-center transition-all text-white"
+              className="w-3.5 h-3.5 xl:w-[18px] xl:h-[18px] rounded-full text-[8px] font-bold flex items-center justify-center transition-all text-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {tipo}
             </button>
@@ -289,11 +290,6 @@ const EmptyRow: React.FC<{ onClassified?: (clasificacion: string, texto: string)
         })}
       </div>
       </div>
-      {similarWarning && (
-        <p className="text-[9px] text-amber-600 leading-tight mt-0.5">
-          Parece que ya tienes una acción similar. Se guardó de todas formas.
-        </p>
-      )}
     </div>
   );
 };
@@ -594,6 +590,9 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
   };
 
   const handlePlanificacionCancel = () => {
+    if (planificacionModal?.restoreOnCancel) {
+      setAcciones(prev => (prev.some(a => a.id === planificacionModal.accion.id) ? prev : [planificacionModal.accion, ...prev]));
+    }
     setPlanificacionModal(null);
   };
 
@@ -792,10 +791,34 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
             {Array.from({ length: emptyRows }).map((_, i) => (
               <EmptyRow
                 key={`empty-${i}`}
-                onClassified={onClassified}
-                onCreated={(accion) => {
-                  setAcciones((prev) => (prev.some(a => a.id === accion.id) ? prev : [accion, ...prev]));
-                  setActiveIndex(0);
+                onCreateAndClassify={async (texto, tipo) => {
+                  try {
+                    const response = await api.post('/api/acciones-kanban/', { texto_accion: texto });
+                    const created = response.data as AccionKanban;
+                    if ((created as any)?.similar_warning) {
+                      setSimilarWarning(true);
+                      setTimeout(() => setSimilarWarning(false), 4000);
+                    }
+                    // Para H y P se abre el flujo de selección (hora/plan) sin agregar al backlog.
+                    // Para D y E se clasifica directamente.
+                    if (tipo === 'H') {
+                      setHoraPendiente({ accion: created, fecha: isoToday(), restoreOnCancel: true });
+                      return;
+                    }
+                    if (tipo === 'P') {
+                      setPlanificacionModal({ accion: created, clasificacion: 'P', restoreOnCancel: true });
+                      return;
+                    }
+                    if (tipo === 'E') {
+                      setLottieDeleteAction(created);
+                      return;
+                    }
+                    // D: delegar con flujo de deshacer
+                    startUndo(created, 'D');
+                  } catch (err) {
+                    console.error('Error creating/clasifying accion:', err);
+                    setError('Error al crear o clasificar la acción');
+                  }
                 }}
               />
             ))}
@@ -934,7 +957,12 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
           accion={horaPendiente.accion as any}
           fecha={horaPendiente.fecha}
           onPick={handleHoraPick}
-          onCancel={() => setHoraPendiente(null)}
+          onCancel={() => {
+            if (horaPendiente.restoreOnCancel) {
+              setAcciones(prev => (prev.some(a => a.id === horaPendiente.accion.id) ? prev : [horaPendiente.accion, ...prev]));
+            }
+            setHoraPendiente(null);
+          }}
         />
       )}
 

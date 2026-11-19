@@ -6,7 +6,7 @@ import { useUiStore } from './stores/uiStore';
 import { useNotificationStore } from './stores/notificationStore';
 import { createPortal } from 'react-dom';
 import {
-  workspaceService, invitationService, delegationService, authService, notificationService, kanbanService, recordatorioService, ruedaService, timeBlockService, objetivoSemanaService, keepNotaService, misionHoyService, matrixService, configuracionService, agentService, motivationalService,
+  workspaceService, invitationService, delegationService, authService, notificationService, kanbanService, recordatorioService, ruedaService, timeBlockService, objetivoSemanaService, keepNotaService, misionHoyService, matrixService, configuracionService, configService, agentService, motivationalService,
   InvitationData, DelegationData, NotificationData, WorkspaceData, WorkspaceMemberData, RuedaCategoria, ResumenRuedaDashboard, TimeBlockData, ObjetivoSemanaData, KeepNotaData, MisionHoyData, RecordatorioData, MatrixItemData, KanbanTaskData, api, monthlyService, progresoService, ProgresoData, granMetaAnualService, FocusiaReportData, DailyPhraseData, reportService,
   horaOroService, HoraOroDia
 } from './services/api';
@@ -194,20 +194,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
     setShowCoaching(false);
     switch (section) {
       case 'inicio':
+        navigate('/app');
+        break;
       case 'coaching':
         navigate('/app/coaching');
-        break;
-      case 'mas':
-      case 'mision':
-        break;
-      case 'gratitud':
-        navigate('/app/gratitud');
-        break;
-      case 'cumple':
-        navigate('/app/cumpleanos');
-        break;
-      case 'focus':
-        navigate('/app/focus');
         break;
       case 'rueda':
         navigate('/app/rueda');
@@ -228,6 +218,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         }
         break;
       }
+      case 'calendario-mensual':
+        navigate('/app/calendario-mensual');
+        break;
       case 'kanban':
         openKanban();
         break;
@@ -238,6 +231,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         openKanban('diaria');
         break;
       case 'delegar':
+      case 'acciones-delegar':
         navigate('/app/delegar');
         break;
       case 'fechas':
@@ -247,10 +241,24 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         navigate('/app/suplementos');
         break;
       case 'hora-oro':
+      case 'hora_de_oro':
         navigate('/app/hora-oro');
+        break;
+      case 'gratitud':
+        navigate('/app/gratitud');
+        break;
+      case 'cumple':
+      case 'cumpleanos':
+        navigate('/app/cumpleanos');
+        break;
+      case 'focus':
+        navigate('/app/focus');
         break;
       case 'tribu':
         navigate('/app/tribu');
+        break;
+      case 'cuentas':
+        navigate('/app/cuentas');
         break;
       case 'inspiracion':
         navigate('/app/inspiracion');
@@ -258,10 +266,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
       case 'cursos':
         navigate('/app/cursos');
         break;
+      case 'reportes':
+        navigate('/app/reportes');
+        break;
+      case 'configuracion':
+        navigate('/app/configuracion');
+        break;
       case 'redes':
       case 'rrss':
         navigate('/app/redes');
         break;
+      case 'mas':
+      case 'mision':
       default:
         break;
     }
@@ -467,6 +483,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
   // Destino único para sidebars de módulos: abre la pantalla pedida.
   const goSection = async (section: string) => {
     switch (section) {
+      case 'inicio':
+        navigate('/app');
+        break;
       case 'rueda':
         navigate('/app/rueda');
         break;
@@ -486,16 +505,20 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         }
         break;
       }
+      case 'calendario-mensual':
+        navigate('/app/calendario-mensual');
+        break;
       case 'kanban':
         navigate('/app/kanban');
         break;
       case 'semanal':
-        navigate('/app/kanban');
+        navigate('/app/kanban?vista=semanal');
         break;
       case 'diaria':
-        navigate('/app/kanban');
+        navigate('/app/kanban?vista=diaria');
         break;
       case 'delegar':
+      case 'acciones-delegar':
         navigate('/app/delegar');
         break;
       case 'fechas':
@@ -508,7 +531,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         navigate('/app/focus');
         break;
       case 'hora-oro':
+      case 'hora_de_oro':
         navigate('/app/hora-oro');
+        break;
+      case 'gratitud':
+        navigate('/app/gratitud');
+        break;
+      case 'cumpleanos':
+      case 'cumple':
+        navigate('/app/cumpleanos');
+        break;
+      case 'cuentas':
+        navigate('/app/cuentas');
         break;
       case 'tribu':
         navigate('/app/tribu');
@@ -526,6 +560,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
       case 'rrss':
         handleOpenRrss();
         break;
+      case 'reportes':
+        navigate('/app/reportes');
+        break;
+      case 'configuracion':
+        navigate('/app/configuracion');
+        break;
+      case 'mision':
+      case 'mas':
       default:
         break;
     }
@@ -536,7 +578,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
     setShowMonthlyCalendar(false);
     switch (key) {
       case 'inicio':
+        navigate('/app');
+        break;
       case 'mensual':
+        navigate('/app/mensual');
         break;
       case 'rueda':
         navigate('/app/rueda');
@@ -546,6 +591,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         break;
       case 'anual':
         navigate('/app/anual');
+        break;
+      case 'calendario-mensual':
+        navigate('/app/calendario-mensual');
         break;
       case 'kanban':
         openKanban();
@@ -557,6 +605,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         openKanban('diaria');
         break;
       case 'delegar':
+      case 'acciones-delegar':
         navigate('/app/delegar');
         break;
       case 'fechas':
@@ -566,6 +615,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         navigate('/app/suplementos');
         break;
       case 'hora-oro':
+      case 'hora_de_oro':
         navigate('/app/hora-oro');
         break;
       case 'tribu':
@@ -593,13 +643,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
       case 'cumple':
         navigate('/app/cumpleanos');
         break;
-      case 'mision':
-      case 'mas':
+      case 'reportes':
+        navigate('/app/reportes');
+        break;
+      case 'configuracion':
+        navigate('/app/configuracion');
         break;
       case 'redes':
       case 'rrss':
         handleOpenRrss();
         break;
+      case 'mision':
+      case 'mas':
       default:
         break;
     }
@@ -1349,9 +1404,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         const data = await authService.getCurrentUser();
         const config = await configuracionService.getMiConfig();
         const avatarIdx = config.avatar_index || 0;
-        const resolvedAvatar = avatarIdx > 0 && AVATAR_FILES[avatarIdx]
-          ? AVATAR_FILES[avatarIdx]
-          : data.avatar_url || `https://ui-avatars.com/api/?name=${data.username}&background=f4d2d2&color=000`;
+        const customAvatar = typeof data.avatar_url === 'string' ? data.avatar_url : '';
+        const isCustomAvatar = customAvatar.startsWith('data:image/') || (customAvatar.startsWith('http') && !Object.values(AVATAR_FILES).includes(customAvatar));
+        const resolvedAvatar = isCustomAvatar
+          ? customAvatar
+          : (avatarIdx > 0 && AVATAR_FILES[avatarIdx]
+            ? AVATAR_FILES[avatarIdx]
+            : customAvatar || `https://ui-avatars.com/api/?name=${data.username}&background=f4d2d2&color=000`);
         setUserData({
           username: data.username,
           email: data.email,
@@ -1459,16 +1518,40 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
 
   const handleUpdateProfile = async () => {
     try {
+      const avatarUrlToSave = newAvatarUrl || '';
+      const presetEntry = Object.entries(AVATAR_FILES).find(([, path]) => path === avatarUrlToSave);
+      const presetIndex = presetEntry ? Number(presetEntry[0]) : 0;
+
       const updated = await authService.updateProfile({
         username: newUsername,
-        avatar_url: newAvatarUrl
+        avatar_url: avatarUrlToSave
       });
+
+      // Mantener sincronizado el avatar de configuración (índice) con el perfil.
+      try {
+        if (presetIndex > 0) {
+          await Promise.allSettled([
+            configuracionService.updateMiConfig({ avatar_index: presetIndex } as any),
+            configService.updateAvatar(presetIndex).catch(() => null),
+          ]);
+        } else if (avatarUrlToSave.startsWith('data:image/')) {
+          // Foto personalizada: quitar avatar predefinido para que se use avatar_url.
+          await configuracionService.updateMiConfig({ avatar_index: 0 } as any).catch(() => null);
+        }
+      } catch {}
+
+      const effectiveAvatar = avatarUrlToSave
+        || updated.avatar_url
+        || `https://ui-avatars.com/api/?name=${encodeURIComponent(updated.username || '')}&background=f4d2d2&color=000`;
+
       setUserData(prev => ({
         ...prev,
-        username: updated.username,
-        avatar_url: updated.avatar_url || `//ui-avatars.com/api/?name=${encodeURIComponent(updated.username || '')}&background=f4d2d2&color=000`,
+        username: updated.username || prev.username,
+        avatar_url: effectiveAvatar,
+        avatar_index: presetIndex > 0 ? presetIndex : (avatarUrlToSave.startsWith('data:image/') ? 0 : prev.avatar_index),
       }));
-      setNewAvatarUrl(updated.avatar_url || '');
+      setNewUsername(updated.username || newUsername);
+      setNewAvatarUrl(effectiveAvatar);
       setShowUserSettingsModal(false);
       addXP(50, 'Perfil actualizado');
     } catch (err) {
@@ -1807,6 +1890,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
           <div className="space-y-2">
             <button
               onClick={() => {
+                setNewUsername(userData.username);
+                setNewAvatarUrl(userData.avatar_url);
                 setShowUserSettingsModal(true);
                 setShowUserMenu(false);
               }}
@@ -4202,6 +4287,9 @@ const AccionesPorDelegarInline: React.FC<AccionesPorDelegarInlineProps> = ({ kan
   );
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editText, setEditText] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [creating, setCreating] = useState(false);
 
   const handleEdit = (task: KanbanTaskData) => {
     setEditingId(task.id);
@@ -4229,14 +4317,41 @@ const AccionesPorDelegarInline: React.FC<AccionesPorDelegarInlineProps> = ({ kan
     }
   };
 
+  const handleCreate = async () => {
+    const title = newTitle.trim();
+    if (!title || creating) return;
+    setCreating(true);
+    try {
+      await Promise.allSettled([
+        kanbanService.create({ titulo: title, descripcion: '', columna: 'Delegar' }),
+        api.post('/api/delegation-processes/', { titulo: title, origen: 'MANUAL' }),
+      ]);
+      setNewTitle('');
+      setIsAdding(false);
+      onRefresh();
+    } catch (err) {
+      console.error('Error creating delegated task:', err);
+    } finally {
+      setCreating(false);
+    }
+  };
+
   return (
     <div
       onClick={() => onOpenModule?.()}
       className="bg-white dark:bg-transparent rounded-md border border-gray-100 dark:border-transparent shadow-md dark:shadow-none overflow-hidden w-70 h-35 mt-2 flex flex-col cursor-pointer hover:shadow-lg transition-shadow "
       title={i18n.t('acciones_por_delegar')}
     >
-      <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] dark:bg-none dark:bg-transparent text-white dark:text-[#fda4af] text-center py-1.5 text-[10px] sm:text-xs font-bold tracking-widest uppercase rounded-md mt-2 mx-2 select-none shrink-0">
+      <div className="relative bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] dark:bg-none dark:bg-transparent text-white dark:text-[#fda4af] text-center py-1.5 text-[10px] sm:text-xs font-bold tracking-widest uppercase rounded-md mt-2 mx-2 select-none shrink-0">
         ACCIONES POR DELEGAR
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setIsAdding((v) => !v); }}
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-white/20 transition-colors"
+          title="Agregar acción por delegar"
+        >
+          <Plus className="w-3 h-3 text-white dark:text-[#fda4af]" />
+        </button>
       </div>
       <div className="mx-2 mt-2 mb-2 rounded-md flex-1 flex flex-col overflow-hidden">
         <table className="w-full border-collapse shrink-0">
@@ -4251,8 +4366,46 @@ const AccionesPorDelegarInline: React.FC<AccionesPorDelegarInlineProps> = ({ kan
             </tr>
           </thead>
         </table>
-        <div className="px-2 pb-2 pt-1 flex flex-col gap-1.5 custom-scrollbar">
-          {delegarTasks.length === 0 && (
+        <div className="px-2 pb-2 pt-1 flex flex-col gap-1.5 custom-scrollbar flex-1 min-h-0 overflow-y-auto">
+          {isAdding && (
+            <div className="flex gap-1.5 items-center" onClick={(e) => e.stopPropagation()}>
+              <div className="flex-1 bg-[#f4f5f8] dark:bg-white rounded-md h-5 flex items-center border border-blue-200">
+                <input
+                  type="text"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  className="w-full bg-transparent border-none outline-none focus:ring-0 text-slate-700 dark:text-slate-800 text-[9px] px-1.5"
+                  placeholder="Nueva acción por delegar..."
+                  autoFocus
+                  disabled={creating}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleCreate();
+                    if (e.key === 'Escape') { setIsAdding(false); setNewTitle(''); }
+                  }}
+                />
+              </div>
+              <div className="w-[70px] flex items-center justify-center gap-1">
+                <button
+                  type="button"
+                  onClick={handleCreate}
+                  disabled={creating || !newTitle.trim()}
+                  className="text-green-600 hover:text-green-800 disabled:opacity-40"
+                  title="Guardar"
+                >
+                  <Check className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setIsAdding(false); setNewTitle(''); }}
+                  className="text-gray-500 hover:text-red-600"
+                  title="Cancelar"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          )}
+          {delegarTasks.length === 0 && !isAdding && (
             <p className="text-[9px] text-gray-400 italic text-center py-2">Sin acciones por delegar</p>
           )}
           {delegarTasks.map((task) => (
