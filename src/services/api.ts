@@ -2171,6 +2171,21 @@ export interface ProgresoData {
   };
 }
 
+export const gamificationService = {
+  getProfile: async (): Promise<{ xp: number; level: number; streak_days: number; last_activity_date: string | null; badges: string[]; counters: Record<string, unknown>; updated_at: string }> => {
+    const response = await api.get('/api/gamification/profile/');
+    return response.data;
+  },
+  addXp: async (amount: number, reason = '', source = ''): Promise<{ profile: { xp: number; level: number; streak_days: number; last_activity_date: string | null; badges: string[]; counters: Record<string, unknown>; updated_at: string } }> => {
+    const response = await api.post('/api/gamification/xp/', { amount, reason, source });
+    return response.data;
+  },
+  getEvents: async (): Promise<Array<{ id: number; amount: number; reason: string; source: string; balance: number; created_at: string }>> => {
+    const response = await api.get('/api/gamification/events/');
+    return response.data;
+  },
+};
+
 export const progresoService = {
   get: async (): Promise<ProgresoData> => {
     const response = await api.get('/api/progreso-actividades/');

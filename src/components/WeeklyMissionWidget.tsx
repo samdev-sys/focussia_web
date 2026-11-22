@@ -95,7 +95,7 @@ export default function WeeklyMissionWidget({
   
 
   return (
-      <div className="relative rounded-md overflow-hidden w-40 h-45 ml-3">
+      <div className="relative rounded-md overflow-hidden w-40 h-45 -ml-22">
         <canvas
           ref={hexCanvasRef}
           className="absolute -inset-6 rounded-md pointer-events-none z-0"

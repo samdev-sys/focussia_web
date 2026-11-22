@@ -113,3 +113,27 @@ body,
     transform: translateX(-50%);
   }
 }
+
+/* Barra de scroll del listado del widget Kanban Backlog: delgada y sin tapar
+   los botones H/P/D/E del borde derecho. */
+.kb-list {
+  scrollbar-width: thin;
+}
+
+.kb-list::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.kb-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.kb-list::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.35);
+  border-radius: 999px;
+}
+
+.kb-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.55);
+}

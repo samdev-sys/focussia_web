@@ -6,7 +6,7 @@ import { useUiStore } from './stores/uiStore';
 import { useNotificationStore } from './stores/notificationStore';
 import { createPortal } from 'react-dom';
 import {
-  workspaceService, invitationService, delegationService, authService, notificationService, kanbanService, recordatorioService, ruedaService, timeBlockService, objetivoSemanaService, keepNotaService, misionHoyService, matrixService, configuracionService, configService, agentService, motivationalService,
+  workspaceService, invitationService, delegationService, authService, notificationService, kanbanService, recordatorioService, ruedaService, timeBlockService, objetivoSemanaService, keepNotaService, misionHoyService, matrixService, configuracionService, configService, agentService, motivationalService, gamificationService,
   InvitationData, DelegationData, NotificationData, WorkspaceData, WorkspaceMemberData, RuedaCategoria, ResumenRuedaDashboard, TimeBlockData, ObjetivoSemanaData, KeepNotaData, MisionHoyData, RecordatorioData, MatrixItemData, KanbanTaskData, api, monthlyService, progresoService, ProgresoData, granMetaAnualService, FocusiaReportData, DailyPhraseData, reportService,
   horaOroService, HoraOroDia
 } from './services/api';
@@ -434,6 +434,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
       try { await focusService.finalizar(actual.id, { completada: true, minutos_enfocado: minutosEnfocado }); }
       catch (e) { console.error('No se pudo registrar la sesión de Focus', e); }
     }
+    awardXPOnce(`focus-complete-${actual.id || actual.startedAtMs}`, 25, 'Sesión Focus completada', { tasksCompleted: 1 });
   };
 
   // Restaurar la sesión en curso tras recargar la página (mismo dispositivo).
@@ -954,6 +955,26 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
   });
   const xpStatsRef = React.useRef(xpStats);
   React.useEffect(() => { xpStatsRef.current = xpStats; }, [xpStats]);
+  // Hidrata XP desde backend (fuente persistente) sin pisar contadores locales más ricos.
+  React.useEffect(() => {
+    let mounted = true;
+    gamificationService.getProfile()
+      .then((p) => {
+        if (!mounted || !p) return;
+        const serverXP = Math.max(0, Number(p.xp) || 0);
+        setXpStats((prev) => {
+          if (serverXP <= prev.totalXP) return prev;
+          const levelInfo = getLevelFromXP(serverXP);
+          const next = { ...prev, totalXP: serverXP, level: levelInfo.level };
+          xpStatsRef.current = next;
+          try { localStorage.setItem('focusia_xp_stats', JSON.stringify(next)); } catch {}
+          return next;
+        });
+      })
+      .catch(() => {});
+    return () => { mounted = false; };
+  }, []);
+
 
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [levelUpData, setLevelUpData] = useState({ level: 0, newBadge: null as typeof BADGES[0] | null });
@@ -968,6 +989,28 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
   });
 
   type XPStatCounters = Partial<Pick<XPStats, 'tasksCompleted' | 'kanbanCompleted' | 'ruedaCompleted' | 'medicationsTaken'>>;
+  const awardedXpRef = React.useRef<Set<string>>((() => {
+    try {
+      const raw = localStorage.getItem('focusia_xp_awarded');
+      const arr = raw ? JSON.parse(raw) : [];
+      return new Set(Array.isArray(arr) ? arr.filter((x: unknown) => typeof x === 'string') : []);
+    } catch {
+      return new Set<string>();
+    }
+  })());
+
+  const awardXPOnce = (key: string, amount: number, reason: string, counters?: XPStatCounters) => {
+    if (!key) return;
+    if (awardedXpRef.current.has(key)) return;
+    awardedXpRef.current.add(key);
+    try {
+      const arr = Array.from(awardedXpRef.current);
+      const trimmed = arr.length > 500 ? arr.slice(arr.length - 500) : arr;
+      awardedXpRef.current = new Set(trimmed);
+      localStorage.setItem('focusia_xp_awarded', JSON.stringify(trimmed));
+    } catch {}
+    addXP(amount, reason, counters);
+  };
 
   const addXP = (amount: number, reason: string, counters?: XPStatCounters) => {
     const prev = xpStatsRef.current;
@@ -1003,6 +1046,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
     xpStatsRef.current = newStats;
     setXpStats(newStats);
     try { localStorage.setItem('focusia_xp_stats', JSON.stringify(newStats)); } catch {}
+    // Persistencia en backend (fire-and-forget) para seguimiento/auditoría.
+    if (safeAmount > 0) {
+      gamificationService.addXp(safeAmount, reason, 'dashboard').catch(() => {});
+    }
 
     setXpPopUp({ amount: safeAmount, message: reason });
     setTimeout(() => setXpPopUp(null), 2000);
@@ -1852,10 +1899,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
           con el mismo gap en las cinco columnas). 
           En tablet / ventana < 1024 u orientación vertical, MobileOrientationPrompt
           muestra la pantalla de rotación antes de llegar aquí. */}
-      <div className="relative z-10 w-full grid grid-rows-[auto_auto] grid-cols-[minmax(146px,146fr)_minmax(295px,295fr)_minmax(432px,432fr)_minmax(268px,268fr)_minmax(299px,299fr)] gap-2 px-2 pb-2 pt-1 [&>*]:min-w-0">
+      <div className="relative z-10 w-full grid grid-rows-[auto_auto] grid-cols-[minmax(240px,146fr)_minmax(295px,295fr)_minmax(432px,432fr)_minmax(268px,268fr)_minmax(299px,299fr)] gap-2 px-2 pb-2 pt-1 [&>*]:min-w-0">
 
       {/* FRANJA SUPERIOR · centro: logo Focusia */}
-      <div className="col-start-3 row-start-1 flex justify-center items-center py-1 ml-8">
+      <div className="col-start-3 row-start-1 flex justify-center items-center py-1 -ml-30">
         <div className="flex flex-col items-center justify-center dark:px-3.5 dark:py-1.5 dark:rounded-md dark:shadow-[0_4px_24px_rgba(129,75,141,0.45)] transition-all">
           <img src="/focussia.png" alt={i18n.t('focusia_logo_47mm')} className="h-[40px] w-[40px] object-contain" />
           <span className="-mt-1 text-lg font-bold text-focusia-gradient">{i18n.t('Focusia')}</span>
@@ -1864,7 +1911,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
 
       {/* FRANJA SUPERIOR · derecha: CURSOS / R.R.S.S. / CUENTAS alineados sobre
           el BLOCK DE NOTAS (inicio de la col 4); avatar anclado al borde derecho */}
-      <div className="col-start-4 col-span-2 -mt-6 row-start-1 flex items-center justify-between gap-2 z-20 ml-10 ">
+      <div className="col-start-4 col-span-2 -mt-6 row-start-1 flex items-center justify-between gap-2 z-20 -ml-18 ">
     <div className="flex items-center gap-2">
     <span id="tour-cursos-btn" className="contents"><ActionButton label={i18n.t('cursos_2jiy')} color=
     "bg-gradient-to-r from-[#000000] to-[#3533cd] text-white py-1 px-3 rounded-md text-[9px] sm:text-xs font-semibold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-18 " onClick={() => navigate('/app/cursos')} /></span>
@@ -1876,7 +1923,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
     <div className="relative shrink-0 ">
       <CyberButton
         onClick={() => setShowUserMenu(!showUserMenu)}
-        className="flex items-center gap-1.5 bg-[#0a0a0f] bg-opacity-80 dark:bg-[linear-gradient(90deg,#9333ea_0%,#4f46e5_55%,#17153b_100%)] backdrop-blur-md rounded-full px-3 py-1.5  hover:bg-[#0a0a0f] hover:bg-opacity-60 transition-colors shadow-sm active:scale-95 border border-white/5 dark:border-purple-400/40 mr-35"
+        className="flex items-center gap-1.5 bg-[#0a0a0f] bg-opacity-80 dark:bg-[linear-gradient(90deg,#9333ea_0%,#4f46e5_55%,#17153b_100%)] backdrop-blur-md rounded-full px-3 py-1.5  hover:bg-[#0a0a0f] hover:bg-opacity-60 transition-colors shadow-sm active:scale-95 border border-white/5 dark:border-purple-400/40 mr-60"
       >
         <div className="w-7 h-7 rounded-full overflow-hidden shadow-sm border-2 border-white/30">
           <img src={userData.avatar_url || undefined} alt={i18n.t('profile_r4x9')} className="w-full h-full object-cover" />
@@ -2076,7 +2123,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
   </div>
 
       {/* FRANJA SUPERIOR · columna 2: INICIO / RUEDA / MATRIZ */}
-      <div className="col-start-2 row-start-1 flex items-center gap-1.5 w-60 -mt-6 ml-8">
+      <div className="col-start-2 row-start-1 flex items-center gap-1.5 w-60 -mt-6 -ml-15">
                 <button
                   id="tour-inicio-btn"
                   onClick={onBackToHub}
@@ -2147,7 +2194,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         <div className="col-start-2 row-start-2 flex flex-col gap-2">
              
 
-            <div className="bg-white/60 dark:bg-transparent backdrop-blur-sm dark:backdrop-blur-none border border-white/30 dark:border-transparent rounded-md p-2 flex flex-col gap-3 w-60 h-40 shadow-[0_8px_32px_rgba(31,38,135,0.03)] dark:shadow-none shrink-0 -mt-10 ml-8">
+            <div className="bg-white/60 dark:bg-transparent backdrop-blur-sm dark:backdrop-blur-none border border-white/30 dark:border-transparent rounded-md p-2 flex flex-col gap-3 w-60 h-40 shadow-[0_8px_32px_rgba(31,38,135,0.03)] dark:shadow-none shrink-0 -mt-10 -ml-15">
               
               
               
@@ -2187,7 +2234,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
             </div>
 
   <div
-    className="backdrop-blur-sm dark:backdrop-blur-none rounded-md flex flex-col w-50 shadow-[0_0_0px_rgb(255,255,255)] dark:shadow-none relative overflow-hidden shrink-0 ml-30 mt-12"
+    className="backdrop-blur-sm dark:backdrop-blur-none rounded-md flex flex-col w-50 shadow-[0_0_0px_rgb(255,255,255)] dark:shadow-none relative overflow-hidden shrink-0 ml-5 mt-12"
   >
     <div className="bg-white dark:bg-transparent shadow-[0_2px_4px_rgb(247,243,243)] dark:shadow-none rounded-md overflow-hidden flex flex-col mt-2 w-45 h-40">
       
@@ -2238,7 +2285,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
         </div>
 
         {/* CENTER COLUMN */}
-<div className="col-start-3 row-start-2 flex flex-col gap-3 w-full relative ml-1">
+<div className="col-start-3 row-start-2 flex flex-col gap-3 w-full relative -ml-22">
           <div className="bg-white/60 dark:bg-[#080206]/90 backdrop-blur-sm border border-white/30 dark:border-[#4c1127] rounded-md p-3 flex flex-col gap-3 w-full shadow-[0_8px_32px_rgba(31,38,135,0.03)] dark:shadow-[0_0_20px_rgba(122,8,38,0.2)]">
             <p className="text-[14px] font-semibold text-[#1e293b] dark:text-[#fce7f3] dark:italic text-center leading-tight">
               {dailyPhrase?.phrase || fraseRespaldo}
@@ -2341,12 +2388,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
 
         {/* COLUMNA 4 — BLOCK DE NOTAS (borde izquierdo alineado con CURSOS/RRSS/CUENTAS de la franja superior) */}
         <div className="col-start-4 row-start-2 flex flex-col gap-2">
-              <div id="tour-notas" className="bg-white/60 dark:bg-transparent backdrop-blur-sm dark:backdrop-blur-none border border-white/30 dark:border-transparent rounded-md p-2 flex flex-col gap-3 w-60 h-40 shadow-[0_8px_32px_rgba(31,38,135,0.03)] dark:shadow-none -mt-9 ml-6">
+              <div id="tour-notas" className="bg-white/60 dark:bg-transparent backdrop-blur-sm dark:backdrop-blur-none border border-white/30 dark:border-transparent rounded-md p-2 flex flex-col gap-3 w-60 h-40 shadow-[0_8px_32px_rgba(31,38,135,0.03)] dark:shadow-none -mt-9 -ml-18">
                 <BlockDeNotas />
               </div>
 
           {/* Bloque Calendario */}
-          <div className="shrink-0 flex flex-col items-center w-full -ml-18 mt-20">
+          <div className="shrink-0 flex flex-col items-center w-full -ml-29 mt-20">
             <CalendarWidget />
           </div>
 
@@ -2358,7 +2405,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
 
         {/* COLUMNA 5 — XP/NIVEL + ACTIVIDADES + SUPLEMENTOS/CUMPLEAÑOS/FOCUS + HORA DE ORO + CLIMA */}
         <div className="col-start-5 row-start-2 flex flex-col gap-2">
-          <div className="w-37 h-20  ml-3 -mt-8">
+          <div className="w-37 h-20  -ml-20 -mt-8">
           <CyberProgressBar
             level={nivelXP.level}
             currentXP={nivelXP.currentXP}
@@ -2367,7 +2414,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
             
           />
           </div>
-          <div className="bg-white dark:bg-transparent backdrop-blur-sm dark:backdrop-blur-none border border-white/20 dark:border-transparent rounded-md p-1 flex flex-col gap-5 w-40 shadow-[0_4px_10px_rgba(0,0,0,0.02)] dark:shadow-none justify-between items-center shrink-0 ml-2 -mt-12">
+          <div className="bg-white dark:bg-transparent backdrop-blur-sm dark:backdrop-blur-none border border-white/20 dark:border-transparent rounded-md p-1 flex flex-col gap-5 w-40 shadow-[0_4px_10px_rgba(0,0,0,0.02)] dark:shadow-none justify-between items-center shrink-0 -ml-22 -mt-12">
               <span id="tour-suplementos-btn" className="contents"><ActionButton label={i18n.t('suplementos')} color="bg-gradient-to-r from-[#3533cd] to-[#040817] dark:from-[#ec4899] dark:via-[#fb923c] dark:to-[#fde047] dark:!text-[#14050c] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full" variant="modern"  onClick={() => navigate('/app/suplementos')} /></span>
               <span id="tour-cumpleanos-btn" className="contents"><ActionButton label={i18n.t('cumpleanos_n7de')} color="bg-gradient-to-r from-[#3533cd] to-[#040817] dark:from-[#ec4899] dark:via-[#fb923c] dark:to-[#fde047] dark:!text-[#14050c] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"  variant="modern" onClick={() => navigate('/app/cumpleanos')} /></span>
               <span id="tour-focus-btn" className="contents"><ActionButton label={i18n.t('focus')} color="bg-gradient-to-r from-[#3533cd] to-[#040817] dark:from-[#ec4899] dark:via-[#fb923c] dark:to-[#fde047] dark:!text-[#14050c] text-white py-2 rounded-md text-[10px] sm:text-xs font-bold tracking-wider uppercase shadow-md transition hover:brightness-110 active:scale-[0.98] w-full"  variant="modern" onClick={() => navigate('/app/focus')} /></span>
@@ -2887,6 +2934,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout, onBackToHub, onShowOnbo
           onOpenHelp={() => setShowAyuda(true)}
           onOpenNotifications={abrirNotificaciones}
           onOpenSettings={() => navigate('/app/configuracion')}
+          onActionCompleted={(accion) => awardXPOnce(`agenda-complete-${accion.id}`, XP_CONFIG.TIME_BLOCK_FINISH, 'Bloque de tiempo completado', { tasksCompleted: 1 })}
         />
       )}
 
@@ -4199,7 +4247,7 @@ export const FechasImportantesCard: React.FC<FechasImportantesProps> = ({ dayAct
   const selectedRecordatorios = selectedDay ? recordatoriosPorDia[selectedDay] || [] : [];
 
   return (
-  <div className="flex flex-col h-55 w-50 -mt-2 ml-28 rounded-md items-center overflow-hidden">
+  <div className="flex flex-col h-55 w-50 -mt-2 ml-3 rounded-md items-center overflow-hidden">
       <div className="bg-gradient-to-r from-[#2b44ff] via-[#0b153a] to-[#040817] dark:bg-none dark:bg-[#070309] dark:border dark:border-white/10 text-white dark:text-[#fdba74] text-center py-1 text-[11px] font-bold tracking-[0.2em] uppercase mt-1.5 mx-2 w-[186px] rounded-sm select-none shrink-0">
         FECHAS IMPORTANTES
       </div>
@@ -4289,6 +4337,7 @@ const AccionesPorDelegarInline: React.FC<AccionesPorDelegarInlineProps> = ({ kan
   const [editText, setEditText] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [newTitle, setNewTitle] = useState('');
+  const [newResponsable, setNewResponsable] = useState('');
   const [creating, setCreating] = useState(false);
 
   const handleEdit = (task: KanbanTaskData) => {
@@ -4319,14 +4368,16 @@ const AccionesPorDelegarInline: React.FC<AccionesPorDelegarInlineProps> = ({ kan
 
   const handleCreate = async () => {
     const title = newTitle.trim();
+    const responsable = newResponsable.trim();
     if (!title || creating) return;
     setCreating(true);
     try {
       await Promise.allSettled([
-        kanbanService.create({ titulo: title, descripcion: '', columna: 'Delegar' }),
-        api.post('/api/delegation-processes/', { titulo: title, origen: 'MANUAL' }),
+        kanbanService.create({ titulo: title, descripcion: '', columna: 'Delegar', responsable }),
+        api.post('/api/delegation-processes/', { titulo: title, origen: 'MANUAL', responsable }),
       ]);
       setNewTitle('');
+      setNewResponsable('');
       setIsAdding(false);
       onRefresh();
     } catch (err) {
@@ -4346,7 +4397,7 @@ const AccionesPorDelegarInline: React.FC<AccionesPorDelegarInlineProps> = ({ kan
         ACCIONES POR DELEGAR
         <button
           type="button"
-          onClick={(e) => { e.stopPropagation(); setIsAdding((v) => !v); }}
+          onClick={(e) => { e.stopPropagation(); setIsAdding((v) => { if (v) { setNewTitle(''); setNewResponsable(''); } return !v; }); }}
           className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-white/20 transition-colors"
           title="Agregar acción por delegar"
         >
@@ -4368,23 +4419,37 @@ const AccionesPorDelegarInline: React.FC<AccionesPorDelegarInlineProps> = ({ kan
         </table>
         <div className="px-2 pb-2 pt-1 flex flex-col gap-1.5 custom-scrollbar flex-1 min-h-0 overflow-y-auto">
           {isAdding && (
-            <div className="flex gap-1.5 items-center" onClick={(e) => e.stopPropagation()}>
-              <div className="flex-1 bg-[#f4f5f8] dark:bg-white rounded-md h-5 flex items-center border border-blue-200">
+            <div className="flex gap-1 items-center" onClick={(e) => e.stopPropagation()}>
+              <div className="flex-1 min-w-0 bg-[#f4f5f8] dark:bg-white rounded-md h-5 flex items-center border border-blue-200">
                 <input
                   type="text"
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   className="w-full bg-transparent border-none outline-none focus:ring-0 text-slate-700 dark:text-slate-800 text-[9px] px-1.5"
-                  placeholder="Nueva acción por delegar..."
+                  placeholder="Acción..."
                   autoFocus
                   disabled={creating}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleCreate();
-                    if (e.key === 'Escape') { setIsAdding(false); setNewTitle(''); }
+                    if (e.key === 'Escape') { setIsAdding(false); setNewTitle(''); setNewResponsable(''); }
                   }}
                 />
               </div>
-              <div className="w-[70px] flex items-center justify-center gap-1">
+              <div className="w-[72px] bg-[#f4f5f8] dark:bg-white rounded-md h-5 flex items-center border border-blue-200">
+                <input
+                  type="text"
+                  value={newResponsable}
+                  onChange={(e) => setNewResponsable(e.target.value)}
+                  className="w-full bg-transparent border-none outline-none focus:ring-0 text-slate-700 dark:text-slate-800 text-[9px] px-1.5"
+                  placeholder="Responsable"
+                  disabled={creating}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleCreate();
+                    if (e.key === 'Escape') { setIsAdding(false); setNewTitle(''); setNewResponsable(''); }
+                  }}
+                />
+              </div>
+              <div className="flex items-center justify-center gap-0.5 shrink-0">
                 <button
                   type="button"
                   onClick={handleCreate}
@@ -4396,7 +4461,7 @@ const AccionesPorDelegarInline: React.FC<AccionesPorDelegarInlineProps> = ({ kan
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setIsAdding(false); setNewTitle(''); }}
+                  onClick={() => { setIsAdding(false); setNewTitle(''); setNewResponsable(''); }}
                   className="text-gray-500 hover:text-red-600"
                   title="Cancelar"
                 >
@@ -4790,7 +4855,7 @@ function HoraDeOroFamiliar({ refreshKey, onOpenSlot, onOpenModule }: {
     dias.find(d => d.dia === dia)?.experiencias[posicion];
 
   return (
-    <div className="bg-white dark:bg-transparent border-2 border-gray-100 dark:border-transparent card-shadow dark:shadow-none overflow-hidden w-60 h-[358px] flex flex-col select-none rounded-md mt-3 -ml-20">
+    <div className="bg-white dark:bg-transparent border-2 border-gray-100 dark:border-transparent card-shadow dark:shadow-none overflow-hidden w-60 h-[358px] flex flex-col select-none rounded-md mt-3 -ml-43">
       <button
         type="button"
         onClick={onOpenModule}
@@ -4847,7 +4912,7 @@ function ClimaComuna({ temp, descripcion, lugar, loading, error, icono, humedad,
 }): React.ReactElement {
   return (
   <div
-    className="bg-white dark:bg-transparent rounded-md border-2 border-gray-100 dark:border-transparent shadow-md dark:shadow-none overflow-hidden w-full h-35 mx-0 mt-8 cursor-pointer hover:shadow-lg transition-shadow -ml-35"
+    className="bg-white dark:bg-transparent rounded-md border-2 border-gray-100 dark:border-transparent shadow-md dark:shadow-none overflow-hidden w-full h-35 mx-0 mt-8 cursor-pointer hover:shadow-lg transition-shadow -ml-58"
     onClick={onAbrir}
     title="Ver pronóstico completo"
   >
@@ -5138,7 +5203,7 @@ function CalendarWidget(): React.ReactElement {
   }, []); 
 
   return (
-  <div className="bg-white dark:bg-transparent rounded-md border-2 border-gray-100 dark:border-transparent shadow-md dark:shadow-none overflow-hidden w-40 h-45 ml-15 -mt-7">
+  <div className="bg-white dark:bg-transparent rounded-md border-2 border-gray-100 dark:border-transparent shadow-md dark:shadow-none overflow-hidden w-40 h-45 -ml-13 -mt-10 ">
     <div className="bg-white dark:bg-transparent rounded-md  dark:border-transparent shadow-[0_4px_20px_rgba(0,0,0,0.05)] dark:shadow-none overflow-hidden w-[170px] h-[170px] select-none flex flex-col">
       <div className="bg-gradient-to-r from-[#000000] to-[#3533cd] dark:bg-none dark:bg-[#070309] dark:border dark:border-white/10 px-2 py-2 flex items-center justify-center gap-6 border-b border-white/5 shrink-0 rounded-md ml-2 mt-1 w-35">
                  <img

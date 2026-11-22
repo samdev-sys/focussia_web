@@ -165,7 +165,14 @@ class UserViewSet(viewsets.ModelViewSet):
         elif request.method == 'PATCH':
             serializer = UserDetailSerializer(request.user, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            try:
+                serializer.save()
+            except Exception:
+                logger.exception('Error updating /api/users/me/ for user_id=%s', request.user.pk)
+                return Response(
+                    {'detail': 'No se pudo actualizar el perfil.'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
             return Response(serializer.data)
         elif request.method == 'DELETE':
             password = request.data.get('password') or request.data.get('current_password')
@@ -4445,7 +4452,14 @@ class ActionDelegationViewSet(BaseUserViewSet):
     def perform_create(self, serializer):
         obj = serializer.save(user=self.request.user)
         obj.push_historial('trasladada', {'origen': obj.origen})
-        obj.save(update_fields=['historial'])
+        update_fields = ['historial']
+        responsable = (obj.responsable or '').strip()
+        if responsable:
+            obj.responsable = responsable[:255]
+            obj.estado = ActionDelegation.Estado.DELEGADA
+            obj.push_historial('responsable_asignado', {'anterior': '', 'nuevo': obj.responsable})
+            update_fields.extend(['responsable', 'estado'])
+        obj.save(update_fields=update_fields)
 
     @action(detail=True, methods=['patch'], url_path='responsable')
     def asignar_responsable(self, request, pk=None):

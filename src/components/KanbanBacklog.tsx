@@ -262,16 +262,16 @@ const EmptyRow: React.FC<{
 
   return (
     <div>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 w-full min-w-0">
       <input
         type="text"
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder={i18n.t('escriba_aqui')}
         disabled={saving}
-        className="flex-1 border border-gray-200 dark:border-white/80 rounded text-[10px] px-1.5 py-1 h-6 w-10 flex items-center text-gray-700 italic placeholder:text-gray-400 bg-white truncate"
+        className="flex-1 min-w-0 border border-gray-200 dark:border-white/80 rounded text-[10px] px-1.5 py-1 h-6 flex items-center text-gray-700 italic placeholder:text-gray-400 bg-white truncate"
       />
-      <div className="flex gap-[3px] shrink-0 rounded-md px-0.5 py-0.5 xl:px-1 bg-gray-100 dark:bg-white border border-black-100 dark:border-white/80">
+      <div className="flex gap-[2px] shrink-0 rounded-md px-[2px] py-0.5 bg-gray-100 dark:bg-white border border-black-100 dark:border-white/80">
         {(['H', 'P', 'D', 'E'] as const).map(tipo => {
           const cfg = TIPO_CONFIG[tipo];
           return (
@@ -281,10 +281,12 @@ const EmptyRow: React.FC<{
               title={tipo === 'H' ? 'Hacer' : tipo === 'P' ? 'Planificar' : tipo === 'D' ? 'Delegar' : 'Eliminar'}
               onClick={() => handleCreate(tipo)}
               disabled={saving || !text.trim()}
-              style={{ background: cfg.color }}
-              className="w-3.5 h-3.5 xl:w-[18px] xl:h-[18px] rounded-full text-[8px] font-bold flex items-center justify-center transition-all text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ '--dot': cfg.color, '--dot-hover': cfg.hover } as React.CSSProperties}
+              className="kb-btn w-4 h-4 xl:w-[18px] xl:h-[18px] shrink-0 rounded-full flex items-center justify-center bg-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {tipo}
+              <span className="kb-dot w-2.5 h-2.5 xl:w-3.5 xl:h-3.5 rounded-full text-[6px] xl:text-[7px] font-bold flex items-center justify-center transition-all text-white">
+                {tipo}
+              </span>
             </button>
           );
         })}
@@ -322,6 +324,7 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
     loadAcciones();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshTrigger]);
+
 
   const safeAcciones = Array.isArray(acciones) ? acciones : [];
   const ROW_HEIGHT = 26;
@@ -519,8 +522,16 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
   }, [lottieDeleteAction, startUndo]);
 
   const handleClasificar = useCallback((accion: AccionKanban, clasificacion: 'H' | 'P' | 'D' | 'E') => {
-    if (pendingClassification || horaPendiente) return;
-    if (leavingIds.has(accion.id)) return;
+    if (pendingClassification || horaPendiente) {
+      console.debug('[KanbanBacklog] click bloqueado', { clasificacion, pending: !!pendingClassification, hora: !!horaPendiente });
+      return;
+    }
+    if (leavingIds.has(accion.id)) {
+      console.debug('[KanbanBacklog] click bloqueado: leaving', { clasificacion, id: accion.id });
+      return;
+    }
+
+    console.debug('[KanbanBacklog] clasificar', { clasificacion, id: accion.id });
 
     if (clasificacion === 'P') {
       setPlanificacionModal({ accion, clasificacion });
@@ -571,12 +582,14 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
 
     // "Meta Diaria" va a la agenda y requiere hora obligatoria.
     if (destino === 'DIARIA') {
+      const restoreOnCancel = planificacionModal.restoreOnCancel;
       setPlanificacionModal(null);
       setHoraPendiente({
         accion,
         fecha: fechaSeleccionada,
         fromPlan: true,
         note: 'Planificado: DIARIA',
+        ...(restoreOnCancel ? { restoreOnCancel: true } : {}),
       });
       return;
     }
@@ -682,6 +695,15 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
         .trash-catch {
           animation: trash-catch 0.6s ease-in-out forwards;
         }
+        .kb-dot {
+          background: var(--dot, #143ccc);
+        }
+        .kb-btn:hover .kb-dot {
+          background: var(--dot-hover, var(--dot, #143ccc));
+        }
+        .kb-btn:disabled .kb-dot {
+          background: var(--dot, #143ccc);
+        }
       `}</style>
 
       <div className="relative bg-[linear-gradient(90deg,#171e3b,#143ccc)] dark:bg-none dark:bg-transparent text-white dark:text-[#fda4af] text-center py-2 font-bold text-[11px] uppercase tracking-widest shrink-0 mb-2 mt-2 rounded-md w-full flex items-center justify-center">
@@ -711,11 +733,11 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
         </p>
       )}
 
-      <div className="grid grid-cols-[1fr_70px] xl:grid-cols-[1fr_90px] text-[10px] font-bold border-b border-gray-200 dark:border-transparent shrink-0 gap-1">
+      <div className="grid grid-cols-[1fr_76px] xl:grid-cols-[1fr_84px] text-[10px] font-bold border-b border-gray-200 dark:border-transparent shrink-0 gap-1 pl-1 pr-1">
         <div className="bg-[linear-gradient(90deg,#ffe29f,#ffc997)] dark:bg-[linear-gradient(90deg,#fde68a,#f9a8d4)] text-slate-800 dark:text-[#14050c] text-center py-1 uppercase tracking-wide rounded-md border border-black-300/50 dark:border-pink-300/40 w-full">
           Acción
         </div>
-        <div className="bg-[linear-gradient(90deg,#ffe29f,#ffc997)] dark:bg-[linear-gradient(90deg,#fde68a,#f9a8d4)] text-slate-800 dark:text-[#14050c] text-center py-1 px-2 uppercase border border-black-300/50 dark:border-pink-300/40 rounded-md w-full">
+        <div className="bg-[linear-gradient(90deg,#ffe29f,#ffc997)] dark:bg-[linear-gradient(90deg,#fde68a,#f9a8d4)] text-slate-800 dark:text-[#14050c] text-center py-1 px-1 uppercase border border-black-300/50 dark:border-pink-300/40 rounded-md w-full">
           Matriz
         </div>
       </div>
@@ -746,7 +768,7 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
 
       
 
-      <div ref={listRef} className="flex-1 min-h-0 overflow-y-auto p-1 space-y-[2px]">
+      <div ref={listRef} className="kb-list flex-1 min-h-0 overflow-y-auto overflow-x-hidden py-1 pl-1 pr-0 space-y-[2px]" style={{ scrollbarGutter: 'stable' }}>
         {loading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
@@ -758,15 +780,15 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
               return (
                 <div
                   key={accion.id}
-                  className={`flex items-center gap-1 group ${leavingIds.has(accion.id) ? (animatingEId === accion.id ? 'kanban-deleting' : 'kanban-leaving') : ''} ${isActive ? 'kanban-active' : ''}`}
+                  className={`flex items-center gap-1 group w-full min-w-0 ${leavingIds.has(accion.id) ? (animatingEId === accion.id ? 'kanban-deleting' : 'kanban-leaving') : ''} ${isActive ? 'kanban-active' : ''}`}
                   onDoubleClick={() => handleDoubleClick(accion)}
                   onMouseEnter={() => setActiveIndex(idx)}
                 >
-                  <div className="flex-1 border border-gray-200 dark:border-white/80 rounded text-[10px] px-1.5 py-1 h-6 flex items-center text-gray-700 bg-white truncate" title={accion.texto_accion}>
+                  <div className="flex-1 min-w-0 border border-gray-200 dark:border-white/80 rounded text-[10px] px-1.5 py-1 h-6 flex items-center text-gray-700 bg-white truncate" title={accion.texto_accion}>
                     {accion.es_fijo && <span className="text-amber-500 mr-1">★</span>}
                     {accion.texto_accion}
                   </div>
-                  <div className="flex gap-[3px] shrink-0 rounded-md px-0.5 py-0.5 xl:px-1 bg-gray-100 dark:bg-white border border-black-100 dark:border-white/80">
+                  <div className="flex gap-[2px] shrink-0 rounded-md px-[2px] py-0.5 bg-gray-100 dark:bg-white border border-black-100 dark:border-white/80">
                     {(['H', 'P', 'D', 'E'] as const).map(tipo => {
                       const cfg = TIPO_CONFIG[tipo];
                       return (
@@ -775,12 +797,12 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
                           type="button"
                           title={tipo === 'H' ? 'Hacer' : tipo === 'P' ? 'Planificar' : tipo === 'D' ? 'Delegar' : 'Eliminar'}
                           onClick={() => handleClasificar(accion, tipo)}
-                          style={{ background: cfg.color }}
-                          className="w-3.5 h-3.5 xl:w-[18px] xl:h-[18px] rounded-full text-[8px] font-bold flex items-center justify-center transition-all text-white"
-                          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = cfg.hover; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = cfg.color; }}
+                          style={{ '--dot': cfg.color, '--dot-hover': cfg.hover } as React.CSSProperties}
+                          className="kb-btn w-4 h-4 xl:w-[18px] xl:h-[18px] shrink-0 rounded-full flex items-center justify-center bg-transparent"
                         >
-                          {tipo}
+                          <span className="kb-dot w-2.5 h-2.5 xl:w-3.5 xl:h-3.5 rounded-full text-[6px] xl:text-[7px] font-bold flex items-center justify-center transition-all text-white">
+                            {tipo}
+                          </span>
                         </button>
                       );
                     })}
@@ -793,6 +815,7 @@ export const KanbanBacklog: React.FC<KanbanBacklogProps> = ({ className = '', co
                 key={`empty-${i}`}
                 onCreateAndClassify={async (texto, tipo) => {
                   try {
+                    console.debug('[KanbanBacklog] crear+clasificar (fila vacía)', { tipo, texto });
                     const response = await api.post('/api/acciones-kanban/', { texto_accion: texto });
                     const created = response.data as AccionKanban;
                     if ((created as any)?.similar_warning) {

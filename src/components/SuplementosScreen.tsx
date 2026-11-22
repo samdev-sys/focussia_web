@@ -7,9 +7,39 @@ import {
 } from 'lucide-react';
 import {
   suplementoService,
+  gamificationService,
   type SuplementoData,
   type SuplementoTipo,
 } from '../services/api';
+
+const XP_LEVEL_THRESHOLDS = [0,100,250,500,800,1200,1700,2300,3000,3800,4700,5700,6800,8000,9300,10700,12200,13800,15500,17300,19200,21200,23300,25500,27800,30200,32700,35300,38000,40800,43700,46700,49800,53000,56300,59700,63200,66800,70500,74300];
+const xpLevelFromTotal = (xp: number) => {
+  let level = 0;
+  for (let i = 0; i < XP_LEVEL_THRESHOLDS.length; i++) {
+    if (xp >= XP_LEVEL_THRESHOLDS[i]) level = i;
+    else break;
+  }
+  return level;
+};
+const awardLocalXP = (amount: number, reason: string, source: string, key: string) => {
+  const safe = Math.max(0, Math.floor(amount));
+  if (!safe) return;
+  try {
+    const awardedRaw = localStorage.getItem('focusia_xp_awarded');
+    const awarded = new Set<string>(awardedRaw ? JSON.parse(awardedRaw) : []);
+    if (awarded.has(key)) return;
+    awarded.add(key);
+    const arr = Array.from(awarded).slice(-500);
+    localStorage.setItem('focusia_xp_awarded', JSON.stringify(arr));
+    const raw = localStorage.getItem('focusia_xp_stats');
+    const prev = raw ? JSON.parse(raw) : {};
+    const totalXP = Math.max(0, Number(prev.totalXP) || 0) + safe;
+    const next = { ...prev, totalXP, level: xpLevelFromTotal(totalXP), todayXP: Math.max(0, Number(prev.todayXP) || 0) + safe };
+    localStorage.setItem('focusia_xp_stats', JSON.stringify(next));
+    window.dispatchEvent(new CustomEvent('focusia:xp-awarded', { detail: { amount: safe, reason, totalXP } }));
+  } catch {}
+  gamificationService.addXp(safe, reason, source).catch(() => {});
+};
 import ModuleShell from './ModuleShell';
 
 /* Icono de cabecera: logo Focusia (igual que la marca del sidebar). */
@@ -550,6 +580,8 @@ export default function SuplementosScreen({ onBack, userName, onNavigate }: {
     setAviso(null);
     try {
       const tarjeta = await suplementoService.marcarTomado(s.id);
+      const today = new Date().toISOString().slice(0, 10);
+      awardLocalXP(5, `Toma registrada: ${s.nombre}`, 'suplementos', `suplemento-toma-${s.id}-${today}-${tarjeta?.proxima_toma_hora || 'done'}`);
       setAviso(
         tarjeta.proxima_toma_hora
           ? `Toma de ${s.nombre} registrada. Próxima dosis: ${tarjeta.proxima_toma_hora}.`

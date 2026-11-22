@@ -70,6 +70,7 @@ interface BoardProps {
   hActionId?: string | null;
   onBackToKanban?: () => void;
   onAfterUndo?: () => void;
+  onActionCompleted?: (accion: AccionKanban) => void;
 }
 
 export const AgendaDiariaBoard: React.FC<BoardProps> = ({
@@ -78,6 +79,7 @@ export const AgendaDiariaBoard: React.FC<BoardProps> = ({
   hActionId,
   onBackToKanban,
   onAfterUndo,
+  onActionCompleted,
 }) => {
   const [dateISO, setDateISO] = useState(todayStr);
   const [dayActions, setDayActions] = useState<AccionKanban[]>([]);
@@ -175,6 +177,7 @@ export const AgendaDiariaBoard: React.FC<BoardProps> = ({
     try {
       await api.patch(`/api/acciones-kanban/${accion.id}/`, { estado: nuevo });
       setAviso(null);
+      if (nuevo === 'Completada') onActionCompleted?.(accion);
       reload();
     } catch (err: any) {
       setAviso({ id: accion.id, titulo: errorDe(err, 'No se pudo cambiar el estado.') });
@@ -716,6 +719,7 @@ interface AgendaDiariaProps {
   onOpenHelp?: () => void;
   onOpenNotifications?: () => void;
   onOpenSettings?: () => void;
+  onActionCompleted?: (accion: AccionKanban) => void;
 }
 
 export const AgendaDiaria: React.FC<AgendaDiariaProps> = ({
@@ -730,6 +734,7 @@ export const AgendaDiaria: React.FC<AgendaDiariaProps> = ({
   onOpenHelp,
   onOpenNotifications,
   onOpenSettings,
+  onActionCompleted,
 }) => (
   <AppShell
     activeNav="diaria"
@@ -748,6 +753,7 @@ export const AgendaDiaria: React.FC<AgendaDiariaProps> = ({
       hActionId={hActionId}
       bannerText={bannerText}
       onBackToKanban={onBackToKanban}
+      onActionCompleted={onActionCompleted}
     />
   </AppShell>
 );
