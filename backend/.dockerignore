@@ -1,0 +1,16 @@
+# Contexto de build: backend/ (Railway Root Directory o compose context: ./backend).
+# Secretos y estado local: NUNCA dentro de la imagen.
+.env
+.env.*
+!.env.example
+*.sqlite3
+celerybeat-schedule*
+.pytest_cache
+__pycache__/
+*.pyc
+*.pyo
+*.log
+.venv/
+media/
+staticfiles/
+db.sqlite3

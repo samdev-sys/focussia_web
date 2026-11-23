@@ -18,12 +18,11 @@ ENV SECRET_KEY=$SECRET_KEY \
     ALLOWED_HOSTS=$ALLOWED_HOSTS \
     DEBUG=$DEBUG
 
-# Contexto: raíz del repo (docker-compose usa context: . con dockerfile backend/Dockerfile).
-# Se copia solo backend/ para no arrastrar node_modules ni el frontend.
-COPY backend/requirements.txt .
+# Contexto esperado: backend/ (Railway Root Directory=backend, o compose con context: ./backend).
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY --chown=10001:10001 backend/ . .
+COPY --chown=10001:10001 . .
 
 RUN python manage.py collectstatic --noinput \
     && mkdir -p /app/media /app/staticfiles \
