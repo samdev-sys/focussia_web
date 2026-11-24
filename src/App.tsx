@@ -158,12 +158,16 @@ function AppContent() {
       .finally(() => setChecking(false));
   }, []);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setAuth('session');
-    // Para cualquier inicio de sesión (manual u OAuth), ir directamente al dashboard
-    // Solo ir a onboarding si es un registro nuevo (manejado por handleRegister)
-    onboardingV2Service.getStatus().catch(() => {});
-    setOnboardingComplete(true);
+    setOnboardingComplete(null);
+    try {
+      const status = await onboardingV2Service.getStatus();
+      setOnboardingComplete(status.onboarding_completado);
+    } catch {
+      // Si no se puede determinar, asumir completado para no bloquear usuarios existentes
+      setOnboardingComplete(true);
+    }
   };
 
   const handleRegister = () => {
