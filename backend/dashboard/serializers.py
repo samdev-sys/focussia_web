@@ -1,3 +1,5 @@
+import re
+
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
@@ -12,6 +14,16 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'password', 'avatar_url', 'bio']
         extra_kwargs = {'password': {'write_only': True}}
+
+    def to_internal_value(self, data):
+        # El campo "nombre" del formulario permite espacios ("Roberto QA2"), pero
+        # el validador de username de Django no los acepta. Normalizamos ANTES de
+        # que corran los validadores del campo para que el registro no falle.
+        data = data.copy()
+        username = data.get('username')
+        if isinstance(username, str):
+            data['username'] = re.sub(r'\s+', '_', username.strip())
+        return super().to_internal_value(data)
 
     def validate_password(self, value):
         validate_password(value)

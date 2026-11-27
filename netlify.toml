@@ -43,6 +43,9 @@ NODE_VERSION = "22"
   [headers.values]
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "DENY"
+    # Google Identity Services necesita poder comunicarse con su popup de
+    # sign-in; `same-origin` bloquearía el postMessage (warning en consola).
+    Cross-Origin-Opener-Policy = "same-origin-allow-popups"
     Referrer-Policy = "strict-origin-when-cross-origin"
     X-XSS-Protection = "0"
     Permissions-Policy = "geolocation=(self), camera=(), microphone=(), payment=(), usb=()"

@@ -357,7 +357,7 @@ class TimeBlockViewSet(BaseUserViewSet):
         instance.delete()
 
 class KanbanTaskViewSet(WorkspaceScopedMixin, viewsets.ModelViewSet):
-    queryset = KanbanTask.objects.all()
+    queryset = KanbanTask.objects.all().order_by('id')
     serializer_class = KanbanTaskSerializer
 
     def perform_create(self, serializer):
@@ -464,7 +464,7 @@ class KanbanActionViewSet(BaseUserViewSet):
         return self.pin(request, action_id=pk)
 
 class RecordatorioViewSet(WorkspaceScopedMixin, viewsets.ModelViewSet):
-    queryset = Recordatorio.objects.all()
+    queryset = Recordatorio.objects.all().order_by('id')
     serializer_class = RecordatorioSerializer
 
     @action(detail=False, methods=['get'])
@@ -1061,7 +1061,7 @@ class HoraOroExperienciaViewSet(BaseUserViewSet):
 
 
 class ObjetivoSemanaViewSet(BaseUserViewSet):
-    queryset = ObjetivoSemana.objects.all()
+    queryset = ObjetivoSemana.objects.all().order_by('id')
     serializer_class = ObjetivoSemanaSerializer
 
     def create(self, request, *args, **kwargs):
@@ -1072,7 +1072,7 @@ class ObjetivoSemanaViewSet(BaseUserViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED)
 
 class KeepNotaViewSet(BaseUserViewSet):
-    queryset = KeepNota.objects.all()
+    queryset = KeepNota.objects.all().order_by('id')
     serializer_class = KeepNotaSerializer
 
     def create(self, request, *args, **kwargs):
@@ -1083,7 +1083,7 @@ class KeepNotaViewSet(BaseUserViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED)
 
 class MisionHoyViewSet(BaseUserViewSet):
-    queryset = MisionHoy.objects.all()
+    queryset = MisionHoy.objects.all().order_by('id')
     serializer_class = MisionHoySerializer
 
     def create(self, request, *args, **kwargs):

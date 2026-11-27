@@ -79,7 +79,14 @@ GROQ_AGENT_MODEL = os.environ.get('GROQ_AGENT_MODEL', 'openai/gpt-oss-120b')
 
 # OAuth: IDs de cliente permitidos para validar tokens sociales en backend.
 # Admite lista separada por comas.
-GOOGLE_OAUTH_CLIENT_ID = os.environ.get('GOOGLE_OAUTH_CLIENT_ID', os.environ.get('VITE_GOOGLE_CLIENT_ID', ''))
+# Acepta los tres nombres que se han usado en despliegues anteriores. Si en
+# Railway solo está `GOOGLE_CLIENT_ID` (como en el panel actual), el backend
+# debe seguir validando el `aud` del id_token contra ese mismo client id.
+GOOGLE_OAUTH_CLIENT_ID = (
+    os.environ.get('GOOGLE_OAUTH_CLIENT_ID')
+    or os.environ.get('GOOGLE_CLIENT_ID')
+    or os.environ.get('VITE_GOOGLE_CLIENT_ID', '')
+)
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -169,6 +176,11 @@ EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+# Algunos proveidores (p. ej. Resend en el puerto 465) exigen SSL en lugar de
+# STARTTLS. TLS y SSL son mutuamente excluyentes en Django.
+EMAIL_USE_SSL = os.environ.get('EMAIL_USE_SSL', 'False') == 'True'
+if EMAIL_USE_SSL:
+    EMAIL_USE_TLS = False
 # Timeout del socket SMTP: sin él, un EMAIL_HOST inalcanzable (p. ej. red
 # bloqueada en Railway) deja send_mail() colgado hasta el límite del SO, y la
 # petición de "reset contraseña" no responde nunca (el botón queda cargando).

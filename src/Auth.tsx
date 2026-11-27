@@ -484,11 +484,14 @@ export function RegistroCuenta({ onExito, onIrLogin, onRecuperar, paso }: {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('Ingresa un email válido'); return; }
     if (password.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return; }
     if (password !== confirm) { setError('Las contraseñas no coinciden'); return; }
+    // El backend valida username sin espacios: normalizamos aquí también para
+    // que el usuario vea con qué nombre quedó registrado.
+    const usuario = nombre.trim().replace(/\s+/g, '_');
     setLoading(true);
     try {
-      await authService.register(nombre.trim(), email.trim(), password);
+      await authService.register(usuario, email.trim(), password);
       await authService.login(email.trim(), password);
-      onExito({ nombre: nombre.trim(), email: email.trim() });
+      onExito({ nombre: usuario, email: email.trim() });
     } catch (err: any) {
       const d = err.response?.data || {};
       const fields = (d.fields || {}) as Record<string, any>;
@@ -543,6 +546,7 @@ export function RegistroCuenta({ onExito, onIrLogin, onRecuperar, paso }: {
             <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} autoComplete="given-name"
               className={inputCls} placeholder={i18n.t('nombre')} />
           </div>
+          <p className="-mt-2 text-[11px] text-slate-400">Los espacios se convertirán en «_». Para iniciar sesión usarás tu email.</p>
 
           <div className="relative w-full">
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-700">

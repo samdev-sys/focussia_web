@@ -87,12 +87,17 @@ def _get_or_create_social_user(email, full_name, avatar_url, provider):
 # ─── GOOGLE ────────────────────────────────────────────────────────────
 
 def _verify_google_token(id_token):
-    resp = requests.get(
-        'https://oauth2.googleapis.com/tokeninfo',
-        params={'id_token': id_token},
-        timeout=10,
-    )
+    try:
+        resp = requests.get(
+            'https://oauth2.googleapis.com/tokeninfo',
+            params={'id_token': id_token},
+            timeout=10,
+        )
+    except requests.RequestException:
+        logger.exception('Google login rechazado: no se pudo contactar tokeninfo')
+        return None
     if resp.status_code != 200:
+        logger.warning('Google login rechazado: tokeninfo devolvió HTTP %s', resp.status_code)
         return None
     data = resp.json()
 
