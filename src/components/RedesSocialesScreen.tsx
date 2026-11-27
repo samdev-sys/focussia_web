@@ -1,8 +1,7 @@
 import i18n from '../i18n';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Home, CircleDot, LayoutGrid, Calendar, CalendarDays, Kanban,
-  CalendarRange, CalendarCheck, Target, Clock, Pill, Cake,
+  Home, CircleDot, LayoutGrid, Calendar, CalendarDays, CalendarRange, CalendarCheck, Target, Clock, Pill, Cake,
   UserCheck, Wallet, MoreHorizontal, ChevronDown, Link2,
   Settings, Bell, HelpCircle, Eye, SquareArrowOutUpRight,
   RefreshCw, ShieldCheck, Star, PlayCircle, Loader2, ArrowRight,
@@ -20,7 +19,7 @@ const NAV_ITEMS = [
   { icon: LayoutGrid, label: 'Matriz', section: 'matriz' },
   { icon: Calendar, label: 'Anual', section: 'anual' },
   { icon: CalendarDays, label: 'Mensual', section: 'mensual' },
-  { icon: Kanban, label: 'Kanban', section: 'kanban' },
+  { icon: NAV_ICONS.kanban, label: 'Kanban', section: 'kanban' },
   { icon: CalendarRange, label: 'Semanal', section: 'semanal' },
   { icon: CalendarCheck, label: 'Diaria', section: 'diaria' },
   { icon: NAV_ICONS.delegar, label: 'Delegar', section: 'delegar' },
@@ -155,7 +154,7 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
   };
 
   return (
-    <div className="flex h-full overflow-hidden text-slate-800 bg-[#F8F9FB]">
+    <div className="flex h-full overflow-hidden text-slate-800 dark:text-slate-100 bg-[#F8F9FB] dark:bg-[#0f1124]">
       {/* Sidebar canónica compartida con todas las pantallas */}
       <div className="hidden md:flex">
         <ShellSidebar
@@ -167,22 +166,22 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
       </div>
 
       {/* Contenido */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden bg-[#F8F9FB] md:rounded-tl-[2rem]">
+      <main className="flex-1 flex flex-col h-full overflow-hidden bg-[#F8F9FB] dark:bg-[#0f1124] md:rounded-tl-[2rem]">
         {/* Header */}
         <div className="flex items-center gap-4 px-6 pt-5 pb-3 shrink-0">
-          <button onClick={onBack} className="md:hidden text-slate-500 hover:text-slate-800 font-bold">←</button>
+          <button onClick={onBack} className="md:hidden text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-100 font-bold">←</button>
           <span className="w-12 h-12 rounded-md bg-gradient-to-br from-[#6236FF] to-[#8A2BE2] flex items-center justify-center shrink-0 shadow-md">
             <Link2 className="w-6 h-6 text-white" />
           </span>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold text-slate-900">{i18n.t('redes_sociales')}</h1>
-            <p className="text-sm text-slate-500">{i18n.t('accede_rapidamente_a_tus_perfiles_person')}</p>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">{i18n.t('redes_sociales')}</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{i18n.t('accede_rapidamente_a_tus_perfiles_person')}</p>
           </div>
           <div className="hidden sm:flex items-center gap-2">
             <button
               title={i18n.t('ayuda_de_ia_pg4k')}
               onClick={() => setShowHelp(true)}
-              className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:shadow-md transition-shadow font-black"
+              className="w-10 h-10 rounded-full bg-white dark:bg-[#14142e] border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:shadow-md transition-shadow font-black"
             >?</button>
             <div className="relative">
               <button
@@ -193,7 +192,7 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
                   }
                   setShowNotifications(v => !v);
                 }}
-                className="relative w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:shadow-md transition-shadow"
+                className="relative w-10 h-10 rounded-full bg-white dark:bg-[#14142e] border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:shadow-md transition-shadow"
               >
                 <Bell className="w-5 h-5" />
                 {notifications.length > 0 && (
@@ -205,21 +204,21 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
               {showNotifications && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
-                  <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-white rounded-xl shadow-2xl border border-slate-100 z-50">
-                    <p className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">{i18n.t('notificaciones_jtdm')}</p>
+                  <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-white dark:bg-[#14142e] rounded-xl shadow-2xl border border-slate-100 dark:border-white/10 z-50">
+                    <p className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-white/10">{i18n.t('notificaciones_jtdm')}</p>
                     {notifications.length === 0 ? (
                       <p className="px-4 py-6 text-sm text-slate-400 text-center">{i18n.t('sin_notificaciones_pem4')}</p>
                     ) : notifications.map(n => (
-                      <div key={n.id} className="px-4 py-3 border-b border-slate-50 last:border-0 hover:bg-slate-50">
-                        <p className="text-sm font-semibold text-slate-800">{n.title}</p>
-                        <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{n.message}</p>
+                      <div key={n.id} className="px-4 py-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 dark:hover:bg-white/5 dark:bg-white/5">
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{n.title}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">{n.message}</p>
                       </div>
                     ))}
                   </div>
                 </>
               )}
             </div>
-            <button title={i18n.t('configuracion_hfss')} onClick={() => setShowConfig(true)} className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:shadow-md transition-shadow">
+            <button title={i18n.t('configuracion_hfss')} onClick={() => setShowConfig(true)} className="w-10 h-10 rounded-full bg-white dark:bg-[#14142e] border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:shadow-md transition-shadow">
               <Settings className="w-5 h-5" />
             </button>
           </div>
@@ -229,11 +228,11 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
           <div className="max-w-[1200px] flex flex-row gap-5">
             <div className="flex-1 flex flex-col gap-5 min-w-0">
               {/* Mis accesos directos */}
-              <section className="bg-white rounded-md border border-slate-100 shadow-sm p-5">
+              <section className="bg-white dark:bg-[#14142e] rounded-md border border-slate-100 dark:border-white/10 shadow-sm p-5">
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div>
-                    <h2 className="text-lg font-extrabold text-slate-900">{i18n.t('mis_accesos_directos')}</h2>
-                    <p className="text-sm text-slate-500">{i18n.t('solo_se_muestran_las_redes_sociales_que_')}</p>
+                    <h2 className="text-lg font-extrabold text-slate-900 dark:text-slate-100">{i18n.t('mis_accesos_directos')}</h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{i18n.t('solo_se_muestran_las_redes_sociales_que_')}</p>
                   </div>
                   <button
                     onClick={irAConfiguracion}
@@ -244,8 +243,8 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
                 </div>
                 {configuradas.length === 0 ? (
                   <div className="mt-4 rounded-xl bg-[#f4f6fb] p-6 text-center">
-                    <p className="text-sm text-slate-500">{i18n.t('aun_no_tienes_accesos_directos')}</p>
-                    <p className="text-sm text-slate-500">{i18n.t('agrega_tus_enlaces_abajo_y_apareceran_aq')}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{i18n.t('aun_no_tienes_accesos_directos')}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{i18n.t('agrega_tus_enlaces_abajo_y_apareceran_aq')}</p>
                     <button onClick={irAConfiguracion} className="mt-3 text-sm font-bold text-white bg-gradient-to-r from-[#6236FF] to-[#8A2BE2] rounded-xl px-5 py-2.5 hover:brightness-110 active:scale-95 transition-all">
                       Ir a Mis Redes Sociales
                     </button>
@@ -257,12 +256,12 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
                         key={r.id}
                         onClick={() => abrir(r.id)}
                         title={`Abrir mi ${NOMBRE_MOSTRAR[r.id]}`}
-                        className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-slate-100 bg-white shadow-sm hover:shadow-md hover:scale-[1.03] active:scale-95 transition-all"
+                        className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-slate-100 dark:border-white/10 bg-white dark:bg-[#14142e] shadow-sm hover:shadow-md hover:scale-[1.03] active:scale-95 transition-all"
                       >
                         <span className="w-9 h-9 rounded-md flex items-center justify-center text-white" style={{ background: FONDO_MARCA[r.id] }}>
                           <RedIcon id={r.id} className="w-10 h-10" />
                         </span>
-                        <span className="text-xs font-bold text-slate-700">{NOMBRE_MOSTRAR[r.id]}</span>
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{NOMBRE_MOSTRAR[r.id]}</span>
                       </button>
                     ))}
                   </div>
@@ -270,10 +269,10 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
               </section>
 
               {/* Configuración */}
-              <section ref={configRef} className="bg-white rounded-md border border-slate-100 shadow-sm p-5 scroll-mt-4">
-                <h2 className="text-lg font-extrabold text-slate-900">{i18n.t('configuracion_de_mis_redes_sociales')}</h2>
-                <p className="text-sm text-slate-500">{i18n.t('agrega_los_enlaces_de_tus_perfiles_solo_')}</p>
-                <div className="hidden md:grid grid-cols-[170px_210px_1fr_110px] gap-3 mt-4 pb-2 text-xs font-bold text-slate-500">
+              <section ref={configRef} className="bg-white dark:bg-[#14142e] rounded-md border border-slate-100 dark:border-white/10 shadow-sm p-5 scroll-mt-4">
+                <h2 className="text-lg font-extrabold text-slate-900 dark:text-slate-100">{i18n.t('configuracion_de_mis_redes_sociales')}</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{i18n.t('agrega_los_enlaces_de_tus_perfiles_solo_')}</p>
+                <div className="hidden md:grid grid-cols-[170px_210px_1fr_110px] gap-3 mt-4 pb-2 text-xs font-bold text-slate-500 dark:text-slate-400">
                   <span>{i18n.t('red_social')}</span>
                   <span>{i18n.t('como_obtener_tu_enlace')}</span>
                   <span>{i18n.t('enlace_de_tu_perfil')}</span>
@@ -284,13 +283,13 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
                     const valor = redes[r.id] || '';
                     const abierto = tutAbierto === r.id;
                     return (
-                      <div key={r.id} className="border-b border-slate-100 last:border-0 pb-2">
+                      <div key={r.id} className="border-b border-slate-100 dark:border-white/10 last:border-0 pb-2">
                         <div className="grid md:grid-cols-[170px_210px_1fr_110px] gap-2 md:gap-3 items-center py-2">
                           <div className="flex items-center gap-2.5">
                             <span className="w-9 h-9 rounded-full flex items-center justify-center text-white shrink-0" style={{ background: FONDO_MARCA[r.id] }}>
                               <RedIcon id={r.id} className="w-5 h-5" />
                             </span>
-                            <span className="text-sm font-bold text-slate-800">{NOMBRE_MOSTRAR[r.id]}</span>
+                            <span className="text-sm font-bold text-slate-800 dark:text-slate-100">{NOMBRE_MOSTRAR[r.id]}</span>
                           </div>
                           <button
                             onClick={() => setTutAbierto(abierto ? null : r.id)}
@@ -306,7 +305,7 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
                               onChange={e => setRedes(prev => ({ ...prev, [r.id]: e.target.value }))}
                               onKeyDown={e => { if (e.key === 'Enter') guardar(r.id); }}
                               placeholder={r.id === 'youtube' ? 'Pega aquí el enlace de tu canal de YouTube' : `Pega aquí el enlace de tu perfil de ${NOMBRE_MOSTRAR[r.id]}`}
-                              className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF] placeholder:text-slate-400"
+                              className="w-full bg-white dark:bg-[#14142e] border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF] placeholder:text-slate-400"
                             />
                             {errs[r.id] ? <p className="text-red-500 text-xs mt-1">{errs[r.id]}</p> : null}
                           </div>
@@ -320,7 +319,7 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
                           </button>
                         </div>
                         {abierto && (
-                          <ol className="md:ml-[180px] rounded-xl bg-[#eef2ff] p-3 pl-8 text-[13px] text-slate-700 list-decimal space-y-1 mb-2">
+                          <ol className="md:ml-[180px] rounded-xl bg-[#eef2ff] p-3 pl-8 text-[13px] text-slate-700 dark:text-slate-200 list-decimal space-y-1 mb-2">
                             {r.tutorial.map((paso, i) => <li key={i}>{paso}</li>)}
                             <li className="font-bold text-[#6236FF]">{i18n.t('tarda_unos_10_segundos_ym3o')}</li>
                           </ol>
@@ -334,7 +333,7 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
 
             {/* Columna derecha */}
             <div className="w-[25%] min-w-0 shrink-0 flex flex-col gap-5">
-              <section ref={ayudaRef} className="bg-white rounded-md border border-slate-100 shadow-sm p-5 scroll-mt-4">
+              <section ref={ayudaRef} className="bg-white dark:bg-[#14142e] rounded-md border border-slate-100 dark:border-white/10 shadow-sm p-5 scroll-mt-4">
                 <div className="flex items-center gap-2.5">
                   <span className="w-10 h-10 rounded-full bg-[#ede9fe] flex items-center justify-center">
                     <HelpCircle className="w-5 h-5 text-[#6236FF]" />
@@ -344,23 +343,23 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
                 <div className="flex flex-col gap-4 mt-4">
                   {COMO_FUNCIONA.map((c, i) => (
                     <div key={i} className="flex gap-3">
-                      <c.Icon className="w-5 h-5 text-slate-700 shrink-0 mt-0.5" />
+                      <c.Icon className="w-5 h-5 text-slate-700 dark:text-slate-200 shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-sm font-extrabold text-slate-900">{c.titulo}</p>
-                        <p className="text-[13px] text-slate-500 leading-snug">{c.texto}</p>
+                        <p className="text-sm font-extrabold text-slate-900 dark:text-slate-100">{c.titulo}</p>
+                        <p className="text-[13px] text-slate-500 dark:text-slate-400 leading-snug">{c.texto}</p>
                       </div>
                     </div>
                   ))}
                 </div>
               </section>
 
-              <section className="bg-white rounded-md border border-slate-100 shadow-sm p-5 flex gap-3">
+              <section className="bg-white dark:bg-[#14142e] rounded-md border border-slate-100 dark:border-white/10 shadow-sm p-5 flex gap-3">
                 <span className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
                   <ShieldCheck className="w-5 h-5 text-emerald-600" />
                 </span>
                 <div>
-                  <p className="text-sm font-extrabold text-slate-900">{i18n.t('tus_enlaces_son_privados')}</p>
-                  <p className="text-[13px] text-slate-500 leading-snug">{i18n.t('focusia_no_accede_ni_almacena_contenido_')}</p>
+                  <p className="text-sm font-extrabold text-slate-900 dark:text-slate-100">{i18n.t('tus_enlaces_son_privados')}</p>
+                  <p className="text-[13px] text-slate-500 dark:text-slate-400 leading-snug">{i18n.t('focusia_no_accede_ni_almacena_contenido_')}</p>
                 </div>
               </section>
 
@@ -375,7 +374,7 @@ const [notifications, setNotifications] = useState<NotificationData[]>([]);
                 <div className="relative h-24 mt-3 mb-1" aria-hidden>
                   <div className="absolute left-2 top-3 w-24 h-16 rounded-lg bg-white/70 border border-[#d5c9f5]" />
                   <div className="absolute right-2 top-3 w-24 h-16 rounded-lg bg-white/70 border border-[#d5c9f5]" />
-                  <div className="absolute left-1/2 -translate-x-1/2 top-0 w-28 h-20 rounded-xl bg-white border border-[#d5c9f5] shadow-sm flex items-center justify-center">
+                  <div className="absolute left-1/2 -translate-x-1/2 top-0 w-28 h-20 rounded-xl bg-white dark:bg-[#14142e] border border-[#d5c9f5] shadow-sm flex items-center justify-center">
                     <Link2 className="w-7 h-7 text-[#6236FF]" />
                   </div>
                 </div>

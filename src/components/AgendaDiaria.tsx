@@ -316,7 +316,7 @@ export const AgendaDiariaBoard: React.FC<BoardProps> = ({
     return (
       <ul className="mt-2 pl-6 space-y-1.5">
         {subs.map(sub => (
-          <li key={sub.id} className="flex items-center gap-2 rounded-md bg-white px-2 py-1.5">
+          <li key={sub.id} className="flex items-center gap-2 rounded-md bg-white dark:bg-[#14142e] px-2 py-1.5">
             <button
               type="button"
               onClick={() => cambiarSubaccion(accion, sub)}
@@ -389,7 +389,7 @@ export const AgendaDiariaBoard: React.FC<BoardProps> = ({
                   setSubInput(null);
                 }
               }}
-              className="w-full rounded-md border border-[#7c3aed] bg-white px-3 py-1.5 text-[13px] text-[#1d3fbf] outline-none"
+              className="w-full rounded-md border border-[#7c3aed] bg-white dark:bg-[#14142e] px-3 py-1.5 text-[13px] text-[#1d3fbf] outline-none"
             />
           </li>
         )}
@@ -431,7 +431,7 @@ export const AgendaDiariaBoard: React.FC<BoardProps> = ({
                 if (e.key === 'Enter') e.currentTarget.blur();
                 if (e.key === 'Escape') { skipBlur.current = true; setEditingAccion(null); }
               }}
-              className="flex-1 min-w-0 text-[14px] font-semibold text-[#1d3fbf] bg-white rounded px-2 py-1 border border-[#2563eb] outline-none"
+              className="flex-1 min-w-0 text-[14px] font-semibold text-[#1d3fbf] bg-white dark:bg-[#14142e] rounded px-2 py-1 border border-[#2563eb] outline-none"
             />
           ) : (
             <span
@@ -474,7 +474,7 @@ export const AgendaDiariaBoard: React.FC<BoardProps> = ({
         )}
 
         {confirmDelete === accion.id && (
-          <div className="mt-2 rounded-lg border border-[#dc2626] bg-white p-3">
+          <div className="mt-2 rounded-lg border border-[#dc2626] bg-white dark:bg-[#14142e] p-3">
             <div className="flex items-start gap-3">
               <Trash2 className="w-5 h-5 text-[#dc2626] mt-0.5 shrink-0" />
               <div>
@@ -574,21 +574,21 @@ export const AgendaDiariaBoard: React.FC<BoardProps> = ({
         </div>
       )}
 
-      <div className="bg-white border border-[#e3e9f4] rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-[#14142e] border border-[#e3e9f4] rounded-xl shadow-sm overflow-hidden">
         <div className="flex items-center gap-2 px-3 sm:px-4 py-3 border-b border-[#eef1f6] flex-wrap">
           <span className="w-9 h-9 rounded-md border border-[#d3e1ff] bg-[#eef4ff] flex items-center justify-center">
             <CalendarDays className="w-5 h-5 text-[#2563eb]" />
           </span>
-          <button onClick={() => setDateISO(shiftISO(dateISO, -1))} className="w-9 h-9 rounded-md border border-[#e3e9f4] flex items-center justify-center hover:bg-slate-50 text-[#1e2a5a]">
+          <button onClick={() => setDateISO(shiftISO(dateISO, -1))} className="w-9 h-9 rounded-md border border-[#e3e9f4] flex items-center justify-center hover:bg-slate-50 dark:hover:bg-white/5 dark:bg-white/5 text-[#1e2a5a]">
             <ChevronLeft className="w-5 h-5" />
           </button>
           <span className="font-bold text-[#1a2340] text-[13px] sm:text-[15px] tracking-wide px-1">{formatDateLong(dateISO)}</span>
-          <button onClick={() => setDateISO(shiftISO(dateISO, 1))} className="w-9 h-9 rounded-md border border-[#e3e9f4] flex items-center justify-center hover:bg-slate-50 text-[#1a2340]">
+          <button onClick={() => setDateISO(shiftISO(dateISO, 1))} className="w-9 h-9 rounded-md border border-[#e3e9f4] flex items-center justify-center hover:bg-slate-50 dark:hover:bg-white/5 dark:bg-white/5 text-[#1a2340]">
             <ChevronRight className="w-5 h-5" />
           </button>
           <div className="flex-1" />
           {onBackToKanban && (
-            <button onClick={onBackToKanban} className="flex items-center gap-2 px-3 py-2 rounded-md border border-[#e3e9f4] text-[#1a2340] text-[13px] font-semibold hover:bg-slate-50">
+            <button onClick={onBackToKanban} className="flex items-center gap-2 px-3 py-2 rounded-md border border-[#e3e9f4] text-[#1a2340] text-[13px] font-semibold hover:bg-slate-50 dark:hover:bg-white/5 dark:bg-white/5">
               <ArrowLeft className="w-4 h-4" /> Volver a Kanban
             </button>
           )}
@@ -606,7 +606,7 @@ export const AgendaDiariaBoard: React.FC<BoardProps> = ({
                   <select
                     value=""
                     onChange={e => { if (e.target.value) moverAccion(a, Number(e.target.value)); }}
-                    className="rounded-md border border-[#e3e9f4] bg-white px-2 py-1.5 text-[13px] outline-none"
+                    className="rounded-md border border-[#e3e9f4] bg-white dark:bg-[#14142e] px-2 py-1.5 text-[13px] outline-none"
                   >
                     <option value="">{i18n.t('asignar_hora')}</option>
                     {HOURS.filter(h => !occupied.has(h)).map(h => (
@@ -646,7 +646,7 @@ export const AgendaDiariaBoard: React.FC<BoardProps> = ({
                       draggable
                       onDragStart={e => { e.dataTransfer.setData('text/plain', accion.id); setDragAccionId(accion.id); }}
                       onDragEnd={() => setDragAccionId(null)}
-                      className="cursor-grab text-slate-400 hover:text-slate-600"
+                      className="cursor-grab text-slate-400 hover:text-slate-600 dark:text-slate-300"
                       title={i18n.t('arrastra_para_cambiar_de_bloque')}
                     >
                       <GripVertical className="w-4 h-4" />
@@ -681,7 +681,7 @@ export const AgendaDiariaBoard: React.FC<BoardProps> = ({
                     <button
                       type="button"
                       onClick={() => iniciarEdicionHora(h)}
-                      className="w-full h-9 rounded-md px-2 text-left text-[13px] italic text-slate-400 hover:bg-slate-50 transition-colors"
+                      className="w-full h-9 rounded-md px-2 text-left text-[13px] italic text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 dark:bg-white/5 transition-colors"
                     >
                       + Escriba una acción
                     </button>

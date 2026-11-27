@@ -230,8 +230,8 @@ export const MatrizEisenhower: React.FC<MatrizEisenhowerProps> = ({ className = 
     <div className={`fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 ${className}`}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
       <div className="relative w-full max-w-5xl max-h-[94vh] overflow-y-auto rounded-3xl shadow-2xl" onClick={e => e.stopPropagation()}>
-        <button onClick={onClose} aria-label={i18n.t('cerrar_9sl5')} className="absolute top-3 right-3 z-30 w-9 h-9 rounded-full bg-white shadow flex items-center justify-center hover:scale-105 transition">
-          <X className="w-5 h-5 text-gray-700" />
+        <button onClick={onClose} aria-label={i18n.t('cerrar_9sl5')} className="absolute top-3 right-3 z-30 w-9 h-9 rounded-full bg-white dark:bg-[#14142e] shadow flex items-center justify-center hover:scale-105 transition">
+          <X className="w-5 h-5 text-gray-700 dark:text-gray-200" />
         </button>
 
         {showResume && (
@@ -284,7 +284,7 @@ export const MatrizEisenhower: React.FC<MatrizEisenhowerProps> = ({ className = 
         {/* PASO 2 — VIDEO */}
         {paso === 2 && (
           <div className="bg-[#f4f6fb] rounded-3xl px-4 py-6 sm:px-10 sm:py-8">
-            <div className="rounded-3xl overflow-hidden border-2 border-[#4f46e5]/30 bg-white shadow">
+            <div className="rounded-3xl overflow-hidden border-2 border-[#4f46e5]/30 bg-white dark:bg-[#14142e] shadow">
               <div className="relative aspect-video bg-[#0b123a]">
                 <video
                   ref={videoRef}
@@ -316,14 +316,14 @@ export const MatrizEisenhower: React.FC<MatrizEisenhowerProps> = ({ className = 
               </button>
             </div>
             {!videoEnded && (
-              <button onClick={() => setVideoEnded(true)} className="mx-auto mt-3 block text-xs text-gray-400 hover:text-gray-600">{i18n.t('ya_vi_la_explicacion_continuar')}</button>
+              <button onClick={() => setVideoEnded(true)} className="mx-auto mt-3 block text-xs text-gray-400 hover:text-gray-600 dark:text-gray-300">{i18n.t('ya_vi_la_explicacion_continuar')}</button>
             )}
           </div>
         )}
 
         {/* PASO 3 — MATRIZ INTERACTIVA */}
         {paso === 3 && (
-          <div className="bg-white rounded-3xl px-4 py-6 sm:px-8 sm:py-8">
+          <div className="bg-white dark:bg-[#14142e] rounded-3xl px-4 py-6 sm:px-8 sm:py-8">
             <h2 className="text-center text-2xl sm:text-4xl font-extrabold text-[#0b123a] tracking-tight">{i18n.t('matriz_de_eisenhower')}</h2>
             <div className="mt-6 flex gap-3 sm:gap-5">
               <div className="flex flex-col items-center justify-between py-2">
@@ -345,7 +345,7 @@ export const MatrizEisenhower: React.FC<MatrizEisenhowerProps> = ({ className = 
                         <span className="text-lg sm:text-2xl font-extrabold tracking-wide">{c.label}</span>
                         <span className="text-[11px] sm:text-sm text-white/90">{c.criterio}</span>
                         {activo && (
-                          <span className="absolute left-3 right-3 bottom-3 bg-white text-[#0b123a] text-[11px] sm:text-sm font-bold rounded-xl px-3 py-2 shadow-xl">
+                          <span className="absolute left-3 right-3 bottom-3 bg-white dark:bg-[#14142e] text-[#0b123a] text-[11px] sm:text-sm font-bold rounded-xl px-3 py-2 shadow-xl">
                             {c.explicacion}
                           </span>
                         )}
@@ -383,7 +383,7 @@ export const MatrizEisenhower: React.FC<MatrizEisenhowerProps> = ({ className = 
                 <button
                   onClick={() => explorados.size === 4 && goPaso(4)}
                   disabled={explorados.size < 4}
-                  className={`mt-4 px-8 py-3 rounded-xl font-extrabold tracking-wide transition ${explorados.size === 4 ? 'bg-gradient-to-r from-[#1e6bff] to-[#7c3aed] text-white shadow-lg hover:brightness-110' : 'bg-gray-100 text-gray-400 cursor-not-allowed border'}`}
+                  className={`mt-4 px-8 py-3 rounded-xl font-extrabold tracking-wide transition ${explorados.size === 4 ? 'bg-gradient-to-r from-[#1e6bff] to-[#7c3aed] text-white shadow-lg hover:brightness-110' : 'bg-gray-100 dark:bg-white/10 text-gray-400 cursor-not-allowed border'}`}
                 >
                   EXPLORA LOS 4 CUADRANTES
                 </button>
@@ -467,7 +467,7 @@ export const MatrizEisenhower: React.FC<MatrizEisenhowerProps> = ({ className = 
                     className={`relative rounded-2xl bg-gradient-to-br ${c.gradiente} text-white p-4 sm:p-5 min-h-[118px] sm:min-h-[150px] flex flex-col items-center justify-center gap-2 shadow-lg transition hover:brightness-105 ${esCorrecta ? 'ring-4 ring-white outline outline-2 outline-[#0b123a]' : ''} ${esElegidaMal ? 'ring-4 ring-[#ff5147]' : ''} ${!respondido ? 'cursor-pointer' : 'cursor-default'}`}
                   >
                     {esElegidaMal && <span className="absolute top-2 right-2 w-7 h-7 rounded-full bg-[#ff5147] border-2 border-white flex items-center justify-center font-extrabold">×</span>}
-                    {esCorrecta && respondido && <span className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white text-[#0b123a] flex items-center justify-center font-extrabold">✓</span>}
+                    {esCorrecta && respondido && <span className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white dark:bg-[#14142e] text-[#0b123a] flex items-center justify-center font-extrabold">✓</span>}
                     <span className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/20 flex items-center justify-center">
                       <IconoCuadrante id={c.id} className="w-8 h-8 sm:w-10 sm:h-10" />
                     </span>

@@ -338,10 +338,10 @@ export default function FocusWidget({ sesion, minimizado, onMinimizar, onCerrarS
             {ETIQUETA_HERRAMIENTA[sesion.herramienta]}
           </span>
           {pausado && <span className="text-[9px] font-bold uppercase text-amber-400">{i18n.t('pausa')}</span>}
-          <button onClick={onMinimizar} title={i18n.t('minimizar')} className="rounded p-0.5 text-slate-500 hover:bg-white/10 hover:text-white">
+          <button onClick={onMinimizar} title={i18n.t('minimizar')} className="rounded p-0.5 text-slate-500 dark:text-slate-400 hover:bg-white/10 hover:text-white">
             <Minus className="h-3.5 w-3.5" />
           </button>
-          <button onClick={onCerrarSolicitado} title={i18n.t('cerrar_widget')} className="rounded p-0.5 text-slate-500 hover:bg-white/10 hover:text-white">
+          <button onClick={onCerrarSolicitado} title={i18n.t('cerrar_widget')} className="rounded p-0.5 text-slate-500 dark:text-slate-400 hover:bg-white/10 hover:text-white">
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -356,7 +356,7 @@ export default function FocusWidget({ sesion, minimizado, onMinimizar, onCerrarS
               <span className="font-mono text-[17px] font-bold text-white">{calculo.principal}</span>
               <span className="text-[10px] text-slate-400">{calculo.secundario}</span>
             </AnilloProgreso>
-            <p className="mt-1 text-center text-[10px] text-slate-500">{calculo.detalle}</p>
+            <p className="mt-1 text-center text-[10px] text-slate-500 dark:text-slate-400">{calculo.detalle}</p>
             <div className="mt-2 flex items-center justify-center gap-2.5">
               <button onClick={alternarPausa} title={pausado ? 'Reanudar' : 'Pausar'}
                 className={`${btnCircular} h-8 w-8`}>
@@ -408,7 +408,7 @@ export default function FocusWidget({ sesion, minimizado, onMinimizar, onCerrarS
                 title={silencio ? 'Alarma silenciada' : 'Alarma con sonido'}
                 className={`flex h-5 w-9 items-center rounded-full px-0.5 transition-colors ${silencio ? 'bg-slate-600' : 'bg-[#8B5CF6]'}`}
               >
-                <span className={`h-4 w-4 rounded-full bg-white transition-transform ${silencio ? '' : 'ml-auto'}`} />
+                <span className={`h-4 w-4 rounded-full bg-white dark:bg-[#14142e] transition-transform ${silencio ? '' : 'ml-auto'}`} />
               </button>
             </div>
           </div>
@@ -469,14 +469,14 @@ export function FocusModales({ guardNueva, sesionActual, confirmCerrar, fin, ocu
   if (guardNueva) {
     return (
       <Dialogo>
-        <h3 className="text-lg font-bold text-slate-900">{i18n.t('ya_existe_una_sesion_de_enfoque_en_ejecu')}</h3>
-        <p className="mt-2 text-sm text-slate-600">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">{i18n.t('ya_existe_una_sesion_de_enfoque_en_ejecu')}</h3>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           Está corriendo <strong>{ETIQUETA_HERRAMIENTA[sesionActual?.herramienta || 'reloj']}</strong>.
           ¿Qué quieres hacer con ella para iniciar{' '}
           <strong>{ETIQUETA_HERRAMIENTA[guardNueva.herramienta]}</strong>?
         </p>
         <div className="mt-5 flex items-center justify-end gap-3">
-          <button onClick={onGuardarCancelar} className="px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100">
+          <button onClick={onGuardarCancelar} className="px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:bg-white/10">
             Cancelar
           </button>
           <button onClick={onGuardarFinalizarNueva} disabled={ocupado}
@@ -492,13 +492,13 @@ export function FocusModales({ guardNueva, sesionActual, confirmCerrar, fin, ocu
   if (confirmCerrar) {
     return (
       <Dialogo>
-        <h3 className="text-lg font-bold text-slate-900">{i18n.t('cerrar_el_widget')}</h3>
-        <p className="mt-2 text-sm text-slate-600">
+        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">{i18n.t('cerrar_el_widget')}</h3>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           La sesión de <strong>{ETIQUETA_HERRAMIENTA[sesionActual?.herramienta || 'reloj']}</strong> sigue
           en ejecución. Cerrar el widget no finaliza la sesión automáticamente.
         </p>
         <div className="mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
-          <button onClick={onCerrarConfirm} className="px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100">
+          <button onClick={onCerrarConfirm} className="px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:bg-white/10">
             Cancelar
           </button>
           <button onClick={onFinalizarConfirm} disabled={ocupado}
@@ -531,15 +531,15 @@ export function FocusModales({ guardNueva, sesionActual, confirmCerrar, fin, ocu
             <CheckCircle2 className="w-6 h-6 text-emerald-600" />
           </span>
           <div>
-            <h3 className="text-lg font-bold text-slate-900">{m.titulo}</h3>
-            <p className="text-sm text-slate-600">{m.cuerpo}</p>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">{m.titulo}</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-300">{m.cuerpo}</p>
           </div>
         </div>
         <p className="mt-3 text-xs text-slate-400">
           Sesión registrada automáticamente en tus Reportes y estadísticas ({fin.minutos} min de enfoque).
         </p>
         <div className="mt-5 flex flex-wrap items-center justify-end gap-3">
-          <button onClick={onFinCerrar} className="px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100">
+          <button onClick={onFinCerrar} className="px-4 py-2.5 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:bg-white/10">
             Continuar donde estaba
           </button>
           <button onClick={onFinDescanso} disabled={ocupado}
@@ -564,7 +564,7 @@ export function FocusModales({ guardNueva, sesionActual, confirmCerrar, fin, ocu
 function Dialogo({ children }: { children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/30">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-6">
+      <div className="bg-white dark:bg-[#14142e] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 w-full max-w-md p-6">
         {children}
       </div>
     </div>

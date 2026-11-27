@@ -1,7 +1,7 @@
 import i18n from '../i18n';
 import React, { useState, useEffect } from 'react';
 import {
-  Home, CircleDot, LayoutGrid, Calendar, CalendarDays, Kanban,
+  Home, CircleDot, LayoutGrid, Calendar, CalendarDays,
   CalendarRange, CalendarCheck, Target, Clock, Pill, Cake,
   UserCheck, MessageSquare, Heart, Smile, GraduationCap, MoreHorizontal,
   Bell, Settings, Moon, ChevronDown, ChevronLeft, Sun, Lock, Send,

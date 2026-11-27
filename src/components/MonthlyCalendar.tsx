@@ -144,7 +144,7 @@ export default function MonthlyCalendar({ onClose, onNeedAnnualGoal, onReview, u
                 </div>
 
                 <div className="p-5 sm:p-8">
-                  <div className="bg-white rounded-3xl shadow-lg overflow-hidden">
+                  <div className="bg-white dark:bg-[#14142e] rounded-3xl shadow-lg overflow-hidden">
                     <div className="h-1 bg-gradient-to-r from-[#2b9df4] to-[#a21caf]" />
                     {currentGoal ? (
                       <div className="grid grid-cols-1 md:grid-cols-3">
@@ -159,7 +159,7 @@ export default function MonthlyCalendar({ onClose, onNeedAnnualGoal, onReview, u
                             {currentGoal.monthly_goal_text}
                           </p>
                         </div>
-                        <div className="p-5 sm:p-6 md:border-l border-gray-200">
+                        <div className="p-5 sm:p-6 md:border-l border-gray-200 dark:border-white/10">
                           <p className="text-[11px] font-bold tracking-widest text-[#5b5bd6] mb-2">
                             POR QUÉ IMPORTA
                           </p>
@@ -167,7 +167,7 @@ export default function MonthlyCalendar({ onClose, onNeedAnnualGoal, onReview, u
                             {currentGoal.brief_explanation}
                           </p>
                         </div>
-                        <div className="p-5 sm:p-6 md:border-l border-gray-200">
+                        <div className="p-5 sm:p-6 md:border-l border-gray-200 dark:border-white/10">
                           <p className="text-[11px] font-bold tracking-widest text-[#5b5bd6] mb-2">
                             RELACIÓN CON MI META ANUAL
                           </p>
@@ -185,7 +185,7 @@ export default function MonthlyCalendar({ onClose, onNeedAnnualGoal, onReview, u
                 </div>
 
                 <div className="px-5 sm:px-8 pb-8">
-                  <div className="bg-white rounded-3xl shadow-lg overflow-hidden">
+                  <div className="bg-white dark:bg-[#14142e] rounded-3xl shadow-lg overflow-hidden">
                     <div className="h-1 bg-gradient-to-r from-[#2b9df4] to-[#a21caf]" />
                     <div className="bg-[#121a45] px-5 py-3 flex items-center gap-3">
                       <span className="text-white font-black tracking-wider text-lg">
@@ -231,8 +231,8 @@ function MonthGrid({ year, month }: { year: number; month: number }) {
         return (
           <div
             key={i}
-            className={`min-h-[52px] sm:min-h-[64px] p-1.5 sm:p-2 border-t border-gray-200 text-sm font-bold text-[#1b2350] ${
-              day === null ? 'bg-white' : isWeekend ? 'bg-[#f4f2ff]' : 'bg-white'
+            className={`min-h-[52px] sm:min-h-[64px] p-1.5 sm:p-2 border-t border-gray-200 dark:border-white/10 text-sm font-bold text-[#1b2350] ${
+              day === null ? 'bg-white dark:bg-[#14142e]' : isWeekend ? 'bg-[#f4f2ff]' : 'bg-white dark:bg-[#14142e]'
             } ${isCurrentMonth && day === today.getDate() ? '!bg-[#1f6feb] !text-white' : ''}`}
             style={{ borderLeftWidth: col === 0 ? 0 : 1, borderLeftColor: col === 0 ? 'transparent' : undefined }}
           >

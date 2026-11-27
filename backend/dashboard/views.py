@@ -8,8 +8,6 @@ import urllib.error
 from datetime import timedelta, datetime, time, date
 from django.conf import settings
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
@@ -108,7 +106,6 @@ from .engine.phase4_generator import generar_payload_coach
 
 logger = logging.getLogger('focusia.security')
 
-@method_decorator(csrf_exempt, name='dispatch')
 class UserViewSet(viewsets.ModelViewSet):
     """Registro de usuarios y perfil propio.
 
@@ -6558,6 +6555,12 @@ class DeviceTokenViewSet(viewsets.ModelViewSet):
         ser.is_valid(raise_exception=True)
         token = ser.validated_data['token']
         platform = ser.validated_data.get('platform') or 'android'
+        existing = DeviceToken.objects.filter(token=token).first()
+        if existing and existing.user_id != request.user.id:
+            return Response(
+                {'code': 'forbidden', 'message': 'Token de dispositivo no válido para este usuario.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         obj, _created = DeviceToken.objects.update_or_create(
             token=token,
             defaults={'user': request.user, 'platform': platform, 'is_active': True},

@@ -75,7 +75,7 @@ export const FormularioRueda: React.FC<FormularioRuedaProps> = ({ onClose, onSav
           <div key={cat.id} className="bg-white/40 backdrop-blur-md rounded-xl p-4 border border-white/50">
             <div className="flex items-center justify-between mb-2">
               <span className="text-lg">{cat.icono}</span>
-              <span className="font-bold text-gray-800">{cat.nombre}</span>
+              <span className="font-bold text-gray-800 dark:text-gray-100">{cat.nombre}</span>
               <span className={`font-black text-xl ${getColor(puntajes[cat.id] || 5)}`}>
                 {puntajes[cat.id] || 5}
               </span>
@@ -106,7 +106,7 @@ export const FormularioRueda: React.FC<FormularioRuedaProps> = ({ onClose, onSav
       <div className="flex gap-3 pt-4">
         <button
           onClick={onClose}
-          className="flex-1 px-4 py-3 rounded-xl border border-gray-300 text-gray-600 font-medium hover:bg-gray-50 transition-colors"
+          className="flex-1 px-4 py-3 rounded-xl border border-gray-300 text-gray-600 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-white/5 dark:bg-white/5 transition-colors"
         >
           Cancelar
         </button>

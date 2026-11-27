@@ -1,8 +1,7 @@
 import i18n from '../i18n';
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Home, CircleDot, LayoutGrid, Calendar, CalendarDays, Kanban,
-  CalendarRange, CalendarCheck, Target, Clock, Pill, Cake,
+  Home, CircleDot, LayoutGrid, Calendar, CalendarDays, CalendarRange, CalendarCheck, Target, Clock, Pill, Cake,
   UserCheck, MessageSquare, Heart, Smile, GraduationCap, MoreHorizontal,
   ChevronDown, ChevronLeft, BookOpen, Play, Check, Lock, BarChart3,
   ShieldCheck, Star, Gift, Home as HomeIcon, X,
@@ -22,7 +21,7 @@ const NAV_ITEMS = [
   { icon: Calendar, label: 'Anual', section: 'anual' },
   { icon: CalendarDays, label: 'Mensual', section: 'mensual' },
   { icon: LayoutGrid, label: 'Matriz', section: 'matriz' },
-  { icon: Kanban, label: 'Kanban', section: 'kanban' },
+  { icon: NAV_ICONS.kanban, label: 'Kanban', section: 'kanban' },
   { icon: CalendarRange, label: 'Semanal', section: 'semanal' },
   { icon: CalendarCheck, label: 'Diaria', section: 'diaria' },
   { icon: NAV_ICONS.delegar, label: 'Delegar', section: 'delegar' },

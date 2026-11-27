@@ -36,7 +36,7 @@ export function ReportNotificationsScreen({
   const lista = reports && reports.length > 0 ? reports : [DEMO_REPORT_WEEKLY_CLOSED];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-[#14142e]">
       <div className="max-w-5xl mx-auto px-5 sm:px-8 pb-10">
         <ReportHeroHeader
           pose="book"
@@ -60,7 +60,7 @@ export function ReportNotificationsScreen({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') onOpenReport(r);
                 }}
-                className="w-full border border-[#e2e8f0] rounded-2xl p-5 sm:p-6 bg-white hover:shadow-md transition-all text-left cursor-pointer"
+                className="w-full border border-[#e2e8f0] rounded-2xl p-5 sm:p-6 bg-white dark:bg-[#14142e] hover:shadow-md transition-all text-left cursor-pointer"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                   <div className="w-16 h-16 rounded-2xl bg-[#E8F1FF] flex items-center justify-center shrink-0">
@@ -68,13 +68,13 @@ export function ReportNotificationsScreen({
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <h2 className="text-xl font-bold text-slate-900">
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
                       Reporte {levelLabel} disponible
                     </h2>
                     <p className="text-base font-bold mt-0.5" style={{ color: BLUE }}>
                       {rangoPeriodo(r)}
                     </p>
-                    <p className="text-sm text-slate-700 mt-1">
+                    <p className="text-sm text-slate-700 dark:text-slate-200 mt-1">
                       {resumenTextoReporte(r)}
                     </p>
                   </div>
@@ -92,7 +92,7 @@ export function ReportNotificationsScreen({
                   </button>
                 </div>
 
-                <div className="border-t border-slate-200 mt-4 pt-3.5 flex items-center gap-2 text-xs text-slate-500">
+                <div className="border-t border-slate-200 dark:border-white/10 mt-4 pt-3.5 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                   <Info className="w-4 h-4 shrink-0" style={{ color: BLUE }} />
                   <span>
                     Toca el aviso para ir directamente a este reporte. No se enviarán recordatorios
@@ -104,7 +104,7 @@ export function ReportNotificationsScreen({
           })}
         </div>
 
-        <div className="mt-6 flex items-center gap-2 text-sm text-slate-600">
+        <div className="mt-6 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
           <Info className="w-4 h-4 shrink-0" style={{ color: BLUE }} />
           <span>
             Los avisos de reportes respetan tu horario permitido y se posponen si estás en Focus.
@@ -137,19 +137,19 @@ export function ReportNotificationBanner({
   return (
     <button
       onClick={() => onOpen(latest)}
-      className="flex gap-3 w-full border border-[#e2e8f0] rounded-xl p-3 hover:shadow-md transition-all text-left bg-white"
+      className="flex gap-3 w-full border border-[#e2e8f0] rounded-xl p-3 hover:shadow-md transition-all text-left bg-white dark:bg-[#14142e]"
     >
       <span className="bg-[#E8F1FF] p-3 rounded-xl shrink-0 self-center">
         <IconoCampana className="w-6 h-6" />
       </span>
       <span className="flex-1 min-w-0">
-        <span className="block text-sm font-bold text-gray-900">
+        <span className="block text-sm font-bold text-gray-900 dark:text-gray-100">
           Reporte {levelLabel} disponible
         </span>
         <span className="block text-xs font-bold text-[#2563EB] mt-0.5">
           {rangoPeriodo(latest)}
         </span>
-        <span className="block text-[11px] text-slate-600 truncate mt-0.5">
+        <span className="block text-[11px] text-slate-600 dark:text-slate-300 truncate mt-0.5">
           {resumenTextoReporte(latest)}
         </span>
         <span

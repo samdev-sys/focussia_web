@@ -110,7 +110,7 @@ export default function AppShell({ activeNav, title, subtitle, username, avatarU
 
       {/* Main */}
       <div
-        className="relative flex-1 min-w-0 bg-[#f7f8fc] overflow-y-auto"
+        className="relative flex-1 min-w-0 bg-[#f7f8fc] dark:bg-[#0f1124] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
         <div className="h-1 bg-gradient-to-r from-[#2b9df4] via-[#5b5bd6] to-[#c026d3]" />

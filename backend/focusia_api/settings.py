@@ -77,6 +77,10 @@ else:
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
 GROQ_AGENT_MODEL = os.environ.get('GROQ_AGENT_MODEL', 'openai/gpt-oss-120b')
 
+# OAuth: IDs de cliente permitidos para validar tokens sociales en backend.
+# Admite lista separada por comas.
+GOOGLE_OAUTH_CLIENT_ID = os.environ.get('GOOGLE_OAUTH_CLIENT_ID', os.environ.get('VITE_GOOGLE_CLIENT_ID', ''))
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',

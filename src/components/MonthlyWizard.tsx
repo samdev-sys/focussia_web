@@ -194,7 +194,7 @@ export default function MonthlyWizard({ onClose, onApproved, username, avatarUrl
             <Panel>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch p-5 sm:p-8">
                 <div className="flex flex-col">
-                  <div className="relative bg-white rounded-3xl p-6 sm:p-8 shadow-lg flex-1">
+                  <div className="relative bg-white dark:bg-[#14142e] rounded-3xl p-6 sm:p-8 shadow-lg flex-1">
                     <div className="flex items-start gap-4">
                       <span className="shrink-0 w-12 h-12 rounded-full bg-[#efeafe] flex items-center justify-center">
                         <Quote className="w-5 h-5 text-[#5b5bd6] fill-[#5b5bd6]" />
@@ -210,7 +210,7 @@ export default function MonthlyWizard({ onClose, onApproved, username, avatarUrl
                         </p>
                       </div>
                     </div>
-                    <span className="hidden md:block absolute top-1/2 -right-3 -translate-y-1/2 w-6 h-6 bg-white rotate-45" />
+                    <span className="hidden md:block absolute top-1/2 -right-3 -translate-y-1/2 w-6 h-6 bg-white dark:bg-[#14142e] rotate-45" />
                   </div>
                   <div className="mt-6">
                     {error && <p className="text-sm text-red-300 mb-3">{error}</p>}
@@ -222,7 +222,7 @@ export default function MonthlyWizard({ onClose, onApproved, username, avatarUrl
                     />
                   </div>
                 </div>
-                <div className="bg-white rounded-3xl p-2 shadow-lg">
+                <div className="bg-white dark:bg-[#14142e] rounded-3xl p-2 shadow-lg">
                   <AvatarImg src={avatarPhoto} name={displayName} className="w-full h-full min-h-[280px] max-h-[420px] object-cover rounded-2xl" />
                 </div>
               </div>
@@ -358,7 +358,7 @@ export default function MonthlyWizard({ onClose, onApproved, username, avatarUrl
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 p-5 sm:p-8">
                 <GoalCard goal={editingGoal} detailed hideEdit metaLabel="META MENSUAL ACTUAL" />
-                <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-lg">
+                <div className="bg-white dark:bg-[#14142e] rounded-3xl p-5 sm:p-6 shadow-lg">
                   <div className="flex items-start gap-3">
                     <div className="w-24 shrink-0 rounded-2xl overflow-hidden">
                       <AvatarImg src={avatarPhoto} name={displayName} className="w-full aspect-[3/4] object-cover" />
@@ -424,7 +424,7 @@ export default function MonthlyWizard({ onClose, onApproved, username, avatarUrl
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-5 sm:p-8 items-stretch">
                 <div className="flex flex-col">
-                  <div className="relative bg-white rounded-3xl p-6 sm:p-8 shadow-lg flex-1">
+                  <div className="relative bg-white dark:bg-[#14142e] rounded-3xl p-6 sm:p-8 shadow-lg flex-1">
                     <div className="flex items-start gap-4">
                       <span className="shrink-0 w-12 h-12 rounded-full bg-[#efeafe] flex items-center justify-center">
                         <Quote className="w-5 h-5 text-[#5b5bd6] fill-[#5b5bd6]" />
@@ -436,24 +436,24 @@ export default function MonthlyWizard({ onClose, onApproved, username, avatarUrl
                     <p className="mt-2 text-[#1b2350] text-base leading-relaxed">
                       Tus Metas Mensuales ya fueron creadas y aprobadas.
                     </p>
-                    <hr className="my-5 border-gray-200" />
+                    <hr className="my-5 border-gray-200 dark:border-white/10" />
                     <p className="text-[#1b2350] text-base leading-relaxed">
                       Desde hoy, cada meta mensual quedará disponible en el botón MENSUAL. Al ingresar,
                       verás el calendario del mes en curso y, en la parte superior, aparecerá la meta
                       correspondiente a ese período.
                     </p>
-                    <hr className="my-5 border-gray-200" />
+                    <hr className="my-5 border-gray-200 dark:border-white/10" />
                     <p className="text-[#1b2350] text-base leading-relaxed">
                       Focusia usará esta meta para ayudarte a organizar tus decisiones, prioridades y
                       acciones del mes.
                     </p>
-                    <span className="hidden md:block absolute top-24 -right-3 w-6 h-6 bg-white rotate-45" />
+                    <span className="hidden md:block absolute top-24 -right-3 w-6 h-6 bg-white dark:bg-[#14142e] rotate-45" />
                   </div>
                   <div className="mt-6">
                     <PrimaryButton label={i18n.t('entender_como_priorizar_mis_tareas')} onClick={onApproved} withArrowCircle />
                   </div>
                 </div>
-                <div className="bg-white rounded-3xl p-2 shadow-lg">
+                <div className="bg-white dark:bg-[#14142e] rounded-3xl p-2 shadow-lg">
                   <AvatarImg src={avatarPhoto} name={displayName} className="w-full h-full min-h-[280px] max-h-[480px] object-cover rounded-2xl" />
                 </div>
               </div>
@@ -509,7 +509,7 @@ function GoalCard({ goal, onEdit, detailed, compact, numbered, hideEdit, metaLab
     ? 'from-[#a21caf] to-[#e879f9]'
     : 'from-[#2b9df4] to-[#a21caf]';
   return (
-    <div className="bg-white rounded-3xl shadow-lg overflow-hidden flex flex-col">
+    <div className="bg-white dark:bg-[#14142e] rounded-3xl shadow-lg overflow-hidden flex flex-col">
       <div className={`h-1 bg-gradient-to-r ${accentBar}`} />
       <div className="bg-[#121a45] px-5 py-3 flex items-center gap-3">
         {numbered ? (
@@ -530,12 +530,12 @@ function GoalCard({ goal, onEdit, detailed, compact, numbered, hideEdit, metaLab
         </div>
         {detailed && (
           <>
-            <hr className="my-4 border-gray-200" />
+            <hr className="my-4 border-gray-200 dark:border-white/10" />
             <div>
               <p className="text-[11px] font-bold tracking-widest text-[#5b5bd6] mb-1">{i18n.t('por_que_importa_h3uq')}</p>
               <p className="text-[#1b2350] text-[15px] leading-relaxed">{goal.brief_explanation}</p>
             </div>
-            <hr className="my-4 border-gray-200" />
+            <hr className="my-4 border-gray-200 dark:border-white/10" />
             <div>
               <p className="text-[11px] font-bold tracking-widest text-[#5b5bd6] mb-1">{i18n.t('relacion_con_mi_gran_meta_anual')}</p>
               <p className="text-[#1b2350] text-[15px] leading-relaxed">{goal.annual_goal_relation}</p>

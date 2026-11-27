@@ -15,7 +15,7 @@ export function ConfirmBanner({ text, onUndo, onClose }: {
       <button
         type="button"
         onClick={onUndo}
-        className="shrink-0 text-xs sm:text-sm font-black text-[#1f6feb] border-2 border-[#1f6feb] rounded-lg px-4 sm:px-6 py-2 hover:bg-white transition-colors"
+        className="shrink-0 text-xs sm:text-sm font-black text-[#1f6feb] border-2 border-[#1f6feb] rounded-lg px-4 sm:px-6 py-2 hover:bg-white dark:bg-[#14142e] transition-colors"
       >
         DESHACER
       </button>
@@ -32,7 +32,7 @@ export function FloatingToast({ text, onUndo, onClose }: {
   onClose: () => void;
 }) {
   return (
-    <div className="fixed top-4 right-4 z-[70] max-w-sm bg-white border border-green-200 rounded-xl shadow-xl px-4 py-3 flex items-center gap-3">
+    <div className="fixed top-4 right-4 z-[70] max-w-sm bg-white dark:bg-[#14142e] border border-green-200 rounded-xl shadow-xl px-4 py-3 flex items-center gap-3">
       <span className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center shrink-0">
         <Check className="w-4 h-4 text-white" strokeWidth={3} />
       </span>
@@ -44,7 +44,7 @@ export function FloatingToast({ text, onUndo, onClose }: {
       >
         DESHACER
       </button>
-      <button type="button" onClick={onClose} className="shrink-0 text-gray-400 hover:text-gray-600">
+      <button type="button" onClick={onClose} className="shrink-0 text-gray-400 hover:text-gray-600 dark:text-gray-300">
         <X className="w-4 h-4" />
       </button>
     </div>

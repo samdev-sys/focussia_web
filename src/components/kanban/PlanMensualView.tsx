@@ -64,22 +64,22 @@ export default function PlanMensualView({ highlightActionId, refreshKey, onConfi
   }, [month, year]);
 
   return (
-    <div className="bg-white rounded-2xl border border-[#e3e8f5] overflow-hidden">
+    <div className="bg-white dark:bg-[#14142e] rounded-2xl border border-[#e3e8f5] overflow-hidden">
       <div className="flex items-center gap-2 sm:gap-3 px-4 py-3 border-b border-[#eef1f8] flex-wrap">
         <span className="w-10 h-10 rounded-xl border border-[#dbe3f5] flex items-center justify-center">
           <Calendar className="w-5 h-5 text-[#1f6feb]" />
         </span>
-        <button type="button" onClick={() => stepMonth(-1)} className="w-9 h-9 rounded-lg border border-[#e3e8f5] flex items-center justify-center text-[#101433] hover:bg-gray-50">
+        <button type="button" onClick={() => stepMonth(-1)} className="w-9 h-9 rounded-lg border border-[#e3e8f5] flex items-center justify-center text-[#101433] hover:bg-gray-50 dark:hover:bg-white/5 dark:bg-white/5">
           <ChevronLeft className="w-5 h-5" />
         </button>
         <span className="font-black text-[#101433] text-sm sm:text-base uppercase">{MESES[month - 1]} {year}</span>
-        <button type="button" onClick={() => stepMonth(1)} className="w-9 h-9 rounded-lg border border-[#e3e8f5] flex items-center justify-center text-[#101433] hover:bg-gray-50">
+        <button type="button" onClick={() => stepMonth(1)} className="w-9 h-9 rounded-lg border border-[#e3e8f5] flex items-center justify-center text-[#101433] hover:bg-gray-50 dark:hover:bg-white/5 dark:bg-white/5">
           <ChevronRight className="w-5 h-5" />
         </button>
         <button
           type="button"
           onClick={onBack}
-          className="ml-auto flex items-center gap-2 text-sm font-bold text-[#101433] border border-[#e3e8f5] rounded-lg px-3 py-2 hover:bg-gray-50"
+          className="ml-auto flex items-center gap-2 text-sm font-bold text-[#101433] border border-[#e3e8f5] rounded-lg px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/5 dark:bg-white/5"
         >
           <ArrowLeft className="w-4 h-4" /> Volver a Kanban
         </button>
@@ -88,7 +88,7 @@ export default function PlanMensualView({ highlightActionId, refreshKey, onConfi
       <div className="p-4">
         <div className="grid grid-cols-7 gap-1.5">
           {WEEK_DAYS.map(d => (
-            <div key={d} className="text-center text-[10px] sm:text-xs font-black text-[#101433] border border-[#e3e8f5] rounded-lg py-2 bg-white">
+            <div key={d} className="text-center text-[10px] sm:text-xs font-black text-[#101433] border border-[#e3e8f5] rounded-lg py-2 bg-white dark:bg-[#14142e]">
               {d}
             </div>
           ))}
@@ -103,7 +103,7 @@ export default function PlanMensualView({ highlightActionId, refreshKey, onConfi
                 className={`min-h-[72px] sm:min-h-[88px] rounded-lg border p-1.5 text-left transition-all hover:shadow-md ${
                   isHighlight
                     ? 'border-2 border-[#a21caf] bg-[#faf0fd] shadow-md'
-                    : 'border-[#e3e8f5] bg-white hover:border-[#1f6feb]'
+                    : 'border-[#e3e8f5] bg-white dark:bg-[#14142e] hover:border-[#1f6feb]'
                 } ${c.outside ? 'opacity-60' : ''}`}
               >
                 <span className={`font-black ${isHighlight ? 'text-[#a21caf] text-base' : c.outside ? 'text-gray-400 text-sm' : 'text-[#101433] text-sm'}`}>

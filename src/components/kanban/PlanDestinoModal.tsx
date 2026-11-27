@@ -18,8 +18,8 @@ export default function PlanDestinoModal({ accion, onPick, onCancel }: {
 }) {
   return (
     <div className="fixed inset-0 z-[60] bg-[#0b1030]/60 backdrop-blur-[2px] flex items-center justify-center p-4" onClick={onCancel}>
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 sm:p-8 text-center" onClick={e => e.stopPropagation()}>
-        <button onClick={onCancel} className="absolute top-4 right-4 text-[#101433] hover:text-gray-500">
+      <div className="relative bg-white dark:bg-[#14142e] rounded-2xl shadow-2xl w-full max-w-2xl p-6 sm:p-8 text-center" onClick={e => e.stopPropagation()}>
+        <button onClick={onCancel} className="absolute top-4 right-4 text-[#101433] hover:text-gray-500 dark:text-gray-400">
           <X className="w-6 h-6" strokeWidth={2.5} />
         </button>
         <span className="mx-auto w-14 h-14 rounded-full bg-[#c026d3] text-white text-2xl font-black flex items-center justify-center">
@@ -36,7 +36,7 @@ export default function PlanDestinoModal({ accion, onPick, onCancel }: {
               key={key}
               type="button"
               onClick={() => onPick(key)}
-              className="border border-[#dbe3f5] rounded-2xl p-5 flex flex-col items-center gap-2 hover:border-[#1f6feb] hover:shadow-lg hover:-translate-y-0.5 transition-all bg-white"
+              className="border border-[#dbe3f5] rounded-2xl p-5 flex flex-col items-center gap-2 hover:border-[#1f6feb] hover:shadow-lg hover:-translate-y-0.5 transition-all bg-white dark:bg-[#14142e]"
             >
               <Icon className="w-12 h-12 text-[#101433]" strokeWidth={1.5} />
               <span className="font-black text-[#101433]">{title}</span>

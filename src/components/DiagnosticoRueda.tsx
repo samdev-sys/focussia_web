@@ -82,7 +82,7 @@ function NivelBadge({ puntaje }: { puntaje: number }) {
     'Excelente': 'bg-green-100 text-green-600',
   };
   return (
-    <span className={`px-6 py-2 rounded-full text-sm font-bold tracking-wide ${styles[n.label] || 'bg-gray-100 text-gray-500'}`}>
+    <span className={`px-6 py-2 rounded-full text-sm font-bold tracking-wide ${styles[n.label] || 'bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400'}`}>
       {n.label.toUpperCase()}
     </span>
   );
@@ -352,10 +352,10 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
       return (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <button onClick={() => setScreen('instruccion')} className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600">
+            <button onClick={() => setScreen('instruccion')} className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 dark:text-gray-300">
               <ChevronLeft className="w-4 h-4" /> Intro
             </button>
-            <h2 className="text-lg sm:text-xl font-bold text-gray-800">{i18n.t('toca_cada_segmento_de_tu_rueda')}</h2>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100">{i18n.t('toca_cada_segmento_de_tu_rueda')}</h2>
             <p className="text-xs text-gray-400 whitespace-nowrap">{guardadas.size} de {categorias.length} áreas evaluadas</p>
           </div>
           <div className="flex items-start gap-4 bg-[#f6f2ff] border border-[#e9e2fb] rounded-2xl px-5 py-4 mb-4">
@@ -369,7 +369,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
             </p>
           </div>
           <div className="grid lg:grid-cols-[1fr_380px] gap-4 items-start">
-            <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4 sm:p-8 flex justify-center w-140">
+            <div className="bg-white dark:bg-[#14142e] rounded-md border border-gray-200 dark:border-white/10 shadow-sm p-4 sm:p-8 flex justify-center w-140">
               <RuedaSVG
                 datos={datosRueda}
                 size={480}
@@ -381,7 +381,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
                 etiquetasExternas
               />
             </div>
-            <div className="bg-white rounded-md border border-gray-200 shadow-sm p-5 sm:p-2 h-113 w-130 -ml-35">
+            <div className="bg-white dark:bg-[#14142e] rounded-md border border-gray-200 dark:border-white/10 shadow-sm p-5 sm:p-2 h-113 w-130 -ml-35">
               {catSel ? (
                 <>
                   <div className="flex items-center gap-2.5 mb-3">
@@ -400,7 +400,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
                           className={`w-10 h-10 rounded-full text-sm font-bold transition-all border ${
                             active
                               ? 'bg-[#7c3aed] border-[#7c3aed] text-white shadow-md scale-105'
-                              : 'bg-white border-[#c4b5fd] text-[#1b2350] hover:border-[#7c3aed]'
+                              : 'bg-white dark:bg-[#14142e] border-[#c4b5fd] text-[#1b2350] hover:border-[#7c3aed]'
                           }`}
                         >
                           {n}
@@ -408,17 +408,17 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
                       );
                     })}
                   </div>
-                  <div className="flex items-center justify-between text-xs text-gray-500 mb-4 px-0.5">
+                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-4 px-0.5">
                     <span>{i18n.t('muy_bajo')}</span>
                     <span>{i18n.t('muy_alto')}</span>
                   </div>
-                  <p className="text-sm font-semibold text-gray-700 mb-2">{i18n.t('comentario_opcional')}</p>
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">{i18n.t('comentario_opcional')}</p>
                   <textarea
                     placeholder=""
                     value={comentarios[String(catSel.id)] || ''}
                     onChange={e => setComentarios(c => ({ ...c, [String(catSel.id)]: e.target.value }))}
                     rows={4}
-                    className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-purple-300 focus:ring-2 focus:ring-purple-100 text-gray-700 resize-none mb-4"
+                    className="w-full text-sm border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2.5 focus:outline-none focus:border-purple-300 focus:ring-2 focus:ring-purple-100 text-gray-700 dark:text-gray-200 resize-none mb-4"
                   />
                   <button onClick={() => guardarArea(catSel.id)}
                     className="w-full py-3.5 bg-gradient-to-r from-[#2563eb] to-[#c026d3] text-white rounded-xl font-bold text-base hover:brightness-110 active:scale-[0.99] transition-all">
@@ -449,8 +449,8 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
                 <Brain className="w-12 h-12 text-white" />
               </div>
             )}
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">¡Buen trabajo{nombre ? `, ${nombre}` : ''}! Analizando tus respuestas</h2>
-            <p className="text-sm text-gray-500">{i18n.t('la_inteligencia_artificial_esta_procesan')}</p>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">¡Buen trabajo{nombre ? `, ${nombre}` : ''}! Analizando tus respuestas</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{i18n.t('la_inteligencia_artificial_esta_procesan')}</p>
             <div className="flex justify-center gap-1.5 mt-6">
               {[0, 1, 2].map(i => <div key={i} className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />)}
             </div>
@@ -480,8 +480,8 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
         'Excelente': 'bg-emerald-100 text-emerald-700',
       };
       return (
-        <div className="bg-white rounded-md border border-gray-200 shadow-sm p-4 sm:p-6">
-          <h2 className="text-xl sm:text-xl font-bold text-gray-900 tracking-tight mb-4">
+        <div className="bg-white dark:bg-[#14142e] rounded-md border border-gray-200 dark:border-white/10 shadow-sm p-4 sm:p-6">
+          <h2 className="text-xl sm:text-xl font-bold text-gray-900 dark:text-gray-100 tracking-tight mb-4">
             DIAGNÓSTICO DE TU <span className="text-[#1d4ed8]">{i18n.t('rueda_de_la_vida')}</span>
           </h2>
           <div className="grid lg:grid-cols-[1fr_300px_300px] gap-4 items-start">
@@ -493,8 +493,8 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
                 centroDiagnostico={{ promedio: prom, nivel: `EQUILIBRIO ${diagnostico.nivel_equilibrio.toUpperCase()}` }}
               />
             </div>
-            <div className="bg-white rounded-md border border-gray-100 shadow-sm p-4">
-              <h3 className="font-bold text-gray-900 tracking-wide mb-3">{i18n.t('resultados')}</h3>
+            <div className="bg-white dark:bg-[#14142e] rounded-md border border-gray-100 dark:border-white/10 shadow-sm p-4">
+              <h3 className="font-bold text-gray-900 dark:text-gray-100 tracking-wide mb-3">{i18n.t('resultados')}</h3>
               <div className="space-y-1.5">
                 {datosRueda.map((d, i) => {
                   const niv = nivelStr(d.puntaje);
@@ -503,9 +503,9 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
                       <span className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: colorPorArea(d.nombre, i) }}>
                         <AreaIcon nombre={d.nombre} className="w-4 h-4 text-white" />
                       </span>
-                      <span className="flex-1 text-xs text-gray-600">{d.nombre}</span>
-                      <span className="font-bold text-gray-800 text-sm w-5 text-right">{d.puntaje}</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${NIVEL_PILL[niv.label] || 'bg-gray-100 text-gray-500'}`}>
+                      <span className="flex-1 text-xs text-gray-600 dark:text-gray-300">{d.nombre}</span>
+                      <span className="font-bold text-gray-800 dark:text-gray-100 text-sm w-5 text-right">{d.puntaje}</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${NIVEL_PILL[niv.label] || 'bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400'}`}>
                         {niv.label}
                       </span>
                     </div>
@@ -513,7 +513,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
                 })}
               </div>
             </div>
-            <div className="bg-white rounded-md border border-gray-100 shadow-sm p-4">
+            <div className="bg-white dark:bg-[#14142e] rounded-md border border-gray-100 dark:border-white/10 shadow-sm p-4">
               <h3 className="font-bold tracking-wide mb-3">
                 INTERPRETACIÓN DE <span className="text-[#6d28d9]">{nombreAvatar || 'LÍA'}</span>
               </h3>
@@ -523,7 +523,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
                 ) : (
                   <div className="w-20 h-24 rounded-xl bg-gradient-to-b from-[#2b3fd4] to-[#7a5af8] shrink-0" />
                 )}
-                <p className="text-[13px] text-gray-700 leading-relaxed">
+                <p className="text-[13px] text-gray-700 dark:text-gray-200 leading-relaxed">
                   <strong>Excelente{nombre ? `, ${nombre}` : ''}.</strong> Completaste tu Rueda de la Vida.
                   Ahora revisemos qué áreas están fuertes y cuáles necesitan mayor atención.
                 </p>
@@ -531,7 +531,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
               <p className="text-[13px] text-indigo-900/80 leading-relaxed bg-purple-50/60 rounded-xl p-3">{sintesis}</p>
             </div>
           </div>
-          <div className="mt-4 bg-white rounded-md border border-gray-100 shadow-sm p-4">
+          <div className="mt-4 bg-white dark:bg-[#14142e] rounded-md border border-gray-100 dark:border-white/10 shadow-sm p-4">
             <h3 className="font-bold tracking-wide mb-3">
               ÁREAS FOCO <span className="text-[#1d4ed8]">{i18n.t('prioritarias')}</span>
             </h3>
@@ -544,13 +544,13 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
                   <button
                     key={f}
                     onClick={() => { setFocoActivo(f); setScreen('acciones'); }}
-                    className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50/60 hover:border-indigo-300 hover:shadow-md transition-all p-3 text-left"
+                    className="flex items-center gap-3 rounded-xl border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-white/5/60 hover:border-indigo-300 hover:shadow-md transition-all p-3 text-left"
                   >
                     <span className="w-12 h-12 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: hex }}>
                       <AreaIcon nombre={f} className="w-6 h-6 text-white" />
                     </span>
                     <span>
-                      <span className="block text-xs font-bold text-gray-500 tracking-wide">{f.toUpperCase()}</span>
+                      <span className="block text-xs font-bold text-gray-500 dark:text-gray-400 tracking-wide">{f.toUpperCase()}</span>
                       <span className="block text-2xl font-black leading-none" style={{ color: hex }}>{pf}</span>
                     </span>
                   </button>
@@ -581,7 +581,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
       return (
         <div>
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-gray-100 tracking-tight">
               ÁREA FOCO: <span className="text-[#1d4ed8]">{focoActivo.toUpperCase()}</span>
             </h2>
             <button onClick={() => diagnostico ? setScreen('reporte') : setScreen('cierre')}
@@ -596,7 +596,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
                   className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
                     focoActivo === f
                       ? 'bg-[#1e3a5f] text-white shadow-md'
-                      : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                      : 'bg-white dark:bg-[#14142e] border border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 dark:bg-white/5'
                   }`}>
                   {f} {acciones.filter(a => a.area_foco === f && a.enviada_kanban).length > 0 && (
                     <CheckCircle2 className="inline w-3 h-3 ml-1 text-green-400" />
@@ -606,15 +606,15 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
             </div>
           )}
           <div className="grid lg:grid-cols-[340px_1fr] gap-4 items-start">
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+            <div className="bg-white dark:bg-[#14142e] rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm p-5">
               <div className="w-28 h-28 mx-auto rounded-full bg-gradient-to-br from-[#1d4ed8] to-[#3b82f6] flex items-center justify-center shadow-lg mb-3">
                 <AreaIcon nombre={focoActivo} className="w-14 h-14 text-white" />
               </div>
               <h3 className="text-center text-xl font-extrabold text-[#101331] tracking-wide mb-2">{focoActivo.toUpperCase()}</h3>
               <p className="text-[13px] text-indigo-900/80 text-center leading-relaxed mb-4">{catFoco ? areaDesc(catFoco.nombre) : ''}</p>
-              <div className="flex items-center justify-center gap-4 border border-gray-200 rounded-2xl py-3 px-4 mb-5">
+              <div className="flex items-center justify-center gap-4 border border-gray-200 dark:border-white/10 rounded-2xl py-3 px-4 mb-5">
                 <div className="text-center">
-                  <p className="text-[11px] font-bold tracking-widest text-gray-700">{i18n.t('puntaje')}</p>
+                  <p className="text-[11px] font-bold tracking-widest text-gray-700 dark:text-gray-200">{i18n.t('puntaje')}</p>
                   <p className="text-4xl font-black text-[#1d4ed8] leading-none mt-1">{puntajeFoco}</p>
                 </div>
                 <div className="w-px self-stretch bg-gray-200" />
@@ -630,8 +630,8 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
                 <p className="text-[13px] text-indigo-900/80 leading-relaxed">{porqueFoco}</p>
               </div>
             </div>
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-              <h3 className="text-xl sm:text-2xl font-black text-gray-900">
+            <div className="bg-white dark:bg-[#14142e] rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm p-5">
+              <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-gray-100">
                 ACCIONES SUGERIDAS <span className="text-[#6d28d9]">POR {nombreAvatar || 'LÍA'}</span>
               </h3>
               <p className="text-sm text-indigo-900/70 mt-1 mb-4">{i18n.t('selecciona_una_o_varias_acciones_para_en')}</p>
@@ -657,7 +657,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
                   const sent = a.enviada_kanban;
                   return (
                     <div key={a.id} className={`rounded-xl border p-3 flex items-center gap-3 transition-all ${
-                      sent ? 'bg-green-50/70 border-green-100' : 'bg-white border-gray-200 hover:border-indigo-200 hover:shadow-sm'
+                      sent ? 'bg-green-50/70 border-green-100' : 'bg-white dark:bg-[#14142e] border-gray-200 dark:border-white/10 hover:border-indigo-200 hover:shadow-sm'
                     }`}>
                       <button
                         onClick={() => { if (!sent) toggleSeleccion(a.id); }}
@@ -701,7 +701,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
                 </button>
               </div>
               <button onClick={() => setScreen('cierre')}
-                className="w-full mt-3 py-2.5 text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                className="w-full mt-3 py-2.5 text-xs text-gray-400 hover:text-gray-600 dark:text-gray-300 transition-colors">
                 Finalizar diagnóstico →
               </button>
             </div>
@@ -711,7 +711,7 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
     }
 
     return (
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-8 grid lg:grid-cols-[280px_1fr_340px] gap-6 items-center">
+      <div className="bg-white dark:bg-[#14142e] rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm p-4 sm:p-8 grid lg:grid-cols-[280px_1fr_340px] gap-6 items-center">
         <div className="relative rounded-2xl overflow-hidden bg-gradient-to-b from-[#2b3fd4] via-[#4b3fd6] to-[#7a5af8] min-h-[380px]">
           {avatarImg ? (
             <img src={avatarImg} alt={i18n.t('coach_bkv0')} className="absolute inset-0 w-full h-full object-cover object-top" />
@@ -720,16 +720,16 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
           )}
           <div className="absolute inset-x-0 bottom-0 p-4 flex justify-center gap-1.5">
             {[0, 1, 2, 3, 4, 5, 6].map(i => (
-              <span key={i} className={`h-1.5 rounded-full ${i === 0 ? 'w-6 bg-white' : 'w-1.5 bg-white/50'}`} />
+              <span key={i} className={`h-1.5 rounded-full ${i === 0 ? 'w-6 bg-white dark:bg-[#14142e]' : 'w-1.5 bg-white/50'}`} />
             ))}
           </div>
         </div>
         <div className="flex justify-center">
           <RuedaSVG datos={datosRueda} size={380} />
         </div>
-        <div className="bg-white rounded-2xl border border-indigo-100 shadow-sm p-6">
+        <div className="bg-white dark:bg-[#14142e] rounded-2xl border border-indigo-100 shadow-sm p-6">
           <span className="text-5xl font-black text-indigo-200 leading-none">“</span>
-          <p className="text-[17px] text-gray-800 leading-relaxed">
+          <p className="text-[17px] text-gray-800 dark:text-gray-100 leading-relaxed">
             Ahora que viste tus áreas fuertes y tus áreas foco, Focusia puede ayudarte a construir una
           </p>
           <p className="text-3xl font-black leading-tight mt-2 bg-gradient-to-r from-[#1d4ed8] to-[#a855f7] bg-clip-text text-transparent">
@@ -746,11 +746,11 @@ export default function DiagnosticoRueda({ avatarIndex = 0, userName = '', onClo
               </button>
             )}
             <button onClick={() => setScreen('reporte')}
-              className="w-full py-2.5 border border-gray-200 rounded-xl text-xs text-gray-500 hover:bg-gray-50 transition-colors">
+              className="w-full py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 dark:bg-white/5 transition-colors">
               Ver diagnóstico completo
             </button>
             <button onClick={onClose}
-              className="w-full py-2.5 border border-gray-200 rounded-xl text-xs text-gray-500 hover:bg-gray-50 transition-colors">
+              className="w-full py-2.5 border border-gray-200 dark:border-white/10 rounded-xl text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 dark:bg-white/5 transition-colors">
               Ir al dashboard principal
             </button>
           </div>

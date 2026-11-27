@@ -96,16 +96,16 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
 
         <div className="flex-1 overflow-y-auto p-4 space-y-5">
           {loading && !config.voz_genero ? (
-            <div className="text-center py-8 text-sm text-gray-500">{i18n.t('cargando')}</div>
+            <div className="text-center py-8 text-sm text-gray-500 dark:text-gray-400">{i18n.t('cargando')}</div>
           ) : (
             <>
               <div className="bg-white/60 rounded-xl p-4 border border-white/50">
-                <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 flex items-center gap-1">
+                <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 flex items-center gap-1">
                   <Volume2 className="w-3.5 h-3.5" /> Voz y Estilo
                 </h3>
                 <div className="space-y-3">
                   <div>
-                    <label className="text-xs text-gray-500 font-medium">{i18n.t('genero_de_la_voz')}</label>
+                    <label className="text-xs text-gray-500 dark:text-gray-400 font-medium">{i18n.t('genero_de_la_voz')}</label>
                     <div className="flex gap-2 mt-1">
                       {(['femenino', 'masculino'] as const).map((g) => (
                         <button
@@ -114,7 +114,7 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
                           className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
                             config.voz_genero === g
                               ? 'bg-slate-700 text-white shadow'
-                              : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                              : 'bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400 hover:bg-gray-200'
                           }`}
                         >
                           {g.charAt(0).toUpperCase() + g.slice(1)}
@@ -123,7 +123,7 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs text-gray-500 font-medium">{i18n.t('estilo_de_comunicacion')}</label>
+                    <label className="text-xs text-gray-500 dark:text-gray-400 font-medium">{i18n.t('estilo_de_comunicacion')}</label>
                     <div className="flex gap-2 mt-1">
                       {([{ id: 'suave', label: 'Suave' }, { id: 'directo', label: 'Directo / Estructurado' }] as const).map((e) => (
                         <button
@@ -132,7 +132,7 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
                           className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
                             config.estilo_comunicacion === e.id
                               ? 'bg-slate-700 text-white shadow'
-                              : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                              : 'bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400 hover:bg-gray-200'
                           }`}
                         >
                           {e.label}
@@ -144,7 +144,7 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
               </div>
 
               <div className="bg-white/60 rounded-xl p-4 border border-white/50">
-                <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 flex items-center gap-1">
+                <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 flex items-center gap-1">
                   <Volume2 className="w-3.5 h-3.5" /> Acompañante
                 </h3>
                 <div className="grid grid-cols-3 gap-2">
@@ -152,7 +152,7 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
                     const selected = config.avatar_index === a.index;
                     return (
                       <button key={a.index} onClick={() => setConfig(p => ({ ...p, avatar_index: a.index }))}
-                        className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all hover:scale-105 active:scale-95 ${selected ? 'border-purple-500 ring-2 ring-purple-300' : 'border-gray-100 hover:border-gray-300'}`}>
+                        className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all hover:scale-105 active:scale-95 ${selected ? 'border-purple-500 ring-2 ring-purple-300' : 'border-gray-100 dark:border-white/10 hover:border-gray-300'}`}>
                         <img src={a.file} alt={a.name} className="w-full h-full object-cover" />
                         {selected && <div className="absolute inset-0 bg-purple-500/10" />}
                         <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 text-[9px] font-medium bg-white/80 px-1.5 py-0.5 rounded-full">{a.name}</span>
@@ -163,13 +163,13 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
                 {config.avatar_index > 0 && (
                   <div className="flex items-center gap-3 mt-3 p-3 bg-white/60 rounded-xl">
                     <img src={AVATARS.find(a => a.index === config.avatar_index)?.file} alt={i18n.t('preview')} className="w-10 h-10 rounded-xl object-cover" />
-                    <p className="text-xs text-gray-500">{i18n.t('tu_coach_actual')}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{i18n.t('tu_coach_actual')}</p>
                   </div>
                 )}
               </div>
 
               <div className="bg-white/60 rounded-xl p-4 border border-white/50">
-                <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 flex items-center gap-1">
+                <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 flex items-center gap-1">
                   <Bell className="w-3.5 h-3.5" /> Canales de Interacción
                 </h3>
                 <div className="space-y-2">
@@ -184,17 +184,17 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
                       onClick={() => toggleCanal(canal.id)}
                       className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all ${
                         config.canales_interaccion.includes(canal.id)
-                          ? 'border-slate-400 bg-slate-50'
-                          : 'border-gray-200 bg-white hover:border-gray-300'
+                          ? 'border-slate-400 bg-slate-50 dark:bg-white/5'
+                          : 'border-gray-200 dark:border-white/10 bg-white dark:bg-[#14142e] hover:border-gray-300'
                       }`}
                     >
                       <div className={`p-1.5 rounded-lg ${
-                        config.canales_interaccion.includes(canal.id) ? 'bg-slate-700 text-white' : 'bg-gray-100 text-gray-400'
+                        config.canales_interaccion.includes(canal.id) ? 'bg-slate-700 text-white' : 'bg-gray-100 dark:bg-white/10 text-gray-400'
                       }`}>
                         <Wifi className="w-3.5 h-3.5" />
                       </div>
                       <div className="text-left flex-1">
-                        <p className="text-sm font-medium text-gray-700">{canal.label}</p>
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-200">{canal.label}</p>
                         <p className="text-xs text-gray-400">{canal.desc}</p>
                       </div>
                       <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
@@ -212,12 +212,12 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
               </div>
 
               <div className="bg-white/60 rounded-xl p-4 border border-white/50">
-                <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 flex items-center gap-1">
+                <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 flex items-center gap-1">
                   <Gauge className="w-3.5 h-3.5" /> Frecuencia e Intensidad
                 </h3>
                 <div className="space-y-3">
                   <div>
-                    <label className="text-xs text-gray-500 font-medium">{i18n.t('nivel_de_exigencia')}</label>
+                    <label className="text-xs text-gray-500 dark:text-gray-400 font-medium">{i18n.t('nivel_de_exigencia')}</label>
                     <div className="flex gap-2 mt-1">
                       {([{ id: 'bajo', label: 'Bajo' }, { id: 'medio', label: 'Medio' }, { id: 'alto', label: 'Alto' }] as const).map((n) => (
                         <button
@@ -226,7 +226,7 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
                           className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
                             config.nivel_exigencia === n.id
                               ? 'bg-slate-700 text-white shadow'
-                              : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                              : 'bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400 hover:bg-gray-200'
                           }`}
                         >
                           {n.label}
@@ -235,7 +235,7 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs text-gray-500 font-medium">
+                    <label className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                       Frecuencia entre intervenciones: cada {config.frecuencia_intervenciones} horas
                     </label>
                     <input
@@ -257,39 +257,39 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
               </div>
 
               <div className="bg-white/60 rounded-xl p-4 border border-white/50">
-                <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 flex items-center gap-1">
+                <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3 flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5" /> Ventana de Intervención
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-gray-500 font-medium">{i18n.t('inicio')}</label>
+                    <label className="text-xs text-gray-500 dark:text-gray-400 font-medium">{i18n.t('inicio')}</label>
                     <input
                       type="time"
                       value={config.ventana_inicio}
                       onChange={(e) => setConfig((p) => ({ ...p, ventana_inicio: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-slate-300 bg-white text-sm mt-1"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-slate-300 bg-white dark:bg-[#14142e] text-sm mt-1"
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-500 font-medium">{i18n.t('fin')}</label>
+                    <label className="text-xs text-gray-500 dark:text-gray-400 font-medium">{i18n.t('fin')}</label>
                     <input
                       type="time"
                       value={config.ventana_fin}
                       onChange={(e) => setConfig((p) => ({ ...p, ventana_fin: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-slate-300 bg-white text-sm mt-1"
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 focus:outline-none focus:ring-2 focus:ring-slate-300 bg-white dark:bg-[#14142e] text-sm mt-1"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-white/10">
                 <div className="flex items-center gap-2 mb-3">
                   {hasMetaAnualAprobada ? (
                     <Target className="w-4 h-4 text-emerald-500" />
                   ) : (
                     <Lock className="w-4 h-4 text-gray-400" />
                   )}
-                  <span className={`text-sm font-bold ${hasMetaAnualAprobada ? 'text-gray-800' : 'text-gray-400'}`}>
+                  <span className={`text-sm font-bold ${hasMetaAnualAprobada ? 'text-gray-800 dark:text-gray-100' : 'text-gray-400'}`}>
                     Modificar mi Plan
                   </span>
                 </div>
@@ -301,8 +301,8 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
                     >
                       <Target className="w-4 h-4 text-[#2b44ff]" />
                       <div>
-                        <p className="text-sm font-semibold text-gray-800">{i18n.t('gran_meta_anual')}</p>
-                        <p className="text-[10px] text-gray-500">{i18n.t('reconstruir_tu_meta_smart')}</p>
+                        <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{i18n.t('gran_meta_anual')}</p>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">{i18n.t('reconstruir_tu_meta_smart')}</p>
                       </div>
                     </button>
                     <button
@@ -311,8 +311,8 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
                     >
                       <CalendarDays className="w-4 h-4 text-purple-500" />
                       <div>
-                        <p className="text-sm font-semibold text-gray-800">{i18n.t('metas_mensuales')}</p>
-                        <p className="text-[10px] text-gray-500">{i18n.t('ajustar_tus_12_objetivos')}</p>
+                        <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{i18n.t('metas_mensuales')}</p>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">{i18n.t('ajustar_tus_12_objetivos')}</p>
                       </div>
                     </button>
                     <button
@@ -321,8 +321,8 @@ export const ConfiguracionPanel: React.FC<ConfiguracionPanelProps> = ({
                     >
                       <Calendar className="w-4 h-4 text-amber-500" />
                       <div>
-                        <p className="text-sm font-semibold text-gray-800">{i18n.t('misiones_semanales')}</p>
-                        <p className="text-[10px] text-gray-500">{i18n.t('planificar_tu_semana')}</p>
+                        <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{i18n.t('misiones_semanales')}</p>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">{i18n.t('planificar_tu_semana')}</p>
                       </div>
                     </button>
                   </div>

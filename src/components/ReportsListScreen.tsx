@@ -156,14 +156,14 @@ function EstadoChico({
         );
       case 'cerrado':
         return enHistorial ? (
-          <span className="inline-flex items-center gap-1.5 text-slate-500">
+          <span className="inline-flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
             <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0" /> {texto}
           </span>
         ) : (
-          <span className="text-slate-600">{texto}</span>
+          <span className="text-slate-600 dark:text-slate-300">{texto}</span>
         );
       default:
-        return <span className="text-slate-600">{texto}</span>;
+        return <span className="text-slate-600 dark:text-slate-300">{texto}</span>;
     }
   };
   return <div className="text-sm mt-0.5">{contenido()}</div>;
@@ -244,7 +244,7 @@ export function ReportsListScreen({
   // Barra de acceso rápido a las 12 pantallas digitalizadas (oculta: mockups de diseño)
   const SelectorPantallas = () => null; /* (
     !import.meta.env.DEV ? null : (
-    <div className="pt-3 pb-1 flex flex-wrap items-center gap-1.5 border-b border-slate-100 text-xs">
+    <div className="pt-3 pb-1 flex flex-wrap items-center gap-1.5 border-b border-slate-100 dark:border-white/10 text-xs">
       <span className="font-bold text-slate-400 mr-1">{i18n.t('vistas')}</span>
       {[
         {
@@ -315,7 +315,7 @@ export function ReportsListScreen({
           className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
             btn.active
               ? 'bg-[#E8F1FF] text-[#2563EB]'
-              : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-white/10 hover:text-slate-800 dark:text-slate-100'
           }`}
         >
           {btn.label}
@@ -330,7 +330,7 @@ export function ReportsListScreen({
   // ──────────────────────────────────────────────────────────────────────
   if (!historial && modoLista === 'notificaciones') {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white dark:bg-[#14142e]">
         <div className="w-full px-5 sm:px-8">
           <SelectorPantallas />
         </div>
@@ -349,7 +349,7 @@ export function ReportsListScreen({
   if (historial) {
     const meta = LEVEL_META[historial];
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-white dark:bg-[#14142e]">
         <div className="w-full px-5 sm:px-8 pb-10">
           <SelectorPantallas />          <ReportHeroHeader
             pose="tab"
@@ -376,13 +376,13 @@ export function ReportsListScreen({
                 <button
                   key={r.id}
                   onClick={() => setSelectedReport(r)}
-                  className="w-full border border-[#e2e8f0] rounded-xl p-4 sm:p-5 hover:shadow-md transition-all text-left flex items-center gap-4 bg-white"
+                  className="w-full border border-[#e2e8f0] rounded-xl p-4 sm:p-5 hover:shadow-md transition-all text-left flex items-center gap-4 bg-white dark:bg-[#14142e]"
                 >
                   <div className="w-12 h-12 rounded-xl bg-[#E8F1FF] flex items-center justify-center shrink-0">
                     <meta.Icon className="w-6 h-6" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-lg font-bold text-slate-900 truncate">
+                    <p className="text-lg font-bold text-slate-900 dark:text-slate-100 truncate">
                       {periodoDe(r)}
                     </p>
                     <EstadoChico report={r} enHistorial />
@@ -394,7 +394,7 @@ export function ReportsListScreen({
                         Acción: {ACTION_LABELS[r.action_taken]}
                       </span>
                     ) : r.never_opened ? (
-                      <span className="inline-block mt-1.5 text-xs font-semibold text-slate-600 bg-slate-100 rounded-md px-2.5 py-0.5">
+                      <span className="inline-block mt-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-white/10 rounded-md px-2.5 py-0.5">
                         Sin consultar en su intervalo
                       </span>
                     ) : null}
@@ -410,7 +410,7 @@ export function ReportsListScreen({
                       </span>
                     ) : (
                       <>
-                        <div className="text-2xl font-black text-slate-900 leading-none">
+                        <div className="text-2xl font-black text-slate-900 dark:text-slate-100 leading-none">
                           {Math.round(r.completion_percentage)}%
                         </div>
                         <div className="text-xs text-slate-400 mt-0.5">{i18n.t('cumplimiento')}</div>
@@ -465,7 +465,7 @@ export function ReportsListScreen({
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-[#14142e]">
       <div className="max-w-[1500px] mx-auto px-5 sm:px-8 pb-10">
         <SelectorPantallas />
 
@@ -491,19 +491,19 @@ export function ReportsListScreen({
                 return (
                   <div
                     key={item.level}
-                    className="border border-[#e2e8f0] rounded-2xl p-6 flex flex-col bg-white shadow-2xs"
+                    className="border border-[#e2e8f0] rounded-2xl p-6 flex flex-col bg-white dark:bg-[#14142e] shadow-2xs"
                   >
                     <div className="w-16 h-16 rounded-2xl bg-[#E8F1FF] flex items-center justify-center shrink-0">
                       <meta.Icon className="w-8 h-8" />
                     </div>
-                    <h2 className="text-2xl font-bold text-slate-900 mt-4">{meta.label}</h2>
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-4">{meta.label}</h2>
 
                     {report ? (
                       <>
                         <div className="text-base font-bold mt-3" style={{ color: BLUE }}>
                           Último reporte disponible
                         </div>
-                        <div className="text-base font-medium text-slate-800 mt-1">
+                        <div className="text-base font-medium text-slate-800 dark:text-slate-100 mt-1">
                           {periodoDe(report)}
                         </div>
                         <EstadoChico report={report} />
@@ -526,7 +526,7 @@ export function ReportsListScreen({
                         )}
 
                         {report.is_partial && report.closed_at && (
-                          <span className="text-xs text-slate-500 mt-1">
+                          <span className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                             Inició tu planificación a mitad de período
                           </span>
                         )}
@@ -550,20 +550,20 @@ export function ReportsListScreen({
                       </>
                     ) : (
                       <>
-                        <div className="text-base text-slate-700 mt-3">
+                        <div className="text-base text-slate-700 dark:text-slate-200 mt-3">
                           Aún no tienes reportes de este tipo.
                         </div>
                         {item.fecha_prevista ? (
-                          <div className="rounded-xl bg-[#F8FAFC] border border-slate-200/80 px-3.5 py-3 mt-3">
+                          <div className="rounded-xl bg-[#F8FAFC] border border-slate-200 dark:border-white/10/80 px-3.5 py-3 mt-3">
                             <div className="text-sm font-bold" style={{ color: BLUE }}>
                               Primer reporte previsto
                             </div>
-                            <div className="text-sm font-bold text-slate-800 mt-0.5">
+                            <div className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-0.5">
                               {fmtFechaPrevista(item.fecha_prevista, item.level)}
                             </div>
                           </div>
                         ) : (
-                          <div className="text-sm text-slate-500 mt-3">
+                          <div className="text-sm text-slate-500 dark:text-slate-400 mt-3">
                             Falta completar tu configuración o tu planificación para calcular la
                             fecha del primer reporte.
                           </div>
@@ -586,7 +586,7 @@ export function ReportsListScreen({
               })}
             </div>
 
-            <div className="mt-7 flex items-center gap-2 text-sm text-slate-600">
+            <div className="mt-7 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
               <Info className="w-4 h-4 shrink-0" style={{ color: BLUE }} />
               {ningunReporte
                 ? 'Los reportes se generan automáticamente al cierre de cada período y quedan disponibles aquí.'

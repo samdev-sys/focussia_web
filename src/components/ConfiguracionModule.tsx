@@ -557,11 +557,11 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
               Aquí puedes ajustar Focusia a tu manera, {nombre}. Elige qué quieres modificar.
             </p>
             <div className="grid md:grid-cols-[300px_1fr] gap-6 mt-8 items-start">
-              <div className="bg-white rounded-xl shadow border border-slate-100 overflow-hidden">
+              <div className="bg-white dark:bg-[#14142e] rounded-xl shadow border border-slate-100 dark:border-white/10 overflow-hidden">
                 <img src={fotoMenu} alt={i18n.t('avatar_actual')} className="w-full aspect-[4/5] object-cover" />
                 <div className="p-4 text-center">
                   <p className="font-black text-[#14173a]">{AVATAR_NOMBRES[avatarId] || ''}</p>
-                  <p className="text-xs text-slate-500">{i18n.t('tu_avatar_actual')}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{i18n.t('tu_avatar_actual')}</p>
                 </div>
               </div>
               <div className="grid sm:grid-cols-3 gap-4">
@@ -570,7 +570,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
                     key={it.id}
                     type="button"
                     onClick={() => { setError(''); setScreen(it.id); }}
-                    className="bg-white rounded-2xl shadow-sm border border-slate-100 aspect-square flex items-center justify-center p-4 hover:shadow-md hover:border-[#2b44ff]/40 active:scale-95 transition-all"
+                    className="bg-white dark:bg-[#14142e] rounded-2xl shadow-sm border border-slate-100 dark:border-white/10 aspect-square flex items-center justify-center p-4 hover:shadow-md hover:border-[#2b44ff]/40 active:scale-95 transition-all"
                   >
                     <span className="font-bold text-[#1e1b4b] text-center">{it.label}</span>
                   </button>
@@ -598,7 +598,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
              <img src="/focussia.png" alt={i18n.t('focusia_5aq1')} className="w-15" /><span className="w-20 text-center text-xl font-bold text-[#323EC0] ml-20" ><p className="text-center -ml-230 text-xl font-bold">{i18n.t('focusia_5aq1')}</p> </span>
             </div>
             <h1 className="text-center text-4xl font-bold text-[#14173a] mt-6 tracking-wide">{i18n.t('avatar_7e46')}</h1>
-            <p className="text-center text-slate-500 mt-1">{i18n.t('revisa_tu_avatar_actual_o_elige_uno_nuev')}</p>
+            <p className="text-center text-slate-500 dark:text-slate-400 mt-1">{i18n.t('revisa_tu_avatar_actual_o_elige_uno_nuev')}</p>
             <div className="grid lg:grid-cols-2 gap-6 mt-6 items-start">
               <div>
                 <div className="rounded-xl overflow-hidden text-white flex" style={{ background: 'linear-gradient(135deg, #373491 0%, #2B1C7E 55%, #170552 100%)' }}>
@@ -612,7 +612,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
                     <button
                       type="button"
                       onClick={() => reproducirVoz(avatarDraft)}
-                      className="mt-4 w-full bg-white rounded-full flex items-center gap-2 pl-1.5 pr-4 py-1.5 text-[#14173a]"
+                      className="mt-4 w-full bg-white dark:bg-[#14142e] rounded-full flex items-center gap-2 pl-1.5 pr-4 py-1.5 text-[#14173a]"
                     >
                       <span className="w-9 h-9 rounded-full bg-[#6d28d9] text-white flex items-center justify-center shrink-0">
                         {reproduciendo === avatarDraft ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
@@ -622,13 +622,13 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
                           <span key={i} className="w-[3px] rounded-full bg-[#6d28d9]/70" style={{ height: `${6 + ((i * 7) % 16)}px` }} />
                         ))}
                       </span>
-                      <span className="text-xs font-bold text-slate-500 whitespace-nowrap">0:00 / 0:00</span>
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">0:00 / 0:00</span>
                     </button>
                     <div className="relative mt-4">
-                      <span className="absolute -left-2 top-5 w-4 h-4 bg-white rotate-45 rounded-[3px]" aria-hidden />
-                      <div className="relative bg-white rounded-2xl p-4 pl-5 text-sm leading-relaxed">
-                        <p className="text-slate-800"><span className="text-[#6d28d9] text-2xl font-black leading-none mr-1">“</span><b>Hola, {nombre}.</b></p>
-                        <p className="text-slate-500 mt-1">{i18n.t('desde_ahora_voy_a_acompanarte_a_construi')}</p>
+                      <span className="absolute -left-2 top-5 w-4 h-4 bg-white dark:bg-[#14142e] rotate-45 rounded-[3px]" aria-hidden />
+                      <div className="relative bg-white dark:bg-[#14142e] rounded-2xl p-4 pl-5 text-sm leading-relaxed">
+                        <p className="text-slate-800 dark:text-slate-100"><span className="text-[#6d28d9] text-2xl font-black leading-none mr-1">“</span><b>Hola, {nombre}.</b></p>
+                        <p className="text-slate-500 dark:text-slate-400 mt-1">{i18n.t('desde_ahora_voy_a_acompanarte_a_construi')}</p>
                       </div>
                     </div>
                     <button
@@ -659,7 +659,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
                       key={a.index}
                       type="button"
                       onClick={() => setAvatarDraft(a.index)}
-                      className={`bg-white rounded-xl overflow-hidden border-2 transition-all hover:shadow-md ${avatarDraft === a.index ? 'border-[#6d28d9]' : 'border-transparent shadow-sm'}`}
+                      className={`bg-white dark:bg-[#14142e] rounded-xl overflow-hidden border-2 transition-all hover:shadow-md ${avatarDraft === a.index ? 'border-[#6d28d9]' : 'border-transparent shadow-sm'}`}
                     >
                       <img src={a.file} alt={a.name} className="w-full aspect-[3/4] object-cover" />
                       <span className="flex items-center justify-between px-2.5 py-2">
@@ -1081,7 +1081,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
           className="flex items-center gap-2"
         >
           <span className={`w-11 h-6 rounded-full p-0.5 transition-colors ${valor ? 'bg-[#7c3aed]' : 'bg-white/15'}`}>
-            <span className={`block w-5 h-5 rounded-full bg-white transition-transform ${valor ? 'translate-x-5' : ''}`} />
+            <span className={`block w-5 h-5 rounded-full bg-white dark:bg-[#14142e] transition-transform ${valor ? 'translate-x-5' : ''}`} />
           </span>
           <span className="text-xs w-20 text-left" style={{ color: valor ? '#c084fc' : '#64748b' }}>{valor ? 'Activado' : 'Desactivado'}</span>
         </button>
@@ -1313,14 +1313,14 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
               <img src="/focussia.png" alt={i18n.t('focusia_5aq1')} className="w-15" /><span className="w-20 text-center text-xl font-bold text-[#323EC0] ml-20"><p className="text-center -ml-230 text-xl font-bold">{i18n.t('focusia_5aq1')}</p></span>
             </div>
             <h1 className="text-center text-4xl font-black text-[#14173a] mt-6 tracking-wide">{i18n.t('mis_redes_sociales')}</h1>
-            <p className="text-center text-slate-500 mt-1">{i18n.t('guarda_el_enlace_de_cada_perfil_una_sola')}</p>
+            <p className="text-center text-slate-500 dark:text-slate-400 mt-1">{i18n.t('guarda_el_enlace_de_cada_perfil_una_sola')}</p>
             <div className="grid md:grid-cols-2 gap-4 mt-6">
               {REDES.map(r => {
                 const valor = redes[r.id] || '';
                 const configurada = valor.trim() !== '';
                 const abierto = tutAbierto === r.id;
                 return (
-                  <div key={r.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+                  <div key={r.id} className="bg-white dark:bg-[#14142e] rounded-2xl shadow-sm border border-slate-100 dark:border-white/10 p-5">
                     <div className="flex items-center gap-3">
                       <span className="w-12 h-12 rounded-full flex items-center justify-center text-white shrink-0" style={{ background: r.color }}>
                         <RedIcon id={r.id} className="w-6 h-6" />
@@ -1340,7 +1340,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
                       </button>
                     </div>
                     {abierto && (
-                      <ol className="mt-3 rounded-xl bg-[#eef2ff] p-3 pl-8 text-[13px] text-slate-700 list-decimal space-y-1">
+                      <ol className="mt-3 rounded-xl bg-[#eef2ff] p-3 pl-8 text-[13px] text-slate-700 dark:text-slate-200 list-decimal space-y-1">
                         {r.tutorial.map((paso, i) => <li key={i}>{paso}</li>)}
                         <li className="font-bold text-[#2b44ff]">{i18n.t('tarda_unos_10_segundos')}</li>
                       </ol>
@@ -1353,7 +1353,7 @@ export default function ConfiguracionModule({ username, onClose, onLogout, panta
                         onChange={e => setRedes(prev => ({ ...prev, [r.id]: e.target.value }))}
                         onKeyDown={e => { if (e.key === 'Enter') guardarRed(r.id); }}
                         placeholder={`https://... tu perfil de ${r.nombre}`}
-                        className="flex-1 min-w-0 bg-[#f4f6fb] border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#2b44ff]"
+                        className="flex-1 min-w-0 bg-[#f4f6fb] border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#2b44ff]"
                       />
                       <button
                         type="button"

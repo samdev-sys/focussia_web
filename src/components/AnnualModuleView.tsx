@@ -36,7 +36,7 @@ export default function AnnualModuleView({ userName = '', avatarImg, onClose, on
         <button onClick={onClose} className="absolute -top-1 right-1 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors" title={i18n.t('cerrar_bspu')}>
           <X className="w-5 h-5 text-white" />
         </button>
-        <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-5 flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-6">
+        <div className="bg-white dark:bg-[#14142e] rounded-2xl shadow-xl p-4 sm:p-5 flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-6">
           <div className="flex items-center gap-3 sm:w-64 shrink-0">
             <span className="w-12 h-12 rounded-2xl bg-[#eceafe] flex items-center justify-center shrink-0">
               <CalendarDays className="w-7 h-7 text-[#4f46e5]" />

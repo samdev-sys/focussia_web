@@ -142,7 +142,7 @@ function DelegationRow({ deleg, expanded, responsables, onToggle, onChanged }: {
       <button
         type="button"
         onClick={onToggle}
-        className="w-100 flex items-center gap-3 bg-white rounded-md border border-[#e3e8f5] px-4 py-3 hover:border-[#1f6feb] hover:shadow-sm transition-all text-left"
+        className="w-100 flex items-center gap-3 bg-white dark:bg-[#14142e] rounded-md border border-[#e3e8f5] px-4 py-3 hover:border-[#1f6feb] hover:shadow-sm transition-all text-left"
       >
         <ChevronRight className="w-4 h-4 text-[#8a93b2] shrink-0" />
         <span className="w-8 h-8 rounded-lg bg-[#eef3ff] flex items-center justify-center shrink-0 text-[#1f6feb] font-bold text-sm">
@@ -160,7 +160,7 @@ function DelegationRow({ deleg, expanded, responsables, onToggle, onChanged }: {
   }
 
   return (
-    <div className="bg-white rounded-md w-190 border border-[#e3e8f5] shadow-sm overflow-hidden -ml-4">
+    <div className="bg-white dark:bg-[#14142e] rounded-md w-190 border border-[#e3e8f5] shadow-sm overflow-hidden -ml-4">
       {/* Cabecera */}
       <div className="flex items-center gap-4 px-6 pt-5">
         <span className="w-8 h-8 rounded-full bg-[#1e1b4b] text-white font-bold text-xl flex items-center justify-center shrink-0">
@@ -181,7 +181,7 @@ function DelegationRow({ deleg, expanded, responsables, onToggle, onChanged }: {
         {/* Responsable */}
         <div className="md:pr-6">
           <p className="text-xs font-bold text-[#4338ca] mb-3">{i18n.t('responsable')}</p>
-          <div className="flex items-center gap-2 bg-[#f8fafc] border border-[#e3e8f5] rounded-md px-1 py-1">
+          <div className="flex items-center gap-2 bg-[#f8fafc] dark:bg-[#0f1124] border border-[#e3e8f5] rounded-md px-1 py-1">
             <User className="w-5 h-5 text-[#8a93b2] shrink-0" />
             <input
               ref={respRef}
@@ -220,7 +220,7 @@ function DelegationRow({ deleg, expanded, responsables, onToggle, onChanged }: {
                 onClick={() => doFollowup(key)}
                 disabled={busy || !deleg.responsable}
                 title={deleg.responsable ? label : 'Asigna un responsable primero'}
-                className="flex flex-col items-center gap-2 py-1 px-1 rounded-md border border-[#e3e8f5] bg-white text-[#1e1b4b] hover:border-[#4338ca] hover:shadow-sm transition-all disabled:opacity-40"
+                className="flex flex-col items-center gap-2 py-1 px-1 rounded-md border border-[#e3e8f5] bg-white dark:bg-[#14142e] text-[#1e1b4b] hover:border-[#4338ca] hover:shadow-sm transition-all disabled:opacity-40"
               >
                 {renderIcon(`w-8 h-6 ${iconCls}`)}
                 <span className="text-[8px] font-bold leading-tight">{label}</span>
@@ -415,7 +415,7 @@ export default function DelegarModule({ username, avatarUrl, onNavigate, onClose
         <div className="xl:col-span-2 space-y-3">
           {/* Buscador */}
           <div className="flex gap-2">
-            <div className="flex-1 flex items-center gap-2 bg-white border border-[#e3e8f5] rounded-xl px-3 py-2.5">
+            <div className="flex-1 flex items-center gap-2 bg-white dark:bg-[#14142e] border border-[#e3e8f5] rounded-xl px-3 py-2.5">
               <Search className="w-4 h-4 text-[#8a93b2]" />
               <input
                 value={query}
@@ -424,7 +424,7 @@ export default function DelegarModule({ username, avatarUrl, onNavigate, onClose
                 className="flex-1 min-w-0 text-sm text-[#101433] placeholder:text-[#8a93b2] outline-none bg-transparent"
               />
             </div>
-            <div className="flex items-center gap-1.5 bg-white border border-[#e3e8f5] rounded-xl px-3 py-2.5">
+            <div className="flex items-center gap-1.5 bg-white dark:bg-[#14142e] border border-[#e3e8f5] rounded-xl px-3 py-2.5">
               <ListFilter className="w-4 h-4 text-[#8a93b2]" />
               <select value={filtro} onChange={e => setFiltro(e.target.value as any)}
                 className="text-xs font-bold text-[#101433] outline-none bg-transparent">
@@ -439,7 +439,7 @@ export default function DelegarModule({ username, avatarUrl, onNavigate, onClose
           {loading ? (
             <p className="text-sm text-gray-400 text-center py-10">{i18n.t('cargando_delegaciones')}</p>
           ) : visibles.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-[#e3e8f5] p-10 text-center">
+            <div className="bg-white dark:bg-[#14142e] rounded-2xl border border-[#e3e8f5] p-10 text-center">
               <UserPlus className="w-10 h-10 text-[#c6d2f5] mx-auto mb-3" />
               <p className="font-bold text-[#101433]">{i18n.t('sin_acciones_delegadas')}</p>
               <p className="text-sm text-[#8a93b2] mt-1">{i18n.t('marca_una_accion_con_d_en_el_kanban_o_de')}</p>
@@ -460,7 +460,7 @@ export default function DelegarModule({ username, avatarUrl, onNavigate, onClose
 
         {/* Resumen lateral */}
         <div className="space-y-4">
-          <div className="bg-white rounded-md w-72 border border-[#e3e8f5] p-5 ml-13">
+          <div className="bg-white dark:bg-[#14142e] rounded-md w-72 border border-[#e3e8f5] p-5 ml-13">
             <p className="text-[11px] font-bold tracking-widest text-[#5b6b8c] mb-3">{i18n.t('resumen_de_delegaciones')}</p>
             <div className="grid grid-cols-2 gap-2">
               <div className="bg-[#f0fdf4] rounded-md p-3 text-center">
@@ -490,7 +490,7 @@ export default function DelegarModule({ username, avatarUrl, onNavigate, onClose
             </div>
           </div>
 
-          <div className="bg-white rounded-md  w-72 border border-[#e3e8f5] p-5 ml-13">
+          <div className="bg-white dark:bg-[#14142e] rounded-md  w-72 border border-[#e3e8f5] p-5 ml-13">
             <p className="text-[11px] font-bold tracking-widest text-black mb-3">{i18n.t('buenas_practicas_de_delegacion')}</p>
             <div className="space-y-2.5">
               {BUENAS_PRACTICAS.map(b => (

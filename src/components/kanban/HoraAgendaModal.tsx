@@ -46,8 +46,8 @@ export default function HoraAgendaModal({ accion, fecha, onPick, onCancel }: {
 
   return (
     <div className="fixed inset-0 z-[60] bg-[#0b1030]/60 backdrop-blur-[2px] flex items-center justify-center p-4" onClick={onCancel}>
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl p-6 sm:p-8 text-center" onClick={e => e.stopPropagation()}>
-        <button onClick={onCancel} className="absolute top-4 right-4 text-[#101433] hover:text-gray-500">
+      <div className="relative bg-white dark:bg-[#14142e] rounded-2xl shadow-2xl w-full max-w-xl p-6 sm:p-8 text-center" onClick={e => e.stopPropagation()}>
+        <button onClick={onCancel} className="absolute top-4 right-4 text-[#101433] hover:text-gray-500 dark:text-gray-400">
           <X className="w-6 h-6" strokeWidth={2.5} />
         </button>
         <span className="mx-auto w-14 h-14 rounded-full bg-[#1f6feb] text-white text-2xl font-black flex items-center justify-center">
@@ -68,7 +68,7 @@ export default function HoraAgendaModal({ accion, fecha, onPick, onCancel }: {
                 onClick={() => elegir(h)}
                 className={`rounded-xl border px-3 py-2.5 text-sm font-bold transition-colors ${
                   ocupada
-                    ? 'border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed'
+                    ? 'border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/10 text-slate-400 cursor-not-allowed'
                     : 'border-[#dbe3f5] text-[#101433] hover:border-[#1f6feb] hover:bg-[#eef4ff]'
                 }`}
               >

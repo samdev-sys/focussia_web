@@ -61,7 +61,7 @@ const originPill = (origin: ActionData['origin_module']): { label: string; cls: 
   switch (origin) {
     case 'KANBAN_BACKLOG': return { label: 'KANBAN', cls: 'bg-violet-100 text-violet-700' };
     case 'INTEGRATIONS_WHATSAPP': return { label: 'WHATSAPP', cls: 'bg-emerald-100 text-emerald-700' };
-    case 'MANUAL': return { label: 'MANUAL', cls: 'bg-slate-100 text-slate-500' };
+    case 'MANUAL': return { label: 'MANUAL', cls: 'bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400' };
     default: return null;
   }
 };
@@ -672,7 +672,7 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[90] flex items-center justify-center p-2">
-        <div className="bg-white rounded-md shadow-2xl border border-white/50 w-[650px] p-6 text-sm text-slate-500">{i18n.t('cargando_plan_semanal')}</div>
+        <div className="bg-white dark:bg-[#14142e] rounded-md shadow-2xl border border-white/50 w-[650px] p-6 text-sm text-slate-500 dark:text-slate-400">{i18n.t('cargando_plan_semanal')}</div>
       </div>
     );
   }
@@ -694,14 +694,14 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
             <p className="text-xs text-[#5b6b8c] mt-0.5">{i18n.t('organiza_tus_acciones_dentro_de_la_seman')}</p>
           </div>
           {onBack && (
-            <button onClick={onBack} className="shrink-0 px-2.5 py-1 rounded-lg border border-[#e3e8f5] text-slate-600 text-[11px] font-bold hover:bg-gray-50">
+            <button onClick={onBack} className="shrink-0 px-2.5 py-1 rounded-lg border border-[#e3e8f5] text-slate-600 dark:text-slate-300 text-[11px] font-bold hover:bg-gray-50 dark:hover:bg-white/5 dark:bg-white/5">
               ← Volver
             </button>
           )}
         </header>
 
         {/* META MENSUAL — borde azul izquierdo; en semanas intermensuales la meta sigue al día elegido */}
-        <section className="bg-white rounded-2xl border border-[#e3e8f5] border-l-4 border-l-[#1d4ed8] p-5 shadow-sm mb-4">
+        <section className="bg-white dark:bg-[#14142e] rounded-2xl border border-[#e3e8f5] border-l-4 border-l-[#1d4ed8] p-5 shadow-sm mb-4">
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <span className="w-6 h-6 rounded bg-blue-50 text-blue-700 flex items-center justify-center"><CalendarDays size={13} /></span>
             <h2 className="text-[11px] font-black uppercase tracking-widest text-blue-800">{i18n.t('meta_mensual')}</h2>
@@ -722,7 +722,7 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
         </section>
 
         {/* MI MISIÓN SEMANAL — asistente cuando está vacía; texto + Editar misión cuando ya existe */}
-        <section className="bg-white rounded-2xl border border-[#e3e8f5] p-5 shadow-sm mb-6">
+        <section className="bg-white dark:bg-[#14142e] rounded-2xl border border-[#e3e8f5] p-5 shadow-sm mb-6">
           {!weeklyMission.trim() ? (
             <div>
               <div className="flex items-center gap-2 mb-3">
@@ -738,7 +738,7 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
                     onChange={e => setWeeklyMission(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') saveMissionNow(weeklyMission); }}
                     placeholder={i18n.t('defini_el_resultado_mas_importante_que_d')}
-                    className="w-full text-lg font-extrabold text-[#101433] bg-white border border-[#e3e8f5] rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-violet-400 placeholder:text-slate-300"
+                    className="w-full text-lg font-extrabold text-[#101433] bg-white dark:bg-[#14142e] border border-[#e3e8f5] rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-violet-400 placeholder:text-slate-300"
                   />
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-start gap-1.5 text-[10px] text-[#5b6b8c]">
@@ -766,10 +766,10 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
                       value={missionDraft}
                       onChange={e => setMissionDraft(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter') commitMissionEdit(); if (e.key === 'Escape') setMissionEditing(false); }}
-                      className="w-full text-xl font-extrabold text-[#101433] bg-white border border-[#e3e8f5] rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-violet-400"
+                      className="w-full text-xl font-extrabold text-[#101433] bg-white dark:bg-[#14142e] border border-[#e3e8f5] rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-violet-400"
                     />
                     <div className="flex gap-2 justify-end">
-                      <button onClick={() => setMissionEditing(false)} className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:bg-slate-100 border border-[#e3e8f5]">Cancelar</button>
+                      <button onClick={() => setMissionEditing(false)} className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-white/10 border border-[#e3e8f5]">Cancelar</button>
                       <button onClick={commitMissionEdit} disabled={!missionDraft.trim()} className="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold hover:opacity-90 disabled:opacity-40">Guardar misión</button>
                     </div>
                   </div>
@@ -786,17 +786,17 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
         </section>
 
         {/* SELECTOR DE SEMANA */}
-        <section className="bg-white rounded-2xl border border-[#e3e8f5] shadow-sm overflow-hidden mb-6">
+        <section className="bg-white dark:bg-[#14142e] rounded-2xl border border-[#e3e8f5] shadow-sm overflow-hidden mb-6">
           <div className="flex items-center justify-between px-5 py-4 border-b border-[#eef1f8]">
             <div className="flex items-center gap-3">
-              <button onClick={() => setWeekOffset(o => o - 1)} className="w-8 h-8 rounded-lg border border-[#e3e8f5] flex items-center justify-center text-[#101433] hover:bg-gray-50"><ChevronLeft size={16} /></button>
+              <button onClick={() => setWeekOffset(o => o - 1)} className="w-8 h-8 rounded-lg border border-[#e3e8f5] flex items-center justify-center text-[#101433] hover:bg-gray-50 dark:hover:bg-white/5 dark:bg-white/5"><ChevronLeft size={16} /></button>
               <div>
                 <span className="font-black text-sm uppercase tracking-wide text-[#101433]">{weekLabel}</span>
                 <div className="mt-1">
                   <span className="text-[9px] font-black tracking-widest uppercase text-white bg-violet-600 px-2 py-0.5 rounded-full">Semana seleccionada</span>
                 </div>
               </div>
-              <button onClick={() => setWeekOffset(o => o + 1)} className="w-8 h-8 rounded-lg border border-[#e3e8f5] flex items-center justify-center text-[#101433] hover:bg-gray-50"><ChevronRight size={16} /></button>
+              <button onClick={() => setWeekOffset(o => o + 1)} className="w-8 h-8 rounded-lg border border-[#e3e8f5] flex items-center justify-center text-[#101433] hover:bg-gray-50 dark:hover:bg-white/5 dark:bg-white/5"><ChevronRight size={16} /></button>
             </div>
             <div className="text-right">
               <span className="text-[11px] text-[#8a93b2] block">{i18n.t('selecciona_un_dia_para_organizar_sus_acc')}</span>
@@ -819,7 +819,7 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
                   onDragOver={e => { if (draggedAction) { e.preventDefault(); setDragOverDay(key); } }}
                   onDragLeave={() => { if (dragOverDay === key) setDragOverDay(null); }}
                   onDrop={() => handleDrop(key)}
-                  className={`bg-white p-3 min-h-[150px] text-left flex flex-col relative transition-colors border-2 ${isSelected ? 'border-violet-500 bg-violet-50/30' : 'border-transparent hover:bg-violet-50/40'} ${isDragTarget ? 'border-dashed border-violet-400 bg-violet-50' : ''}`}
+                  className={`bg-white dark:bg-[#14142e] p-3 min-h-[150px] text-left flex flex-col relative transition-colors border-2 ${isSelected ? 'border-violet-500 bg-violet-50/30' : 'border-transparent hover:bg-violet-50/40'} ${isDragTarget ? 'border-dashed border-violet-400 bg-violet-50' : ''}`}
                 >
                   <div className={`text-[10px] font-black uppercase ${isSelected ? 'text-violet-700' : 'text-[#8a93b2]'}`}>
                     {DAY_FULL[idx]}{crossMonth ? ` · ${MONTHS_ABBR_BY_INDEX[day.getMonth()]}` : ''}
@@ -830,11 +830,11 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
                       → {draggedAction.subactions?.length ? `Grupo (${draggedAction.subactions.length})` : draggedAction.title}
                     </div>
                   ) : count > 0 ? (
-                    <div className={`mt-auto inline-flex self-start text-[9px] font-bold rounded-full px-2 py-0.5 ${isSelected ? 'bg-violet-100 text-violet-700' : 'bg-slate-100 text-slate-500'}`}>
+                    <div className={`mt-auto inline-flex self-start text-[9px] font-bold rounded-full px-2 py-0.5 ${isSelected ? 'bg-violet-100 text-violet-700' : 'bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400'}`}>
                       {count} {count === 1 ? 'acción' : 'acciones'}
                     </div>
                   ) : (
-                    <div className="mt-auto inline-flex self-start text-[9px] font-bold rounded-full px-2 py-0.5 bg-slate-100 text-slate-400">
+                    <div className="mt-auto inline-flex self-start text-[9px] font-bold rounded-full px-2 py-0.5 bg-slate-100 dark:bg-white/10 text-slate-400">
                       Sin acciones
                     </div>
                   )}
@@ -852,8 +852,8 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
 
         {/* Banner modo consulta (semanas pasadas) */}
         {reviewMode && (
-          <div className="bg-white rounded-2xl border border-[#e3e8f5] p-4 mb-4 flex items-start gap-3">
-            <span className="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center shrink-0"><AlertCircle size={14} /></span>
+          <div className="bg-white dark:bg-[#14142e] rounded-2xl border border-[#e3e8f5] p-4 mb-4 flex items-start gap-3">
+            <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 flex items-center justify-center shrink-0"><AlertCircle size={14} /></span>
             <div>
               <p className="text-xs font-bold text-[#101433]">Consulte la planificación de la semana seleccionada.</p>
               <p className="text-[11px] text-[#5b6b8c] mt-0.5">Semana anterior: su Misión Semanal y sus acciones permanecen conservadas.</p>
@@ -862,7 +862,7 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
         )}
 
         {/* DETALLE DEL DÍA */}
-        <section className="bg-white rounded-2xl border border-[#e3e8f5] shadow-sm overflow-hidden mb-6 relative">
+        <section className="bg-white dark:bg-[#14142e] rounded-2xl border border-[#e3e8f5] shadow-sm overflow-hidden mb-6 relative">
 
           <div className="flex items-center justify-between px-5 py-4 border-b border-[#eef1f8] bg-gradient-to-r from-[#f9fafb] to-white">
             <div>
@@ -898,8 +898,8 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
                       onDragStart={e => handleDragStart(e, action)}
                       onDragEnd={() => { setDraggedAction(null); setDragOverDay(null); }}
                       className={`rounded-xl border p-3 transition-all ${
-                        reviewMode ? 'border-slate-200 bg-slate-50/60 cursor-default'
-                          : action.status === 'COMPLETADA' ? 'border-violet-300 bg-violet-50/40 cursor-grab active:cursor-grabbing' : 'border-slate-200 bg-white hover:shadow-sm cursor-grab active:cursor-grabbing'
+                        reviewMode ? 'border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5/60 cursor-default'
+                          : action.status === 'COMPLETADA' ? 'border-violet-300 bg-violet-50/40 cursor-grab active:cursor-grabbing' : 'border-slate-200 dark:border-white/10 bg-white dark:bg-[#14142e] hover:shadow-sm cursor-grab active:cursor-grabbing'
                       } ${draggedAction?.id === action.id ? 'opacity-40' : ''} ${highlightActionId === action.id ? 'ring-2 ring-emerald-400' : ''}`}
                     >
                       {confirmDeleteId === action.id ? (
@@ -948,7 +948,7 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
                                   )}
                                   <button className="shrink-0 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab"><GripVertical size={12} /></button>
                                   {action.subactions?.length > 0 && (
-                                    <button onClick={() => toggleSubactions(action.id)} className="shrink-0 p-0.5 hover:bg-slate-100 rounded">
+                                    <button onClick={() => toggleSubactions(action.id)} className="shrink-0 p-0.5 hover:bg-slate-100 dark:bg-white/10 rounded">
                                       {expandedActions.has(action.id) ? <ChevronRight size={12} className="rotate-90" /> : <ChevronRight size={12} />}
                                     </button>
                                   )}
@@ -956,7 +956,7 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
                               )}
                               {action.subactions?.length > 0 && (
                                 <div className="flex items-center gap-2 mt-1">
-                                  <div className="w-24 h-1 rounded-full bg-slate-100 overflow-hidden">
+                                  <div className="w-24 h-1 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
                                     <div className="h-full bg-violet-500 transition-all" style={{ width: `${groupProgress(action)}%` }} />
                                   </div>
                                   <span className="text-[9px] font-bold text-slate-400">{groupProgress(action)}%</span>
@@ -970,40 +970,40 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
                               <button
                                 disabled={reviewMode}
                                 onClick={() => setActiveDropdownId(activeDropdownId === action.id ? null : action.id)}
-                                className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-600 disabled:opacity-30"
+                                className="p-1 hover:bg-slate-100 dark:bg-white/10 rounded text-slate-400 hover:text-slate-600 dark:text-slate-300 disabled:opacity-30"
                               >
                                 <MoreVertical size={14} />
                               </button>
                               {activeDropdownId === action.id && (
                                 <>
                                   <div className="fixed inset-0 z-10" onClick={() => { setActiveDropdownId(null); setTimeBlockActionId(null); }} />
-                                  <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-md shadow-xl border border-gray-200 overflow-hidden z-20">
+                                  <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-[#14142e] rounded-md shadow-xl border border-gray-200 dark:border-white/10 overflow-hidden z-20">
                                     {timeBlockActionId === action.id ? (
                                       <div className="p-3 space-y-2">
                                         <div className="text-[10px] font-black uppercase tracking-widest text-[#101433]">Seleccionar hora</div>
                                         <select
                                           value={timeBlockHour}
                                           onChange={e => setTimeBlockHour(Number(e.target.value))}
-                                          className="w-full text-xs px-2 py-1.5 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-violet-400"
+                                          className="w-full text-xs px-2 py-1.5 border border-slate-200 dark:border-white/10 rounded-lg outline-none focus:ring-1 focus:ring-violet-400"
                                         >
                                           {Array.from({ length: 24 }, (_, i) => (
                                             <option key={i} value={i}>{String(i).padStart(2, '0')}:00</option>
                                           ))}
                                         </select>
                                         <div className="flex gap-1.5">
-                                          <button onClick={() => setTimeBlockActionId(null)} className="flex-1 text-xs px-2 py-1.5 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
+                                          <button onClick={() => setTimeBlockActionId(null)} className="flex-1 text-xs px-2 py-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-white/10 rounded-lg transition-colors">Cancelar</button>
                                           <button onClick={() => confirmTimeBlock(action)} className="flex-1 text-xs px-2 py-1.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-lg hover:opacity-90 transition-opacity font-bold">Confirmar</button>
                                         </div>
                                       </div>
                                     ) : (
                                       <>
-                                        <button onClick={() => { setActiveDropdownId(null); handleAIChecklist(action); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-left hover:bg-violet-50 transition-colors border-b border-gray-100">
+                                        <button onClick={() => { setActiveDropdownId(null); handleAIChecklist(action); }} className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-left hover:bg-violet-50 transition-colors border-b border-gray-100 dark:border-white/10">
                                           <span className="text-base shrink-0">📋</span>
-                                          <div><div className="font-medium text-slate-700">Checklist IA</div><div className="text-[10px] text-slate-400">{i18n.t('subacciones_sugeridas')}</div></div>
+                                          <div><div className="font-medium text-slate-700 dark:text-slate-200">Checklist IA</div><div className="text-[10px] text-slate-400">{i18n.t('subacciones_sugeridas')}</div></div>
                                         </button>
                                         <button onClick={() => setTimeBlockActionId(action.id)} className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-left hover:bg-violet-50 transition-colors">
                                           <span className="text-base shrink-0">🕐</span>
-                                          <div><div className="font-medium text-slate-700">Trasladar a Time Blocking</div><div className="text-[10px] text-slate-400">{i18n.t('asignar_un_horario_fijo')}</div></div>
+                                          <div><div className="font-medium text-slate-700 dark:text-slate-200">Trasladar a Time Blocking</div><div className="text-[10px] text-slate-400">{i18n.t('asignar_un_horario_fijo')}</div></div>
                                         </button>
                                       </>
                                     )}
@@ -1016,16 +1016,16 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
                           {/* Fila de botones de acción (mockup: Mover / Repetir / Delegar / Eliminar) */}
                           {!reviewMode && (
                             <div className="flex items-center gap-1.5 mt-2 justify-end flex-wrap">
-                              <button onClick={() => openMovePanel(action)} className="text-[10px] font-bold px-2 py-1 rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-violet-700 inline-flex items-center gap-1">
+                              <button onClick={() => openMovePanel(action)} className="text-[10px] font-bold px-2 py-1 rounded-md border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 dark:bg-white/5 hover:text-violet-700 inline-flex items-center gap-1">
                                 <GripVertical size={10} /> Mover
                               </button>
-                              <button onClick={() => { setRepeatActionId(repeatActionId === action.id ? null : action.id); setRepeatDate(formatDateKey(currentDay)); }} className={`text-[10px] font-bold px-2 py-1 rounded-md border inline-flex items-center gap-1 ${repeatActionId === action.id ? 'border-violet-300 text-violet-700 bg-violet-50' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
+                              <button onClick={() => { setRepeatActionId(repeatActionId === action.id ? null : action.id); setRepeatDate(formatDateKey(currentDay)); }} className={`text-[10px] font-bold px-2 py-1 rounded-md border inline-flex items-center gap-1 ${repeatActionId === action.id ? 'border-violet-300 text-violet-700 bg-violet-50' : 'border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 dark:bg-white/5'}`}>
                                 <Repeat2 size={10} /> Repetir
                               </button>
-                              <button onClick={() => delegateActionTo(action.id)} className="text-[10px] font-bold px-2 py-1 rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-violet-700 inline-flex items-center gap-1">
+                              <button onClick={() => delegateActionTo(action.id)} className="text-[10px] font-bold px-2 py-1 rounded-md border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 dark:bg-white/5 hover:text-violet-700 inline-flex items-center gap-1">
                                 <Users size={10} /> Delegar
                               </button>
-                              <button onClick={() => requestDeleteAction(action)} className="text-[10px] font-bold px-2 py-1 rounded-md border border-slate-200 text-slate-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200 inline-flex items-center gap-1">
+                              <button onClick={() => requestDeleteAction(action)} className="text-[10px] font-bold px-2 py-1 rounded-md border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:bg-red-50 hover:text-red-600 hover:border-red-200 inline-flex items-center gap-1">
                                 <Trash2 size={10} /> Eliminar
                               </button>
                             </div>
@@ -1039,7 +1039,7 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
                                 type="date"
                                 value={repeatDate}
                                 onChange={e => setRepeatDate(e.target.value)}
-                                className="w-full text-xs px-2 py-1.5 border border-amber-300 rounded-lg outline-none bg-white"
+                                className="w-full text-xs px-2 py-1.5 border border-amber-300 rounded-lg outline-none bg-white dark:bg-[#14142e]"
                               />
                               <div className="flex gap-1.5 mt-1.5 justify-end">
                                 <button onClick={() => { setRepeatActionId(null); setRepeatDate(''); }} className="text-[10px] px-2.5 py-1 rounded-md border border-amber-200 text-amber-700 font-bold hover:bg-amber-100">Cancelar</button>
@@ -1051,7 +1051,7 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
 
                           {/* Subacciones */}
                           {expandedActions.has(action.id) && (action.subactions?.length > 0 || subInputFor === action.id) && (
-                            <div className="ml-6 mt-2 space-y-1 border-t border-slate-100 pt-2">
+                            <div className="ml-6 mt-2 space-y-1 border-t border-slate-100 dark:border-white/10 pt-2">
                               {action.subactions.map(sub => (
                                 <div key={sub.id} className="flex items-center gap-1.5 group/sub">
                                   <button
@@ -1076,7 +1076,7 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
                                   ) : (
                                     <span
                                       onDoubleClick={() => startSubEdit(action.id, sub.id, sub.title)}
-                                      className={`text-xs flex-1 ${reviewMode ? '' : 'cursor-pointer'} ${sub.is_completed ? 'line-through text-slate-400' : 'text-slate-600'}`}
+                                      className={`text-xs flex-1 ${reviewMode ? '' : 'cursor-pointer'} ${sub.is_completed ? 'line-through text-slate-400' : 'text-slate-600 dark:text-slate-300'}`}
                                     >
                                       {sub.title}
                                     </span>
@@ -1111,7 +1111,7 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
                 })}
 
                 {dayActions.length === 0 && !showNewInput && (
-                  <div className="border-2 border-dashed border-slate-200 rounded-xl py-8 text-center text-slate-400">
+                  <div className="border-2 border-dashed border-slate-200 dark:border-white/10 rounded-xl py-8 text-center text-slate-400">
                     <p className="text-xs font-semibold">Sin acciones para este día{reviewMode ? '' : ' · Crea la primera o importa desde Kanban'}</p>
                   </div>
                 )}
@@ -1125,7 +1125,7 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
                       </span>
                       <span className="text-[9px] opacity-80">ENTER guarda · ESC cancela</span>
                     </div>
-                    <div className="bg-white p-3">
+                    <div className="bg-white dark:bg-[#14142e] p-3">
                       <input
                         autoFocus
                         value={newActionTitle}
@@ -1135,10 +1135,10 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
                           if (e.key === 'Escape') { setShowNewInput(false); setShowAISuggest(null); setNewActionTitle(''); }
                         }}
                         placeholder={i18n.t('que_accion_quieres_agregar')}
-                        className="w-full text-sm px-2.5 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-violet-400"
+                        className="w-full text-sm px-2.5 py-2 border border-slate-200 dark:border-white/10 rounded-lg outline-none focus:ring-2 focus:ring-violet-400"
                       />
                       <div className="flex gap-1.5 mt-2 justify-end">
-                        <button onClick={() => { setShowNewInput(false); setShowAISuggest(null); setNewActionTitle(''); }} className="text-xs px-3 py-1.5 border border-slate-200 text-slate-500 rounded-lg hover:bg-slate-50 font-bold">Cancelar</button>
+                        <button onClick={() => { setShowNewInput(false); setShowAISuggest(null); setNewActionTitle(''); }} className="text-xs px-3 py-1.5 border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5 dark:bg-white/5 font-bold">Cancelar</button>
                         <button onClick={confirmAddAction} className="text-xs px-3.5 py-1.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-lg hover:opacity-90 font-bold">Guardar acción</button>
                       </div>
                     </div>
@@ -1147,7 +1147,7 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
                 {!reviewMode && !showNewInput && dayActions.length > 0 && (
                   <button
                     onClick={() => setShowNewInput(true)}
-                    className="w-full py-3 text-xs text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-xl transition-colors flex items-center justify-center gap-1 border border-dashed border-slate-200 font-semibold"
+                    className="w-full py-3 text-xs text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-xl transition-colors flex items-center justify-center gap-1 border border-dashed border-slate-200 dark:border-white/10 font-semibold"
                   >
                     <Plus size={14} /> Añadir acción
                   </button>
@@ -1176,7 +1176,7 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
                             {block.tarea}
                           </span>
                         ) : (
-                          <span className="flex-1 h-5 border border-dashed border-slate-200 rounded-md" />
+                          <span className="flex-1 h-5 border border-dashed border-slate-200 dark:border-white/10 rounded-md" />
                         )}
                       </div>
                     );
@@ -1197,13 +1197,13 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
 
               {/* Grupo inteligente */}
               {!sugGrupoHidden && (
-                <div className="bg-white rounded-2xl border border-[#e3e8f5] p-4 shadow-sm">
+                <div className="bg-white dark:bg-[#14142e] rounded-2xl border border-[#e3e8f5] p-4 shadow-sm">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Sparkles size={13} className="text-amber-500" />
                       <h5 className="text-[10px] font-black uppercase tracking-widest text-[#101433]">Grupo inteligente</h5>
                     </div>
-                    <button onClick={() => setSugGrupoHidden(true)} className="text-slate-300 hover:text-slate-500"><X size={12} /></button>
+                    <button onClick={() => setSugGrupoHidden(true)} className="text-slate-300 hover:text-slate-500 dark:text-slate-400"><X size={12} /></button>
                   </div>
                   <p className="text-[11px] text-[#5b6b8c] leading-relaxed mb-2">
                     Crea una acción y Focusia la convierte en un grupo de subacciones listas para marcar.
@@ -1221,18 +1221,18 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
 
               {/* Acciones derivadas */}
               {!sugDerivadasHidden && pendingDerivadas.length > 0 && (
-                <div className="bg-white rounded-2xl border border-[#e3e8f5] p-4 shadow-sm">
+                <div className="bg-white dark:bg-[#14142e] rounded-2xl border border-[#e3e8f5] p-4 shadow-sm">
                   <div className="flex items-center justify-between mb-2">
                     <h5 className="text-[10px] font-black uppercase tracking-widest text-[#101433]">Acciones derivadas</h5>
-                    <button onClick={() => setSugDerivadasHidden(true)} className="text-slate-300 hover:text-slate-500"><X size={12} /></button>
+                    <button onClick={() => setSugDerivadasHidden(true)} className="text-slate-300 hover:text-slate-500 dark:text-slate-400"><X size={12} /></button>
                   </div>
                   <p className="text-[11px] text-[#5b6b8c] leading-relaxed mb-2">
                     Tienes acciones del Kanban pendientes por planificar. Elige su día y agrégalas a esta semana.
                   </p>
                   <div className="space-y-1.5 mb-2 max-h-40 overflow-y-auto">
                     {pendingDerivadas.map(kb => (
-                      <div key={kb.id} className="border border-slate-100 rounded-lg px-2 py-1.5">
-                        <label className="flex items-center gap-2 text-[11px] font-semibold text-slate-600 cursor-pointer">
+                      <div key={kb.id} className="border border-slate-100 dark:border-white/10 rounded-lg px-2 py-1.5">
+                        <label className="flex items-center gap-2 text-[11px] font-semibold text-slate-600 dark:text-slate-300 cursor-pointer">
                           <input type="checkbox" checked={derivadaSel.has(kb.id)} onChange={() => toggleDerivada(kb.id)} className="accent-violet-600" />
                           <span className="flex-1 min-w-0 truncate">{kb.texto_accion}</span>
                         </label>
@@ -1242,7 +1242,7 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
                               <button
                                 key={d.getDate()}
                                 onClick={() => setDerivadaDays(prev => ({ ...prev, [kb.id]: di }))}
-                                className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${(derivadaDays[kb.id] ?? selectedDayIdx) === di ? 'bg-violet-600 text-white border-violet-600' : 'text-slate-400 border-slate-200 hover:bg-slate-50'}`}
+                                className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${(derivadaDays[kb.id] ?? selectedDayIdx) === di ? 'bg-violet-600 text-white border-violet-600' : 'text-slate-400 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5 dark:bg-white/5'}`}
                               >
                                 {DAY_NAMES[di]}
                               </button>
@@ -1258,13 +1258,13 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
                         <button onClick={() => addDerivadaActions([...derivadaSel])} disabled={derivadaSel.size === 0} className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:opacity-90 disabled:opacity-40">
                           Añadir seleccionadas ({derivadaSel.size})
                         </button>
-                        <button onClick={() => { setDerivadaMode('idle'); setDerivadaSel(new Set()); }} className="text-[10px] font-bold px-2.5 py-1 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50">Cancelar</button>
+                        <button onClick={() => { setDerivadaMode('idle'); setDerivadaSel(new Set()); }} className="text-[10px] font-bold px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 dark:bg-white/5">Cancelar</button>
                       </>
                     ) : (
                       <>
                         <button onClick={() => addDerivadaActions(pendingDerivadas.map(k => k.id))} className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:opacity-90">Agregar todas</button>
                         <button onClick={() => setDerivadaMode('choose')} className="text-[10px] font-bold px-2.5 py-1 rounded-lg border border-violet-200 text-violet-700 hover:bg-violet-50">Elegir cuáles</button>
-                        <button onClick={() => setSugDerivadasHidden(true)} className="text-[10px] font-bold px-2.5 py-1 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50">No agregar</button>
+                        <button onClick={() => setSugDerivadasHidden(true)} className="text-[10px] font-bold px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 dark:bg-white/5">No agregar</button>
                       </>
                     )}
                   </div>
@@ -1273,13 +1273,13 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
 
               {/* Plantilla: lista de compras */}
               {!sugComprasHidden && (
-                <div className="bg-white rounded-2xl border border-[#e3e8f5] p-4 shadow-sm">
+                <div className="bg-white dark:bg-[#14142e] rounded-2xl border border-[#e3e8f5] p-4 shadow-sm">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <ShoppingCart size={13} className="text-violet-600" />
                       <h5 className="text-[10px] font-black uppercase tracking-widest text-[#101433]">Plantilla personal · Lista de compras</h5>
                     </div>
-                    <button onClick={() => setSugComprasHidden(true)} className="text-slate-300 hover:text-slate-500"><X size={12} /></button>
+                    <button onClick={() => setSugComprasHidden(true)} className="text-slate-300 hover:text-slate-500 dark:text-slate-400"><X size={12} /></button>
                   </div>
                   <p className="text-[11px] text-[#5b6b8c] leading-relaxed mb-2">Añade tu lista de compras del mes como grupo de subacciones el {DAY_FULL[(currentDay.getDay() === 0 ? 6 : currentDay.getDay() - 1)].toLowerCase()} {currentDay.getDate()} de {MONTHS[currentDay.getMonth()]}.</p>
                   <div className="flex flex-wrap gap-1 mb-3">
@@ -1295,13 +1295,13 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
 
               {/* Recomendación: actividad física */}
               {!sugFisicaHidden && (
-                <div className="bg-white rounded-2xl border border-[#e3e8f5] p-4 shadow-sm">
+                <div className="bg-white dark:bg-[#14142e] rounded-2xl border border-[#e3e8f5] p-4 shadow-sm">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Dumbbell size={13} className="text-emerald-600" />
                       <h5 className="text-[10px] font-black uppercase tracking-widest text-[#101433]">Recomendación semanal · Actividad física</h5>
                     </div>
-                    <button onClick={() => setSugFisicaHidden(true)} className="text-slate-300 hover:text-slate-500"><X size={12} /></button>
+                    <button onClick={() => setSugFisicaHidden(true)} className="text-slate-300 hover:text-slate-500 dark:text-slate-400"><X size={12} /></button>
                   </div>
                   <p className="text-[11px] text-[#5b6b8c] leading-relaxed mb-2">
                     Focusia sugiere 3 sesiones esta semana: lunes, miércoles y viernes.
@@ -1323,29 +1323,29 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
         {/* MOVER A OTRA SEMANA (grupo o acción) */}
         {moveAction && (
           <div className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-4" onClick={() => setMoveAction(null)}>
-            <div className="bg-white rounded-2xl shadow-xl p-5 w-[460px]" onClick={e => e.stopPropagation()}>
+            <div className="bg-white dark:bg-[#14142e] rounded-2xl shadow-xl p-5 w-[460px]" onClick={e => e.stopPropagation()}>
               <div className="flex items-center gap-2 mb-1">
                 <span className="w-7 h-7 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center font-black text-xs">↔</span>
                 <span className="text-[10px] font-black uppercase tracking-widest text-violet-700">
                   {(moveAction.subactions?.length || 0) > 0 ? 'Mover grupo a otra semana' : 'Mover a otra semana'}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mb-3">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
                 <span className="font-bold text-[#101433]">"{moveAction.title}"</span>
                 {(moveAction.subactions?.length || 0) > 0 && <> · conserva sus {moveAction.subactions!.length} subacciones.</>}
               </p>
 
               <div className="flex items-center gap-2 mb-2">
-                <button onClick={() => setMoveOffset(o => o - 1)} className="w-7 h-7 rounded-lg border border-[#e3e8f5] flex items-center justify-center hover:bg-gray-50"><ChevronLeft size={14} /></button>
+                <button onClick={() => setMoveOffset(o => o - 1)} className="w-7 h-7 rounded-lg border border-[#e3e8f5] flex items-center justify-center hover:bg-gray-50 dark:hover:bg-white/5 dark:bg-white/5"><ChevronLeft size={14} /></button>
                 <span className="text-[10px] font-black uppercase tracking-wide text-[#101433] flex-1">{mockWeekLabel(getWeekDays(moveOffset))}</span>
-                <button onClick={() => setMoveOffset(o => o + 1)} className="w-7 h-7 rounded-lg border border-[#e3e8f5] flex items-center justify-center hover:bg-gray-50"><ChevronRight size={14} /></button>
+                <button onClick={() => setMoveOffset(o => o + 1)} className="w-7 h-7 rounded-lg border border-[#e3e8f5] flex items-center justify-center hover:bg-gray-50 dark:hover:bg-white/5 dark:bg-white/5"><ChevronRight size={14} /></button>
               </div>
               <div className="flex gap-1 flex-wrap mb-3">
                 {DAY_NAMES.map((dn, idx) => (
                   <button
                     key={dn}
                     onClick={() => setMoveDayIdx(idx)}
-                    className={`text-[9px] font-bold px-2 py-1 rounded-full border transition-colors ${moveDayIdx === idx ? 'bg-violet-600 text-white border-violet-600' : 'text-slate-400 border-slate-200 hover:bg-violet-50'}`}
+                    className={`text-[9px] font-bold px-2 py-1 rounded-full border transition-colors ${moveDayIdx === idx ? 'bg-violet-600 text-white border-violet-600' : 'text-slate-400 border-slate-200 dark:border-white/10 hover:bg-violet-50'}`}
                   >
                     {dn}
                   </button>
@@ -1355,7 +1355,7 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
                 Destino: {DAY_FULL[(selectedMoveDay.getDay() === 0 ? 6 : selectedMoveDay.getDay() - 1)]} {selectedMoveDay.getDate()} de {MONTHS[selectedMoveDay.getMonth()]}{moveCross ? ' (semana intermensual)' : ''}.
               </p>
               <div className="flex gap-2 justify-end">
-                <button onClick={() => setMoveAction(null)} className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 font-bold">Cancelar</button>
+                <button onClick={() => setMoveAction(null)} className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 dark:bg-white/5 font-bold">Cancelar</button>
                 <button onClick={confirmMove} className="text-xs px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:opacity-90 font-bold">Confirmar movimiento</button>
               </div>
             </div>
@@ -1365,24 +1365,24 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
         {/* Grupo Inteligente (al crear acción) */}
         {showAISuggest && (
           <div className="fixed inset-0 bg-black/30 z-[100] flex items-center justify-center p-4" onClick={() => setShowAISuggest(null)}>
-            <div className="bg-white rounded-2xl shadow-xl p-4 w-[650px]" onClick={e => e.stopPropagation()}>
+            <div className="bg-white dark:bg-[#14142e] rounded-2xl shadow-xl p-4 w-[650px]" onClick={e => e.stopPropagation()}>
               <div className="flex items-center gap-2 text-amber-600 mb-2">
                 <AlertCircle size={16} />
                 <span className="font-bold text-sm">{i18n.t('grupo_inteligente')}</span>
               </div>
-              <p className="text-xs text-slate-600 mb-3">
+              <p className="text-xs text-slate-600 dark:text-slate-300 mb-3">
                 Detecté que <strong>"{showAISuggest.title}"</strong> normalmente incluye varias tareas.
                 ¿Deseas convertirla en un Grupo Inteligente de Acciones?
               </p>
-              <div className="space-y-1 mb-3 bg-slate-50 rounded-lg p-2">
+              <div className="space-y-1 mb-3 bg-slate-50 dark:bg-white/5 rounded-lg p-2">
                 {showAISuggest.subactions.map((s, i) => (
-                  <div key={i} className="flex items-center gap-1.5 text-xs text-slate-500">
+                  <div key={i} className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                     <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />{s}
                   </div>
                 ))}
               </div>
               <div className="flex gap-2 justify-end">
-                <button onClick={rejectAIGroup} className="text-xs px-3 py-1.5 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">{i18n.t('no_solo_la_accion')}</button>
+                <button onClick={rejectAIGroup} className="text-xs px-3 py-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:bg-white/10 rounded-lg transition-colors">{i18n.t('no_solo_la_accion')}</button>
                 <button onClick={confirmAIGroup} className="text-xs px-3 py-1.5 bg-gradient-to-r from-[#d97706] to-[#f59e0b] text-white rounded-lg hover:opacity-90 transition-opacity font-medium">{i18n.t('si_crear_grupo')}</button>
               </div>
             </div>
@@ -1392,24 +1392,24 @@ export default function PlanSemanalView({ highlightActionId, refreshKey, onConfi
         {/* Checklist IA */}
         {aiChecklistAction && (
           <div className="fixed inset-0 bg-black/30 z-[100] flex items-center justify-center p-4" onClick={() => setAiChecklistAction(null)}>
-            <div className="bg-white rounded-2xl shadow-xl p-4 max-w-md w-full" onClick={e => e.stopPropagation()}>
+            <div className="bg-white dark:bg-[#14142e] rounded-2xl shadow-xl p-4 max-w-md w-full" onClick={e => e.stopPropagation()}>
               <div className="flex items-center gap-2 text-amber-600 mb-2">
                 <AlertCircle size={16} />
                 <span className="font-bold text-sm">Checklist IA</span>
               </div>
-              <p className="text-xs text-slate-600 mb-3">Checklist sugerido para: <strong>"{aiChecklistAction.title}"</strong></p>
+              <p className="text-xs text-slate-600 dark:text-slate-300 mb-3">Checklist sugerido para: <strong>"{aiChecklistAction.title}"</strong></p>
               <div className="space-y-1.5 mb-3">
                 {editableSubs.map((s, i) => (
                   <div key={i} className="flex items-center gap-1.5">
                     <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-                    <input value={s} onChange={e => { const next = [...editableSubs]; next[i] = e.target.value; setEditableSubs(next); }} className="flex-1 text-xs px-2 py-1 border border-slate-200 rounded outline-none focus:ring-1 focus:ring-violet-400 bg-white" />
+                    <input value={s} onChange={e => { const next = [...editableSubs]; next[i] = e.target.value; setEditableSubs(next); }} className="flex-1 text-xs px-2 py-1 border border-slate-200 dark:border-white/10 rounded outline-none focus:ring-1 focus:ring-violet-400 bg-white dark:bg-[#14142e]" />
                     <button onClick={() => { const next = editableSubs.filter((_, idx) => idx !== i); setEditableSubs(next.length ? next : ['']); }} className="p-0.5 hover:bg-red-100 rounded text-slate-400 hover:text-red-500 shrink-0"><X size={12} /></button>
                   </div>
                 ))}
                 <button onClick={() => setEditableSubs([...editableSubs, ''])} className="text-[10px] text-violet-600 hover:text-violet-700 font-medium flex items-center gap-1 mt-1"><Plus size={11} /> Añadir ítem</button>
               </div>
               <div className="flex gap-2 justify-end">
-                <button onClick={() => setAiChecklistAction(null)} className="text-xs px-3 py-1.5 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Cancelar</button>
+                <button onClick={() => setAiChecklistAction(null)} className="text-xs px-3 py-1.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:bg-white/10 rounded-lg transition-colors">Cancelar</button>
                 <button onClick={confirmAIChecklist} className="text-xs px-3 py-1.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-lg hover:opacity-90 transition-opacity font-medium">Añadir checklist</button>
               </div>
             </div>

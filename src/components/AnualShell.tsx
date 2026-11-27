@@ -104,17 +104,17 @@ export const AnualShell: React.FC<AnualShellProps> = ({
         {!hideTopbar && (
           <div className="flex items-center justify-between px-4 sm:px-8 pt-4 sm:pt-5 pb-2 shrink-0">
             <div className="flex items-center gap-3">
-              <span className="w-10 h-10 rounded-md bg-[#eceafe] flex items-center justify-center shrink-0">
-                <CalendarIcon className="w-6 h-6 text-[#4f46e5]" />
+              <span className="w-10 h-10 rounded-md bg-[#eceafe] dark:bg-[#2a2755] flex items-center justify-center shrink-0">
+                <CalendarIcon className="w-6 h-6 text-[#4f46e5] dark:text-[#a5b4fc]" />
               </span>
-              <h1 className="text-xl sm:text-2xl font-extrabold text-[#101331]">{title}</h1>
+              <h1 className="text-xl sm:text-2xl font-extrabold text-[#101331] dark:text-gray-100">{title}</h1>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => { if (onOpenHelp) onOpenHelp(); else setShowHelpLocal(true); }} className="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-700 hover:bg-gray-50" title={i18n.t('ayuda_de_ia')}>
+              <button onClick={() => { if (onOpenHelp) onOpenHelp(); else setShowHelpLocal(true); }} className="w-9 h-9 rounded-full border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 flex items-center justify-center text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/10" title={i18n.t('ayuda_de_ia')}>
                 <CircleHelp className="w-5 h-5" />
               </button>
               <div className="relative">
-                <button onClick={() => { if (onOpenNotifications) onOpenNotifications(); else toggleNotificationsLocal(); }} className="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-700 hover:bg-gray-50 relative" title={i18n.t('notificaciones_zzpz')}>
+                <button onClick={() => { if (onOpenNotifications) onOpenNotifications(); else toggleNotificationsLocal(); }} className="w-9 h-9 rounded-full border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 flex items-center justify-center text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/10 relative" title={i18n.t('notificaciones_zzpz')}>
                   <Bell className="w-5 h-5" />
                   {notifications.length > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#6d28d9] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
@@ -125,21 +125,21 @@ export const AnualShell: React.FC<AnualShellProps> = ({
                 {showNotificationsLocal && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowNotificationsLocal(false)} />
-                    <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-white rounded-xl shadow-2xl border border-gray-100 z-50">
-                      <p className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-gray-400 border-b border-gray-100">{i18n.t('notificaciones_zzpz')}</p>
+                    <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-white dark:bg-[#1a1a3a] rounded-xl shadow-2xl border border-gray-100 dark:border-white/10 z-50">
+                      <p className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-gray-400 border-b border-gray-100 dark:border-white/10">{i18n.t('notificaciones_zzpz')}</p>
                       {notifications.length === 0 ? (
                         <p className="px-4 py-6 text-sm text-gray-400 text-center">{i18n.t('sin_notificaciones')}</p>
                       ) : notifications.map(n => (
-                        <div key={n.id} className="px-4 py-3 border-b border-gray-50 last:border-0 hover:bg-gray-50">
-                          <p className="text-sm font-semibold text-gray-800">{n.title}</p>
-                          <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{n.message}</p>
+                        <div key={n.id} className="px-4 py-3 border-b border-gray-50 dark:border-white/5 last:border-0 hover:bg-gray-50 dark:hover:bg-white/5">
+                          <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{n.title}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{n.message}</p>
                         </div>
                       ))}
                     </div>
                   </>
                 )}
               </div>
-              <button onClick={() => { if (onOpenSettings) onOpenSettings(); else setShowConfigLocal(true); }} className="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-700 hover:bg-gray-50" title={i18n.t('configuracion_omg1')}>
+              <button onClick={() => { if (onOpenSettings) onOpenSettings(); else setShowConfigLocal(true); }} className="w-9 h-9 rounded-full border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 flex items-center justify-center text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/10" title={i18n.t('configuracion_omg1')}>
                 <Settings className="w-5 h-5" />
               </button>
             </div>

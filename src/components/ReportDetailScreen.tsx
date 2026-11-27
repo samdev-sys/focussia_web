@@ -257,7 +257,7 @@ function Estadisticas({ report, placeholder }: { report: FocusiaReportData; plac
     cumplimiento: sinDatos ? '— %' : `${Math.round(report.completion_percentage)} %`,
   };
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 border-b border-slate-100 pb-2">
+    <div className="grid grid-cols-2 sm:grid-cols-4 border-b border-slate-100 dark:border-white/10 pb-2">
       {ESTADISTICAS.map((s, i) => (
         <div
           key={s.key}
@@ -270,7 +270,7 @@ function Estadisticas({ report, placeholder }: { report: FocusiaReportData; plac
               {valores[s.key]}
             </span>
           )}
-          <span className="text-sm sm:text-base text-slate-600">{s.label}</span>
+          <span className="text-sm sm:text-base text-slate-600 dark:text-slate-300">{s.label}</span>
         </div>
       ))}
     </div>
@@ -294,20 +294,20 @@ function Donut({ porcentaje, completadas, sinCompletar, pendiente }: {
             : `conic-gradient(${PURPLE} 0deg ${deg}deg, ${GRAY_LINE} ${deg}deg 360deg)`,
         }}
       >
-        <div className="absolute inset-[24px] rounded-full bg-white flex items-center justify-center">
-          <span className="text-3xl font-black text-slate-900">
+        <div className="absolute inset-[24px] rounded-full bg-white dark:bg-[#14142e] flex items-center justify-center">
+          <span className="text-3xl font-black text-slate-900 dark:text-slate-100">
             {pendiente ? '— %' : `${Math.round(porcentaje)} %`}
           </span>
         </div>
       </div>
-      <div className="space-y-2.5 text-base text-slate-700">
+      <div className="space-y-2.5 text-base text-slate-700 dark:text-slate-200">
         <div className="flex items-center gap-2.5">
           <span className="w-4 h-4 rounded-full shrink-0" style={{ background: PURPLE }} />
-          <span><strong className="font-bold text-slate-900">{completadas}</strong> completadas</span>
+          <span><strong className="font-bold text-slate-900 dark:text-slate-100">{completadas}</strong> completadas</span>
         </div>
         <div className="flex items-center gap-2.5">
           <span className="w-4 h-4 rounded-full bg-slate-300 shrink-0" />
-          <span><strong className="font-bold text-slate-900">{sinCompletar}</strong> sin completar</span>
+          <span><strong className="font-bold text-slate-900 dark:text-slate-100">{sinCompletar}</strong> sin completar</span>
         </div>
       </div>
     </div>
@@ -331,7 +331,7 @@ function DesgloseSinCompletar({ report }: { report: FocusiaReportData }) {
       </h4>
       <ul className="space-y-1.5">
         {filas.map((f, i) => (
-          <li key={i} className="flex gap-3 text-sm text-slate-700">
+          <li key={i} className="flex gap-3 text-sm text-slate-700 dark:text-slate-200">
             <span className="font-bold min-w-[20px]" style={{ color: BLUE }}>{f.n}</span>
             <span>{f.texto}</span>
           </li>
@@ -403,7 +403,7 @@ function BarraSerie({
   const hayDatos = data.some(d => d.planificadas > 0);
   return (
     <div>
-      <div className="flex items-center gap-5 text-sm text-slate-700 mb-3">
+      <div className="flex items-center gap-5 text-sm text-slate-700 dark:text-slate-200 mb-3">
         <span className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full" style={{ background: CYAN }} /> Planificadas
         </span>
@@ -417,7 +417,7 @@ function BarraSerie({
           <div className="w-16 h-16 rounded-2xl bg-[#E8F1FF] flex items-center justify-center mb-4">
             <ClipboardCheck className="w-8 h-8" style={{ color: BLUE }} />
           </div>
-          <h4 className="text-lg font-bold text-slate-800">
+          <h4 className="text-lg font-bold text-slate-800 dark:text-slate-100">
             Sin actividad registrada en los 7 días
           </h4>
           <p className="text-sm text-slate-400 mt-1">
@@ -566,7 +566,7 @@ export function ReportDetailScreen({
   };
 
   const captionHero = !vencido ? (
-    <span className="inline-flex items-center gap-1.5 text-slate-600">
+    <span className="inline-flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
       <Clock className="w-4 h-4 shrink-0" style={{ color: BLUE }} />
       En actualización · Los datos pueden cambiar hasta las 00:00
     </span>
@@ -575,11 +575,11 @@ export function ReportDetailScreen({
   );
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-[#14142e]">
       <div className="max-w-[1500px] mx-auto w-full px-5 sm:px-8 pb-10">
         {/* Selector rápido entre las vistas de detalle digitalizadas (oculto: mockups de diseño) */}
         {false && (
-          <div className="pt-3 pb-1 flex flex-wrap items-center gap-1.5 border-b border-slate-100 text-xs">
+          <div className="pt-3 pb-1 flex flex-wrap items-center gap-1.5 border-b border-slate-100 dark:border-white/10 text-xs">
             <span className="font-bold text-slate-400 mr-1">Vistas de reporte:</span>
             {[
               { label: '‹ Lista / Historial / Notificaciones', active: false, onClick: onBack },
@@ -626,7 +626,7 @@ export function ReportDetailScreen({
                 className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
                   btn.active
                     ? 'bg-[#E8F1FF] text-[#2563EB]'
-                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-800'
+                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:bg-white/10 hover:text-slate-800 dark:text-slate-100'
                 }`}
               >
                 {btn.label}
@@ -648,19 +648,19 @@ export function ReportDetailScreen({
         {failed ? (
           <>
             {/* Foto 10 · Estado de error (período cerrado sin datos verificables) */}
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-7 mb-2">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 mt-7 mb-2">
               Los datos del período aún no están disponibles.
             </h2>
             <Estadisticas report={report} placeholder />
 
             <div className="grid md:grid-cols-5 gap-6 mt-5">
               <div className="border border-[#e2e8f0] rounded-xl p-6 md:col-span-2 flex flex-col">
-                <h3 className="text-xl font-bold text-slate-900 mb-6">Resumen no disponible</h3>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-6">Resumen no disponible</h3>
                 <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
                   <div className="w-16 h-16 rounded-2xl bg-[#EEF2FF] flex items-center justify-center mb-4">
                     <FileWarning className="w-8 h-8 text-indigo-400" />
                   </div>
-                  <p className="text-base font-bold text-slate-800 max-w-xs">
+                  <p className="text-base font-bold text-slate-800 dark:text-slate-100 max-w-xs">
                     No pudimos generar tu reporte. Volveremos a intentarlo.
                   </p>
                   {report.ai_interpretation ? (
@@ -679,7 +679,7 @@ export function ReportDetailScreen({
               </div>
 
               <div className="border border-[#e2e8f0] rounded-xl p-6 md:col-span-3 flex flex-col">
-                <h3 className="text-xl font-bold text-slate-900 mb-5">Gráficos pendientes</h3>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-5">Gráficos pendientes</h3>
                 <div className="flex-1 space-y-3.5 py-2">
                   {[88, 72, 82, 64].map((w, i) => (
                     <div key={i} className="flex items-center gap-3">
@@ -687,10 +687,10 @@ export function ReportDetailScreen({
                       <span className="h-1.5 rounded-full bg-slate-200" style={{ width: `${w}%` }} />
                     </div>
                   ))}
-                  <div className="border-t border-dashed border-slate-200 mt-6 pt-3" />
+                  <div className="border-t border-dashed border-slate-200 dark:border-white/10 mt-6 pt-3" />
                 </div>
                 <div className="text-center mt-4">
-                  <p className="text-base font-bold text-slate-800">
+                  <p className="text-base font-bold text-slate-800 dark:text-slate-100">
                     Los gráficos aparecerán cuando los datos estén disponibles.
                   </p>
                   <p className="text-sm text-slate-400 mt-1">
@@ -709,18 +709,18 @@ export function ReportDetailScreen({
                   className="w-16 h-16 rounded-full object-cover border-2 border-purple-100 shrink-0"
                 />
                 <div className="min-w-0">
-                  <h3 className="text-xl font-bold text-slate-900">
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
                     {avatarNombre} · <span style={{ color: BLUE }}>Reporte pendiente</span>
                   </h3>
-                  <p className="text-sm text-slate-700 mt-1">
+                  <p className="text-sm text-slate-700 dark:text-slate-200 mt-1">
                     Estamos recuperando los datos del período.
                   </p>
-                  <p className="text-sm text-slate-700">No necesitas iniciar otro reporte.</p>
+                  <p className="text-sm text-slate-700 dark:text-slate-200">No necesitas iniciar otro reporte.</p>
                 </div>
               </div>
               <div className="lg:border-l lg:border-[#e2e8f0] lg:pl-6 flex flex-col sm:flex-row sm:items-center gap-4">
                 <div>
-                  <h4 className="text-lg font-bold text-slate-900 mb-3">¿Cómo quieres continuar?</h4>
+                  <h4 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-3">¿Cómo quieres continuar?</h4>
                   <div className="flex flex-wrap items-center gap-4">
                     <button
                       onClick={onBack}
@@ -745,7 +745,7 @@ export function ReportDetailScreen({
         ) : (
           <>
             {/* Mensaje principal */}
-            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-7">
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-slate-100 mt-7">
               {report.level === 'annual' && !sinDatos ? (
                 <>
                   Cerraste el período con el{' '}
@@ -763,7 +763,7 @@ export function ReportDetailScreen({
               )}
             </h2>
             {report.level === 'monthly' && meta?.texto && (
-              <p className="text-lg text-slate-700 mt-2">Tu meta: {meta.texto}.</p>
+              <p className="text-lg text-slate-700 dark:text-slate-200 mt-2">Tu meta: {meta.texto}.</p>
             )}
 
             <Estadisticas report={report} />
@@ -771,7 +771,7 @@ export function ReportDetailScreen({
             {/* Tarjetas de gráfico (Donut + Serie) */}
             <div className="grid md:grid-cols-5 gap-6 mt-5">
               <div className="border border-[#e2e8f0] rounded-xl p-7 sm:p-8 md:col-span-2 flex flex-col">
-                <h3 className="text-2xl font-bold text-slate-900 mb-6">
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">
                   {DONUT_TITULO[report.level]}
                 </h3>
                 <Donut
@@ -785,7 +785,7 @@ export function ReportDetailScreen({
                     <h4 className="text-[15px] font-bold mb-1.5" style={{ color: BLUE }}>
                       Sin acciones computables
                     </h4>
-                    <p className="text-sm text-slate-700 leading-relaxed">
+                    <p className="text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
                       No registraste acciones principales en este período. Las subtareas se reflejan
                       a través de su acción principal.
                     </p>
@@ -800,7 +800,7 @@ export function ReportDetailScreen({
 
               <div className="border border-[#e2e8f0] rounded-xl p-7 sm:p-8 md:col-span-3 flex flex-col justify-between">
                 <div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-5">
+                  <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-5">
                     {CHART_TITULO[report.level]}
                   </h3>
                   <BarraSerie
@@ -814,8 +814,8 @@ export function ReportDetailScreen({
                 {report.level === 'annual' && granMeta?.texto && (
                   <div className="border-t border-[#e2e8f0] pt-4 mt-3">
                     <div className="flex items-center justify-between gap-4 mb-2">
-                      <p className="text-sm text-slate-800">
-                        <strong className="font-bold text-slate-900">Tu Gran Meta Anual:</strong>{' '}
+                      <p className="text-sm text-slate-800 dark:text-slate-100">
+                        <strong className="font-bold text-slate-900 dark:text-slate-100">Tu Gran Meta Anual:</strong>{' '}
                         {granMeta.texto}
                       </p>
                       <span className="text-base font-bold shrink-0" style={{ color: BLUE }}>
@@ -837,7 +837,7 @@ export function ReportDetailScreen({
                   className="w-20 h-20 rounded-full object-cover border-2 border-purple-100 shrink-0"
                 />
                 <div className="min-w-0">
-                  <h3 className="text-2xl font-bold text-slate-900">
+                  <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                     {avatarNombre} ·{' '}
                     {pendienteAnalisis ? (
                       <span style={{ color: BLUE }}>Análisis pendiente</span>
@@ -847,15 +847,15 @@ export function ReportDetailScreen({
                   </h3>
                   {pendienteAnalisis ? (
                     <>
-                      <p className="text-[15px] text-slate-700 mt-1.5">
+                      <p className="text-[15px] text-slate-700 dark:text-slate-200 mt-1.5">
                         Los datos del período están disponibles.
                       </p>
-                      <p className="text-[15px] text-slate-700">
+                      <p className="text-[15px] text-slate-700 dark:text-slate-200">
                         La interpretación se completará aquí automáticamente.
                       </p>
                     </>
                   ) : (
-                    <p className="text-[15px] text-slate-700 mt-1.5 whitespace-pre-line leading-relaxed">
+                    <p className="text-[15px] text-slate-700 dark:text-slate-200 mt-1.5 whitespace-pre-line leading-relaxed">
                       {report.ai_interpretation || 'Sin interpretación disponible para este período.'}
                     </p>
                   )}
@@ -863,13 +863,13 @@ export function ReportDetailScreen({
               </div>
 
               <div className="lg:border-l lg:border-[#e2e8f0] lg:pl-6 shrink-0">
-                <h4 className="text-xl font-bold text-slate-900 mb-4">¿Cómo quieres continuar?</h4>
+                <h4 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4">¿Cómo quieres continuar?</h4>
                 {actionTaken ? (
                   <div className="flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-100 px-4 py-3">
                     <span className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
                       <Check className="w-4 h-4 text-emerald-600" />
                     </span>
-                    <p className="text-sm font-semibold text-slate-700">
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                       Acción registrada:{' '}
                       {({
                         reorganize_week: 'Reorganizar semana',
@@ -915,14 +915,14 @@ export function ReportDetailScreen({
 
             {/* Nota inferior de ventana de actualización */}
             {!vencido ? (
-              <div className="mt-4 flex items-center gap-2 text-sm text-slate-600">
+              <div className="mt-4 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                 <Info className="w-4 h-4 shrink-0" style={{ color: BLUE }} />
                 Si completas o modificas acciones antes de las 00:00, este reporte se actualizará.
                 Después de esa hora el período queda cerrado.
               </div>
             ) : (
               report.level === 'weekly' && !sinDatos && !pendienteAnalisis && (
-                <div className="mt-4 flex items-center gap-2 text-sm text-slate-600">
+                <div className="mt-4 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                   <Info className="w-4 h-4 shrink-0" style={{ color: BLUE }} />
                   El reporte puede actualizarse hasta las 00:00.
                 </div>

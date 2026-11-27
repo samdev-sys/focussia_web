@@ -1,8 +1,7 @@
 import i18n from '../i18n';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Home, CircleDot, LayoutGrid, Calendar, CalendarDays, Kanban,
-  CalendarRange, CalendarCheck, Target, Clock, Pill, Cake,
+  Home, CircleDot, LayoutGrid, Calendar, CalendarDays, CalendarRange, CalendarCheck, Target, Clock, Pill, Cake,
   UserCheck, Wallet, Link2, MoreHorizontal, ChevronDown,
   Plus, Trash2, Pencil, X, Check, ChevronLeft, ChevronRight,
   CalendarDays as CalendarIcon, Download, History, Settings,
@@ -26,7 +25,7 @@ const NAV_ITEMS = [
   { icon: LayoutGrid, label: 'Matriz', section: 'matriz' },
   { icon: Calendar, label: 'Anual', section: 'anual' },
   { icon: CalendarDays, label: 'Mensual', section: 'mensual' },
-  { icon: Kanban, label: 'Kanban', section: 'kanban' },
+  { icon: NAV_ICONS.kanban, label: 'Kanban', section: 'kanban' },
   { icon: CalendarRange, label: 'Semanal', section: 'semanal' },
   { icon: CalendarCheck, label: 'Diaria', section: 'diaria' },
   { icon: NAV_ICONS.delegar, label: 'Delegar', section: 'delegar' },
@@ -89,7 +88,7 @@ function pillMedio(valor: string): string {
   if (/transferencia/.test(v)) return 'bg-orange-100 text-orange-700';
   if (/efectivo/.test(v)) return 'bg-amber-100 text-amber-700';
   if (!v.trim()) return '';
-  return 'bg-slate-100 text-slate-600';
+  return 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300';
 }
 
 function inicialesBanco(nombre: string): string {
@@ -418,7 +417,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
     const esMedio = col.nombre.trim().toLowerCase() === 'medio de pago';
     if (esBanco) {
       return (
-        <select value={fExtras[id] || ''} onChange={e => setFExtras(p => ({ ...p, [id]: e.target.value }))} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF]">
+        <select value={fExtras[id] || ''} onChange={e => setFExtras(p => ({ ...p, [id]: e.target.value }))} className="w-full bg-white dark:bg-[#14142e] border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF]">
           <option value="">{i18n.t('selecciona_un_banco')}</option>
           {BANCOS.map(b => <option key={b} value={b}>{b}</option>)}
         </select>
@@ -426,7 +425,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
     }
     if (esMedio) {
       return (
-        <select value={fExtras[id] || ''} onChange={e => setFExtras(p => ({ ...p, [id]: e.target.value }))} className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF]">
+        <select value={fExtras[id] || ''} onChange={e => setFExtras(p => ({ ...p, [id]: e.target.value }))} className="w-full bg-white dark:bg-[#14142e] border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF]">
           <option value="">{i18n.t('selecciona_medio_de_pago')}</option>
           {MEDIOS.map(b => <option key={b} value={b}>{b}</option>)}
         </select>
@@ -437,13 +436,13 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
         value={fExtras[id] || ''}
         onChange={e => setFExtras(p => ({ ...p, [id]: e.target.value }))}
         placeholder={i18n.t('escribe_una_observacion')}
-        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF] placeholder:text-slate-400"
+        className="w-full bg-white dark:bg-[#14142e] border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF] placeholder:text-slate-400"
       />
     );
   };
 
   return (
-    <div className="flex h-full overflow-hidden text-slate-800 bg-[#F8F9FB]">
+    <div className="flex h-full overflow-hidden text-slate-800 dark:text-slate-100 bg-[#F8F9FB] dark:bg-[#0f1124]">
       {/* Sidebar canónica compartida con todas las pantallas */}
       <div className="hidden md:flex">
         <ShellSidebar
@@ -454,18 +453,18 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
       </div>
 
       {/* Contenido */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden bg-[#F8F9FB] md:rounded-tl-[2rem]">
+      <main className="flex-1 flex flex-col h-full overflow-hidden bg-[#F8F9FB] dark:bg-[#0f1124] md:rounded-tl-[2rem]">
         <div className="flex items-center gap-4 px-6 pt-5 pb-3 shrink-0">
-          <button onClick={onBack} className="md:hidden text-slate-500 hover:text-slate-800 font-bold">←</button>
+          <button onClick={onBack} className="md:hidden text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-100 font-bold">←</button>
           <span className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#6236FF] to-[#8A2BE2] flex items-center justify-center shrink-0 shadow-md">
             <Wallet className="w-6 h-6 text-white" />
           </span>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold text-slate-900">{i18n.t('cuentas')}</h1>
-            <p className="text-sm text-slate-500">{i18n.t('administra_tus_pagos_recurrentes_y_mante')}</p>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">{i18n.t('cuentas')}</h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{i18n.t('administra_tus_pagos_recurrentes_y_mante')}</p>
           </div>
           <div className="hidden sm:flex items-center gap-2">
-            <button title={i18n.t('ayuda_de_ia_tcc0')} onClick={() => setShowHelp(true)} className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:shadow-md transition-shadow font-black">?</button>
+            <button title={i18n.t('ayuda_de_ia_tcc0')} onClick={() => setShowHelp(true)} className="w-10 h-10 rounded-full bg-white dark:bg-[#14142e] border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:shadow-md transition-shadow font-black">?</button>
             <div className="relative">
               <button
                 title={i18n.t('notificaciones_5j5d')}
@@ -475,7 +474,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                   }
                   setShowNotifications(v => !v);
                 }}
-                className="relative w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:shadow-md transition-shadow"
+                className="relative w-10 h-10 rounded-full bg-white dark:bg-[#14142e] border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:shadow-md transition-shadow"
               >
                 <Bell className="w-5 h-5" />
                 {notifications.length > 0 && (
@@ -487,21 +486,21 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
               {showNotifications && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
-                  <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-white rounded-xl shadow-2xl border border-slate-100 z-50">
-                    <p className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">{i18n.t('notificaciones_5j5d')}</p>
+                  <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-white dark:bg-[#14142e] rounded-xl shadow-2xl border border-slate-100 dark:border-white/10 z-50">
+                    <p className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-white/10">{i18n.t('notificaciones_5j5d')}</p>
                     {notifications.length === 0 ? (
                       <p className="px-4 py-6 text-sm text-slate-400 text-center">{i18n.t('sin_notificaciones_2hhg')}</p>
                     ) : notifications.map(n => (
-                      <div key={n.id} className="px-4 py-3 border-b border-slate-50 last:border-0 hover:bg-slate-50">
-                        <p className="text-sm font-semibold text-slate-800">{n.title}</p>
-                        <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{n.message}</p>
+                      <div key={n.id} className="px-4 py-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 dark:hover:bg-white/5 dark:bg-white/5">
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{n.title}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">{n.message}</p>
                       </div>
                     ))}
                   </div>
                 </>
               )}
             </div>
-            <button title={i18n.t('configuracion_5kx5')} onClick={() => setShowConfig(true)} className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700 hover:shadow-md transition-shadow">
+            <button title={i18n.t('configuracion_5kx5')} onClick={() => setShowConfig(true)} className="w-10 h-10 rounded-full bg-white dark:bg-[#14142e] border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:shadow-md transition-shadow">
               <Settings className="w-5 h-5" />
             </button>
           </div>
@@ -515,31 +514,31 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                 <button onClick={abrirNuevaFila} className="flex items-center gap-1.5 text-sm font-bold text-white bg-gradient-to-r from-[#6236FF] to-[#8A2BE2] rounded-md px-4 py-2.5 hover:brightness-110 active:scale-95 transition-all shadow-sm">
                   <Plus className="w-4 h-4" /> Agregar fila
                 </button>
-                <button onClick={() => { setNuevaCol(''); setPanel('columna'); }} className="flex items-center gap-1.5 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-md px-4 py-2.5 hover:shadow-md active:scale-95 transition-all">
+                <button onClick={() => { setNuevaCol(''); setPanel('columna'); }} className="flex items-center gap-1.5 text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-[#14142e] border border-slate-200 dark:border-white/10 rounded-md px-4 py-2.5 hover:shadow-md active:scale-95 transition-all">
                   <Plus className="w-4 h-4" /> Agregar columna
                 </button>
                 <span className="flex-1" />
-                <button onClick={() => { cargarHistorial(); setPanel('historial'); }} className="flex items-center gap-1.5 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-md px-4 py-2.5 hover:shadow-md active:scale-95 transition-all">
+                <button onClick={() => { cargarHistorial(); setPanel('historial'); }} className="flex items-center gap-1.5 text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-[#14142e] border border-slate-200 dark:border-white/10 rounded-md px-4 py-2.5 hover:shadow-md active:scale-95 transition-all">
                   <CalendarIcon className="w-4 h-4" /> Historial
                 </button>
-                <button onClick={exportarCSV} className="flex items-center gap-1.5 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded-md px-4 py-2.5 hover:shadow-md active:scale-95 transition-all">
+                <button onClick={exportarCSV} className="flex items-center gap-1.5 text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-[#14142e] border border-slate-200 dark:border-white/10 rounded-md px-4 py-2.5 hover:shadow-md active:scale-95 transition-all">
                   <Download className="w-4 h-4" /> Exportar
                 </button>
                 <div className="relative">
-                  <button onClick={() => setPanel(panel === 'acciones' ? null : 'acciones')} title={i18n.t('acciones')} className="w-10 h-10 flex items-center justify-center text-slate-700 bg-white border border-slate-200 rounded-md hover:shadow-md active:scale-95 transition-all font-black">
+                  <button onClick={() => setPanel(panel === 'acciones' ? null : 'acciones')} title={i18n.t('acciones')} className="w-10 h-10 flex items-center justify-center text-slate-700 dark:text-slate-200 bg-white dark:bg-[#14142e] border border-slate-200 dark:border-white/10 rounded-md hover:shadow-md active:scale-95 transition-all font-black">
                     •••
                   </button>
                   {panel === 'acciones' && (
                     <>
                       <div className="fixed inset-0 z-10" onClick={() => setPanel(null)} />
-                      <div className="absolute right-0 mt-2 w-56 bg-white rounded-md border border-slate-100 shadow-xl z-20 overflow-hidden">
-                        <button onClick={() => { setEditCols(v => !v); setPanel(null); }} className="w-full flex items-center gap-2.5 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 text-left">
+                      <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#14142e] rounded-md border border-slate-100 dark:border-white/10 shadow-xl z-20 overflow-hidden">
+                        <button onClick={() => { setEditCols(v => !v); setPanel(null); }} className="w-full flex items-center gap-2.5 px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5 dark:bg-white/5 text-left">
                           <Pencil className="w-4 h-4" /> {editCols ? 'Terminar edición' : 'Editar columnas'}
                         </button>
                         <button onClick={() => setPanel('confirmBulk')} className="w-full flex items-center gap-2.5 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 text-left">
                           <Trash2 className="w-4 h-4" /> Eliminar cuentas
                         </button>
-                        <button onClick={restaurarColumnas} className="w-full flex items-center gap-2.5 px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 text-left">
+                        <button onClick={restaurarColumnas} className="w-full flex items-center gap-2.5 px-4 py-3 text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5 dark:bg-white/5 text-left">
                           <RefreshCw className="w-4 h-4" /> Restaurar columnas
                         </button>
                       </div>
@@ -550,26 +549,26 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
               {error && <p className="bg-red-50 text-red-600 text-xs font-medium rounded-md px-4 py-2">{error}</p>}
 
               {/* Tabla */}
-              <section ref={tablaRef} className="bg-white rounded-md border border-slate-100 shadow-sm overflow-hidden scroll-mt-4 -ml-4">
+              <section ref={tablaRef} className="bg-white dark:bg-[#14142e] rounded-md border border-slate-100 dark:border-white/10 shadow-sm overflow-hidden scroll-mt-4 -ml-4">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm border-collapse min-w-[760px]">
                     <thead>
-                      <tr className="text-left text-xs font-bold text-slate-500 border-b border-slate-100">
+                      <tr className="text-left text-xs font-bold text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-white/10">
                         <th className="px-4 py-3 w-12">
-                          <span className="inline-block w-5 h-5 rounded-md border-2 border-slate-200" />
+                          <span className="inline-block w-5 h-5 rounded-md border-2 border-slate-200 dark:border-white/10" />
                         </th>
                         <th className="px-2 py-3">
-                          <button onClick={() => ordenarPor('cuenta')} className="inline-flex items-center gap-1.5 hover:text-slate-800">
+                          <button onClick={() => ordenarPor('cuenta')} className="inline-flex items-center gap-1.5 hover:text-slate-800 dark:text-slate-100">
                             Cuenta <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
                           </button>
                         </th>
                         <th className="px-2 py-3">
-                          <button onClick={() => ordenarPor('dia')} className="inline-flex items-center gap-1.5 hover:text-slate-800">
+                          <button onClick={() => ordenarPor('dia')} className="inline-flex items-center gap-1.5 hover:text-slate-800 dark:text-slate-100">
                             <CalendarIcon className="w-4 h-4 text-slate-400" /> Día de vencimiento <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
                           </button>
                         </th>
                         <th className="px-2 py-3">
-                          <button onClick={() => ordenarPor('monto')} className="inline-flex items-center gap-1.5 hover:text-slate-800">
+                          <button onClick={() => ordenarPor('monto')} className="inline-flex items-center gap-1.5 hover:text-slate-800 dark:text-slate-100">
                             <span className="font-black">$</span> Monto <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
                           </button>
                         </th>
@@ -590,7 +589,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                           </th>
                         ))}
                         <th className="px-2 py-3 w-12 text-right">
-                          <button onClick={() => setEditCols(v => !v)} title={i18n.t('editar_columnas')} className={`transition-colors ${editCols ? 'text-[#6236FF]' : 'text-slate-300 hover:text-slate-500'}`}>
+                          <button onClick={() => setEditCols(v => !v)} title={i18n.t('editar_columnas')} className={`transition-colors ${editCols ? 'text-[#6236FF]' : 'text-slate-300 hover:text-slate-500 dark:text-slate-400'}`}>
                             <Settings className="w-4 h-4" />
                           </button>
                         </th>
@@ -607,7 +606,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                         </td></tr>
                       ) : (
                         filasOrdenadas.map(f => (
-                          <tr key={f.id} className={`border-t border-slate-100 transition-colors ${f.pagado ? 'bg-emerald-50/70' : 'bg-white hover:bg-slate-50/60'}`}>
+                          <tr key={f.id} className={`border-t border-slate-100 dark:border-white/10 transition-colors ${f.pagado ? 'bg-emerald-50/70' : 'bg-white dark:bg-[#14142e] hover:bg-slate-50 dark:hover:bg-white/5 dark:bg-white/5/60'}`}>
                             <td className="px-4 py-3">
                               <button
                                 onClick={() => togglePagado(f)}
@@ -618,7 +617,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                               </button>
                             </td>
                             <td className="px-2 py-3">
-                              <span className="inline-flex items-center gap-2.5 font-bold text-slate-800">
+                              <span className="inline-flex items-center gap-2.5 font-bold text-slate-800 dark:text-slate-100">
                                 {f.cuenta.toLowerCase().includes('netflix') ? (
                                   <span className="w-7 h-7 rounded-lg bg-[#E50914] text-white font-black flex items-center justify-center text-sm shrink-0">{i18n.t('n')}</span>
                                 ) : (
@@ -627,10 +626,10 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                                 {f.cuenta || <span className="text-slate-300 font-medium">{i18n.t('sin_nombre')}</span>}
                               </span>
                             </td>
-                            <td className="px-2 py-3 font-bold text-slate-700">
+                            <td className="px-2 py-3 font-bold text-slate-700 dark:text-slate-200">
                               {f.dia_vencimiento != null ? String(f.dia_vencimiento).padStart(2, '0') : <span className="text-slate-300">—</span>}
                             </td>
-                            <td className="px-2 py-3 font-bold text-slate-800">{f.monto || <span className="text-slate-300">—</span>}</td>
+                            <td className="px-2 py-3 font-bold text-slate-800 dark:text-slate-100">{f.monto || <span className="text-slate-300">—</span>}</td>
                             {columnas.map(c => {
                               const v = f.extras?.[String(c.id)] || '';
                               const esBanco = c.nombre.trim().toLowerCase() === 'banco';
@@ -638,7 +637,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                                 <td key={c.id} className="px-2 py-3">
                                   {esBanco ? (
                                     v ? (
-                                      <span className="inline-flex items-center gap-1.5 text-[13px] font-bold text-slate-700">
+                                      <span className="inline-flex items-center gap-1.5 text-[13px] font-bold text-slate-700 dark:text-slate-200">
                                         <span className="w-6 h-6 rounded-md text-white text-[10px] font-black flex items-center justify-center shrink-0" style={{ background: colorBanco(v) }}>
                                           {inicialesBanco(v)}
                                         </span>
@@ -653,7 +652,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                                         <Check className="w-3.5 h-3.5" strokeWidth={3} /> {v}
                                       </span>
                                     ) : (
-                                      <span className="text-[13px] text-slate-600">{v}</span>
+                                      <span className="text-[13px] text-slate-600 dark:text-slate-300">{v}</span>
                                     )
                                   ) : (
                                     f.pagado && c.nombre.trim().toLowerCase() === 'observaciones'
@@ -677,7 +676,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                     </tbody>
                   </table>
                 </div>
-                <p className="text-center text-xs text-slate-400 py-3 border-t border-slate-100">
+                <p className="text-center text-xs text-slate-400 py-3 border-t border-slate-100 dark:border-white/10">
                   Mostrando {filas.length} cuenta{filas.length === 1 ? '' : 's'} registrada{filas.length === 1 ? '' : 's'}
                   {guardando && <span className="ml-2 animate-pulse">{i18n.t('guardando')}</span>}
                 </p>
@@ -692,7 +691,7 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                   <select
                     value={`${anio}-${String(mes).padStart(2, '0')}`}
                     onChange={e => { const [a, m] = e.target.value.split('-').map(Number); irPeriodo(a, m); }}
-                    className="bg-white/15 border border-white/25 rounded-md text-xs font-bold px-2 py-1.5 outline-none cursor-pointer [&>option]:text-slate-800"
+                    className="bg-white/15 border border-white/25 rounded-md text-xs font-bold px-2 py-1.5 outline-none cursor-pointer [&>option]:text-slate-800 dark:text-slate-100"
                   >
                     {opcionesMeses.map(o => (
                       <option key={`${o.a}-${o.m}`} value={`${o.a}-${String(o.m).padStart(2, '0')}`}>
@@ -715,8 +714,8 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                 </div>
               </section>
 
-              <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-                <h3 className="font-bold text-slate-900 text-[15px]">{i18n.t('proximos_vencimientos')}</h3>
+              <section className="bg-white dark:bg-[#14142e] rounded-2xl border border-slate-100 dark:border-white/10 shadow-sm p-5">
+                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-[15px]">{i18n.t('proximos_vencimientos')}</h3>
                 <div className="flex flex-col gap-2 mt-3">
                   {vencimientos.length === 0 ? (
                     <p className="text-[13px] text-slate-400">{i18n.t('sin_vencimientos_pendientes')}</p>
@@ -725,11 +724,11 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                       <div key={f.id} className="rounded-md bg-[#f4f6fb] p-3 flex items-center gap-3">
                         <span className="text-xl leading-none">{emojiCuenta(f.cuenta)}</span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-slate-900 truncate">{f.cuenta}</p>
-                          <p className="text-xs text-slate-500">{textoVence(f.dia_vencimiento || 0)}</p>
+                          <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{f.cuenta}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{textoVence(f.dia_vencimiento || 0)}</p>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-lg font-bold text-slate-900">{String(f.dia_vencimiento).padStart(2, '0')}</p>
+                          <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{String(f.dia_vencimiento).padStart(2, '0')}</p>
                           <p className="text-[10px] font-bold text-[#6236FF]">{MESES_CORTO[mes - 1]}</p>
                         </div>
                       </div>
@@ -741,13 +740,13 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                 </button>
               </section>
 
-              <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex gap-3">
+              <section className="bg-white dark:bg-[#14142e] rounded-2xl border border-slate-100 dark:border-white/10 shadow-sm p-5 flex gap-3">
                 <span className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
                   <CloudCog className="w-5 h-5 text-emerald-600" />
                 </span>
                 <div>
-                  <p className="text-sm font-extrabold text-slate-900">{i18n.t('tus_cambios_se_guardan_automaticamente')}</p>
-                  <p className="text-[13px] text-slate-500 leading-snug">{i18n.t('puedes_editar_siempre_que_lo_necesites')}</p>
+                  <p className="text-sm font-extrabold text-slate-900 dark:text-slate-100">{i18n.t('tus_cambios_se_guardan_automaticamente')}</p>
+                  <p className="text-[13px] text-slate-500 dark:text-slate-400 leading-snug">{i18n.t('puedes_editar_siempre_que_lo_necesites')}</p>
                 </div>
               </section>
             </div>
@@ -759,32 +758,32 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
       {(panel === 'fila') && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4" onClick={() => setPanel(null)}>
           <div className="absolute inset-0 bg-black/40" />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-5" onClick={e => e.stopPropagation()}>
+          <div className="relative bg-white dark:bg-[#14142e] rounded-2xl shadow-2xl w-full max-w-md p-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-extrabold text-slate-900">{editando ? 'Editar cuenta' : 'Agregar nueva cuenta'}</h3>
-              <button onClick={() => setPanel(null)} className="text-slate-400 hover:text-slate-700"><X className="w-5 h-5" /></button>
+              <h3 className="font-extrabold text-slate-900 dark:text-slate-100">{editando ? 'Editar cuenta' : 'Agregar nueva cuenta'}</h3>
+              <button onClick={() => setPanel(null)} className="text-slate-400 hover:text-slate-700 dark:text-slate-200"><X className="w-5 h-5" /></button>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <label className="block text-xs font-bold text-slate-500">Cuenta
-                <input value={fCuenta} onChange={e => setFCuenta(e.target.value)} placeholder={i18n.t('nombre_de_la_cuenta')} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF] font-normal" />
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400">Cuenta
+                <input value={fCuenta} onChange={e => setFCuenta(e.target.value)} placeholder={i18n.t('nombre_de_la_cuenta')} className="mt-1 w-full border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF] font-normal" />
               </label>
-              <label className="block text-xs font-bold text-slate-500">Día de vencimiento
-                <select value={fDia} onChange={e => setFDia(e.target.value)} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF] font-normal bg-white">
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400">Día de vencimiento
+                <select value={fDia} onChange={e => setFDia(e.target.value)} className="mt-1 w-full border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF] font-normal bg-white dark:bg-[#14142e]">
                   <option value="">{i18n.t('selecciona_un_dia')}</option>
                   {Array.from({ length: 31 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{String(d).padStart(2, '0')}</option>)}
                 </select>
               </label>
-              <label className="block text-xs font-bold text-slate-500">Monto
-                <input value={fMonto} onChange={e => setFMonto(e.target.value)} placeholder={i18n.t('ej_42_000_o_variable')} className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF] font-normal placeholder:text-slate-400" />
+              <label className="block text-xs font-bold text-slate-500 dark:text-slate-400">Monto
+                <input value={fMonto} onChange={e => setFMonto(e.target.value)} placeholder={i18n.t('ej_42_000_o_variable')} className="mt-1 w-full border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF] font-normal placeholder:text-slate-400" />
               </label>
               {columnas.map(c => (
-                <label key={c.id} className="block text-xs font-bold text-slate-500">{c.nombre}
+                <label key={c.id} className="block text-xs font-bold text-slate-500 dark:text-slate-400">{c.nombre}
                   <span className="mt-1 block font-normal">{campoExtra(c)}</span>
                 </label>
               ))}
             </div>
             <div className="flex gap-2 mt-4">
-              <button onClick={() => setPanel(null)} className="flex-1 border border-slate-200 rounded-xl py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">{i18n.t('cancelar_7umw')}</button>
+              <button onClick={() => setPanel(null)} className="flex-1 border border-slate-200 dark:border-white/10 rounded-xl py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 dark:bg-white/5">{i18n.t('cancelar_7umw')}</button>
               <button onClick={guardarFila} disabled={guardando} className="flex-1 text-sm font-bold text-white bg-gradient-to-r from-[#6236FF] to-[#8A2BE2] rounded-xl py-2.5 hover:brightness-110 active:scale-95 disabled:opacity-50">
                 Guardar
               </button>
@@ -797,28 +796,28 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
       {panel === 'columna' && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4" onClick={() => setPanel(null)}>
           <div className="absolute inset-0 bg-black/40" />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5" onClick={e => e.stopPropagation()}>
+          <div className="relative bg-white dark:bg-[#14142e] rounded-2xl shadow-2xl w-full max-w-sm p-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-extrabold text-slate-900">{i18n.t('agregar_nueva_columna')}</h3>
-              <button onClick={() => setPanel(null)} className="text-slate-400 hover:text-slate-700"><X className="w-5 h-5" /></button>
+              <h3 className="font-extrabold text-slate-900 dark:text-slate-100">{i18n.t('agregar_nueva_columna')}</h3>
+              <button onClick={() => setPanel(null)} className="text-slate-400 hover:text-slate-700 dark:text-slate-200"><X className="w-5 h-5" /></button>
             </div>
-            <label className="block text-xs font-bold text-slate-500">Nombre de la columna
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400">Nombre de la columna
               <input
                 autoFocus
                 value={nuevaCol}
                 onChange={e => setNuevaCol(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') agregarColumna(); }}
                 placeholder={i18n.t('ej_banco_medio_de_pago_comprobante')}
-                className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF] font-normal placeholder:text-slate-400"
+                className="mt-1 w-full border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#6236FF] font-normal placeholder:text-slate-400"
               />
             </label>
-            <label className="block text-xs font-bold text-slate-500 mt-3">Tipo de dato
-              <select disabled className="mt-1 w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50 text-slate-500">
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mt-3">Tipo de dato
+              <select disabled className="mt-1 w-full border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm bg-slate-50 dark:bg-white/5 text-slate-500 dark:text-slate-400">
                 <option>{i18n.t('texto')}</option>
               </select>
             </label>
             <div className="flex gap-2 mt-4">
-              <button onClick={() => setPanel(null)} className="flex-1 border border-slate-200 rounded-xl py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">{i18n.t('cancelar_7umw')}</button>
+              <button onClick={() => setPanel(null)} className="flex-1 border border-slate-200 dark:border-white/10 rounded-xl py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 dark:bg-white/5">{i18n.t('cancelar_7umw')}</button>
               <button onClick={agregarColumna} className="flex-1 text-sm font-bold text-white bg-gradient-to-r from-[#6236FF] to-[#8A2BE2] rounded-xl py-2.5 hover:brightness-110 active:scale-95">{i18n.t('guardar_9nec')}</button>
             </div>
           </div>
@@ -829,18 +828,18 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
       {panel === 'eliminarColumna' && colAEliminar && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4" onClick={() => setPanel(null)}>
           <div className="absolute inset-0 bg-black/40" />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5 text-center" onClick={e => e.stopPropagation()}>
+          <div className="relative bg-white dark:bg-[#14142e] rounded-2xl shadow-2xl w-full max-w-sm p-5 text-center" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-2">
               <span />
-              <button onClick={() => setPanel(null)} className="text-slate-400 hover:text-slate-700"><X className="w-5 h-5" /></button>
+              <button onClick={() => setPanel(null)} className="text-slate-400 hover:text-slate-700 dark:text-slate-200"><X className="w-5 h-5" /></button>
             </div>
             <span className="mx-auto w-14 h-14 rounded-full bg-red-50 flex items-center justify-center">
               <Trash2 className="w-6 h-6 text-red-500" />
             </span>
-            <h3 className="font-extrabold text-slate-900 mt-3">¿Eliminar columna “{colAEliminar.nombre}”?</h3>
-            <p className="text-[13px] text-slate-500 mt-1">{i18n.t('se_eliminara_esta_columna_y_toda_la_info')}</p>
+            <h3 className="font-extrabold text-slate-900 dark:text-slate-100 mt-3">¿Eliminar columna “{colAEliminar.nombre}”?</h3>
+            <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">{i18n.t('se_eliminara_esta_columna_y_toda_la_info')}</p>
             <div className="flex gap-2 mt-4">
-              <button onClick={() => setPanel(null)} className="flex-1 border border-slate-200 rounded-xl py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">{i18n.t('cancelar_7umw')}</button>
+              <button onClick={() => setPanel(null)} className="flex-1 border border-slate-200 dark:border-white/10 rounded-xl py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 dark:bg-white/5">{i18n.t('cancelar_7umw')}</button>
               <button onClick={eliminarColumna} className="flex-1 text-sm font-bold text-white bg-red-500 rounded-xl py-2.5 hover:bg-red-600 active:scale-95">{i18n.t('eliminar')}</button>
             </div>
           </div>
@@ -851,18 +850,18 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
       {panel === 'confirmBulk' && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4" onClick={() => setPanel(null)}>
           <div className="absolute inset-0 bg-black/40" />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5 text-center" onClick={e => e.stopPropagation()}>
+          <div className="relative bg-white dark:bg-[#14142e] rounded-2xl shadow-2xl w-full max-w-sm p-5 text-center" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-2">
               <span />
-              <button onClick={() => setPanel(null)} className="text-slate-400 hover:text-slate-700"><X className="w-5 h-5" /></button>
+              <button onClick={() => setPanel(null)} className="text-slate-400 hover:text-slate-700 dark:text-slate-200"><X className="w-5 h-5" /></button>
             </div>
             <span className="mx-auto w-14 h-14 rounded-full bg-red-50 flex items-center justify-center">
               <Trash2 className="w-6 h-6 text-red-500" />
             </span>
-            <h3 className="font-extrabold text-slate-900 mt-3">¿Eliminar las {filas.length} cuentas de {MESES[mes - 1]} {anio}?</h3>
-            <p className="text-[13px] text-slate-500 mt-1">{i18n.t('esta_accion_no_se_puede_deshacer_otros_m')}</p>
+            <h3 className="font-extrabold text-slate-900 dark:text-slate-100 mt-3">¿Eliminar las {filas.length} cuentas de {MESES[mes - 1]} {anio}?</h3>
+            <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1">{i18n.t('esta_accion_no_se_puede_deshacer_otros_m')}</p>
             <div className="flex gap-2 mt-4">
-              <button onClick={() => setPanel(null)} className="flex-1 border border-slate-200 rounded-xl py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50">{i18n.t('cancelar_7umw')}</button>
+              <button onClick={() => setPanel(null)} className="flex-1 border border-slate-200 dark:border-white/10 rounded-xl py-2.5 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 dark:bg-white/5">{i18n.t('cancelar_7umw')}</button>
               <button onClick={eliminarCuentasMes} className="flex-1 text-sm font-bold text-white bg-red-500 rounded-xl py-2.5 hover:bg-red-600 active:scale-95">{i18n.t('eliminar')}</button>
             </div>
           </div>
@@ -873,10 +872,10 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
       {panel === 'historial' && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4" onClick={() => setPanel(null)}>
           <div className="absolute inset-0 bg-black/40" />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5 max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="relative bg-white dark:bg-[#14142e] rounded-2xl shadow-2xl w-full max-w-sm p-5 max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-extrabold text-slate-900">{i18n.t('historial_mensual')}</h3>
-              <button onClick={() => setPanel(null)} className="text-slate-400 hover:text-slate-700"><X className="w-5 h-5" /></button>
+              <h3 className="font-extrabold text-slate-900 dark:text-slate-100">{i18n.t('historial_mensual')}</h3>
+              <button onClick={() => setPanel(null)} className="text-slate-400 hover:text-slate-700 dark:text-slate-200"><X className="w-5 h-5" /></button>
             </div>
             {historial.length === 0 ? (
               <p className="text-sm text-slate-400 text-center py-6">{i18n.t('aun_no_hay_meses_registrados')}</p>
@@ -885,10 +884,10 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
                 <button
                   key={`${h.anio}-${h.mes}`}
                   onClick={() => { irPeriodo(h.anio, h.mes); setPanel(null); }}
-                  className={`w-full flex items-center gap-3 py-2.5 border-b border-slate-100 last:border-0 text-left hover:bg-slate-50 rounded-lg px-2 ${(h.anio === anio && h.mes === mes) ? 'bg-[#f4f2ff]' : ''}`}
+                  className={`w-full flex items-center gap-3 py-2.5 border-b border-slate-100 dark:border-white/10 last:border-0 text-left hover:bg-slate-50 dark:hover:bg-white/5 dark:bg-white/5 rounded-lg px-2 ${(h.anio === anio && h.mes === mes) ? 'bg-[#f4f2ff]' : ''}`}
                 >
                   <div className="flex-1">
-                    <p className="text-sm font-extrabold text-slate-800">{MESES[h.mes - 1]} {h.anio}</p>
+                    <p className="text-sm font-extrabold text-slate-800 dark:text-slate-100">{MESES[h.mes - 1]} {h.anio}</p>
                     <p className="text-xs text-emerald-600 font-bold">{h.pagadas}/{h.total} pagadas</p>
                   </div>
                   <span className="text-right text-xs font-bold">
@@ -907,10 +906,10 @@ export default function CuentasScreen({ userName, onBack, onNavigate }: Props) {
       )}
 
       {/* Header mes móvil */}
-      <div className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-1 bg-white rounded-full shadow-xl border border-slate-200 px-2 py-1.5">
-        <button onClick={() => moverMes(-1)} className="p-2 text-slate-600"><ChevronLeft className="w-5 h-5" /></button>
-        <span className="text-xs font-black text-slate-800 px-1">{MESES[mes - 1]} {anio}</span>
-        <button onClick={() => moverMes(1)} className="p-2 text-slate-600"><ChevronRight className="w-5 h-5" /></button>
+      <div className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-1 bg-white dark:bg-[#14142e] rounded-full shadow-xl border border-slate-200 dark:border-white/10 px-2 py-1.5">
+        <button onClick={() => moverMes(-1)} className="p-2 text-slate-600 dark:text-slate-300"><ChevronLeft className="w-5 h-5" /></button>
+        <span className="text-xs font-black text-slate-800 dark:text-slate-100 px-1">{MESES[mes - 1]} {anio}</span>
+        <button onClick={() => moverMes(1)} className="p-2 text-slate-600 dark:text-slate-300"><ChevronRight className="w-5 h-5" /></button>
       </div>
 
       <ConfiguracionPanel isOpen={showConfig} onClose={() => setShowConfig(false)} />

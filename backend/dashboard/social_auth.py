@@ -3,7 +3,6 @@ import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
@@ -96,17 +95,47 @@ def _verify_google_token(id_token):
     if resp.status_code != 200:
         return None
     data = resp.json()
-    if 'email' not in data:
+
+    email = data.get('email')
+    email_verified = data.get('email_verified')
+    aud = data.get('aud')
+    iss = data.get('iss')
+    if not email:
         return None
+
+    # email_verified puede venir como 'true'/'false' (string) desde tokeninfo.
+    if str(email_verified).lower() != 'true':
+        logger.warning('Google login rechazado: email no verificado (aud=%s)', aud)
+        return None
+
+    allowed_issuers = {'accounts.google.com', 'https://accounts.google.com'}
+    if iss not in allowed_issuers:
+        logger.warning('Google login rechazado: issuer inválido (%s)', iss)
+        return None
+
+    configured_aud = [
+        cid.strip()
+        for cid in str(getattr(settings, 'GOOGLE_OAUTH_CLIENT_ID', '') or '').split(',')
+        if cid.strip()
+    ]
+    if configured_aud:
+        if aud not in configured_aud:
+            logger.warning('Google login rechazado: aud inválido')
+            return None
+    elif not settings.DEBUG:
+        logger.error('GOOGLE_OAUTH_CLIENT_ID no configurado; rechazando login de Google en producción')
+        return None
+    else:
+        logger.warning('GOOGLE_OAUTH_CLIENT_ID no configurado; omitiendo validación de aud en DEBUG')
+
     return {
-        'email': data['email'],
+        'email': email,
         'full_name': data.get('name', ''),
         'avatar_url': data.get('picture', ''),
         'provider': 'google',
     }
 
 
-@csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def google_login(request):
@@ -168,7 +197,6 @@ def _verify_microsoft_token(access_token):
     }
 
 
-@csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def microsoft_login(request):

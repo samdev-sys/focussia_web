@@ -35,6 +35,7 @@ export const NAV_ITEMS: { key: string; label: string }[] = [
   { key: 'inspiracion', label: 'Inspiración' },
   { key: 'cumple', label: 'Cumpleaños' },
   { key: 'tribu', label: 'Tribu' },
+  { key: 'cuentas', label: 'Cuentas' },
   { key: 'focus', label: 'Focus' },
   { key: 'cursos', label: 'Cursos' },
   { key: 'coaching', label: 'Coaching' },

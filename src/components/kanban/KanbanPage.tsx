@@ -50,7 +50,7 @@ export default function KanbanPage({ acciones, papelera, loading, onAdd, onClass
   return (
     <div className="space-y-4">
       {/* Input */}
-      <div className="bg-white rounded-md border border-[#e3e8f5] p-3 sm:p-4 flex items-center gap-3">
+      <div className="bg-white dark:bg-[#14142e] rounded-md border border-[#e3e8f5] p-3 sm:p-4 flex items-center gap-3">
         <span className="w-11 h-11 rounded-md bg-[#eef3ff] hidden sm:flex items-center justify-center shrink-0">
           <FileText className="w-6 h-6 text-[#1f6feb]" />
         </span>
@@ -80,13 +80,13 @@ export default function KanbanPage({ acciones, papelera, loading, onAdd, onClass
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Pendientes */}
-        <div className="lg:col-span-2 bg-white rounded-md border border-[#e3e8f5] overflow-hidden">
+        <div className="lg:col-span-2 bg-white dark:bg-[#14142e] rounded-md border border-[#e3e8f5] overflow-hidden">
           <div className="flex items-center gap-3 px-5 pt-4 pb-3">
             <h2 className="text-xl sm:text-2xl font-bold text-[#101433]">{i18n.t('acciones_pendientes')}</h2>
             <button
               type="button"
               onClick={() => setShowHelp(v => !v)}
-              className="ml-auto flex items-center gap-1.5 text-xs font-bold text-[#101433] border border-[#e3e8f5] rounded-lg px-2.5 py-1.5 hover:bg-gray-50 transition-colors"
+              className="ml-auto flex items-center gap-1.5 text-xs font-bold text-[#101433] border border-[#e3e8f5] rounded-lg px-2.5 py-1.5 hover:bg-gray-50 dark:hover:bg-white/5 dark:bg-white/5 transition-colors"
             >
               <Info className="w-4 h-4" /> Recordar H/P/D/E <ChevronDown className="w-3.5 h-3.5" />
             </button>
@@ -132,7 +132,7 @@ export default function KanbanPage({ acciones, papelera, loading, onAdd, onClass
         </div>
 
         {/* Ideas desechadas */}
-        <div className="bg-white rounded-md border border-[#e3e8f5] p-5">
+        <div className="bg-white dark:bg-[#14142e] rounded-md border border-[#e3e8f5] p-5">
           <div className="flex items-center gap-2">
             <Trash2 className="w-6 h-6 text-[#101433]" />
             <h2 className="text-xl font-bold text-[#101433]">{i18n.t('ideas_desechadas_9ztt')}</h2>
@@ -148,7 +148,7 @@ export default function KanbanPage({ acciones, papelera, loading, onAdd, onClass
                 <p className="text-[#101433] font-bold text-base">{a.texto_accion}</p>
                 <div className="flex items-center gap-2 mt-3">
                   <span className="w-8 h-8 rounded-full bg-black text-white text-sm font-black flex items-center justify-center">{i18n.t('e')}</span>
-                  <span className="text-xs font-bold text-[#5b6b8c] bg-gray-100 px-2.5 py-1 rounded-full">{i18n.t('desechada')}</span>
+                  <span className="text-xs font-bold text-[#5b6b8c] bg-gray-100 dark:bg-white/10 px-2.5 py-1 rounded-full">{i18n.t('desechada')}</span>
                   <button
                     type="button"
                     onClick={() => onRestore(a.id)}

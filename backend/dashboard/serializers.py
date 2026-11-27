@@ -716,6 +716,13 @@ class ActionSerializer(serializers.ModelSerializer):
                   'origin_module', 'status', 'subactions', 'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at']
 
+    def validate_weekly_plan(self, value):
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        if user and user.is_authenticated and value.user_id != user.id:
+            raise serializers.ValidationError('No tienes permiso para usar este plan semanal.')
+        return value
+
 
 class ActionMoveSerializer(serializers.Serializer):
     action_id = serializers.UUIDField()
